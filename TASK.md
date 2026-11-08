@@ -1,6 +1,12 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: DONE — full-shell revamp built and verified (Nov 8, Khang's ask).
+Status: IN PROGRESS — holistic build (phases 1–5) by OpenCode (Nov 8, Khang's direct ask).
+
+## WIP
+
+WIP: OpenCode editing program.js, store.js, timer.js, app.js, index.html, style.css, README.md, TASK.md, BUILD_LOG.md, manifest.webmanifest, sw.js, icons, tests, package.json since 2026-11-08.
+
+---
 
 ## Completed task — full revamp
 
