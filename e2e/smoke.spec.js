@@ -39,5 +39,27 @@ for (const size of sizes) {
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
+
+    test("no overflow with suggestion + sparkline + RIR hint (worst case)", async ({ page }) => {
+      await page.goto(url);
+      await page.evaluate(() => {
+        const hist = [50, 52.5, 55].map((l, i) => ({ date: "2026-10-0" + (i + 1), load: l, reps: 6, rir: 2, hitTop: true, setsDone: 3 }));
+        localStorage.setItem("gym-tool-v2", JSON.stringify({
+          v: 2, cur: "fri", idx: 0,
+          state: { "fri:0": { done: 0, load: 55, reps: 6, rir: 2, topHits: 0, lastRir: null } },
+          liftHistory: { "fri:0": hist }
+        }));
+      });
+      await page.reload();
+      await page.locator(".liftrow").first().click();
+      await expect(page.locator("#suggestLine")).toBeVisible();
+      await expect(page.locator("#sparkWrap")).toBeVisible();
+      await expect(page.locator("#rirHint")).toBeVisible();
+      const fits = await page.evaluate(() => {
+        const r = document.getElementById("doneBtn").getBoundingClientRect();
+        return document.documentElement.scrollHeight <= window.innerHeight + 1 && r.bottom <= window.innerHeight + 1 && r.top >= 0;
+      });
+      expect(fits, "Set Done must stay fully on-screen").toBe(true);
+    });
   });
 }

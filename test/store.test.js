@@ -17,6 +17,12 @@ const S = require("../store.js");
 
 test.beforeEach(() => { global.localStorage.clear(); });
 
+test("emptyPayload opens on today's training day", () => {
+  const d = new Date().getDay();
+  const expected = d === 6 ? "sat" : (d === 0 ? "sun" : "fri");
+  assert.equal(S.emptyPayload().cur, expected);
+});
+
 test("migrate v1 → v2 carries data forward", () => {
   const raw = JSON.stringify({ v: 1, cur: "sat", idx: 2, state: { "sat:0": { done: 1 } } });
   const p = S.migrate(raw);

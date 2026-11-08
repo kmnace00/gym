@@ -16,7 +16,9 @@
   function read(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
   function write(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
 
-  function emptyPayload() { return { v: CURRENT, cur: "fri", idx: 0, state: {}, liftHistory: {} }; }
+  /* open on today's training day; Mon–Thu (off days) land on Fri, the next session */
+  function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
+  function emptyPayload() { return { v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {} }; }
 
   function normalize(p) {
     if (!p.state || typeof p.state !== "object") p.state = {};
