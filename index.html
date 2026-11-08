@@ -1,443 +1,325 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>Gym</title>
+<meta name="theme-color" content="#0b0e12">
 <meta name="apple-mobile-web-app-title" content="Gym">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<title>Gym</title>
 <link rel="icon" href="data:,">
 <style>
+/* ── design tokens — dark-first, light is an explicit opt-in ───────────── */
 :root{
-  --bg:#f7f7f5; --card:#ffffff; --ink:#111111; --muted:#6d6d68; --faint:#67675f; --line:#e7e7e2;
-  --accent:#0f766e; --accent-ink:#ffffff; --accent-bg:#e6f4f1;
-  --timer-bg:#111111; --timer-ink:#f7f7f5;
-  --warn-bg:#fef3c7; --warn:#92400e;
-  --fill:#eeeeea;
-  --seg:#d5d5cf;
+  --bg:#0b0e12; --surface:#151a21; --surface-2:#1d242d; --line:#28313b;
+  --ink:#eef2f5; --muted:#9aa6b3; --faint:#68727e;
+  --accent:#35d0b8; --accent-ink:#04231e; --accent-soft:rgba(53,208,184,.15);
+  --good:#4ade80; --warn-bg:#3a2c0c; --warn:#fbbf24;
+  --radius:16px; --radius-sm:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.5);
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#101010; --card:#1a1a1a; --ink:#f2f2f2; --muted:#a6a6a6; --faint:#919191; --line:#2a2a2a;
-    --accent:#2dd4bf; --accent-ink:#06201b; --accent-bg:#14332e;
-    --timer-bg:#ececec; --timer-ink:#111111;
-    --warn-bg:#2a2110; --warn:#fbbf24;
-    --fill:#242424;
-    --seg:#3d3d3d;
-  }
+html[data-theme="light"]{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f4; --line:#e0e5ea;
+  --ink:#0d1318; --muted:#5a6572; --faint:#8a95a1;
+  --accent:#0d9488; --accent-ink:#ffffff; --accent-soft:rgba(13,148,136,.12);
+  --good:#16a34a; --warn-bg:#fef3c7; --warn:#92400e;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.1);
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
+
+*,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{
   margin:0;background:var(--bg);color:var(--ink);
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   line-height:1.35;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
 button{font:inherit;cursor:pointer;color:inherit;background:none;border:0;padding:0}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
 }
+
+/* ── shell ─────────────────────────────────────────────────────────────── */
 .app{
   height:100dvh;max-width:520px;margin:0 auto;
-  display:flex;flex-direction:column;gap:10px;
+  display:flex;flex-direction:column;gap:12px;
   padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-  /* rapid taps mid-set should never start selecting text */
   -webkit-user-select:none;user-select:none;
 }
 
-/* — top: day picker + session time, kept quiet — */
-.top{display:flex;gap:10px;align-items:center;flex:none;min-width:0}
-.days{display:flex;gap:2px;flex:1;min-width:0;background:var(--fill);border-radius:999px;padding:3px}
+/* ── header: day tabs (day view) / back (lift view) + theme + session ──── */
+.header{display:flex;gap:10px;align-items:center;flex:none;min-width:0}
+.days{display:flex;gap:3px;flex:1;min-width:0;background:var(--surface-2);border-radius:999px;padding:3px}
 .day{
-  flex:1;height:44px;border-radius:999px;font-weight:700;font-size:14px;color:var(--muted);
+  flex:1;height:42px;border-radius:999px;font-weight:700;font-size:14px;color:var(--muted);
+  transition:background .2s ease,color .2s ease;
 }
-.day.active{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.day.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.day:active{filter:brightness(.96)}
+.app.lift-mode .days{display:none}
+.backbtn{
+  display:none;flex:none;margin-right:auto;height:42px;padding:0 16px 0 12px;
+  border-radius:999px;align-items:center;gap:6px;
+  font-weight:700;font-size:14px;color:var(--ink);background:var(--surface-2);
+}
+.app.lift-mode .backbtn{display:inline-flex}
+.themebtn{
+  flex:none;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;
+  font-size:17px;color:var(--muted);
+}
 .pill{
-  flex:none;min-height:44px;padding:10px 12px;border-radius:999px;font-size:14px;font-weight:600;color:var(--muted);
-  font-variant-numeric:tabular-nums;white-space:nowrap;min-width:52px;background:transparent;text-align:center;
-  /* idle and at 0:00 it asks for attention it hasn't earned — the session
-     auto-starts on the first Set Done, so until it is running it stays
-     quiet the legible way: no pill background at all, just muted text at
-     full strength. An earlier pass demoted it with opacity instead, but
-     at half strength the label fell to ~2.6:1 against the page — under
-     gym lighting, at arm's length, the one manual start control was the
-     hardest text on the screen to read. The missing fill already carries
-     the demotion; it earns its filled pill back the moment the session
-     is actually running */
-  transition:background .25s ease;
+  flex:none;min-height:42px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:700;
+  font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
+  display:inline-flex;align-items:center;gap:6px;background:transparent;
+  transition:background .2s ease,color .2s ease;
 }
-.pill.on{color:var(--ink);background:var(--accent-bg)}
-/* at 0:00 the readout carries zero information — until the session has
-   actually banked time, the pill is just the play affordance; the elapsed
-   time appears the moment there is a time worth reading */
+.pill.on{color:var(--accent);background:var(--accent-soft)}
+/* the elapsed readout is hidden until there is time worth reading */
 .pill:not(.on):not(.has-time) #elapsed{display:none}
-/* the session start is the last icon-only control on the lift screen —
-   a lone ▶ reads as decoration, not as the button that starts the
-   session clock, so while idle it carries the plain word Start; the
-   word retires the moment the session is running or has time banked,
-   when the pause glyph and the elapsed readout say it instead */
 .pill.on .startlbl,.pill.has-time .startlbl{display:none}
 
-/* — rest timer: quiet when idle, the focus only while counting — */
-.timer{
-  flex:none;border-radius:14px;padding:9px 12px;
-  display:flex;align-items:center;gap:10px;min-height:48px;
-  background:var(--card);color:var(--muted);
-  transition:background .25s ease,color .25s ease;
-}
-/* idle timer is not rendered at all — the strip only exists while a rest
-   is actually counting or waiting at GO, so nothing competes with the lift */
-.timer:not(.active){display:none}
-.timer.go{cursor:pointer}
-.timer.go #pauseRest{display:none}
-.timer.paused .clock{opacity:.55}
-.timer .clock{
-  font-size:20px;font-weight:700;line-height:1;letter-spacing:-.01em;
-  font-variant-numeric:tabular-nums;
-}
-.timer .tlabel{flex:1;min-width:0;font-size:12.5px;line-height:1.3}
-.timer .tlabel strong{font-weight:600;color:inherit}
-.timer .tlabel span{opacity:.75}
-.timer .tlabel strong,.timer .tlabel span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline}
-.timer .tbtns{display:none;gap:6px;flex:none}
-.timer .tbtns button{
-  height:44px;padding:0 13px;border-radius:999px;
-  border:1px solid currentColor;background:transparent;color:inherit;font-weight:700;font-size:13.5px;
-}
-.timer.active{background:var(--timer-bg);color:var(--timer-ink);padding:12px}
-.timer.active .clock{font-size:42px;font-weight:800;min-width:96px}
-.timer.active .tlabel{font-size:12.5px}
-.timer.active .tlabel strong{display:block;font-size:13.5px}
-.timer.active .tlabel span{display:block}
-.timer.active .tbtns{display:flex}
-.timer.go{background:var(--accent);color:var(--accent-ink)}
+/* ── views ─────────────────────────────────────────────────────────────── */
+.view{flex:1;min-height:0;min-width:0;flex-direction:column}
 
-/* — rest progress: one thin bar, only while the timer runs — */
-.rbar{display:none}
-.timer.active{flex-wrap:wrap}
-.timer.active .rbar{
-  display:block;flex-basis:100%;order:5;height:6px;border-radius:99px;
-  background:rgba(127,127,127,.35);overflow:hidden;
+/* ── day view: the 8-lift overview ─────────────────────────────────────── */
+.dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
+.daytitle{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.liftlist{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.liftrow{
+  flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;gap:12px;
+  width:100%;text-align:left;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;padding:0 14px;
+  transition:border-color .2s ease,background .2s ease,transform .08s ease;
 }
-.rbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s linear}
-.timer.go .rbar i{background:currentColor}
-.app.resting .rbar{width:100%;flex:none;order:0}
+.liftrow:active{transform:scale(.992)}
+.liftrow.now{border-color:var(--accent);background:var(--accent-soft)}
+.liftrow.done{opacity:.62}
+.liftstatus{flex:none;width:20px;text-align:center;font-size:15px;font-weight:800;color:var(--accent)}
+.liftmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.liftname{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liftmeta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{flex:none;font-size:20px;color:var(--faint);line-height:1}
+.progress{flex:none;display:flex;gap:4px;height:6px;margin-top:8px}
+.pseg{flex:1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.pseg i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s ease}
 
-/* — undo: only on the rest screen, only right after a set is logged — */
-.undobtn{
-  display:none;flex:none;padding:8px 12px;min-height:44px;
-  align-items:center;justify-content:center;
-  font-size:12.5px;font-weight:600;color:inherit;opacity:.55;
-  text-decoration:underline;text-underline-offset:3px;
-}
-.app.resting.can-undo .undobtn{display:flex}
-.app.resting.show-details .undobtn{flex-basis:100%;text-align:center;padding:2px 0 0}
-
-/* — rest focus: while resting, the timer is the whole screen — */
-.detailsbtn{
-  display:none;flex:none;padding:0 12px;min-height:44px;height:44px;
-  align-items:center;justify-content:center;
-  font-size:13.5px;font-weight:600;color:inherit;opacity:.65;
-  text-decoration:underline;text-underline-offset:3px;
-}
-.app.resting:not(.show-details) .top,
-.app.resting:not(.show-details) .card,
-.app.resting:not(.show-details) .bottom{display:none}
-.app.resting .timer{
-  flex:1;flex-direction:column;justify-content:center;align-items:center;
-  text-align:center;gap:16px;padding:28px 20px;border-radius:20px;
-}
-.app.resting .timer .clock{
-  font-size:clamp(84px,26vw,120px);font-weight:800;line-height:.95;min-width:0;
-}
-.app.resting .timer .tlabel{flex:none;text-align:center;font-size:14px}
-.app.resting .timer .tlabel strong{
-  display:block;font-size:17px;font-weight:700;
-  white-space:normal;overflow:visible;text-overflow:clip;
-}
-.app.resting .timer .tlabel span{
-  display:block;margin-top:5px;opacity:.75;
-  white-space:normal;overflow:visible;text-overflow:clip;
-}
-.app.resting .timer .tbtns{display:flex;gap:10px}
-.app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px}
-.app.resting .detailsbtn{display:inline-flex}
-.app.resting .timer.go .tlabel strong{font-size:22px}
-/* what's coming up, stated on the rest screen itself — "set up the next
-   set" is only actionable if the screen says what that set is */
-.rnext{display:none}
-.timer.active .rnext{display:block;font-size:12.5px;opacity:.8;font-variant-numeric:tabular-nums}
-.app.resting .timer .rnext{font-size:15px;text-align:center;white-space:normal}
-.app.resting.show-details .timer .rnext{flex-basis:100%;text-align:left;font-size:12.5px}
-/* rest reading order, top to bottom: time, progress, what just happened,
-   what's next, actions, then the quiet escape links — set explicitly so the
-   progress bar sits under the countdown instead of below the buttons */
-.app.resting:not(.show-details) .timer .clock{order:1}
-.app.resting:not(.show-details) .timer .rbar{order:2}
-.app.resting:not(.show-details) .timer .tlabel{order:3}
-.app.resting:not(.show-details) .timer .rnext{order:4}
-.app.resting:not(.show-details) .timer .tbtns{order:5}
-.app.resting:not(.show-details) .timer .rnav{order:6}
-.app.resting:not(.show-details) .detailsbtn{order:7}
-.app.resting:not(.show-details) .undobtn{order:8}
-/* back / forward between lifts, on the rest screen itself: in rest focus
-   the bottom nav is hidden with the card, so without this pair the only
-   way off the lift just done was ending the rest (or peeking). Shown only
-   in rest focus — peeked details bring the bottom nav back, and an idle
-   timer is not rendered at all, so the pair is never focusable or
-   clickable in a state where it is hidden. The buttons forward to the
-   bottom nav's own prev / next handlers; there is no second copy of the
-   navigation logic. */
-.rnav{display:none}
-.app.resting:not(.show-details) .rnav{
-  display:flex;gap:10px;align-items:center;justify-content:center;
-}
-.rnav button{
-  width:52px;height:44px;border-radius:999px;flex:none;
-  border:1px solid currentColor;background:transparent;color:inherit;
-  font-size:20px;font-weight:700;line-height:1;
-  display:grid;place-items:center;
-}
-.rnav button:disabled{opacity:.25}
-/* paused must read at a glance, not just as a dimmer clock */
-.timer.paused .tlabel strong::after{content:" — paused";font-weight:600;opacity:.75}
-/* Pause is the least-used action on a 90–180s rest — demoted to a quiet
-   text link in the same style as Show workout (.detailsbtn: 13.5px, 600,
-   .65 opacity, underlined, no border or fill) so End rest is the single
-   prominent button until GO. It keeps a 44px tap target and its exact
-   tap / resume behaviour; only its visual weight changes. */
-.timer .tbtns #pauseRest{
-  border:0;background:transparent;
-  font-size:13.5px;font-weight:600;opacity:.65;
-  text-decoration:underline;text-underline-offset:3px;
-  height:44px;padding:0 8px;
-}
-.app.resting .timer .tbtns #pauseRest{height:44px;padding:0 8px;font-size:13.5px}
-.app.resting.show-details .timer .tbtns #pauseRest{flex:0 0 auto;height:44px;padding:0 8px;font-size:13.5px}
-/* at GO the advance button is the one primary action on the screen */
-.timer.go #skipRest{background:var(--accent-ink);color:var(--accent);border-color:transparent}
-.timer.go .clock{letter-spacing:.04em}
-/* details peeked: timer shrinks back to a strip, everything else returns */
-.app.resting.show-details .timer{
-  flex:none;flex-direction:row;justify-content:flex-start;align-items:center;
-  text-align:left;gap:10px;padding:12px;border-radius:14px;flex-wrap:wrap;
-}
-.app.resting.show-details .timer .clock{font-size:42px;min-width:96px}
-.app.resting.show-details .timer .tlabel{flex:1;text-align:left}
-.app.resting.show-details .timer .tlabel strong{font-size:13.5px;white-space:normal;overflow:visible;text-overflow:clip;display:block}
-.app.resting.show-details .timer .tlabel span{margin-top:1px;white-space:normal;overflow:visible;text-overflow:clip;display:block}
-.app.resting.show-details .timer .tbtns button{height:44px;padding:0 12px;font-size:12.5px}
-/* peek strip at phone width: clock + label share row one, what's next gets
-   its own line, then the three rest buttons get a full even row of their
-   own — squeezing all of them onto one line truncated the label and made
-   the buttons uneven, exactly when a tired user is trying to read fast */
-.app.resting.show-details .timer .rnext{order:3}
-.app.resting.show-details .timer .tbtns{flex-basis:100%;order:4}
-.app.resting.show-details .timer .tbtns button{flex:1}
-.app.resting.show-details .timer .rbar{order:5}
-.app.resting.show-details .detailsbtn{flex-basis:100%;padding:2px 0 0;text-align:center;order:6}
-.app.resting.show-details .undobtn{order:7}
-
-/* — current lift: one thing to look at — */
-.card{
-  flex:1;min-height:0;background:var(--card);
-  border-radius:18px;padding:22px 16px 14px;
-  display:flex;flex-direction:column;
-}
-/* the card's slack is split between two flexible spacers: .sp1 above
-   the lift info and .sp2 between the set dots and the action cluster.
-   .sp1 takes the smaller share, so the lift block sits roughly centred
-   in the free space above the action cluster instead of hugging the
-   top over one chasm, while .sp2 still holds Set Done in the bottom
-   thumb zone. On short phones both spacers collapse to zero (see the
-   max-height:720px block) and the layout is exactly the compact stack. */
-.sp1{flex:2 1 0;min-height:0}
-.sp2{flex:3 1 0;min-height:0}
-.meta{font-size:12px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;margin-top:0}
+/* ── lift view ─────────────────────────────────────────────────────────── */
+.liftnav{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.mini{width:44px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--ink)}
+.mini:active{background:var(--surface-2)}
+.mini:disabled{opacity:.25}
+.liftstat{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 h1{
-  font-size:clamp(26px,6.8vw,32px);line-height:1.08;letter-spacing:-.02em;font-weight:800;
-  margin:8px 0 4px;
+  flex:none;
+  font-size:clamp(25px,6.6vw,31px);line-height:1.08;letter-spacing:-.02em;font-weight:800;
+  margin:2px 0 6px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-.pres{color:var(--muted)}
-/* the prescription is the one thing read at arm's length, mid-set, with the
-   phone on the rack — reps × load gets display size, the rest stays quiet */
-.pres .big{display:block;font-size:27px;line-height:1.15;font-weight:800;color:var(--ink);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.pres .small{display:block;margin-top:4px;font-size:13.5px;line-height:1.4}
+.pres{flex:none}
+.pres .big{display:block;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.pres .big b{color:var(--ink)}
+.pres .small{display:block;margin-top:4px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .cue{
-  font-size:15px;line-height:1.5;color:var(--muted);margin:7px 0 0;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  flex:none;font-size:15px;line-height:1.5;color:var(--muted);margin:9px 0 0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
-/* the tempo is the same for every lift, so it is stated quietly under
-   the cue on the first lift of the day only (see render) — explode up,
-   2s down, 1s hold — instead of being repeated on every lift */
-.tempo{font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:3px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
-.setdots{display:flex;gap:10px;margin:18px 0 12px;align-items:center}
+.tempo{flex:none;font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:4px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
+.setdots{flex:none;display:flex;gap:10px;margin:16px 0 0;align-items:center}
 .sdot{width:13px;height:13px;border-radius:50%;background:var(--line)}
 .sdot.done{background:var(--accent)}
-.sdot.now{background:transparent;border:2.5px solid var(--ink);width:16px;height:16px}
-/* the set count is stated once, here — the button below is action only */
+.sdot.now{width:16px;height:16px;background:transparent;border:2.5px solid var(--ink)}
 .setcount{font-size:13px;font-weight:600;color:var(--muted);margin-left:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.ctl{background:var(--fill);border-radius:12px;padding:6px;display:flex;align-items:center;justify-content:space-between;gap:2px}
+/* adjust cluster — always visible on the lift view, no hidden toggle */
+.adjust{flex:none;margin-top:auto;padding-top:14px}
+.steppers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px;display:flex;align-items:center;justify-content:space-between;gap:2px}
 .stepbtn{
   width:44px;height:44px;flex:none;border-radius:50%;
-  background:var(--card);font-size:22px;font-weight:700;line-height:1;
-  display:grid;place-items:center;
-  /* press-and-hold repeats the step (see bindStepper) — a long press
-     must not also raise the iOS touch callout over the control */
-  -webkit-touch-callout:none;
+  background:var(--surface-2);font-size:22px;font-weight:700;line-height:1;
+  display:grid;place-items:center;-webkit-touch-callout:none;
 }
-.stepbtn:active{filter:brightness(.94)}
+.stepbtn:active{filter:brightness(1.2)}
 .ctl .mid{text-align:center;min-width:0}
-.ctl .k{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
-.ctl .v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
-
-.rirrow{display:flex;align-items:center;gap:6px;margin-top:12px}
+.ctl .k{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.ctl .v{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.rirrow{display:flex;align-items:center;gap:6px;margin-top:10px}
 .rirrow .k{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--faint);margin-right:2px}
 .rir{
   flex:1;height:44px;border-radius:999px;
-  background:var(--fill);color:var(--muted);font-weight:700;font-size:15px;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);
+  font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
 }
-.rir.active{background:var(--ink);color:var(--bg)}
+.rir.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
-/* — adjust controls live behind Show details; main view is read-only.
-   The card reads as two zones: the lift itself, centred in the free
-   space by the .sp1/.sp2 spacers, and one action cluster at the bottom — Adjust
-   toggle, its controls when open, any hint, then Set Done, kept together
-   by fixed margins so opening the adjustments never splits them apart. — */
-.carddetailsbtn{
-  align-self:flex-start;margin-top:4px;padding:2px 4px 0;min-height:44px;height:44px;
-  display:inline-flex;align-items:center;
-  font-size:13.5px;font-weight:600;color:var(--muted);
-  /* a quiet text link, same treatment as the rest screen's escape links —
-     the bordered pill read as a second co-primary button beside Set Done,
-     but adjusting is the exception (bad day / progression), not the flow.
-     Quiet comes from the link styling and the muted colour at full
-     strength, not from opacity: faded to 65% the label dropped to
-     ~3.2:1 on the card, and the moment this link matters — a bad day,
-     mid-workout, deciding whether to change the load — is exactly when
-     it has to be findable at a glance in gym light */
-  text-decoration:underline;text-underline-offset:3px;
-}
-.adjustnote{display:none;margin:12px 0 0;font-size:12.5px;line-height:1.35;color:var(--faint)}
-.app:not(.adjust-open) .controls,
-.app:not(.adjust-open) .rirrow{display:none}
-.app.adjust-open .controls{display:grid}
-.app.adjust-open .rirrow{display:flex}
-.app.adjust-open .adjustnote{display:block}
-
-.hint{
-  display:none;margin-top:12px;border-radius:10px;padding:8px 10px;
-  font-size:13px;line-height:1.3;
-}
+.hint{display:none;margin-top:12px;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.35}
 .hint.show{display:block;background:var(--warn-bg);color:var(--warn)}
-.hint.good{background:var(--accent-bg);color:var(--accent)}
+.hint.good{background:var(--accent-soft);color:var(--accent)}
 .donebtn{
-  margin-top:12px;width:100%;height:62px;border-radius:14px;
-  background:var(--ink);color:var(--bg);
-  font-size:18px;font-weight:800;letter-spacing:.01em;
+  flex:none;margin-top:12px;width:100%;height:60px;border-radius:14px;
+  background:var(--ink);color:var(--bg);font-size:18px;font-weight:800;letter-spacing:.01em;
   transition:transform .08s ease,opacity .08s ease;
 }
 .donebtn:active{opacity:.88;transform:scale(.985)}
-.donebtn.complete{background:var(--fill);color:var(--accent)}
+.donebtn.complete{background:var(--surface-2);color:var(--accent)}
 
-/* — bottom: progress + prev / next only — */
-.bottom{flex:none}
-.nextup{
-  font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 2px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+/* ── rest timer: a strip when peeking, the whole screen while counting ─── */
+.timer{
+  display:none;flex:none;border-radius:var(--radius);padding:10px 14px;
+  align-items:center;gap:12px;background:var(--surface);color:var(--muted);
+  transition:background .25s ease,color .25s ease;
 }
-.nextup b{color:var(--ink);font-weight:600}
-.nav{display:flex;align-items:center;gap:4px;min-width:0}
-.navbtn{
-  width:48px;height:44px;flex:none;font-size:22px;font-weight:700;color:var(--ink);
-  display:grid;place-items:center;border-radius:10px;
+.timer.active{display:flex}
+.timer.go{cursor:pointer}
+.timer.paused .clock{opacity:.5}
+/* Pause is meaningless at GO — the button is inert there (pauseBtn ignores .go),
+   so it must not sit on screen looking tappable. */
+.timer.go #pauseRest{display:none}
+.timer .clock{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.timer .tlabel{flex:1;min-width:0;font-size:13px}
+.timer .tlabel strong{display:block;font-weight:700;color:var(--ink);font-size:13.5px}
+.timer .tlabel span{display:block;opacity:.75}
+.timer .rnext{font-size:12px;opacity:.8;font-variant-numeric:tabular-nums}
+.timer .tbtns{display:none;gap:8px;flex:none}
+.timer.active .tbtns{display:flex}
+.timer .tbtns button{
+  height:42px;padding:0 14px;border-radius:999px;
+  border:1px solid var(--line);background:transparent;font-weight:700;font-size:13px;
 }
-.navbtn:disabled{opacity:.25}
-.navbtn:active{background:var(--fill)}
-.day:active{filter:brightness(.95)}
-.jump{display:flex;gap:2px;flex:1;min-width:0;align-items:center}
-.seg{flex:1;min-width:0;height:44px;display:flex;align-items:center;padding:0 2px}
-.seg i{display:block;width:100%;height:5px;border-radius:99px;background:var(--seg)}
-.seg.now i{height:6px}
-.seg.now i{background:var(--ink)}
-.seg.done i{background:var(--accent)}
+.timer .rbar{display:none}
+.timer .rnav{display:none}
+.timer .detailsbtn,.timer .undobtn{display:none}
+.timer .tbtns #pauseRest{border:0;background:transparent;text-decoration:underline;text-underline-offset:3px;opacity:.7;padding:0 8px;font-weight:600}
 
+/* full-screen rest focus */
+.app.resting .timer{
+  flex:1;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;gap:16px;padding:28px 22px;border-radius:20px;
+}
+.app.resting .timer .clock{font-size:clamp(80px,25vw,118px);font-weight:800;line-height:.95;min-width:0}
+.app.resting .timer .tlabel{flex:none;text-align:center;font-size:14px}
+.app.resting .timer .tlabel strong{display:block;font-size:18px}
+.app.resting .timer .tlabel span{margin-top:4px}
+.app.resting .timer .tbtns{display:flex;gap:10px}
+.app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px}
+.app.resting .timer .tbtns #pauseRest{height:44px;padding:0 8px;font-size:13.5px}
+.app.resting .timer .rbar{
+  display:block;width:100%;max-width:340px;height:7px;border-radius:99px;
+  background:var(--surface-2);overflow:hidden;order:2;
+}
+.app.resting .timer .rbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s linear}
+.app.resting .timer .rnext{display:block;font-size:15px;max-width:360px;order:4}
+.app.resting .timer .clock{order:1}
+.app.resting .timer .tlabel{order:3}
+.app.resting .timer .tbtns{order:5}
+.app.resting .timer .rnav{
+  display:flex;gap:10px;align-items:center;justify-content:center;order:6;
+}
+.app.resting .timer .rnav button{
+  width:54px;height:44px;border-radius:999px;flex:none;
+  border:1px solid var(--line);background:transparent;color:inherit;
+  font-size:20px;font-weight:700;
+}
+.app.resting .timer .rnav button:disabled{opacity:.25}
+.app.resting .timer .detailsbtn,.app.resting .timer .undobtn{
+  display:inline-flex;height:44px;padding:0 12px;align-items:center;justify-content:center;
+  font-size:13.5px;font-weight:600;color:inherit;opacity:.7;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.app.resting .timer .detailsbtn{order:7}
+.app.resting .timer .undobtn{order:8;display:none}
+.app.resting.can-undo .timer .undobtn{display:inline-flex}
+.app.resting .timer.paused .tlabel strong::after{content:" — paused";font-weight:600;opacity:.75}
+
+/* GO: one unmistakable, tappable advance screen */
+.app.resting .timer.go{background:var(--accent);color:var(--accent-ink)}
+.app.resting .timer.go .clock,.app.resting .timer.go .tlabel,.app.resting .timer.go .tlabel strong,
+.app.resting .timer.go .rnext{color:var(--accent-ink)}
+.app.resting .timer.go .rbar{background:rgba(0,0,0,.18)}
+.app.resting .timer.go .rbar i{background:var(--accent-ink)}
+.app.resting .timer.go .tbtns button{border-color:var(--accent-ink);color:var(--accent-ink)}
+.app.resting .timer.go #skipRest{background:var(--accent-ink);color:var(--accent);border-color:transparent}
+
+/* peeked details: timer shrinks back to a strip, workout returns behind it */
+.app.resting.show-details .timer{
+  flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;
+  text-align:left;gap:8px;padding:10px 12px;border-radius:14px;
+}
+.app.resting.show-details .timer .clock{font-size:32px;min-width:70px;order:1}
+/* the label must keep real width — flex-basis 0 let it shrink to a sliver
+   earlier and wrap one word per line into a 281px column, which then forced
+   the whole strip (and the lift view below it) off-screen */
+.app.resting.show-details .timer .tlabel{flex:1 1 auto;min-width:0;text-align:left;order:2}
+.app.resting.show-details .timer .tlabel strong{white-space:normal;overflow:visible;text-overflow:clip;display:block;font-size:13.5px;line-height:1.2}
+.app.resting.show-details .timer .tlabel span{display:block;font-size:12px;line-height:1.2}
+/* the peek is a two-row strip: clock + label + Hide workout, then the
+   actions on their own full-width row. Progress bar, what's-next, the ‹ ›
+   pair and Undo stay on the full rest screen, so the strip stays short
+   enough that the lift view keeps its name and Set Done at 390×667. */
+.app.resting.show-details .timer .rnext,
+.app.resting.show-details .timer .rbar,
+.app.resting.show-details .timer .rnav,
+.app.resting.show-details .timer .undobtn{display:none}
+.app.resting.show-details .timer .detailsbtn{order:3;flex:0 0 auto;width:auto;height:42px;padding:0 10px;justify-content:center;align-self:center}
+.app.resting.show-details .timer .tbtns{order:4;flex:1 1 100%;display:flex}
+.app.resting.show-details .timer .tbtns button{flex:1;height:40px;padding:0 8px;font-size:12.5px}
+
+/* ── responsive: short phones keep everything on one screen ────────────── */
 @media (max-height:720px){
-  .app{gap:7px;padding-top:9px}
-  .sp1,.sp2{flex:0 0 0;min-height:0}
-  .meta{margin-top:0}
+  .app{gap:8px;padding-top:9px}
+  .dayhead{padding-bottom:6px}
+  .liftlist{gap:5px}
+  h1{font-size:23px;margin:0 0 4px}
+  .pres .big{font-size:22px}
+  .pres .small{font-size:12.5px;margin-top:2px}
+  .cue{font-size:13.5px;line-height:1.4;margin-top:6px}
+  .tempo{margin-top:3px}
+  .setdots{margin-top:10px}
+  .adjust{padding-top:8px}
+  .stepbtn{width:40px;height:40px;font-size:20px}
+  .rir{height:40px}
+  .donebtn{height:52px;margin-top:8px;font-size:17px}
   .app.resting .timer .clock{font-size:72px}
   .app.resting .timer{gap:11px;padding:20px 16px}
-  .app.resting.show-details .timer .clock{font-size:36px;min-width:86px}
-  .timer.active .clock{font-size:36px;min-width:86px}
-  .timer.active{padding:9px 10px}
-  h1{font-size:24px}
-  /* tighten spacing before truncating the cue — it keeps both lines */
-  .pres .big{font-size:23px}
-  .pres .small{font-size:12.5px;margin-top:2px}
-  .cue{font-size:14px;line-height:1.4;margin-top:5px}
-  .tempo{font-size:12px;margin-top:4px}
-  .setdots{margin-top:10px}
-  .carddetailsbtn{margin-top:4px}
-  .controls,.rirrow{margin-top:9px}
-  .hint{margin-top:8px}
-  .donebtn{height:54px}
-  .card{padding:13px 13px 11px}
-  .card{overflow-y:auto}
+  .app.resting.show-details .timer .clock{font-size:32px;min-width:74px}
+  /* peek at short heights: trim the lift block so Set Done stays on-screen */
+  .app.resting.show-details .cue{-webkit-line-clamp:2}
 }
-/* tall viewports: spend the extra height on arm's-length readability
-   instead of leaving a void in the middle of the card */
 @media (min-height:820px){
-  .card{padding:28px 18px 16px}
-  h1{font-size:34px;margin:10px 0 6px}
-  .pres .big{font-size:30px}
-  .pres .small{font-size:14px}
-  .cue{font-size:15.5px;margin-top:9px}
-  .setdots{margin-top:22px;gap:11px}
-  .sdot{width:14px;height:14px}
-  .sdot.now{width:17px;height:17px}
-  /* the extra height is absorbed by the .sp1/.sp2 spacers, so the taller
-     button just makes the thumb target bigger. The middle spacer is
-     capped: without a cap it takes 3/5 of all slack on tall phones and
-     leaves one big void between the set dots and the action cluster.
-     Capped, the leftover slack goes to .sp1 above the lift info, so the
-     lift block sits lower and more centred instead. */
-  .sp2{max-height:96px}
-  .donebtn{height:68px;font-size:19px}
-}
-/* phones with height to spare: let the cue use a third line instead of
-   clipping real programming notes (the Sunday calf cue carries the
-   alternate-week lift) — short phones keep the tighter two-line clamp */
-@media (min-height:721px){
-  .cue{-webkit-line-clamp:3}
-}
-@media (min-width:700px){
-  .app{padding-top:16px}
+  .dayhead{padding-bottom:12px}
+  .liftlist{gap:8px}
+  h1{font-size:32px}
+  .pres .big{font-size:29px}
+  .donebtn{height:66px;font-size:19px}
 }
 </style>
 </head>
 <body>
 <div class="app" id="app">
 
-  <div class="top">
+  <header class="header" id="header">
     <div class="days" role="group" aria-label="Workout day">
       <button class="day active" type="button" data-day="fri">Fri</button>
       <button class="day" type="button" data-day="sat">Sat</button>
       <button class="day" type="button" data-day="sun">Sun</button>
     </div>
+    <button class="backbtn" id="backBtn" type="button" aria-label="Back to lift list">‹ Lifts</button>
+    <button class="themebtn" id="themeBtn" type="button" aria-label="Toggle theme">☾</button>
     <button class="pill" id="sessBtn" type="button" aria-label="Start or pause session timer">▶ <span class="startlbl">Start</span><span id="elapsed">0:00</span></button>
-  </div>
+  </header>
 
   <div class="timer" id="timerBar">
     <div class="clock" id="restTime">Rest</div>
-    <div class="tlabel" aria-live="polite"><strong id="restLabel"></strong> <span id="restMsg">Starts after Set Done</span></div>
+    <div class="tlabel" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
     <div class="rnext" id="restNext"></div>
+    <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <div class="tbtns">
       <button id="plus15" type="button">+15</button>
       <button id="pauseRest" type="button">Pause</button>
@@ -447,61 +329,57 @@ h1{
       <button id="rPrevBtn" type="button" aria-label="Previous lift">‹</button>
       <button id="rNextBtn" type="button" aria-label="Next lift">›</button>
     </div>
-    <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <button class="detailsbtn" id="detailsBtn" type="button" aria-expanded="false" data-show="Show workout" data-hide="Hide workout">Show workout</button>
     <button class="undobtn" id="undoBtn" type="button">Undo last set</button>
   </div>
 
-  <main class="card" id="card">
-    <div class="sp1" aria-hidden="true"></div>
-    <div class="meta"><span id="liftMeta">Lift 1 of 8</span></div>
+  <section class="view" id="dayView" aria-label="Today's lifts">
+    <div class="dayhead">
+      <div class="daytitle" id="dayTitle">—</div>
+      <div class="daysub" id="daySummary">—</div>
+    </div>
+    <ul class="liftlist" id="liftList"></ul>
+    <div class="progress" id="progressSegs" aria-hidden="true"></div>
+  </section>
+
+  <section class="view" id="liftView" aria-label="Current lift">
+    <div class="liftnav">
+      <button class="mini" id="prevLift" type="button" aria-label="Previous lift">‹</button>
+      <span class="liftstat" id="liftMeta">—</span>
+      <button class="mini" id="nextLift" type="button" aria-label="Next lift">›</button>
+    </div>
     <h1 id="exName">—</h1>
     <div class="pres" id="exPres">—</div>
     <p class="cue" id="exCue">—</p>
     <p class="tempo" id="tempoLine">Tempo — explode up · 2s down · 1s hold</p>
-
     <div class="setdots" id="setDots" aria-label="Sets"></div>
 
-    <div class="sp2" aria-hidden="true"></div>
-
-    <button class="carddetailsbtn" id="cardDetailsBtn" type="button" aria-expanded="false" data-show="Adjust load / RIR" data-hide="Hide adjustments">Adjust load / RIR</button>
-
-    <p class="adjustnote">Adjust only when you need to — a bad day, or after beating the top of the range twice. Otherwise leave the defaults.</p>
-
-    <div class="controls">
-      <div class="ctl">
-        <button class="stepbtn" type="button" id="loadDown" aria-label="Decrease load">−</button>
-        <div class="mid"><div class="k">Load</div><div class="v" id="loadVal">—</div></div>
-        <button class="stepbtn" type="button" id="loadUp" aria-label="Increase load">+</button>
+    <div class="adjust">
+      <div class="steppers">
+        <div class="ctl">
+          <button class="stepbtn" type="button" id="loadDown" aria-label="Decrease load">−</button>
+          <div class="mid"><span class="k">Load</span><span class="v" id="loadVal">—</span></div>
+          <button class="stepbtn" type="button" id="loadUp" aria-label="Increase load">+</button>
+        </div>
+        <div class="ctl">
+          <button class="stepbtn" type="button" id="repDown" aria-label="Decrease reps">−</button>
+          <div class="mid"><span class="k">Reps</span><span class="v" id="repVal">—</span></div>
+          <button class="stepbtn" type="button" id="repUp" aria-label="Increase reps">+</button>
+        </div>
       </div>
-      <div class="ctl">
-        <button class="stepbtn" type="button" id="repDown" aria-label="Decrease reps">−</button>
-        <div class="mid"><div class="k">Reps</div><div class="v" id="repVal">—</div></div>
-        <button class="stepbtn" type="button" id="repUp" aria-label="Increase reps">+</button>
+      <div class="rirrow" id="rirRow" aria-label="Reps in reserve">
+        <span class="k">RIR</span>
       </div>
-    </div>
-
-    <div class="rirrow" id="rirRow" aria-label="Reps in reserve">
-      <span class="k">RIR</span>
     </div>
 
     <div class="hint" id="hint"></div>
-
     <button class="donebtn" id="doneBtn" type="button">Set Done</button>
-  </main>
-
-  <div class="bottom">
-    <p class="nextup" id="nextUp"></p>
-    <div class="nav">
-      <button class="navbtn" id="prevBtn" type="button" aria-label="Previous lift">‹</button>
-      <div class="jump" id="jump" aria-hidden="true"></div>
-      <button class="navbtn" id="nextBtn" type="button" aria-label="Next lift">›</button>
-    </div>
-  </div>
+  </section>
 
 </div>
 
 <script>
+/* ── program data — unchanged from the original tool ───────────────────── */
 var DAYS={
 fri:{label:"Friday — Push + Quads",ex:[
 {n:"Smith squat",s:3,r:6,top:6,load:60,step:2.5,rest:180,rir:2,cue:"Bar over mid-foot, heels flat."},
@@ -535,31 +413,48 @@ sun:{label:"Sunday — Light / Machines",ex:[
 ]}
 };
 
-/* open on today's workout — training is Fri–Sun only, so Sat and Sun
-   land on their own day instead of always starting on Fri and costing
-   a tap before the first set; Mon–Thu (off days) keep Fri, the next
-   session in the week */
-var cur=(function(){var d=new Date().getDay();return d===6?"sat":(d===0?"sun":"fri");})(), idx=0, state={}, hintText="", hintGood=false;
-function st(d,i){
-  var k=d+":"+i;
-  if(!state[k]){var e=DAYS[d].ex[i];state[k]={done:0,load:e.load||0,reps:e.r,rir:e.rir,topHits:0,lastRir:null};}
-  return state[k];
-}
+/* ── helpers ───────────────────────────────────────────────────────────── */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function fmt(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");}
-/* estimated session length from the prescription itself: ~50s of work
-   per set (slow eccentrics included), every set followed by its full
-   prescribed rest, ~1 min to change lifts — the number the day was
-   planned against, so running long is visible before it happens */
+
+/* ── state + persistence ───────────────────────────────────────────────── */
+var STORE="gym-tool-v1", THEME_KEY="gym-theme";
+/* open on today's workout; Mon–Thu (off days) land on Fri, the next session */
+var cur=(function(){var d=new Date().getDay();return d===6?"sat":(d===0?"sun":"fri");})();
+var idx=0, state={}, hintText="", hintGood=false, view="day";
+function st(d,i){
+  var k=d+":"+i, e=DAYS[d].ex[i], s=state[k];
+  if(!s){ s=state[k]={done:0,load:e.load||0,reps:e.r,rir:e.rir,topHits:0,lastRir:null}; }
+  else{
+    if(typeof s.done!=="number")s.done=0;
+    if(typeof s.load!=="number")s.load=e.load||0;
+    if(typeof s.reps!=="number")s.reps=e.r;
+    if(typeof s.rir!=="number")s.rir=e.rir;
+    if(typeof s.topHits!=="number")s.topHits=0;
+    if(!("lastRir" in s))s.lastRir=null;
+  }
+  return s;
+}
+function save(){
+  try{ localStorage.setItem(STORE,JSON.stringify({v:1,cur:cur,idx:idx,state:state})); }catch(e){}
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(STORE); if(!raw)return;
+    var p=JSON.parse(raw); if(!p||p.v!==1)return;
+    if(p.state&&typeof p.state==="object")state=p.state;
+    if(p.cur&&DAYS[p.cur])cur=p.cur;
+    if(typeof p.idx==="number"&&p.idx>=0&&p.idx<DAYS[cur].ex.length)idx=p.idx;
+  }catch(e){}
+}
+
+/* ── day math (same model as the original tool) ────────────────────────── */
 function dayMins(d){
   var t=0, list=DAYS[d].ex;
   list.forEach(function(e){ t+=e.s*50 + e.s*e.rest; });
   t+=(list.length-1)*60;
   return Math.round(t/60);
 }
-/* same model as dayMins, counting only sets not yet done — the meta line
-   quotes the full day before the first set, then switches to time left,
-   so running long is visible against the plan while there is still time
-   to act on it. Extra sets beyond the prescription count as done. */
 function dayMinsLeft(d){
   var t=0, liftsLeft=0, list=DAYS[d].ex;
   list.forEach(function(e,i){
@@ -572,24 +467,152 @@ function dayMinsLeft(d){
 function ex(){return DAYS[cur].ex[idx];}
 function curSt(){return st(cur,idx);}
 
-/* rest timer — quiet until it is running; while running it takes the whole screen.
-   Timestamp-based: it reads the clock instead of counting ticks, so a busy
-   or sleeping phone can't make the rest longer than it should be. */
-var rLeft=0, rInt=null, rEnd=0, rTotal=0, rLabel="", pendingNext=false, pendingIdx=-1, pendingDay="", lastAction=null, rPaused=false, rNote="", rNextText="";
-var timerBar=document.getElementById("timerBar");
+/* ── element refs ──────────────────────────────────────────────────────── */
 var appEl=document.getElementById("app");
+var header=document.getElementById("header");
+var dayView=document.getElementById("dayView");
+var liftView=document.getElementById("liftView");
+var liftList=document.getElementById("liftList");
+var timerBar=document.getElementById("timerBar");
 var detailsBtn=document.getElementById("detailsBtn");
-var cardDetailsBtn=document.getElementById("cardDetailsBtn");
 var skipBtn=document.getElementById("skipRest");
 var pauseBtn=document.getElementById("pauseRest");
 var undoBtn=document.getElementById("undoBtn");
 var rPrevBtn=document.getElementById("rPrevBtn");
 var rNextBtn=document.getElementById("rNextBtn");
-/* the rest-screen nav pair is about to be hidden (details peeked, or the
-   rest ending): if it currently holds focus, return focus to the body
-   first so it never stays on an element that is no longer visible */
+var sessBtn=document.getElementById("sessBtn");
+var rirRow=document.getElementById("rirRow");
+
+/* ── theme ─────────────────────────────────────────────────────────────── */
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content", t==="light"?"#f4f6f8":"#0b0e12");
+  var b=document.getElementById("themeBtn");
+  if(b){
+    b.textContent = t==="light" ? "☀" : "☾";
+    b.setAttribute("aria-label", t==="light" ? "Switch to dark theme" : "Switch to light theme");
+  }
+}
+function initTheme(){
+  var t="dark";
+  try{ var saved=localStorage.getItem(THEME_KEY); if(saved==="light"||saved==="dark")t=saved; }catch(e){}
+  applyTheme(t);
+}
+document.getElementById("themeBtn").onclick=function(){
+  var t=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+  try{ localStorage.setItem(THEME_KEY,t); }catch(e){}
+  applyTheme(t);
+};
+
+/* ── visibility: only one view (and the right chrome) shows at a time ──── */
+function applyVisibility(){
+  var resting=appEl.classList.contains("resting");
+  var peek=appEl.classList.contains("show-details");
+  var showCurrent=!resting||peek;
+  dayView.style.display=(showCurrent&&view==="day")?"flex":"none";
+  liftView.style.display=(showCurrent&&view==="lift")?"flex":"none";
+  header.style.display=(resting&&!peek)?"none":"flex";
+}
+
+/* ── render ────────────────────────────────────────────────────────────── */
+function syncDays(){
+  document.querySelectorAll(".day").forEach(function(b){
+    var on=b.getAttribute("data-day")===cur;
+    b.classList.toggle("active",on);
+    b.setAttribute("aria-pressed",on?"true":"false");
+  });
+}
+function renderDay(){
+  var list=DAYS[cur].ex, totalDone=0, totalSets=0;
+  list.forEach(function(x,i){ totalDone+=Math.min(st(cur,i).done,x.s); totalSets+=x.s; });
+  document.getElementById("dayTitle").textContent=DAYS[cur].label;
+  document.getElementById("daySummary").textContent=(totalSets>0&&totalDone>=totalSets)
+    ? "Workout complete — nice work"
+    : "8 lifts · "+totalSets+" sets · ~"+(totalDone>0?dayMinsLeft(cur):dayMins(cur))+" min"+(totalDone>0?" left":" total");
+
+  var rows="";
+  list.forEach(function(e,i){
+    var s=st(cur,i), done=s.done>=e.s;
+    var loadTxt = e.load===null ? (s.load>0?"Load "+s.load:"start light")
+                 : e.load===0 ? "bodyweight" : "Load "+s.load;
+    var restTxt = fmt(e.rest+(s.rir<=1?30:0));
+    rows += '<li class="liftrow'+(done?" done":"")+(i===idx?" now":"")+'" data-i="'+i+'" role="button" tabindex="0">'
+      + '<span class="liftstatus">'+(done?"✓":"")+'</span>'
+      + '<span class="liftmain"><span class="liftname">'+esc(e.n)+'</span>'
+      + '<span class="liftmeta">'+e.s+'×'+e.r+(e.top>e.r?"–"+e.top:"")+' · '+loadTxt+' · '+restTxt+' rest</span></span>'
+      + '<span class="chev">›</span></li>';
+  });
+  liftList.innerHTML=rows;
+
+  var segs="";
+  list.forEach(function(e,i){
+    var s=st(cur,i);
+    var pct=Math.max(0,Math.min(1,s.done/e.s));
+    segs+='<span class="pseg"><i style="width:'+(pct*100)+'%"></i></span>';
+  });
+  document.getElementById("progressSegs").innerHTML=segs;
+  save();
+}
+function renderLift(){
+  var e=ex(), s=curSt(), list=DAYS[cur].ex;
+  var anyDone=false;
+  list.forEach(function(x,i){ if(st(cur,i).done>0)anyDone=true; });
+  document.getElementById("liftMeta").textContent="Lift "+(idx+1)+" of "+list.length+" · ~"+(anyDone?dayMinsLeft(cur):dayMins(cur))+" min";
+  document.getElementById("exName").textContent=e.n;
+
+  var rirTxt=(e.partial&&s.done===e.s-1)?"0–1 RIR · last set":s.rir+" RIR";
+  var loadBig = e.load===null
+    ? (s.load>0?"Load <b>"+s.load+"</b>":"start light")
+    : (e.load===0?"bodyweight":"Load <b>"+s.load+"</b>");
+  var effRest=e.rest+(s.rir<=1?30:0);
+  document.getElementById("exPres").innerHTML=
+    "<span class='big'><b>"+s.reps+(e.top>s.reps?"–"+e.top:"")+"</b> reps · "+loadBig+"</span>"
+    +"<span class='small'>"+rirTxt+" · Rest "+fmt(effRest)+"</span>";
+  document.getElementById("exCue").textContent=e.cue;
+  document.getElementById("tempoLine").style.display=idx===0?"":"none";
+
+  var complete=s.done>=e.s;
+  var dots="";
+  for(var k=0;k<e.s;k++){ dots+='<span class="sdot'+(k<s.done?" done":(k===s.done?" now":""))+'"></span>'; }
+  dots+='<span class="setcount">'+(complete?("All "+e.s+" sets done"):("Set "+(s.done+1)+" of "+e.s))+'</span>';
+  document.getElementById("setDots").innerHTML=dots;
+
+  document.getElementById("loadVal").textContent=(e.load===null&&s.load===0)?"—":s.load;
+  document.getElementById("repVal").textContent=s.reps;
+  rirRow.querySelectorAll(".rir").forEach(function(b){
+    b.classList.toggle("active",s.rir===parseInt(b.getAttribute("data-rir"),10));
+  });
+
+  var btn=document.getElementById("doneBtn");
+  btn.classList.toggle("complete",complete);
+  btn.textContent=complete?"✓ Done — tap for extra set":"Set Done";
+
+  var hint=document.getElementById("hint");
+  hint.textContent=hintText;
+  hint.className="hint"+(hintText?" show":"")+(hintGood?" good":"");
+
+  var last=idx===list.length-1;
+  document.getElementById("prevLift").disabled=idx===0;
+  document.getElementById("nextLift").disabled=last;
+  /* the rest-screen pair forwards to these same buttons, so it must mirror
+     their disabled state or the arrows look live but do nothing at the ends */
+  rPrevBtn.disabled=idx===0;
+  rNextBtn.disabled=last;
+  save();
+}
+function render(){
+  appEl.classList.toggle("lift-mode",view==="lift");
+  syncDays();
+  applyVisibility();
+  if(view==="day")renderDay(); else renderLift();
+}
+
+/* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
+var rLeft=0, rInt=null, rEnd=0, rTotal=0, rLabel="", pendingNext=false, pendingIdx=-1, pendingDay="", lastAction=null, rPaused=false, rNote="", rNextText="";
+
 function blurRestNav(){
-  if(document.activeElement===rPrevBtn || document.activeElement===rNextBtn){
+  if(document.activeElement===rPrevBtn||document.activeElement===rNextBtn){
     document.activeElement.blur();
   }
 }
@@ -598,92 +621,45 @@ function resetPause(){
   timerBar.classList.remove("paused");
   pauseBtn.textContent="Pause";
 }
-/* two separate disclosures, two separate states: the rest screen's
-   "Show workout" peek and the card's "Adjust load / RIR" controls used
-   to share one flag, so opening one silently armed the other — peeking
-   at the workout mid-rest also opened the steppers, and adjusting a
-   load pre-opened the rest peek. Each toggle now owns only its own. */
+function setRestLabel(t,m){
+  document.getElementById("restLabel").textContent=t;
+  document.getElementById("restMsg").textContent=m;
+}
 function setRestDetails(open){
-  if(open) blurRestNav();
+  if(open)blurRestNav();
   appEl.classList.toggle("show-details",!!open);
   detailsBtn.textContent=detailsBtn.getAttribute(open?"data-hide":"data-show");
   detailsBtn.setAttribute("aria-expanded",open?"true":"false");
-}
-function setAdjust(open){
-  /* closing hides the steppers and the RIR picker (display:none when
-     .adjust-open is removed): no control inside them may keep focus
-     while hidden. The toggle's own taps are safe — focus sits on the
-     toggle, which stays visible — but the programmatic closes are
-     not: End rest (via timerIdle), the nav arrows, and a day switch
-     all run this with focus wherever the user left it, a RIR button
-     included, stranding it on an element that is no longer rendered —
-     the same trap timerIdle and blurRestNav already guard for the
-     timer bar and the rest nav. Enforced here, at the one choke point
-     every close passes through, so no caller can reopen the gap. */
-  if(!open){
-    var ae=document.activeElement;
-    if(ae && ae.closest && (ae.closest(".controls") || ae.closest(".rirrow"))) ae.blur();
-  }
-  appEl.classList.toggle("adjust-open",!!open);
-  cardDetailsBtn.textContent=cardDetailsBtn.getAttribute(open?"data-hide":"data-show");
-  cardDetailsBtn.setAttribute("aria-expanded",open?"true":"false");
+  applyVisibility();
 }
 detailsBtn.onclick=function(){
   setRestDetails(!appEl.classList.contains("show-details"));
 };
-cardDetailsBtn.onclick=function(){
-  setAdjust(!appEl.classList.contains("adjust-open"));
-};
-function setRestLabel(t,m){document.getElementById("restLabel").textContent=t;document.getElementById("restMsg").textContent=m;}
-/* undo is a right-after-the-set action on the lift just logged: it stays
-   armed only while that lift is on screen. Manual navigation (prev /
-   next arrows — the rest screen's pair forwards to them — or a day tab)
-   is the user taking over, so it disarms undo; otherwise the button
-   stayed live on a different lift and tapping it silently reverted a
-   set on a lift that wasn't visible, leaving the screen in front of
-   the user unchanged and the log wrong with no sign of it. The rest
-   itself is untouched — only the undo window closes. */
-function clearUndo(){
-  lastAction=null;
-  appEl.classList.remove("can-undo");
-}
 function timerIdle(label,msg){
-  /* the whole timer bar is about to stop being rendered: no control
-     inside it may keep focus. blurRestNav covers the narrower peek
-     case (only the nav pair hides); here every timer control goes,
-     End rest itself included — it is the button most likely to be
-     focused at this exact moment. */
-  if(timerBar.contains(document.activeElement)) document.activeElement.blur();
+  if(timerBar.contains(document.activeElement))document.activeElement.blur();
   timerBar.classList.remove("active","go");
   appEl.classList.remove("resting");
   setRestDetails(false);
-  setAdjust(false);
-  pendingIdx=-1;
-  pendingDay="";
+  pendingIdx=-1; pendingDay="";
   resetPause();
   skipBtn.textContent="End rest";
   document.getElementById("restTime").textContent="Rest";
-  /* finishRest leaves "Rest complete — GO" as the clock's accessible
-     name; every other piece of GO state is cleared here (bar, label,
-     advance target), so the name goes too — otherwise the dismissed
-     timer keeps describing itself as a rest that already finished.
-     startRest sets the counting name fresh on the next rest. */
   document.getElementById("restTime").removeAttribute("aria-label");
   document.getElementById("rbarFill").style.width="0";
   document.getElementById("restNext").textContent="";
   setRestLabel(label||"",msg||"Starts after Set Done");
+  applyVisibility();
 }
 function updateRbar(){
   var f=rTotal>0?1-(rLeft/rTotal):0;
   document.getElementById("rbarFill").style.width=Math.max(0,Math.min(100,f*100))+"%";
 }
-/* audible GO cue — the AudioContext is created/resumed on the Set Done tap
-   (a user gesture), so it is allowed to sound when the rest ends */
+/* the AudioContext is created/resumed on the Set Done tap (a user gesture) */
 var actx=null;
 function ensureAudio(){
   try{
-    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-    if(actx.state==="suspended") actx.resume();
+    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==="suspended")actx.resume();
   }catch(e){}
 }
 function beepGo(){
@@ -704,18 +680,13 @@ function beepGo(){
 function finishRest(){
   clearInterval(rInt); rInt=null; rLeft=0;
   resetPause();
-  /* natural expiry is a rest exit too: if the user peeked at the
-     workout mid-rest and opened Adjust, close it here — same as
-     timerIdle/startRest — so GO never lands with steppers open. */
-  setAdjust(false);
-  /* one unmistakable signal at zero: the clock itself says GO */
   document.getElementById("restTime").textContent="GO";
   document.getElementById("restTime").setAttribute("aria-label","Rest complete — GO");
   document.getElementById("rbarFill").style.width="100%";
   var rn=document.getElementById("restNext");
   rn.textContent=rn.textContent.replace("Up next —","Up now —");
   timerBar.classList.add("go");
-  var adv=pendingNext && cur===pendingDay && idx===pendingIdx;
+  var adv=pendingNext&&cur===pendingDay&&idx===pendingIdx;
   skipBtn.textContent=adv?(idx<DAYS[cur].ex.length-1?"Next lift":"Finish"):"Start next set";
   setRestLabel("GO",adv?(idx<DAYS[cur].ex.length-1?"Lift done — next up.":"Workout complete — nice work."):"Next set — go.");
   if(navigator.vibrate)navigator.vibrate(200);
@@ -729,52 +700,29 @@ function tickRest(){
 }
 function startRest(sec,label,lastSet,note,nextText){
   clearInterval(rInt); rTotal=sec; rEnd=Date.now()+sec*1000; rLeft=sec; rLabel=label; pendingNext=!!lastSet;
-  /* remember which lift a finished-lift advance belongs to: peeking at
-     the workout mid-rest and navigating (arrows, day tabs)
-     moves idx, and the advance must not fire from the wrong lift and
-     skip one. The day is part of the target, not just the index:
-     switching days mid-rest lands on the new day's first incomplete
-     lift, whose index routinely equals the armed one, so an index-only
-     check would fire the advance on a lift never done. A +15 restart
-     after GO keeps the original target, since timerIdle — the only
-     place pendingIdx resets — has not run. */
-  if(pendingNext && pendingIdx<0){ pendingIdx=idx; pendingDay=cur; }
-  /* kept so a +15 tapped after GO can restart the rest without losing
-     the partials note or the what's-next line */
+  if(pendingNext&&pendingIdx<0){ pendingIdx=idx; pendingDay=cur; }
   rNote=note||""; rNextText=nextText||"";
   document.getElementById("restNext").textContent=rNextText;
   document.getElementById("restTime").setAttribute("aria-label","Rest time remaining");
   timerBar.classList.add("active"); timerBar.classList.remove("go");
   appEl.classList.add("resting");
-  /* entering rest focus hides the top bar, the card, and the bottom
-     nav — the Set Done tap that started this rest leaves focus on a
-     button in one of those regions, stranded on an element that is no
-     longer visible (the same trap blurRestNav guards on the way out).
-     Anything inside the timer bar itself stays visible, so focus
-     there — a +15 restart after GO — is left alone. */
-  if(document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur();
+  if(document.activeElement&&!timerBar.contains(document.activeElement))document.activeElement.blur();
   setRestDetails(false);
-  setAdjust(false);
   resetPause();
   skipBtn.textContent="End rest";
   document.getElementById("restTime").textContent=fmt(rLeft);
   updateRbar();
-  /* rest screen copy stays to one short line: what to do, nothing else.
-     The partials prompt lives here, not on the card — this is the moment
-     it can still be acted on. */
   var msg = note==="partials"
     ? "Add bottom-half partials to failure — then rest."
     : "Stretch — set up the next set.";
-  if(sec>ex().rest) msg="+30s for 0–1 RIR · "+msg;
+  if(sec>ex().rest)msg="+30s for 0–1 RIR · "+msg;
   setRestLabel(label,msg);
+  applyVisibility();
   rInt=setInterval(tickRest,200);
 }
 document.getElementById("plus15").onclick=function(){
   if(!timerBar.classList.contains("active"))return;
-  /* +15 mid-rest is a rest action, not a peek: close Adjust if the
-     user opened it while peeking, so the panel can't linger. */
-  setAdjust(false);
-  if(!rInt && !rPaused && rLeft<=0){ startRest(15,rLabel,pendingNext,rNote,rNextText); return; }
+  if(!rInt&&!rPaused&&rLeft<=0){ startRest(15,rLabel,pendingNext,rNote,rNextText); return; }
   timerBar.classList.remove("go");
   skipBtn.textContent="End rest";
   if(rPaused){
@@ -786,7 +734,7 @@ document.getElementById("plus15").onclick=function(){
   rEnd+=15000; rTotal+=15; tickRest();
 };
 pauseBtn.onclick=function(){
-  if(!timerBar.classList.contains("active") || timerBar.classList.contains("go"))return;
+  if(!timerBar.classList.contains("active")||timerBar.classList.contains("go"))return;
   if(rPaused){
     rPaused=false;
     timerBar.classList.remove("paused");
@@ -805,36 +753,32 @@ pauseBtn.onclick=function(){
   document.getElementById("restTime").textContent=fmt(rLeft);
   updateRbar();
 };
-/* at GO the whole timer surface is the advance button — one big tap target */
+/* at GO the whole timer surface is the advance button */
 timerBar.addEventListener("click",function(ev){
   if(!timerBar.classList.contains("go"))return;
   if(ev.target.closest("button"))return;
   skipBtn.click();
 });
-document.getElementById("skipRest").onclick=function(){
+function clearUndo(){
+  lastAction=null;
+  appEl.classList.remove("can-undo");
+}
+skipBtn.onclick=function(){
   var wasGo=timerBar.classList.contains("go");
   clearInterval(rInt); rInt=null; rLeft=0;
   resetPause();
   clearUndo();
-  if(pendingNext && cur===pendingDay && idx===pendingIdx){
+  if(pendingNext&&cur===pendingDay&&idx===pendingIdx){
     pendingNext=false;
-    /* a progression hint earned on the finished lift is kept (it names the
-       lift) instead of being wiped by the advance, as it was before */
-    if(idx<DAYS[cur].ex.length-1){ idx++; timerIdle("","Next lift — go."); render(); }
-    else{
+    if(idx<DAYS[cur].ex.length-1){
+      idx++; hintText=""; hintGood=false;
+      timerIdle("","Next lift — go."); render();
+    }else{
       timerIdle("","Workout complete — nice work.");
-      /* the workout is over, so the session clock stops here instead of
-         counting up from the finish until someone pauses it by hand —
-         pauseSession banks the final time in the pill and releases the
-         wake lock with it. sAutoStopped marks this as the completion
-         stop (not a deliberate mid-workout pause), so logging an extra
-         set afterwards resumes the clock from the banked time. */
       if(sInt){ pauseSession(); sAutoStopped=true; }
     }
     return;
   }
-  /* navigated during the peek: the user took manual control, so ending
-     the rest just ends it — no second, silent advance on top of theirs */
   pendingNext=false;
   timerIdle("",wasGo?"Next set — go.":"Skipped — next set, go.");
 };
@@ -851,23 +795,15 @@ undoBtn.onclick=function(){
   render();
 };
 
-/* session timer — also timestamp-based, so it stays honest if the phone sleeps */
+/* ── session timer ─────────────────────────────────────────────────────── */
 var sSec=0, sInt=null, sBase=0, sStart=0;
-/* true only when the completion stop (not the user) paused the session */
 var sAutoStopped=false;
-var sessBtn=document.getElementById("sessBtn");
 function tickSession(){
   sSec=sBase+Math.floor((Date.now()-sStart)/1000);
   var el=document.getElementById("elapsed");
   if(el)el.textContent=fmt(sSec);
-  /* once the session has banked time, the pill keeps showing it even
-     while paused — before that it stays a bare play affordance */
   if(sSec>0)sessBtn.classList.add("has-time");
 }
-/* one pause path for both the pill tap and the workout-complete stop:
-   bank the elapsed time, drop the interval, and let the screen sleep —
-   a stopped session is no longer keeping the user mid-workout, so it
-   stops holding the screen open too */
 function pauseSession(){
   tickSession();
   clearInterval(sInt); sInt=null; sBase=sSec;
@@ -876,166 +812,52 @@ function pauseSession(){
   sessBtn.innerHTML="▶ <span class='startlbl'>Start</span><span id='elapsed'>"+fmt(sSec)+"</span>";
 }
 sessBtn.onclick=function(){
-  if(sInt){
-    /* a manual pause is deliberate: it does not arm the auto-resume
-       that the completion stop sets */
-    pauseSession();
-    sAutoStopped=false;
-    return;
-  }
+  if(sInt){ pauseSession(); sAutoStopped=false; return; }
   sAutoStopped=false;
   sessBtn.classList.add("on");
   sessBtn.innerHTML="⏸ <span id='elapsed'>"+fmt(sSec)+"</span>";
   sStart=Date.now();
   sInt=setInterval(tickSession,500);
-  /* a manually started session deserves the wake lock too — it used to
-     be requested only via Set Done, so a session started from the pill
-     could still sleep mid-workout */
   keepAwake();
 };
 
-/* keep the screen awake while a session runs — best effort, silent if unavailable */
+/* ── wake lock — best effort, silent if unavailable ────────────────────── */
 var wakeLock=null;
 function keepAwake(){
   if(!("wakeLock" in navigator))return;
-  /* reuse the lock already held: Set Done calls this on every set, and
-     requesting a fresh sentinel each time overwrote the only reference
-     to the previous ones, leaving them held forever with no way to let
-     go — the screen could then never sleep, even after the session was
-     paused and releaseAwake ran */
-  if(wakeLock && !wakeLock.released)return;
+  if(wakeLock&&!wakeLock.released)return;
   navigator.wakeLock.request("screen").then(function(w){
     wakeLock=w;
-    /* the browser drops the lock on its own when the tab hides or the
-       screen is forced off — forget it when that happens so the next
-       keepAwake (the visibility handler, a new set) asks for a fresh
-       one instead of trusting a dead reference */
-    w.addEventListener("release",function(){ if(wakeLock===w) wakeLock=null; });
+    w.addEventListener("release",function(){ if(wakeLock===w)wakeLock=null; });
   }).catch(function(){});
 }
 function releaseAwake(){
   if(!wakeLock)return;
   var w=wakeLock; wakeLock=null;
-  try{ var p=w.release(); if(p && p.catch)p.catch(function(){}); }catch(e){}
+  try{ var p=w.release(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
 }
 document.addEventListener("visibilitychange",function(){
-  if(document.visibilityState==="visible" && sInt)keepAwake();
+  if(document.visibilityState==="visible"&&sInt)keepAwake();
 });
 
-/* RIR picker — built once */
-var rirRow=document.getElementById("rirRow");
-for(var r=0;r<=4;r++){
+/* ── RIR picker — built once ───────────────────────────────────────────── */
+for(var ri=0;ri<=4;ri++){
   (function(rv){
     var b=document.createElement("button");
     b.type="button"; b.className="rir"; b.textContent=rv; b.setAttribute("data-rir",rv);
     b.setAttribute("aria-label","RIR "+rv);
-    b.onclick=function(){curSt().rir=rv; render();};
+    b.onclick=function(){curSt().rir=rv; save(); render();};
     rirRow.appendChild(b);
-  })(r);
+  })(ri);
 }
 
-function render(){
-  var e=ex(), s=curSt(), list=DAYS[cur].ex;
-  /* the day name is not repeated here — the Fri/Sat/Sun tabs already say
-     it. The slot carries the day's estimated length instead: the full
-     total before the first set, then minutes left once work is logged. */
-  var anyDone=false;
-  list.forEach(function(x,i){ if(st(cur,i).done>0) anyDone=true; });
-  document.getElementById("liftMeta").textContent = anyDone
-    ? "Lift "+(idx+1)+" of "+list.length+" · ~"+dayMinsLeft(cur)+" min left"
-    : "Lift "+(idx+1)+" of "+list.length+" · ~"+dayMins(cur)+" min total";
-  document.getElementById("exName").textContent=e.n;
-  /* the RIR named here is the adjusted one (s.rir), not the target
-     (e.rir): load and reps in this same line already show their adjusted
-     values, and the rest quoted beside it already follows the adjusted
-     RIR (see effRest below) — quoting the target here made the line
-     contradict itself after an adjustment, e.g. "2 RIR · Rest 2:30" on a
-     2:00-base lift once RIR 1 was picked. The target still lives in the
-     comparisons that need it (topHits, the progression hint). The
-     last-set partials branch stays a target instruction: go to 0–1. */
-  var rirTxt=(e.partial && s.done===e.s-1) ? "0–1 RIR · last set" : s.rir+" RIR";
-  /* label before the number — "Load 60" reads at a glance and in a screen
-     reader; "60 load" did neither */
-  var loadBig = e.load===null
-    ? (s.load>0 ? "Load <b>"+s.load+"</b>" : "start light")
-    : (e.load===0 ? "bodyweight" : "Load <b>"+s.load+"</b>");
-  /* the rest shown is the rest the timer will actually run: a set ending
-     at 0–1 RIR earns +30s (see startRest), and quoting the shorter base
-     rest on the card made the two disagree for most isolations */
-  var effRest=e.rest + (s.rir<=1 ? 30 : 0);
-  document.getElementById("exPres").innerHTML=
-    "<span class='big'><b>"+s.reps+(e.top>s.reps?"–"+e.top:"")+"</b> reps · "+loadBig+"</span>"+
-    /* set count is stated once, by the dots + "Set x of y" below — saying
-       "3 sets" here too was a second copy of the same number */
-    "<span class='small'>"+rirTxt+" · Rest "+fmt(effRest)+"</span>";
-  document.getElementById("exCue").textContent=e.cue;
-  /* tempo is identical on every lift — show it only on the first lift
-     of the day; on lifts 2+ it is repeated noise, so hide the line */
-  document.getElementById("tempoLine").style.display = idx===0 ? "" : "none";
-
-  var complete=s.done>=e.s;
-  var dots="";
-  for(var k=0;k<e.s;k++){
-    dots+='<span class="sdot'+(k<s.done?" done":(k===s.done?" now":""))+'"></span>';
-  }
-  dots+='<span class="setcount">'+(complete?("All "+e.s+" sets done"):("Set "+(s.done+1)+" of "+e.s))+'</span>';
-  document.getElementById("setDots").innerHTML=dots;
-
-  document.getElementById("loadVal").textContent = e.load===null && s.load===0 ? "—" : s.load;
-  document.getElementById("repVal").textContent=s.reps;
-
-  var rirs=rirRow.querySelectorAll(".rir");
-  rirs.forEach(function(b){b.classList.toggle("active", s.rir===parseInt(b.getAttribute("data-rir")));});
-
-  var btn=document.getElementById("doneBtn");
-  btn.classList.toggle("complete",complete);
-  if(complete) btn.textContent="✓ Done — tap for extra set";
-  else btn.textContent="Set Done";
-
-  var hint=document.getElementById("hint");
-  hint.textContent=hintText;
-  hint.className="hint"+(hintText?" show":"")+(hintGood?" good":"");
-
-  /* bottom nav — thin progress segments, display-only: navigation is
-     prev/next (and the rest auto-advance) only, so a mis-tap in the
-     bottom thumb zone can't silently jump to the wrong lift */
-  document.getElementById("prevBtn").disabled = idx===0;
-  document.getElementById("nextBtn").disabled = idx===list.length-1;
-  /* the rest-screen pair follows the same ends-of-day rule */
-  rPrevBtn.disabled = idx===0;
-  rNextBtn.disabled = idx===list.length-1;
-  var jump="";
-  list.forEach(function(x,i){
-    var xs=st(cur,i);
-    jump+='<span class="seg'+(i===idx?" now":(xs.done>=x.s?" done":""))+'"><i></i></span>';
-  });
-  document.getElementById("jump").innerHTML=jump;
-
-  var next=list[idx+1];
-  var totalDone=0,totalSets=0;
-  list.forEach(function(x,i){totalDone+=Math.min(st(cur,i).done,x.s); totalSets+=x.s;});
-  /* day progress already has one visual home — the segments below — so the
-     line above them names only what's next, without a fourth copy of the
-     counts (lift x of 8, dots, and segments already carry progress) */
-  document.getElementById("nextUp").innerHTML = next
-    ? "Next: <b>"+next.n+"</b>"
-    : (totalDone>=totalSets ? "<b>Workout complete</b>" : "Last lift");
+/* ── steppers — tap once, press-and-hold repeats ───────────────────────── */
+function stepLoad(d){
+  var s=curSt();
+  s.load=d<0?Math.max(0,Math.round((s.load-ex().step)*100)/100):Math.round((s.load+ex().step)*100)/100;
+  save(); render();
 }
-
-/* steppers — one tap is one step, exactly as before; press-and-hold
-   repeats the same step. Adjusting is the exception flow, but when it
-   is needed it was the slowest thing in the app: a load change is one
-   tap per 1–5 lb step, and the lifts that start at "start light"
-   (load null — leg extension, cable fly, overhead extension, calf
-   raise) needed dozens of taps to dial in a first load. Hold-repeat
-   fixes that with no new controls to learn or look at: the buttons,
-   their size, and the step sizes are unchanged, and a hold that has
-   already stepped suppresses the click on release so a hold never
-   lands one extra step the user didn't watch happen. Keyboard and
-   assistive-tech activation never sees the pointer handlers, so it
-   keeps the plain one-click-one-step behaviour. */
-function stepLoad(d){var s=curSt(); s.load=d<0?Math.max(0,Math.round((s.load-ex().step)*100)/100):Math.round((s.load+ex().step)*100)/100; render();}
-function stepReps(d){var s=curSt(); s.reps=Math.max(1,s.reps+d); render();}
+function stepReps(d){var s=curSt(); s.reps=Math.max(1,s.reps+d); save(); render();}
 function bindStepper(id,fn){
   var b=document.getElementById(id), delay=null, rep=null, held=false;
   function stop(){
@@ -1043,116 +865,87 @@ function bindStepper(id,fn){
     if(rep){clearInterval(rep); rep=null;}
   }
   b.addEventListener("pointerdown",function(){
-    held=false;
-    stop();
-    delay=setTimeout(function(){
-      delay=null;
-      fn(); held=true;
-      rep=setInterval(fn,70);
-    },400);
+    held=false; stop();
+    delay=setTimeout(function(){ delay=null; fn(); held=true; rep=setInterval(fn,70); },400);
   });
-  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){
-    b.addEventListener(ev,stop);
-  });
-  b.addEventListener("click",function(){
-    if(held){ held=false; return; }
-    fn();
-  });
+  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ b.addEventListener(ev,stop); });
+  b.addEventListener("click",function(){ if(held){held=false;return;} fn(); });
 }
 bindStepper("loadDown",function(){stepLoad(-1);});
 bindStepper("loadUp",function(){stepLoad(1);});
 bindStepper("repDown",function(){stepReps(-1);});
 bindStepper("repUp",function(){stepReps(1);});
 
-/* set done */
+/* ── set done ──────────────────────────────────────────────────────────── */
 document.getElementById("doneBtn").onclick=function(){
-  setAdjust(false);
   var e=ex(), s=curSt();
-  var wasComplete = s.done>=e.s;
+  var wasComplete=s.done>=e.s;
   lastAction={day:cur,i:idx,done:s.done,topHits:s.topHits,lastRir:s.lastRir};
   appEl.classList.add("can-undo");
   s.done++; s.lastRir=s.rir;
-  if(s.reps>=e.top && s.rir>=e.rir) s.topHits++;
+  if(s.reps>=e.top&&s.rir>=e.rir)s.topHits++;
 
   hintText=""; hintGood=false;
-  var finished = !wasComplete && s.done>=e.s;
+  var finished=!wasComplete&&s.done>=e.s;
   var restNote="";
-  if(finished && e.partial && s.lastRir<=1){
-    /* shown on the rest screen itself (see startRest), where it is still
-       actionable — as a card hint it was cleared before it was ever seen */
+  if(finished&&e.partial&&s.lastRir<=1){
     restNote="partials";
-  } else if(finished && s.topHits>=1 && s.reps>=e.top && s.lastRir>=e.rir){
+  }else if(finished&&s.topHits>=1&&s.reps>=e.top&&s.lastRir>=e.rir){
     hintText=e.n+": top reps at target RIR — do it again next session to add weight.";
     hintGood=true;
   }
 
-  /* name what's coming up, so the rest screen's "set up the next set"
-     is something the user can actually act on while the clock runs */
   var list=DAYS[cur].ex, nextText="";
   if(s.done>=e.s){
     var nx=list[idx+1];
-    /* the what's-next line already showed in every rest state — what it
-       genuinely lacked was this: when the next set is a different lift,
-       it named the lift and its sets × reps but not its load, the one
-       thing "set up the next set" actually requires during the rest.
-       The same-lift branch below already carries the load; this branch
-       now states it the same way, from data every lift already has. */
-    var nxLoad = !nx ? "" : nx.load===null
-      ? (st(cur,idx+1).load>0 ? " · Load "+st(cur,idx+1).load : " · start light")
-      : nx.load===0 ? " · bodyweight" : " · Load "+st(cur,idx+1).load;
-    nextText = nx ? "Up next — "+nx.n+" · "+nx.s+" × "+nx.r+(nx.top>nx.r?"–"+nx.top:"")+nxLoad : "Last lift done — workout complete";
-  } else {
-    nextText = "Up next — Set "+(s.done+1)+" of "+e.s+" · "+s.reps+" reps"+
-      (e.load===null ? (s.load>0 ? " · load "+s.load : " · start light") : (e.load===0 ? " · bodyweight" : " · load "+s.load));
+    var nxLoad=!nx?"":nx.load===null
+      ? (st(cur,idx+1).load>0?" · Load "+st(cur,idx+1).load:" · start light")
+      : nx.load===0?" · bodyweight":" · Load "+st(cur,idx+1).load;
+    nextText=nx?"Up next — "+nx.n+" · "+nx.s+" × "+nx.r+(nx.top>nx.r?"–"+nx.top:"")+nxLoad:"Last lift done — workout complete";
+  }else{
+    nextText="Up next — Set "+(s.done+1)+" of "+e.s+" · "+s.reps+" reps"+
+      (e.load===null?(s.load>0?" · load "+s.load:" · start light"):(e.load===0?" · bodyweight":" · load "+s.load));
   }
 
-  /* a Set Done tap always starts a new rest, so any advance target armed
-     by an earlier rest is stale — clear it here so startRest re-arms to
-     the lift actually just logged. Without this, finishing a different
-     lift from the mid-rest peek (Show workout leaves the rest running,
-     so timerIdle never clears the old target) left the GO advance
-     pointing at the previous lift: GO read "Start next set" instead of
-     "Next lift" and End rest never advanced. The +15-after-GO restart
-     does not pass through here, so it keeps its original target. */
   pendingIdx=-1; pendingDay="";
-  startRest(e.rest + (s.rir<=1 ? 30 : 0), e.n+" — set "+Math.min(s.done,e.s)+" done", s.done>=e.s, restNote, nextText);
+  startRest(e.rest+(s.rir<=1?30:0), e.n+" — set "+Math.min(s.done,e.s)+" done", s.done>=e.s, restNote, nextText);
 
-  /* arm the GO beep on this tap, confirm the tap with a short buzz */
   ensureAudio();
   if(navigator.vibrate)navigator.vibrate(10);
-
-  /* auto-start session timer on first set — and resume it after the
-     workout-complete stop if an extra set is logged, so extra work
-     still lands on the session clock; a deliberate manual pause in
-     between stays paused */
-  if(!sInt && (sSec===0 || sAutoStopped)) sessBtn.click();
+  if(!sInt&&(sSec===0||sAutoStopped))sessBtn.click();
   keepAwake();
-
   render();
 };
 
-/* nav + days */
-document.getElementById("prevBtn").onclick=function(){if(idx>0){idx--; hintText=""; hintGood=false; setAdjust(false); clearUndo(); render();}};
-document.getElementById("nextBtn").onclick=function(){if(idx<DAYS[cur].ex.length-1){idx++; hintText=""; hintGood=false; setAdjust(false); clearUndo(); render();}};
-/* rest-screen pair: forward to the bottom nav's buttons so the day-switch,
-   advance, and pending-advance logic above stays the only copy. Moving
-   idx mid-rest is exactly the manual-control case skipRest already
-   handles, so ending the rest afterwards never double-advances. */
-rPrevBtn.onclick=function(){document.getElementById("prevBtn").click();};
-rNextBtn.onclick=function(){document.getElementById("nextBtn").click();};
+/* ── navigation ────────────────────────────────────────────────────────── */
+function showDay(){
+  view="day"; hintText=""; hintGood=false; clearUndo();
+  render();
+}
+function openLift(i){
+  if(i<0||i>=DAYS[cur].ex.length)return;
+  idx=i; view="lift"; hintText=""; hintGood=false; clearUndo(); render();
+}
+document.getElementById("backBtn").onclick=showDay;
+liftList.addEventListener("click",function(ev){
+  var row=ev.target.closest(".liftrow"); if(!row)return;
+  openLift(parseInt(row.getAttribute("data-i"),10));
+});
+liftList.addEventListener("keydown",function(ev){
+  if(ev.key!=="Enter"&&ev.key!==" ")return;
+  var row=ev.target.closest(".liftrow"); if(!row)return;
+  ev.preventDefault(); openLift(parseInt(row.getAttribute("data-i"),10));
+});
+document.getElementById("prevLift").onclick=function(){ if(idx>0){ idx--; hintText=""; hintGood=false; clearUndo(); render(); } };
+document.getElementById("nextLift").onclick=function(){ if(idx<DAYS[cur].ex.length-1){ idx++; hintText=""; hintGood=false; clearUndo(); render(); } };
+/* rest-screen pair forwards to the lift nav so there is one copy of the logic */
+rPrevBtn.onclick=function(){ document.getElementById("prevLift").click(); };
+rNextBtn.onclick=function(){ document.getElementById("nextLift").click(); };
 document.querySelectorAll(".day").forEach(function(b){
-  /* sync the tab to the auto-selected day above — the markup's Fri
-     default is only the off-day fallback */
-  b.classList.toggle("active", b.getAttribute("data-day")===cur);
-  b.setAttribute("aria-pressed", b.classList.contains("active")?"true":"false");
   b.onclick=function(){
-    document.querySelectorAll(".day").forEach(function(x){x.classList.remove("active");x.setAttribute("aria-pressed","false");});
-    b.classList.add("active");
-    b.setAttribute("aria-pressed","true");
     cur=b.getAttribute("data-day");
-    idx=0; hintText=""; hintGood=false; setAdjust(false); clearUndo();
-    /* a new day is a new session — the completion auto-resume must not
-       carry the previous day's banked clock into it */
+    idx=0; hintText=""; hintGood=false; view="day";
+    clearUndo();
     sAutoStopped=false;
     var list=DAYS[cur].ex;
     for(var i=0;i<list.length;i++){ if(st(cur,i).done<list[i].s){ idx=i; break; } }
@@ -1160,6 +953,9 @@ document.querySelectorAll(".day").forEach(function(b){
   };
 });
 
+/* ── boot ──────────────────────────────────────────────────────────────── */
+initTheme();
+load();
 render();
 </script>
 </body>

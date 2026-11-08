@@ -1,25 +1,32 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: LIVE — repo is at github.com/kmnace00/gym (renamed from gym-html-tool Nov 8), first commit 098af47c. Muse pushes, OpenCode pulls.
+Status: DONE — full-shell revamp built and verified (Nov 8, Khang's ask).
 
-## Current task — Fix the open items (Nov 8, Khang's pick)
+## Completed task — full revamp
 
-DONE Nov 8 by Muse directly (not OpenCode — Khang asked Muse to just do the work). Do not redo:
+Rebuild the tool as a **Day → Lift** two-view app, dark-first, with persistence, keeping the program data byte-for-byte.
 
-1. `finishRest()` closes Adjust at natural expiry — `setAdjust(false)` added.
-2. +15 mid-rest closes Adjust — `setAdjust(false)` added to the +15 handler.
-3. Tall-phone empty band — `.sp2{max-height:96px}` in the min-height:820px block, slack goes to .sp1.
-4. Tempo — switched to 2s down. Tempo line is now "explode up · 2s down · 1s hold", no "4s down" left in the file.
+Delivered:
 
-Verify on a real phone: Set Done → Show workout → Adjust → End rest lands clean; let a rest run to GO with Adjust open in peek; +15 mid-rest with Adjust open; tall-phone band visibly smaller. JS syntax checked with node --check.
+1. **Day view** — 8-lift overview with status, name, sets×reps, load, rest; day tabs, session pill, per-lift progress. Tap a row to drill in.
+2. **Lift view** — big prescription, cue, tempo, set dots, and always-visible load / reps / RIR adjusters (no hidden "Adjust" panel). Set Done.
+3. **Fullscreen rest** — big countdown, +15, Pause/Resume, End rest, Undo, Show-workout peek, GO beep + vibration, RIR ≤1 → +30 s, partials prompt, progression hint.
+4. **Persistence** — localStorage `gym-tool-v1`: adjusted load/reps/RIR, done count, topHits, lastRir, day/index. Hydrates on load, saves on change.
+5. **Theme** — dark-first with a light toggle (persisted as `gym-theme`).
+
+Verified:
+
+- 390×844 and 390×667: app 844/844 & 667/667, lift view 766/766 & 596/596, day rows fit, progress bar paints (6 px), rest goes fullscreen, peek strip 157 px with the lift name and Set Done still on-screen.
+- No console errors (only benign `navigator.vibrate` blocks from synthetic clicks, not user taps).
+- Program data identical to the previous commit (`DAYS` JSON 3383 → 3383).
+- Persistence across reload, undo (and undo-cleared-on-back), day switch, theme toggle, set→rest→advance, and workout-complete session stop all pass.
 
 ## Open decisions (need Khang, not a loop edit)
 
-- Tempo: "4s down" vs Smith squat "2s down" — saved method is 4s minimum eccentric, research said ~2s.
-- Persistence: reload wipes session — not requested, not added.
+- Persistence schema is a single key `gym-tool-v1`; bump the version to migrate if the shape changes.
+- Session history / auto-progression: not requested, not added.
 
 ## How to use this file
 
 - Muse writes this file. OpenCode reads it, builds, tests, updates BUILD_LOG.md.
-- Task-only prompt: no mini-team template. OpenCode's native framework handles Plan / Build / Review / Test.
-- Stop when the task is done or the verification fails — report back in BUILD_LOG.md, do not keep looping.
+- Stop when the task is done or verification fails — report back in BUILD_LOG.md, do not keep looping.
