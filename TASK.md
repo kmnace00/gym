@@ -2,21 +2,29 @@
 
 Status: LIVE — repo is at github.com/kmnace00/gym-html-tool, first commit 098af47c. Muse pushes, OpenCode pulls.
 
-## Current task
+## Current task — Fix the open items (Nov 8, Khang's pick)
 
-None active. The UI/UX loop stopped at 79% of Muse's free weekly limit (resets Nov 9 at 9:29 PM CST) after Loops 15–35.
+Fix these three, nothing else:
 
-Next task when loop resumes, or when Khang picks it:
-- Verify on a real phone: Set Done → Show workout → Adjust → End rest lands clean, with no steppers / RIR picker leaking onto the next lift.
-- Verify: open on Sat/Sun opens on that day; hold a load stepper repeats; finishing freezes session time and releases wake lock.
+1. `finishRest()` doesn't close Adjust at natural expiry — add `setAdjust(false)` on the natural-expiry path, same as `timerIdle()` (652) and `startRest()` (745) already do.
+2. +15 mid-rest doesn't close Adjust — tapping +15 while the Adjust panel is open must close it (call `setAdjust(false)` in the +15 handler).
+3. Tall-phone empty band — reduce the large empty band mid-card on tall phones. Keep one screen, no scrolling, rest focus intact. Do NOT break the short-phone guard (`@media (max-height:720px)` — spacers collapse, card scrolls internally if needed).
+
+Verify:
+- 390px, no overflow, no console errors, no clipped controls.
+- All three Adjust exit paths land clean: End rest, natural expiry to GO, +15 mid-rest — next lift shows only prescription + quiet Adjust link.
+- Short-phone layout still holds; tall-phone band visibly smaller.
+
+Do NOT change in this task:
+- Tempo — "4s down" vs Smith squat "2s down" is still Khang's call, not in this task.
+- No persistence, no loads / reps / rests / data changes, no new features.
+
+After building: add one line per fix to BUILD_LOG.md, commit, push to `main`, and report what changed and what you verified.
 
 ## Open decisions (need Khang, not a loop edit)
 
 - Tempo: "4s down" vs Smith squat "2s down" — saved method is 4s minimum eccentric, research said ~2s.
 - Persistence: reload wipes session — not requested, not added.
-- Large empty band on tall phones — intentional spacer, most visible remaining polish item.
-- `finishRest()` doesn't close Adjust at natural expiry — self-healing, deprioritised.
-- +15 mid-rest doesn't close an open Adjust panel — closes when rest ends.
 
 ## How to use this file
 
