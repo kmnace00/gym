@@ -1,0 +1,15 @@
+{
+  "name": "gym",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Personal one-screen 3-day hypertrophy tool.",
+  "scripts": {
+    "test": "node --test test/",
+    "icons": "node tools/make-icons.js",
+    "e2e": "playwright test",
+    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check app.js && node --check sw.js && node --test test/"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

@@ -1,14 +1,25 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: IN PROGRESS — holistic build (phases 1–5) by OpenCode (Nov 8, Khang's direct ask).
+Status: DONE — holistic build (phases 1–5), Nov 8, Khang's direct ask. Unit + e2e green.
 
-## WIP
+## Completed task — holistic build (phases 1–5)
 
-WIP: OpenCode editing program.js, store.js, timer.js, app.js, index.html, style.css, README.md, TASK.md, BUILD_LOG.md, manifest.webmanifest, sw.js, icons, tests, package.json since 2026-11-08.
+Delivered:
+
+1. **Data safety** — schema v2 (`gym-tool-v2`), real v1→v2 migration (no silent discard; unknown versions backed up, never overwritten), Export/Import via the `⋯` menu (copy / download / import JSON).
+2. **Architecture** — `app.js` split into `program.js` (data + pure math), `store.js` (persistence/history), `timer.js` (timer math), `app.js` (controller). `save()` moved out of `render()`. UMD guards so the pure modules run under `node:test`. Unit tests (27) + Playwright viewport/functional e2e (6).
+3. **Progression + history** — per-lift ring buffer (`liftHistory`), "Last <day>: … → try X" suggestion with one-tap Apply, inline e1RM sparkline.
+4. **UX hardening** — single `navigateLift()`, undo survives navigation, GO double-tap guard, double-tap "Finish" confirm, one-time RIR explainer, `prefers-color-scheme` fallback on first load.
+5. **PWA** — `manifest.webmanifest`, `sw.js` (cache-first offline), generated 192/512 icons.
+
+Verified:
+
+- `node --test test/` 27/27; `npx playwright test` 6/6 at 390×667 and 390×844 (no overflow).
+- Program data `DAYS` unchanged (24 lifts). Details in `BUILD_LOG.md`.
 
 ---
 
-## Completed task — full revamp
+## Previous task — full revamp
 
 Rebuild the tool as a **Day → Lift** two-view app, dark-first, with persistence, keeping the program data byte-for-byte.
 

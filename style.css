@@ -286,3 +286,39 @@ h1{
   .pres .big{font-size:29px}
   .donebtn{height:66px;font-size:19px}
 }
+
+/* ── backup menu + modal ───────────────────────────────────────────────── */
+.menubtn{flex:none;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;font-size:20px;line-height:1;color:var(--muted)}
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6)}
+.modal[hidden]{display:none}
+.modal-card{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.modalclose{width:36px;height:36px;border-radius:999px;display:grid;place-items:center;color:var(--muted);font-size:16px}
+.modalbtn{min-height:46px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer}
+.modalbtn:active{filter:brightness(1.15)}
+.modalmsg{min-height:1.1em;font-size:12.5px;color:var(--accent)}
+.modalfoot{font-size:11px;color:var(--faint);text-align:center;margin-top:2px}
+
+/* ── progression suggestion + sparkline ────────────────────────────────── */
+.suggest{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;line-height:1.35;color:var(--muted);font-variant-numeric:tabular-nums}
+.suggest[hidden]{display:none}
+.suggest b{color:var(--ink)}
+.applybtn{flex:none;height:30px;padding:0 12px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:12px;letter-spacing:.01em}
+.applybtn:active{filter:brightness(1.1)}
+.sparkwrap{flex:none;margin-top:8px;height:28px;color:var(--accent)}
+.sparkwrap[hidden]{display:none}
+.spark{width:100%;height:28px;display:block;overflow:visible}
+
+/* ── RIR one-time explainer ────────────────────────────────────────────── */
+.rirhint{flex:none;margin:8px 0 0;font-size:11px;line-height:1.3;color:var(--faint)}
+.rirhint[hidden]{display:none}
+
+/* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
+@media (max-height:720px){
+  .suggest{margin-top:8px;font-size:12px;gap:6px}
+  .applybtn{height:28px;font-size:11.5px}
+  .sparkwrap{height:22px;margin-top:6px}
+  .spark{height:22px}
+  .rirhint{font-size:10.5px;margin-top:6px}
+  #liftView .cue{-webkit-line-clamp:2}
+}
