@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: AWAITING_GITHUB — repo not created yet. Once the private GitHub repo exists, Muse will push this folder and OpenCode will pull it.
+Status: LIVE — repo is at github.com/kmnace00/gym-html-tool, first commit 098af47c. Muse pushes, OpenCode pulls.
 
 ## Current task
 
