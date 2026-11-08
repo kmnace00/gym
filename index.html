@@ -270,7 +270,7 @@ h1{
 }
 /* the tempo is the same for every lift, so it is stated quietly under
    the cue on the first lift of the day only (see render) — explode up,
-   4s down, 1s hold — instead of being repeated on every lift */
+   2s down, 1s hold — instead of being repeated on every lift */
 .tempo{font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:3px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
 .setdots{display:flex;gap:10px;margin:18px 0 12px;align-items:center}
 .sdot{width:13px;height:13px;border-radius:50%;background:var(--line)}
@@ -402,6 +402,14 @@ h1{
   /* the extra height is absorbed by the .sp1/.sp2 spacers, so the taller
      button just makes the thumb target bigger */
   .donebtn{height:68px;font-size:19px}
+  /* the 2:3 split pooled most of the tall-phone slack in .sp2 — a ~150px
+     dead band between the set dots and Adjust, right in the middle of the
+     card. Shift the share upward (4:1): the lift block sits lower, closer
+     to its controls, and the leftover height reads as top breathing room.
+     Same one screen, same thumb-zone Set Done; short phones are untouched
+     (their block collapses both spacers). */
+  .sp1{flex:4 1 0}
+  .sp2{flex:1 1 0}
 }
 /* phones with height to spare: let the cue use a third line instead of
    clipping real programming notes (the Sunday calf cue carries the
@@ -450,7 +458,7 @@ h1{
     <h1 id="exName">—</h1>
     <div class="pres" id="exPres">—</div>
     <p class="cue" id="exCue">—</p>
-    <p class="tempo" id="tempoLine">Tempo — explode up · 4s down · 1s hold</p>
+    <p class="tempo" id="tempoLine">Tempo — explode up · 2s down · 1s hold</p>
 
     <div class="setdots" id="setDots" aria-label="Sets"></div>
 
@@ -696,6 +704,10 @@ function beepGo(){
 function finishRest(){
   clearInterval(rInt); rInt=null; rLeft=0;
   resetPause();
+  /* natural expiry lands on GO exactly like End rest (timerIdle): any
+     Adjust panel left open on the lift must not reopen under the GO
+     screen and leak its stale open state onto the next lift. */
+  setAdjust(false);
   /* one unmistakable signal at zero: the clock itself says GO */
   document.getElementById("restTime").textContent="GO";
   document.getElementById("restTime").setAttribute("aria-label","Rest complete — GO");
@@ -759,6 +771,10 @@ function startRest(sec,label,lastSet,note,nextText){
 }
 document.getElementById("plus15").onclick=function(){
   if(!timerBar.classList.contains("active"))return;
+  /* +15 mid-rest is another rest-state action: the lift's Adjust panel
+     is behind the rest screen, so close it here too rather than leave
+     it armed to reappear open on the next lift. */
+  setAdjust(false);
   if(!rInt && !rPaused && rLeft<=0){ startRest(15,rLabel,pendingNext,rNote,rNextText); return; }
   timerBar.classList.remove("go");
   skipBtn.textContent="End rest";
