@@ -26,4 +26,4 @@ No paste loop — the repo is the handoff.
 - One screen, no scroll. Rest focus. Optimal defaults hidden behind details.
 - No persistence added unless explicitly requested — session-only for now.
 - No new features / fluff without Khang's explicit ask.
-- Tempo conflict open: tempo line says "4s down", Smith squat cue says "2s down". Needs Khang's call.
+- Tempo decided Nov 8: 2s down (was 4s). Tempo line is "explode up · 2s down · 1s hold".
