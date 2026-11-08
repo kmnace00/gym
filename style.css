@@ -55,10 +55,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
   font-weight:700;font-size:14px;color:var(--ink);background:var(--surface-2);
 }
 .app.lift-mode .backbtn{display:inline-flex}
-.themebtn{
-  flex:none;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;
-  font-size:17px;color:var(--muted);
-}
 .pill{
   flex:none;min-height:42px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:700;
   font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
@@ -117,7 +113,11 @@ h1{
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
 .tempo{flex:none;font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:4px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
-.setdots{flex:none;display:flex;gap:10px;margin:16px 0 0;align-items:center}
+.setdots{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 0}
+.dotsline{display:flex;align-items:center;gap:10px;min-width:0;flex:1;overflow:hidden}
+.resetlift{flex:none;height:30px;padding:0 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
+.resetlift:disabled{opacity:.4}
+.resetlift:not(:disabled):active{filter:brightness(1.15)}
 .sdot{width:13px;height:13px;border-radius:50%;background:var(--line)}
 .sdot.done{background:var(--accent)}
 .sdot.now{width:16px;height:16px;background:transparent;border:2.5px solid var(--ink)}
@@ -312,6 +312,11 @@ h1{
 /* ── RIR one-time explainer ────────────────────────────────────────────── */
 .rirhint{flex:none;margin:8px 0 0;font-size:11px;line-height:1.3;color:var(--faint)}
 .rirhint[hidden]{display:none}
+
+/* ── persistent undo pill + menu extras ────────────────────────────────── */
+.undopill{flex:none;height:42px;padding:0 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:13px}
+.modalsep{height:1px;background:var(--line);margin:4px 0}
+.modalbtn-danger{color:#ef4444}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){

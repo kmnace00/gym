@@ -60,6 +60,16 @@ for (const size of sizes) {
         return document.documentElement.scrollHeight <= window.innerHeight + 1 && r.bottom <= window.innerHeight + 1 && r.top >= 0;
       });
       expect(fits, "Set Done must stay fully on-screen").toBe(true);
+
+      // reset button + persistent undo pill must not push Set Done off-screen
+      await page.locator("#doneBtn").click();
+      await page.locator("#skipRest").click();
+      await expect(page.locator("#undoPill")).toBeVisible();
+      const fits2 = await page.evaluate(() => {
+        const r = document.getElementById("doneBtn").getBoundingClientRect();
+        return document.documentElement.scrollHeight <= window.innerHeight + 1 && r.bottom <= window.innerHeight + 1;
+      });
+      expect(fits2, "Set Done stays on-screen after a set").toBe(true);
     });
   });
 }

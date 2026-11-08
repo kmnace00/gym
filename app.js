@@ -37,17 +37,16 @@
   var rirHint = document.getElementById("rirHint");
   var menuBtn = document.getElementById("menuBtn");
   var modal = document.getElementById("modal");
+  var undoPill = document.getElementById("undoPill");
+  var resetLiftBtn = document.getElementById("resetLiftBtn");
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", t === "light" ? "#f4f6f8" : "#0b0e12");
-    var b = document.getElementById("themeBtn");
-    if (b) {
-      b.textContent = t === "light" ? "☀" : "☾";
-      b.setAttribute("aria-label", t === "light" ? "Switch to dark theme" : "Switch to light theme");
-    }
+    var b = document.getElementById("themeToggle");
+    if (b) b.textContent = t === "light" ? "Theme: Light" : "Theme: Dark";
   }
   function initTheme() {
     var t = null;
@@ -55,7 +54,7 @@
     if (!t) { try { if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) t = "light"; } catch (e) {} }
     applyTheme(t || "dark");
   }
-  document.getElementById("themeBtn").onclick = function () {
+  document.getElementById("themeToggle").onclick = function () {
     var t = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
     try { localStorage.setItem(Gym.THEME_KEY, t); } catch (e) {}
     applyTheme(t);
@@ -160,7 +159,7 @@
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
     var anyDone = false;
     list.forEach(function (x, i) { if (st(cur, i).done > 0) anyDone = true; });
-    document.getElementById("liftMeta").textContent = "Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min";
+    document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min";
     document.getElementById("exName").textContent = e.n;
 
     var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
@@ -195,14 +194,17 @@
     hint.className = "hint" + (hintText ? " show" : "") + (hintGood ? " good" : "");
 
     setNavDisabled();
+    resetLiftBtn.disabled = s.done === 0;
     renderSuggest();
     renderSpark();
   }
+  function syncUndo() { undoPill.hidden = actionLog.length === 0; }
   function render() {
     appEl.classList.toggle("lift-mode", view === "lift");
     syncDays();
     applyVisibility();
     if (view === "day") renderDay(); else renderLift();
+    syncUndo();
   }
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
@@ -354,7 +356,7 @@
     if (Date.now() - goAt < 400) return;
     skipBtn.click();
   });
-  function clearUndo() { actionLog = []; appEl.classList.remove("can-undo"); }
+  function clearUndo() { actionLog = []; appEl.classList.remove("can-undo"); if (undoPill) undoPill.hidden = true; }
   skipBtn.onclick = function () {
     var wasGo = timerBar.classList.contains("go");
     clearInterval(rInt); rInt = null; rLeft = 0;
@@ -385,7 +387,7 @@
     pendingNext = false;
     timerIdle("", wasGo ? "Next set — go." : "Skipped — next set, go.");
   };
-  undoBtn.onclick = function () {
+  function undoLast() {
     if (!actionLog.length) return;
     var a = actionLog.pop();
     var s = st(a.day, a.i);
@@ -397,7 +399,9 @@
     hintText = ""; hintGood = false;
     timerIdle("", "Set undone — ready when you are.");
     commit(); render();
-  };
+  }
+  undoBtn.onclick = undoLast;
+  undoPill.onclick = undoLast;
 
   /* ── session timer ─────────────────────────────────────────────────────── */
   var sSec = 0, sInt = null, sBase = 0, sStart = 0, sAutoStopped = false;
@@ -546,6 +550,15 @@
     if (!isNaN(v)) { curSt().load = v; commit(); render(); }
   };
 
+  /* restart this lift: clear its sets, keep the working weight */
+  resetLiftBtn.onclick = function () {
+    Gym.resetLift(payload, cur, idx);
+    actionLog = actionLog.filter(function (a) { return !(a.day === cur && a.i === idx); });
+    if (!actionLog.length) appEl.classList.remove("can-undo");
+    hintText = ""; hintGood = false;
+    commit(); render();
+  };
+
   /* ── navigation ────────────────────────────────────────────────────────── */
   function showDay() { view = "day"; hintText = ""; hintGood = false; commit(); render(); }
   function openLift(i) {
@@ -629,6 +642,27 @@
     reader.readAsText(f);
     ev.target.value = "";
   });
+
+  /* two-tap confirm for destructive menu actions */
+  var armedFn = null, armedUntil = 0;
+  function twoTap(btn, confirmText, fn) {
+    if (armedFn === fn && Date.now() < armedUntil) {
+      armedFn = null; armedUntil = 0; fn(); btn.textContent = btn.getAttribute("data-label"); return;
+    }
+    armedFn = fn; armedUntil = Date.now() + 2500;
+    if (!btn.getAttribute("data-label")) btn.setAttribute("data-label", btn.textContent);
+    btn.textContent = confirmText;
+    setTimeout(function () {
+      if (armedFn === fn) { armedFn = null; armedUntil = 0; btn.textContent = btn.getAttribute("data-label"); }
+    }, 2600);
+  }
+  function doResetDay() { Gym.resetDay(payload, cur); commit(); render(); updateFoot(); setMsg("Day reset — sets cleared."); }
+  function doClearAll() {
+    payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
+    clearUndo(); commit(); render(); updateFoot(); setMsg("All training data cleared.");
+  }
+  document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
+  document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
 
   /* ── boot ──────────────────────────────────────────────────────────────── */
   initTheme();

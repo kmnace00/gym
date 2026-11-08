@@ -69,6 +69,41 @@ test("lastEntry / series / popHistory", () => {
   assert.equal(S.lastEntry(p, "fri", 0).load, 50);
 });
 
+test("resetLift clears sets but keeps load/reps/rir", () => {
+  const p = S.emptyPayload();
+  p.state["fri:0"] = { done: 3, load: 62.5, reps: 7, rir: 1, topHits: 2, lastRir: 1 };
+  S.resetLift(p, "fri", 0);
+  const r = p.state["fri:0"];
+  assert.equal(r.done, 0);
+  assert.equal(r.topHits, 0);
+  assert.equal(r.lastRir, null);
+  assert.equal(r.load, 62.5);
+  assert.equal(r.reps, 7);
+  assert.equal(r.rir, 1);
+});
+
+test("resetLift drops a same-day history snapshot", () => {
+  const p = S.emptyPayload();
+  p.state["fri:0"] = { done: 3, load: 50, reps: 6, rir: 2, topHits: 1, lastRir: 2 };
+  S.pushHistory(p, "fri", 0, { date: S.dateKey(), load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  S.resetLift(p, "fri", 0);
+  assert.equal(S.lastEntry(p, "fri", 0), null);
+});
+
+test("resetDay clears the day's sets, keeps loads and other days", () => {
+  const p = S.emptyPayload();
+  p.state["fri:0"] = { done: 3, load: 60, reps: 6, rir: 2, topHits: 0, lastRir: 2 };
+  p.state["fri:1"] = { done: 2, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: 2 };
+  p.state["sat:0"] = { done: 1, load: 90, reps: 7, rir: 2, topHits: 0, lastRir: 2 };
+  S.pushHistory(p, "fri", 0, { date: S.dateKey(), load: 60, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  S.resetDay(p, "fri");
+  assert.equal(p.state["fri:0"].done, 0);
+  assert.equal(p.state["fri:1"].done, 0);
+  assert.equal(p.state["sat:0"].done, 1);
+  assert.equal(p.state["fri:0"].load, 60);
+  assert.equal(S.lastEntry(p, "fri", 0), null);
+});
+
 test("export → import round-trips", () => {
   const p = S.emptyPayload();
   p.state["fri:0"] = { done: 2, load: 62.5, reps: 6, rir: 1, topHits: 1, lastRir: 1 };

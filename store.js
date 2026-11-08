@@ -83,6 +83,35 @@
     if (arr && arr.length) arr.pop();
   }
 
+  /* clear one lift's finished sets, keeping the working load / reps / RIR.
+     A same-day snapshot (from a redo) is dropped so redoing replaces it.    */
+  function resetLift(p, d, i) {
+    var k = d + ":" + i, rec = p.state && p.state[k];
+    if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; }
+    var arr = p.liftHistory && p.liftHistory[k];
+    if (arr && arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
+  }
+
+  /* clear every lift's finished sets for one day, keeping loads + earlier history */
+  function resetDay(p, d) {
+    var prefix = d + ":", k;
+    if (p.state) {
+      for (k in p.state) {
+        if (p.state.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
+          p.state[k].done = 0; p.state[k].topHits = 0; p.state[k].lastRir = null;
+        }
+      }
+    }
+    if (p.liftHistory) {
+      for (k in p.liftHistory) {
+        if (p.liftHistory.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
+          var arr = p.liftHistory[k];
+          while (arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
+        }
+      }
+    }
+  }
+
   function dateKey(dt) {
     dt = dt || new Date();
     return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
@@ -93,6 +122,7 @@
     emptyPayload: emptyPayload, migrate: migrate, load: load, save: save,
     exportPayload: exportPayload, importRaw: importRaw,
     pushHistory: pushHistory, lastEntry: lastEntry, series: series, popHistory: popHistory,
+    resetLift: resetLift, resetDay: resetDay,
     dateKey: dateKey
   };
 });

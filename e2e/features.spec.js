@@ -49,6 +49,64 @@ test("import restores a backup", async ({ page }) => {
   await expect(page.locator("#loadVal")).toHaveText("77");
 });
 
+test("back button reads Back and lift context shows the day", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#backBtn")).toHaveText(/Back/);
+  await expect(page.locator("#liftMeta")).toContainText("Lift 1 of 8");
+  await expect(page.locator("#liftMeta")).toHaveText(/(Fri|Sat|Sun)/);
+});
+
+test("restart lift clears sets but keeps load", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click(); // end rest, back to the lift
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 2 of 3");
+  const loadBefore = await page.locator("#loadVal").textContent();
+  await page.locator("#resetLiftBtn").click();
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#loadVal")).toHaveText(loadBefore);
+});
+
+test("reset day clears all lifts via the menu (two taps)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").nth(1).click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await page.locator("#backBtn").click();
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await page.locator("#resetDay").click();
+  await page.locator("#modalClose").click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+});
+
+test("clear all data wipes history", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modalFoot")).toContainText("0 sessions saved");
+  await page.locator("#clearAll").click();
+  await page.locator("#clearAll").click();
+  await expect(page.locator("#modalMsg")).toContainText("cleared");
+});
+
+test("undo pill appears after a set and undoes it", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await expect(page.locator("#undoPill")).toBeVisible();
+  await page.locator("#undoPill").click();
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#undoPill")).toBeHidden();
+});
+
 test("undo survives navigating to another lift while resting", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

@@ -1,6 +1,18 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: DONE — holistic build (phases 1–5), Nov 8, Khang's direct ask. Unit + e2e green.
+Status: DONE — UI/UX nav + reset (Nov 8, Khang's direct ask). Unit + e2e green.
+
+## Completed task — UI/UX nav + reset
+
+Delivered:
+- Back button `‹ Lifts` → `‹ Back`; lift context shows the day ("Friday · Lift 3 of 8").
+- `↺ Restart lift` (clears sets, keeps weight) on the set-dots row.
+- `⋯` menu: Reset day, Clear all data (both two-tap confirm), Theme toggle moved in; header decluttered.
+- Persistent `Undo` pill (day + lift views, not just rest).
+
+---
+
+## Previous task — holistic build (phases 1–5)
 
 ## Completed task — holistic build (phases 1–5)
 
