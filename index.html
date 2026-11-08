@@ -400,16 +400,13 @@ h1{
   .sdot{width:14px;height:14px}
   .sdot.now{width:17px;height:17px}
   /* the extra height is absorbed by the .sp1/.sp2 spacers, so the taller
-     button just makes the thumb target bigger */
+     button just makes the thumb target bigger. The middle spacer is
+     capped: without a cap it takes 3/5 of all slack on tall phones and
+     leaves one big void between the set dots and the action cluster.
+     Capped, the leftover slack goes to .sp1 above the lift info, so the
+     lift block sits lower and more centred instead. */
+  .sp2{max-height:96px}
   .donebtn{height:68px;font-size:19px}
-  /* the 2:3 split pooled most of the tall-phone slack in .sp2 — a ~150px
-     dead band between the set dots and Adjust, right in the middle of the
-     card. Shift the share upward (4:1): the lift block sits lower, closer
-     to its controls, and the leftover height reads as top breathing room.
-     Same one screen, same thumb-zone Set Done; short phones are untouched
-     (their block collapses both spacers). */
-  .sp1{flex:4 1 0}
-  .sp2{flex:1 1 0}
 }
 /* phones with height to spare: let the cue use a third line instead of
    clipping real programming notes (the Sunday calf cue carries the
@@ -704,9 +701,9 @@ function beepGo(){
 function finishRest(){
   clearInterval(rInt); rInt=null; rLeft=0;
   resetPause();
-  /* natural expiry lands on GO exactly like End rest (timerIdle): any
-     Adjust panel left open on the lift must not reopen under the GO
-     screen and leak its stale open state onto the next lift. */
+  /* natural expiry is a rest exit too: if the user peeked at the
+     workout mid-rest and opened Adjust, close it here — same as
+     timerIdle/startRest — so GO never lands with steppers open. */
   setAdjust(false);
   /* one unmistakable signal at zero: the clock itself says GO */
   document.getElementById("restTime").textContent="GO";
@@ -771,9 +768,8 @@ function startRest(sec,label,lastSet,note,nextText){
 }
 document.getElementById("plus15").onclick=function(){
   if(!timerBar.classList.contains("active"))return;
-  /* +15 mid-rest is another rest-state action: the lift's Adjust panel
-     is behind the rest screen, so close it here too rather than leave
-     it armed to reappear open on the next lift. */
+  /* +15 mid-rest is a rest action, not a peek: close Adjust if the
+     user opened it while peeking, so the panel can't linger. */
   setAdjust(false);
   if(!rInt && !rPaused && rLeft<=0){ startRest(15,rLabel,pendingNext,rNote,rNextText); return; }
   timerBar.classList.remove("go");
