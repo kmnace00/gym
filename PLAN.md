@@ -17,7 +17,7 @@ Goal: personal one-screen gym tool, free, no scroll, rest-focused. Abandoned clo
 
 ## Integration
 
-- Public GitHub repo: `kmnace00/gym-html-tool`, branch `main`. Public for GitHub Pages simplicity — Pages is live at https://kmnace00.github.io/gym-html-tool/ . Muse pushes, OpenCode pulls.
+- Public GitHub repo: `kmnace00/gym` (renamed from `gym-html-tool` Nov 8), branch `main`. Public for GitHub Pages simplicity — Pages is live at https://kmnace00.github.io/gym/ . Muse pushes, OpenCode pulls.
 - Muse writes TASK.md / PLAN.md. OpenCode builds, updates BUILD_LOG.md.
 - No paste loop. No direct Muse → OpenCode server call until Tailscale + `opencode serve` is fixed on the Max (currently impaired: session contents don't load, Providers shows no connected providers).
 

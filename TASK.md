@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: LIVE — repo is at github.com/kmnace00/gym-html-tool, first commit 098af47c. Muse pushes, OpenCode pulls.
+Status: LIVE — repo is at github.com/kmnace00/gym (renamed from gym-html-tool Nov 8), first commit 098af47c. Muse pushes, OpenCode pulls.
 
 ## Current task — Fix the open items (Nov 8, Khang's pick)
 
