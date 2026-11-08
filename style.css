@@ -1,0 +1,288 @@
+/* ── design tokens — dark-first, light is an explicit opt-in ───────────── */
+:root{
+  --bg:#0b0e12; --surface:#151a21; --surface-2:#1d242d; --line:#28313b;
+  --ink:#eef2f5; --muted:#9aa6b3; --faint:#68727e;
+  --accent:#35d0b8; --accent-ink:#04231e; --accent-soft:rgba(53,208,184,.15);
+  --good:#4ade80; --warn-bg:#3a2c0c; --warn:#fbbf24;
+  --radius:16px; --radius-sm:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.5);
+}
+html[data-theme="light"]{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f4; --line:#e0e5ea;
+  --ink:#0d1318; --muted:#5a6572; --faint:#8a95a1;
+  --accent:#0d9488; --accent-ink:#ffffff; --accent-soft:rgba(13,148,136,.12);
+  --good:#16a34a; --warn-bg:#fef3c7; --warn:#92400e;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.1);
+}
+html{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  line-height:1.35;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;cursor:pointer;color:inherit;background:none;border:0;padding:0}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+
+/* ── shell ─────────────────────────────────────────────────────────────── */
+.app{
+  height:100dvh;max-width:520px;margin:0 auto;
+  display:flex;flex-direction:column;gap:12px;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  -webkit-user-select:none;user-select:none;
+}
+
+/* ── header: day tabs (day view) / back (lift view) + theme + session ──── */
+.header{display:flex;gap:10px;align-items:center;flex:none;min-width:0}
+.days{display:flex;gap:3px;flex:1;min-width:0;background:var(--surface-2);border-radius:999px;padding:3px}
+.day{
+  flex:1;height:42px;border-radius:999px;font-weight:700;font-size:14px;color:var(--muted);
+  transition:background .2s ease,color .2s ease;
+}
+.day.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.day:active{filter:brightness(.96)}
+.app.lift-mode .days{display:none}
+.backbtn{
+  display:none;flex:none;margin-right:auto;height:42px;padding:0 16px 0 12px;
+  border-radius:999px;align-items:center;gap:6px;
+  font-weight:700;font-size:14px;color:var(--ink);background:var(--surface-2);
+}
+.app.lift-mode .backbtn{display:inline-flex}
+.themebtn{
+  flex:none;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;
+  font-size:17px;color:var(--muted);
+}
+.pill{
+  flex:none;min-height:42px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:700;
+  font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);
+  display:inline-flex;align-items:center;gap:6px;background:transparent;
+  transition:background .2s ease,color .2s ease;
+}
+.pill.on{color:var(--accent);background:var(--accent-soft)}
+/* the elapsed readout is hidden until there is time worth reading */
+.pill:not(.on):not(.has-time) #elapsed{display:none}
+.pill.on .startlbl,.pill.has-time .startlbl{display:none}
+
+/* ── views ─────────────────────────────────────────────────────────────── */
+.view{flex:1;min-height:0;min-width:0;flex-direction:column}
+
+/* ── day view: the 8-lift overview ─────────────────────────────────────── */
+.dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
+.daytitle{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.liftlist{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.liftrow{
+  flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;gap:12px;
+  width:100%;text-align:left;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;padding:0 14px;
+  transition:border-color .2s ease,background .2s ease,transform .08s ease;
+}
+.liftrow:active{transform:scale(.992)}
+.liftrow.now{border-color:var(--accent);background:var(--accent-soft)}
+.liftrow.done{opacity:.62}
+.liftstatus{flex:none;width:20px;text-align:center;font-size:15px;font-weight:800;color:var(--accent)}
+.liftmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.liftname{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liftmeta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{flex:none;font-size:20px;color:var(--faint);line-height:1}
+.progress{flex:none;display:flex;gap:4px;height:6px;margin-top:8px}
+.pseg{flex:1;height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.pseg i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s ease}
+
+/* ── lift view ─────────────────────────────────────────────────────────── */
+.liftnav{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.mini{width:44px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--ink)}
+.mini:active{background:var(--surface-2)}
+.mini:disabled{opacity:.25}
+.liftstat{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1{
+  flex:none;
+  font-size:clamp(25px,6.6vw,31px);line-height:1.08;letter-spacing:-.02em;font-weight:800;
+  margin:2px 0 6px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.pres{flex:none}
+.pres .big{display:block;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.pres .big b{color:var(--ink)}
+.pres .small{display:block;margin-top:4px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cue{
+  flex:none;font-size:15px;line-height:1.5;color:var(--muted);margin:9px 0 0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.tempo{flex:none;font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:4px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
+.setdots{flex:none;display:flex;gap:10px;margin:16px 0 0;align-items:center}
+.sdot{width:13px;height:13px;border-radius:50%;background:var(--line)}
+.sdot.done{background:var(--accent)}
+.sdot.now{width:16px;height:16px;background:transparent;border:2.5px solid var(--ink)}
+.setcount{font-size:13px;font-weight:600;color:var(--muted);margin-left:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* adjust cluster — always visible on the lift view, no hidden toggle */
+.adjust{flex:none;margin-top:auto;padding-top:14px}
+.steppers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px;display:flex;align-items:center;justify-content:space-between;gap:2px}
+.stepbtn{
+  width:44px;height:44px;flex:none;border-radius:50%;
+  background:var(--surface-2);font-size:22px;font-weight:700;line-height:1;
+  display:grid;place-items:center;-webkit-touch-callout:none;
+}
+.stepbtn:active{filter:brightness(1.2)}
+.ctl .mid{text-align:center;min-width:0}
+.ctl .k{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.ctl .v{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.rirrow{display:flex;align-items:center;gap:6px;margin-top:10px}
+.rirrow .k{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--faint);margin-right:2px}
+.rir{
+  flex:1;height:44px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line);color:var(--muted);
+  font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.rir.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.hint{display:none;margin-top:12px;border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.35}
+.hint.show{display:block;background:var(--warn-bg);color:var(--warn)}
+.hint.good{background:var(--accent-soft);color:var(--accent)}
+.donebtn{
+  flex:none;margin-top:12px;width:100%;height:60px;border-radius:14px;
+  background:var(--ink);color:var(--bg);font-size:18px;font-weight:800;letter-spacing:.01em;
+  transition:transform .08s ease,opacity .08s ease;
+}
+.donebtn:active{opacity:.88;transform:scale(.985)}
+.donebtn.complete{background:var(--surface-2);color:var(--accent)}
+
+/* ── rest timer: a strip when peeking, the whole screen while counting ─── */
+.timer{
+  display:none;flex:none;border-radius:var(--radius);padding:10px 14px;
+  align-items:center;gap:12px;background:var(--surface);color:var(--muted);
+  transition:background .25s ease,color .25s ease;
+}
+.timer.active{display:flex}
+.timer.go{cursor:pointer}
+.timer.paused .clock{opacity:.5}
+/* Pause is meaningless at GO — the button is inert there (pauseBtn ignores .go),
+   so it must not sit on screen looking tappable. */
+.timer.go #pauseRest{display:none}
+.timer .clock{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.timer .tlabel{flex:1;min-width:0;font-size:13px}
+.timer .tlabel strong{display:block;font-weight:700;color:var(--ink);font-size:13.5px}
+.timer .tlabel span{display:block;opacity:.75}
+.timer .rnext{font-size:12px;opacity:.8;font-variant-numeric:tabular-nums}
+.timer .tbtns{display:none;gap:8px;flex:none}
+.timer.active .tbtns{display:flex}
+.timer .tbtns button{
+  height:42px;padding:0 14px;border-radius:999px;
+  border:1px solid var(--line);background:transparent;font-weight:700;font-size:13px;
+}
+.timer .rbar{display:none}
+.timer .rnav{display:none}
+.timer .detailsbtn,.timer .undobtn{display:none}
+.timer .tbtns #pauseRest{border:0;background:transparent;text-decoration:underline;text-underline-offset:3px;opacity:.7;padding:0 8px;font-weight:600}
+
+/* full-screen rest focus */
+.app.resting .timer{
+  flex:1;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;gap:16px;padding:28px 22px;border-radius:20px;
+}
+.app.resting .timer .clock{font-size:clamp(80px,25vw,118px);font-weight:800;line-height:.95;min-width:0}
+.app.resting .timer .tlabel{flex:none;text-align:center;font-size:14px}
+.app.resting .timer .tlabel strong{display:block;font-size:18px}
+.app.resting .timer .tlabel span{margin-top:4px}
+.app.resting .timer .tbtns{display:flex;gap:10px}
+.app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px}
+.app.resting .timer .tbtns #pauseRest{height:44px;padding:0 8px;font-size:13.5px}
+.app.resting .timer .rbar{
+  display:block;width:100%;max-width:340px;height:7px;border-radius:99px;
+  background:var(--surface-2);overflow:hidden;order:2;
+}
+.app.resting .timer .rbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s linear}
+.app.resting .timer .rnext{display:block;font-size:15px;max-width:360px;order:4}
+.app.resting .timer .clock{order:1}
+.app.resting .timer .tlabel{order:3}
+.app.resting .timer .tbtns{order:5}
+.app.resting .timer .rnav{
+  display:flex;gap:10px;align-items:center;justify-content:center;order:6;
+}
+.app.resting .timer .rnav button{
+  width:54px;height:44px;border-radius:999px;flex:none;
+  border:1px solid var(--line);background:transparent;color:inherit;
+  font-size:20px;font-weight:700;
+}
+.app.resting .timer .rnav button:disabled{opacity:.25}
+.app.resting .timer .detailsbtn,.app.resting .timer .undobtn{
+  display:inline-flex;height:44px;padding:0 12px;align-items:center;justify-content:center;
+  font-size:13.5px;font-weight:600;color:inherit;opacity:.7;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.app.resting .timer .detailsbtn{order:7}
+.app.resting .timer .undobtn{order:8;display:none}
+.app.resting.can-undo .timer .undobtn{display:inline-flex}
+.app.resting .timer.paused .tlabel strong::after{content:" — paused";font-weight:600;opacity:.75}
+
+/* GO: one unmistakable, tappable advance screen */
+.app.resting .timer.go{background:var(--accent);color:var(--accent-ink)}
+.app.resting .timer.go .clock,.app.resting .timer.go .tlabel,.app.resting .timer.go .tlabel strong,
+.app.resting .timer.go .rnext{color:var(--accent-ink)}
+.app.resting .timer.go .rbar{background:rgba(0,0,0,.18)}
+.app.resting .timer.go .rbar i{background:var(--accent-ink)}
+.app.resting .timer.go .tbtns button{border-color:var(--accent-ink);color:var(--accent-ink)}
+.app.resting .timer.go #skipRest{background:var(--accent-ink);color:var(--accent);border-color:transparent}
+
+/* peeked details: timer shrinks back to a strip, workout returns behind it */
+.app.resting.show-details .timer{
+  flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;
+  text-align:left;gap:8px;padding:10px 12px;border-radius:14px;
+}
+.app.resting.show-details .timer .clock{font-size:32px;min-width:70px;order:1}
+/* the label must keep real width — flex-basis 0 let it shrink to a sliver
+   earlier and wrap one word per line into a 281px column, which then forced
+   the whole strip (and the lift view below it) off-screen */
+.app.resting.show-details .timer .tlabel{flex:1 1 auto;min-width:0;text-align:left;order:2}
+.app.resting.show-details .timer .tlabel strong{white-space:normal;overflow:visible;text-overflow:clip;display:block;font-size:13.5px;line-height:1.2}
+.app.resting.show-details .timer .tlabel span{display:block;font-size:12px;line-height:1.2}
+/* the peek is a two-row strip: clock + label + Hide workout, then the
+   actions on their own full-width row. Progress bar, what's-next, the ‹ ›
+   pair and Undo stay on the full rest screen, so the strip stays short
+   enough that the lift view keeps its name and Set Done at 390×667. */
+.app.resting.show-details .timer .rnext,
+.app.resting.show-details .timer .rbar,
+.app.resting.show-details .timer .rnav,
+.app.resting.show-details .timer .undobtn{display:none}
+.app.resting.show-details .timer .detailsbtn{order:3;flex:0 0 auto;width:auto;height:42px;padding:0 10px;justify-content:center;align-self:center}
+.app.resting.show-details .timer .tbtns{order:4;flex:1 1 100%;display:flex}
+.app.resting.show-details .timer .tbtns button{flex:1;height:40px;padding:0 8px;font-size:12.5px}
+
+/* ── responsive: short phones keep everything on one screen ────────────── */
+@media (max-height:720px){
+  .app{gap:8px;padding-top:9px}
+  .dayhead{padding-bottom:6px}
+  .liftlist{gap:5px}
+  h1{font-size:23px;margin:0 0 4px}
+  .pres .big{font-size:22px}
+  .pres .small{font-size:12.5px;margin-top:2px}
+  .cue{font-size:13.5px;line-height:1.4;margin-top:6px}
+  .tempo{margin-top:3px}
+  .setdots{margin-top:10px}
+  .adjust{padding-top:8px}
+  .stepbtn{width:40px;height:40px;font-size:20px}
+  .rir{height:40px}
+  .donebtn{height:52px;margin-top:8px;font-size:17px}
+  .app.resting .timer .clock{font-size:72px}
+  .app.resting .timer{gap:11px;padding:20px 16px}
+  .app.resting.show-details .timer .clock{font-size:32px;min-width:74px}
+  /* peek at short heights: trim the lift block so Set Done stays on-screen */
+  .app.resting.show-details .cue{-webkit-line-clamp:2}
+}
+@media (min-height:820px){
+  .dayhead{padding-bottom:12px}
+  .liftlist{gap:8px}
+  h1{font-size:32px}
+  .pres .big{font-size:29px}
+  .donebtn{height:66px;font-size:19px}
+}
