@@ -230,6 +230,10 @@ h1{
   font-size:13.5px;font-weight:600;color:inherit;opacity:.7;
   text-decoration:underline;text-underline-offset:3px;
 }
+.app.resting .timer .undobtn{
+  opacity:1;color:var(--ink);text-decoration:none;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface);
+}
 .app.resting .timer .restfooter{display:flex;order:7;align-items:center;justify-content:center;gap:18px}
 .app.resting .timer .undobtn{display:none}
 .app.resting.can-undo .timer .undobtn{display:inline-flex}
@@ -416,9 +420,12 @@ h1{
 /* ── plan today + previous-session line ─────────────────────────────────── */
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .planbtn{
-  flex:none;height:28px;padding:0 12px;border-radius:999px;
-  background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:12px;
+  flex:none;height:44px;padding:0 14px;margin:-8px 0;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:13px;
 }
+/* "Plan today" overwrites loads: it reads as secondary so it cannot be
+   mistaken for Continue/Finish, the two commitment actions.               */
+.planbtn#planBtn{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
 .planbtn[hidden]{display:none}
 .planbtn:active{filter:brightness(1.1)}
 .prevline{
@@ -478,7 +485,7 @@ h1{
 .rpctl{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums}
 .rpctl span{min-width:54px;text-align:center;font-size:17px;font-weight:800}
 .rpctl button{
-  width:40px;height:40px;border-radius:999px;background:var(--surface);
+  width:44px;height:44px;margin:-2px 0;border-radius:999px;background:var(--surface);
   border:1px solid var(--line);font-size:19px;font-weight:700;line-height:1;
 }
 .rpctl button:active{filter:brightness(1.15)}
@@ -522,7 +529,7 @@ h1{
   .weekstrip{margin-top:4px}
   .wk{height:19px;font-size:10px}
   .app.resting .timer .rprep{padding:5px 8px;gap:3px;max-width:300px}
-  .rpctl button{width:36px;height:36px;font-size:17px}
+  .rpctl button{width:44px;height:44px;font-size:17px}
   .rpctl span{font-size:15px;min-width:46px}
   .rpname{font-size:10px}
   .sumv{font-size:15px}

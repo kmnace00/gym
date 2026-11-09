@@ -989,10 +989,12 @@
 
   /* plan the whole day: pre-fill each not-yet-started lift from its history */
   document.getElementById("planBtn").onclick = function () {
-    var list = DAYS[cur].ex, up = 0, down = 0, keep = 0;
+    var list = DAYS[cur].ex, up = 0, down = 0, keep = 0, manual = 0;
     list.forEach(function (e, i) {
       var s = st(cur, i);
       if (s.done > 0) return; // never overwrite an in-progress lift
+      var dflt = e.load === null ? 0 : (e.load || 0);
+      if (s.load !== dflt) { manual++; return; } // an explicit load (or an earlier plan) wins
       var p = planFor(e, Gym.series(payload, cur, i));
       if (p.action === "none") return;
       if (p.action === "up") up++;
@@ -1002,7 +1004,7 @@
     });
     planMsg = (up || down)
       ? "Planned +" + up + (down ? " · deload " + down : "")
-      : "Planned · all keep";
+      : (manual > 0 ? "Planned · kept your loads" : "Planned · all keep");
     commit(); render();
   };
 
