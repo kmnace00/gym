@@ -405,6 +405,42 @@
   }
 
   /**
+   * Everything the Progress view needs, computed once.
+   * @param {any} payload
+   * @param {object} DAYS
+   * @param {(load:number, reps:number, opts?:object)=>number} metric
+   * @param {string} nowKey YYYY-MM-DD
+   * @param {{fri:number,sat:number,sun:number}} [dayLens]
+   * @returns {{workouts:number, sets:number, weekDone:number, weekTotal:number,
+   *            volume:number, byDay:object, weeks:any[], heatCount:number,
+   *            heatTotal:number, recent:any[], wow:object, pr:any, movers:any[]}}
+   */
+  function progressSnapshot(payload, DAYS, metric, nowKey, dayLens) {
+    var wk = weekStatus(payload, nowKey, dayLens), weekDone = 0, i, d;
+    for (i = 0; i < wk.length; i++) if (wk[i].state === "done") weekDone++;
+    var weeks = trainingDays(payload, 8, nowKey), days = Object.keys(DAYS || {}), heatCount = 0, j, w;
+    for (i = 0; i < weeks.length; i++) {
+      w = weeks[i];
+      for (j = 0; j < days.length; j++) if (w[days[j]]) heatCount++;
+    }
+    return {
+      workouts: sessionCount(payload),
+      sets: setsRecorded(payload),
+      weekDone: weekDone,
+      weekTotal: wk.length,
+      volume: totalVolume(payload),
+      byDay: volumeByDay(payload, DAYS),
+      weeks: weeks,
+      heatCount: heatCount,
+      heatTotal: weeks.length * days.length,
+      recent: recentVolume(payload, 12),
+      wow: weekOverWeek(payload, nowKey),
+      pr: personalRecords(payload, DAYS, metric)[0] || null,
+      movers: topMovers(payload, DAYS, metric)
+    };
+  }
+
+  /**
    * Estimate vs actual session length for one day, from the finished-session
    * log. The estimate comes from the program model (`Gym.dayMins(day)`) and is
    * passed in so this module stays free of program data — the same pattern as
@@ -448,6 +484,7 @@
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
     compactVol: compactVol, topMovers: topMovers,
-    trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift
+    trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift,
+    progressSnapshot: progressSnapshot
   };
 });
