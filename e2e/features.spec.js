@@ -18,7 +18,21 @@ test("Set Done persists across reload", async ({ page }) => {
   await expect(page.locator("#timerBar")).toHaveClass(/active/);
   await page.reload();
   await page.locator(".liftrow").first().click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 2 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
+});
+
+test("set log shows a row per set and records the values", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#setLog .setrow")).toHaveCount(3);
+  await page.locator("#loadUp").click();
+  const load = await page.locator("#loadVal").textContent();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await expect(page.locator("#setLog .setrow").nth(0)).toHaveClass(/done/);
+  await expect(page.locator("#setLog .setrow").nth(0)).toContainText(load);
+  await expect(page.locator("#setLog .setrow").nth(1)).toHaveClass(/now/);
+  await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
 });
 
 test("auto-progression suggests +step and Apply sets it", async ({ page }) => {
@@ -62,10 +76,10 @@ test("restart lift clears sets but keeps load", async ({ page }) => {
   await page.locator(".liftrow").first().click();
   await page.locator("#doneBtn").click();
   await page.locator("#skipRest").click(); // end rest, back to the lift
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 2 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
   const loadBefore = await page.locator("#loadVal").textContent();
   await page.locator("#resetLiftBtn").click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 1 of 3");
   await expect(page.locator("#loadVal")).toHaveText(loadBefore);
 });
 
@@ -84,7 +98,7 @@ test("reset day clears all lifts via the menu (two taps)", async ({ page }) => {
   await page.locator("#resetDay").click();
   await page.locator("#modalClose").click();
   await page.locator(".liftrow").first().click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 1 of 3");
 });
 
 test("clear all data wipes history", async ({ page }) => {
@@ -102,9 +116,9 @@ test("undo on the lift steps back one set (visible)", async ({ page }) => {
   await expect(page.locator("#undoSetBtn")).toBeDisabled();
   await page.locator("#doneBtn").click();
   await page.locator("#skipRest").click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 2 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
   await page.locator("#undoSetBtn").click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 1 of 3");
   await expect(page.locator("#undoSetBtn")).toBeDisabled();
 });
 
@@ -116,5 +130,5 @@ test("undo on the rest screen after the final set restores it", async ({ page })
   await page.locator("#doneBtn").click(); // completes all sets, resting
   await expect(page.locator("#undoBtn")).toBeVisible();
   await page.locator("#undoBtn").click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 3 of 3");
+  await expect(page.locator("#setCount")).toContainText("Set 3 of 3");
 });

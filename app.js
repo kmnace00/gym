@@ -154,6 +154,34 @@
     svg.innerHTML = '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
     wrap.hidden = false;
   }
+  function loadLabel(load, e) {
+    if (e.load === null) return load > 0 ? String(load) : "light";
+    if (e.load === 0) return load > 0 ? "BW+" + load : "BW";
+    return load > 0 ? String(load) : "—";
+  }
+  /* the set log: one row per prescribed set, completed sets checked, the next
+     set highlighted — rows flex to fill the vertical space (as in Hevy/Strong) */
+  function renderSetLog(e, s) {
+    var rows = Math.max(e.s, s.done);
+    var html = "";
+    for (var i = 0; i < rows; i++) {
+      var done = i < s.done;
+      var rec = (done && s.sets && s.sets[i]) ? s.sets[i] : { load: s.load, reps: s.reps, rir: s.rir };
+      var cls = "setrow" + (done ? " done" : (i === s.done ? " now" : ""));
+      var mark = done ? "✓" : (i === s.done ? "●" : "");
+      html += '<div class="' + cls + '">'
+        + '<span class="sn">' + (i + 1) + '</span>'
+        + '<span class="sr">' + loadLabel(rec.load, e) + " × " + rec.reps + '</span>'
+        + '<span class="srir">@' + rec.rir + ' RIR</span>'
+        + '<span class="smark" aria-hidden="true">' + mark + '</span>'
+        + '</div>';
+    }
+    document.getElementById("setLog").innerHTML = html;
+    var complete = s.done >= e.s;
+    document.getElementById("setCount").textContent = complete
+      ? "All " + e.s + " sets done"
+      : "Set " + (s.done + 1) + " of " + e.s;
+  }
   function renderLift() {
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
     var anyDone = false;
@@ -173,10 +201,7 @@
     document.getElementById("tempoLine").style.display = idx === 0 ? "" : "none";
 
     var complete = s.done >= e.s;
-    var dots = "";
-    for (var k = 0; k < e.s; k++) { dots += '<span class="sdot' + (k < s.done ? " done" : (k === s.done ? " now" : "")) + '"></span>'; }
-    dots += '<span class="setcount">' + (complete ? ("All " + e.s + " sets done") : ("Set " + (s.done + 1) + " of " + e.s)) + '</span>';
-    document.getElementById("setDots").innerHTML = dots;
+    renderSetLog(e, s);
 
     document.getElementById("loadVal").textContent = (e.load === null && s.load === 0) ? "—" : s.load;
     document.getElementById("repVal").textContent = s.reps;
@@ -397,6 +422,7 @@
     if (s.done <= 0) return;
     var wasComplete = s.done >= ex().s;
     s.done--;
+    if (s.sets && s.sets.length > s.done) s.sets.length = s.done;
     if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
     if (wasComplete && s.done < ex().s) {
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
@@ -502,7 +528,10 @@
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
     var wasComplete = s.done >= e.s;
-    s.done++; s.lastRir = s.rir;
+    s.sets = s.sets || [];
+    s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
+    s.done = s.sets.length;
+    s.lastRir = s.rir;
     if (s.reps >= e.top && s.rir >= e.rir) s.topHits++;
 
     hintText = ""; hintGood = false;

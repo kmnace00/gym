@@ -51,6 +51,14 @@ test("getLift injects defaults", () => {
   assert.equal(s.lastRir, null);
 });
 
+test("getLift keeps a sets array and backfills legacy done counts", () => {
+  const st = { "fri:0": { done: 2, load: 60, reps: 6, rir: 2 } }, e = P.DAYS.fri.ex[0];
+  const s = P.getLift(st, "fri", 0, e);
+  assert.ok(Array.isArray(s.sets));
+  assert.equal(s.sets.length, 2);
+  assert.equal(s.sets[0].load, 60);
+});
+
 test("getLift repairs a partial record", () => {
   const st = { "fri:0": { done: 2 } }, e = P.DAYS.fri.ex[0];
   const s = P.getLift(st, "fri", 0, e);

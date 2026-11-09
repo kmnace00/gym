@@ -71,7 +71,7 @@ test("lastEntry / series / popHistory", () => {
 
 test("resetLift clears sets but keeps load/reps/rir", () => {
   const p = S.emptyPayload();
-  p.state["fri:0"] = { done: 3, load: 62.5, reps: 7, rir: 1, topHits: 2, lastRir: 1 };
+  p.state["fri:0"] = { done: 3, load: 62.5, reps: 7, rir: 1, topHits: 2, lastRir: 1, sets: [{ load: 62.5, reps: 7, rir: 1 }] };
   S.resetLift(p, "fri", 0);
   const r = p.state["fri:0"];
   assert.equal(r.done, 0);
@@ -80,6 +80,7 @@ test("resetLift clears sets but keeps load/reps/rir", () => {
   assert.equal(r.load, 62.5);
   assert.equal(r.reps, 7);
   assert.equal(r.rir, 1);
+  assert.deepEqual(r.sets, []);
 });
 
 test("resetLift drops a same-day history snapshot", () => {

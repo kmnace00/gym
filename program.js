@@ -71,7 +71,7 @@
   /* lazy default-injection (was `st()`); mutates state like the original */
   function getLift(state, d, i, e) {
     var k = d + ":" + i, s = state[k];
-    if (!s) { s = state[k] = { done: 0, load: e.load || 0, reps: e.r, rir: e.rir, topHits: 0, lastRir: null }; }
+    if (!s) { s = state[k] = { done: 0, load: e.load || 0, reps: e.r, rir: e.rir, topHits: 0, lastRir: null, sets: [] }; }
     else {
       if (typeof s.done !== "number") s.done = 0;
       if (typeof s.load !== "number") s.load = e.load || 0;
@@ -80,6 +80,9 @@
       if (typeof s.topHits !== "number") s.topHits = 0;
       if (!("lastRir" in s)) s.lastRir = null;
     }
+    if (!Array.isArray(s.sets)) s.sets = [];
+    /* legacy records only stored a done count — backfill placeholder rows */
+    while (s.sets.length < s.done) s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
     return s;
   }
 

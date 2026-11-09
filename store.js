@@ -87,7 +87,7 @@
      A same-day snapshot (from a redo) is dropped so redoing replaces it.    */
   function resetLift(p, d, i) {
     var k = d + ":" + i, rec = p.state && p.state[k];
-    if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; }
+    if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = []; }
     var arr = p.liftHistory && p.liftHistory[k];
     if (arr && arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
   }
@@ -98,7 +98,7 @@
     if (p.state) {
       for (k in p.state) {
         if (p.state.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
-          p.state[k].done = 0; p.state[k].topHits = 0; p.state[k].lastRir = null;
+          p.state[k].done = 0; p.state[k].topHits = 0; p.state[k].lastRir = null; p.state[k].sets = [];
         }
       }
     }
