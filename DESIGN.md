@@ -194,10 +194,9 @@ volume/metric, corruption quarantine, and no-scroll.
 
 ## L9 design (2026-11-08, Muse) — Full rest-controller extraction [T2]
 
-Status: DESIGNED — not built. Build is a future batch item (proposed Batch 3),
-not queued until Khang approves this design + the batch. This design is the
-one T2 design for this Muse session; L6/L7/L8 designs follow in later sessions,
-in backlog order, and L7/L8 outcomes are proposals to Khang, not silent changes.
+Status: APPROVED by Khang Nov 9, 05:45 CT — building now (after the 5-phase
+pipeline). The build contract below pins the exact API, view model and effect
+list so the move is mechanical and reviewable. L6/L7/L8 remain proposals.
 
 ### Why now, why this seam
 
@@ -318,3 +317,54 @@ tap within the 2,500 ms arm window → `finishWorkout`; manual nav →
 - Rollback: the move is one commit; reverting it restores `app.js` rest
   orchestration exactly (the pure `machine.js` / `rest.js` layers are
   untouched by the move, so a revert does not touch them). 
+
+### L9 build contract (pinned Nov 9, after approval)
+
+`restctl.js` is dependency-free like the other pure modules: `createRestController(deps)`
+receives `Machine` and `Rest` as deps rather than requiring them, so it loads in the
+browser (`window.Gym.createRestController`) and in Node tests with the same code.
+
+```js
+createRestController(deps) → {
+  start(sec, label, lastSet, note, nextText) → out
+  tick(nowMs)      → out      // interval-driven; re-derives from Machine timestamps
+  finish()         → out      // active → GO (tick routes here at zero)
+  idle(label, msg) → out
+  pause()          → out
+  resume()         → out
+  extend15()       → out
+  skip(fromTimerBar) → out    // advance / two-tap finish / next set
+  finishReset()    → out      // the 2,600 ms arm window expired
+  cancelPendingAdvance() → out
+  view()           → view     // pure snapshot, no state change
+}
+out  = { state, view, effects }   // state is a read-only snapshot for tests
+view = { phase, secs, progress, label, msg, nextText, skipLabel,
+         showPrep, prepName, prepLoad, prepReps }
+effects = [] | ordered array of
+  {type:"beep"} · {type:"vibrate", ms:200} · {type:"notify"}
+  {type:"advanceTo", idx} · {type:"finishWorkout"}
+  {type:"commit"} · {type:"render"}
+  {type:"scheduleFinishReset", ms:2600}
+```
+
+deps: `Machine`, `Rest`, `now()`, `cur()`, `idx()`, `dayLen()`, `done()`, `sets()`,
+`exRest()`, `editSet()`, `firstOpen(from)`, `prep() → {name, load, reps}`.
+
+Rules (each one is today's app.js behaviour, preserved byte for byte):
+- `skipLabel` is `"End rest"` for active/paused, `Rest.advanceLabel(adv, lastLift)` at GO,
+  and `"Tap again to finish"` while armed. `nextText` at GO is `ctx.nextText.replace("Up next —", "Up now —")`.
+- `skip(true)` ignores a tap within 400 ms of `goAtMs` (the timer-surface shortcut);
+  `skip(false)` is the button itself and is never guarded.
+- Effect order at GO: `vibrate(200)`, `beep`, `notify`. At next-lift: `advanceTo`, `commit`, `render`.
+- `cancelPendingAdvance()` never emits effects and its callers do not re-render.
+- `extend15()` at GO restarts a 15 s rest with `ctx.label` (which stays `""`, as today).
+- Interval stays in `app.js`: the shell starts it when `view.phase === "active"` and
+  stops it otherwise; the controller never touches timers except the injected arm timer.
+- `ctx.label` is never written (today it is always `""`); keep that to avoid a string change.
+
+Files: new `restctl.js`; `app.js` (rest block only); `index.html` (script tag before
+`app.js`); `sw.js` (ASSETS + `CACHE` `gym-v20`); new `test/restctl.test.js`; one new
+e2e that jumps the clock with `page.clock` (simulated phone sleep) and asserts the
+remaining time is re-derived, not accumulated.
+
