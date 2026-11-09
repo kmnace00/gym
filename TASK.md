@@ -2,7 +2,7 @@
 
 ## WIP
 
-WIP: OpenCode editing stats.js, test/stats.test.js, docs since 2026-11-09 16:35 CT — B3-29 (Stats maps use Object.create(null)).
+WIP: OpenCode editing test/program.test.js, test/store.test.js since 2026-11-09 16:40 CT — B3-30 (Untested pure-store paths + program-id uniqueness).
 
 ## Completed — B3-28: Tooling-guard gaps (check script, check-ids, check-assets) [T1]
 - Built Nov 9 (OpenCode). `check` syntax-checks the two tool files; `check-ids.js` covers single-quoted refs and `data-day` vs `DAYS`; `check-assets.js` parses the manifest. Each guard verified against a broken fixture.
