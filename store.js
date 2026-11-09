@@ -170,6 +170,10 @@
     if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;
+    if (own(e, "bwKg")) {
+      e.bwKg = num(e.bwKg, 0);
+      if (!(e.bwKg > 0 && e.bwKg <= BODYWEIGHT_MAX)) delete e.bwKg;
+    }
     if (Object.prototype.hasOwnProperty.call(e, "exId")) e.exId = typeof e.exId === "string" ? e.exId : String(e.exId);
     sanitizeSetsField(e);
     return e;

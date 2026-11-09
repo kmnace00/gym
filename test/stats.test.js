@@ -278,3 +278,19 @@ test("topMovers forwards bodyweight options to the metric", () => {
   assert.deepEqual(S.topMovers(p, P.DAYS, (l, r) => l * (1 + r / 30)), []);
   assert.deepEqual(S.topMovers(p, P.DAYS, P.epley1rm), []);
 });
+
+test("bodyweight history is valued at the weight in force", () => {
+  const i = P.DAYS.fri.ex.findIndex((x) => x.bw), key = "fri:" + i;
+  const a = { date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 75 };
+  const b = { date: "2026-11-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 100 };
+  assert.equal(S.entryVolume(a, 100), 1350); // 75 kg banked, not today's 100
+  assert.equal(S.entryVolume(b, 100), 1800);
+  // legacy entries (no bwKg) keep the scalar passed in
+  assert.equal(S.entryVolume({ date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true }, 100), 1800);
+  const p = { bodyweight: 100, liftHistory: { [key]: [a, b] } };
+  assert.equal(S.totalVolume(p), 3150);
+  assert.equal(S.personalRecords(p, P.DAYS, P.progressMetric)[0].metric, 120); // 100 × 1.2
+  const mv = S.topMovers(p, P.DAYS, P.progressMetric);
+  assert.equal(mv.length, 1);
+  assert.equal(mv[0].pct, 33.3); // 90 -> 120
+});

@@ -23,6 +23,16 @@
   function metricFor(e, load, reps) {
     return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: payload && payload.bodyweight });
   }
+  /* bodyweight work is valued at the weight in force when that session was
+     banked, so editing today's weight never rewrites past PRs. */
+  function bwFor(entry) {
+    return entry && typeof entry.bwKg === "number" && isFinite(entry.bwKg) && entry.bwKg > 0
+      ? entry.bwKg
+      : (payload && payload.bodyweight);
+  }
+  function metricForEntry(e, entry, load, reps) {
+    return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: bwFor(entry) });
+  }
   function topSetOf(e, sets) {
     return Stats.topSet(sets, function (l, r) { return metricFor(e, l, r); });
   }
@@ -36,12 +46,14 @@
     for (var j = 0; j < s.sets.length; j++) {
       if (s.sets[j].reps >= e.top && s.sets[j].rir >= e.rir) hit = true;
     }
-    Gym.upsertHistory(payload, d, i, {
+    var entry = {
       date: Gym.sessionDate(payload), load: top.load, reps: top.reps, rir: top.rir,
       hitTop: hit, setsDone: s.sets.length,
       sets: s.sets.map(function (x) { return { load: x.load, reps: x.reps, rir: x.rir }; }),
       bw: !!e.bw, exId: e.id
-    });
+    };
+    if (e.bw && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
+    Gym.upsertHistory(payload, d, i, entry);
   }
 
   /* ── persistence: immediate by default, coalesced on the 70ms stepper path ──
@@ -886,8 +898,8 @@
     var prevBest = -Infinity, hi, hj, topEntry;
     for (hi = 0; hi < priorHist.length; hi++) {
       topEntry = topSetOf(e, Stats.entrySets(priorHist[hi]));
-      if (topEntry) prevBest = Math.max(prevBest, metricFor(e, topEntry.load || 0, topEntry.reps || 0));
-      else prevBest = Math.max(prevBest, metricFor(e, priorHist[hi].load || 0, priorHist[hi].reps || 0));
+      if (topEntry) prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], topEntry.load || 0, topEntry.reps || 0));
+      else prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], priorHist[hi].load || 0, priorHist[hi].reps || 0));
     }
 
     s.sets = s.sets || [];

@@ -105,7 +105,9 @@
    */
   function entryVolume(e, bwKg) {
     if (!e) return 0;
-    var bw = typeof bwKg === "number" && isFinite(bwKg) && bwKg > 0 ? bwKg : 75;
+    var bw = e && typeof e.bwKg === "number" && isFinite(e.bwKg) && e.bwKg > 0
+      ? e.bwKg
+      : (typeof bwKg === "number" && isFinite(bwKg) && bwKg > 0 ? bwKg : 75);
     var sets = entrySets(e), total = 0, i, load, eff;
     for (i = 0; i < sets.length; i++) {
       load = typeof sets[i].load === "number" && isFinite(sets[i].load) ? sets[i].load : 0;
@@ -353,7 +355,7 @@
         sets = entrySets(e);
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
-          opts = { bw: isBw || e.bw === true, bodyweight: bwKg };
+          opts = { bw: isBw || e.bw === true, bodyweight: (typeof e.bwKg === "number" && isFinite(e.bwKg) && e.bwKg > 0 ? e.bwKg : bwKg) };
           m = metric(set.load || 0, set.reps || 0, opts);
           if (m > bestM) { bestM = m; best = { load: set.load || 0, reps: set.reps || 0, date: e.date }; }
         }
@@ -385,11 +387,13 @@
       p = k.split(":"); d = p[0]; i = parseInt(p[1], 10);
       e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
       if (!e) continue;
-      var opts = { bw: !!e.bw, bodyweight: bwKg };
-      first = topSet(entrySets(arr[0]), metric, opts) || arr[0];
-      last = topSet(entrySets(arr[arr.length - 1]), metric, opts) || arr[arr.length - 1];
-      var fm = metric(first.load || 0, first.reps || 0, opts);
-      var lm = metric(last.load || 0, last.reps || 0, opts);
+      function optsFor(en) {
+        return { bw: !!e.bw, bodyweight: en && typeof en.bwKg === "number" && isFinite(en.bwKg) && en.bwKg > 0 ? en.bwKg : bwKg };
+      }
+      first = topSet(entrySets(arr[0]), metric, optsFor(arr[0])) || arr[0];
+      last = topSet(entrySets(arr[arr.length - 1]), metric, optsFor(arr[arr.length - 1])) || arr[arr.length - 1];
+      var fm = metric(first.load || 0, first.reps || 0, optsFor(arr[0]));
+      var lm = metric(last.load || 0, last.reps || 0, optsFor(arr[arr.length - 1]));
       if (!fm) continue;
       delta = lm - fm; pct = Math.round((delta / fm) * 1000) / 10;
       out.push({ name: e.n, delta: Math.round(delta * 10) / 10, pct: pct });
