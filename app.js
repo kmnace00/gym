@@ -960,7 +960,7 @@
 
     commit();
     restNextRaw = nextText;
-    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText));
+    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText, hintText));
 
     ensureAudio();
     if (navigator.vibrate) navigator.vibrate(10);

@@ -75,17 +75,19 @@
   }
 
   /**
-   * Rest-screen message: the partials cue on flagged lifts, else the stretch
-   * cue, both prefixed when this rest was lengthened for a 0–1 RIR set.
+   * Rest-screen message: the partials cue on flagged lifts, else a PR/top-reps
+   * hint when one just fired, else the stretch cue; prefixed when this rest
+   * was lengthened for a 0–1 RIR set.
    * @param {string} note
    * @param {number} sec
    * @param {number} baseRest
+   * @param {string} [hint]
    * @returns {string}
    */
-  function restMsg(note, sec, baseRest) {
+  function restMsg(note, sec, baseRest, hint) {
     var msg = note === "partials"
       ? "Add bottom-half partials to failure — then rest."
-      : "Stretch — set up the next set.";
+      : (hint || "Stretch — set up the next set.");
     return sec > baseRest ? "+30s for 0–1 RIR · " + msg : msg;
   }
 

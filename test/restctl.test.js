@@ -59,6 +59,14 @@ test("start captures the lift for a pending advance, and prep shows while restin
   assert.equal(out.view.prepReps, "8");
 });
 
+test("the rest message carries a PR hint and a new rest clears it", () => {
+  const s = mk();
+  const out = s.ctl.start(90, "Fri — set 1 done", false, "", "", "New PR — 60 lb × 6");
+  assert.equal(out.view.msg, "New PR — 60 lb × 6");
+  const next = s.ctl.start(90, "Fri — set 2 done", false, "", "");
+  assert.equal(next.view.msg, "Stretch — set up the next set.");
+});
+
 test("tick re-derives the remaining time from the timestamp", () => {
   const s = mk();
   s.ctl.start(90, "Fri — set 1 done", false, "", "");

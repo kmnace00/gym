@@ -50,7 +50,7 @@
     var ctx = {
       label: "", pending: false, pIdx: -1, pDay: "",
       note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, frozen: false,
-      startLabel: "", idleLabel: "", idleMsg: ""
+      startLabel: "", idleLabel: "", idleMsg: "", hint: ""
     };
 
     function lastLift() { return deps.idx() >= deps.dayLen() - 1; }
@@ -118,14 +118,15 @@
       return out([{ type: "vibrate", ms: 200 }, { type: "beep" }, { type: "notify" }]);
     }
 
-    function start(sec, label, lastSet, note, nextText) {
+    function start(sec, label, lastSet, note, nextText, hint) {
       rest = Machine.start(sec, deps.now());
       ctx.pending = !!lastSet;
       if (ctx.pending) { ctx.pIdx = deps.idx(); ctx.pDay = deps.cur(); }
       ctx.startLabel = label;
       ctx.note = note || ""; ctx.nextText = nextText || "";
+      ctx.hint = hint || "";
       ctx.finishUntil = 0; ctx.frozen = false;
-      ctx.msg = Rest.restMsg(note, sec, deps.exRest());
+      ctx.msg = Rest.restMsg(note, sec, deps.exRest(), ctx.hint);
       return out([{ type: "closeDetails" }, { type: "blurIfOutside" }]);
     }
 
@@ -163,7 +164,7 @@
 
     function extend15() {
       if (rest.phase === "idle") return out([]);
-      if (rest.phase === "go") return start(15, ctx.label, ctx.pending, ctx.note, ctx.nextText);
+      if (rest.phase === "go") return start(15, ctx.label, ctx.pending, ctx.note, ctx.nextText, ctx.hint);
       ctx.frozen = false;
       rest = Machine.extend(rest, 15);
       return out([]);

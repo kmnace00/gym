@@ -48,6 +48,25 @@ test("rest footer links sit on one even row", async ({ page }) => {
   expect(u.x).toBeGreaterThan(d.x);
 });
 
+test("a New PR hint survives on the rest screen", async ({ page }) => {
+  await seed(page, {
+    v: 4, cur: "fri", idx: 0, bodyweight: 165, sessionLog: [],
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, sets: [] } },
+    liftHistory: {
+      "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 }]
+    }
+  });
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await expect(page.locator("#restMsg")).toContainText("New PR");
+  await expect(page.locator("#restMsg")).not.toContainText("Stretch");
+
+  const fits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(fits, "the hint must not overflow the rest screen").toBe(true);
+});
+
 test("set log shows a row per set and records the values", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

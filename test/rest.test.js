@@ -43,6 +43,9 @@ test("restMsg picks the partials or stretch cue, prefixing only when lengthened"
   assert.equal(R.restMsg(undefined, 90, 120), stretch);       // shorter than base
   assert.equal(R.restMsg("", 150, 120), prefix + stretch);    // only when sec > base
   assert.equal(R.restMsg("partials", 121, 120), prefix + partials);
+  assert.equal(R.restMsg("", 120, 120, "New PR — 60 lb × 6"), "New PR — 60 lb × 6");
+  assert.equal(R.restMsg("", 150, 120, "New PR — 60 lb × 6"), prefix + "New PR — 60 lb × 6");
+  assert.equal(R.restMsg("partials", 120, 120, "New PR"), partials); // the in-rest cue wins
 });
 
 test("goLabel matches the three GO-screen states", () => {

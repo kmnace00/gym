@@ -2,24 +2,24 @@
 
 ## WIP
 
-WIP: OpenCode editing index.html, app.js, e2e/a11y.spec.js, sw.js since 2026-11-09 11:53 CT
+WIP: none claimed — checkpoint after B3-10.
 
-Status: ACTIVE — Batch 3, B3-09 (keyboard Import). B3-08 is done and pushed as
-`983e2a1`. Batch: `QUEUE.md` B3-09–B3-35, in order. When B3-09 is done, copy
-B3-10 from `QUEUE.md` into this file and start it. Base HEAD: `983e2a1`.
+Status: CHECKPOINT (OpenCode, Nov 9 11:57 CT) — Batch 3 items B3-01…B3-10 are
+built, gated and pushed; B3-11 is next. This session stopped for length per
+the loop rule ("finish the current item, checkpoint, stop"). A new session
+with the same loop prompt reads `QUEUE.md`, copies B3-11 into this file and
+starts it. Base HEAD: `TO_BE_FILLED` (B3-10 auto-sync).
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-09: "Import backup" is unreachable by keyboard [T1]
+## Completed — B3-10: The PR / top-reps hint is set on the final set — and wiped before the lifter ever sees it [T1]
 
-Why: the one data-recovery path a keyboard/switch user needs is mouse-only. "Restore (replace)" next to it is a real button; Import is a `<label>` wrapping a hidden file input, and labels aren't focusable, so Tab never reaches it and Enter can't activate it. Evidence: `index.html:175` (label + hidden input); the modal's Tab trap lists `label.modalbtn` among focusables but it can never receive focus. Compare `index.html:176` / `app.js:1230-1241`, where Restore is a button that clicks its hidden input.
+The PR/top-reps hint now surfaces on the rest screen: `restCtl.start` takes the hint, `restMsg` uses it in place of the stretch line (the in-rest partials cue still wins; the +30 s prefix still applies) and `extend15` at GO carries it. The rest message line shows "New PR — …" for the whole rest; advance still clears `hintText`. 2 unit tests + 1 e2e (seeded prior best 50×6 → log 60×6 → `#restMsg` contains "New PR", not "Stretch", no overflow). SW `gym-v46`. Verified 157/157 unit, typecheck clean, 73/73 e2e. Commit: auto-sync (pending hash at checkpoint).
 
-Do:
-- Make Import a button that clicks `#importFile`, exactly like `replaceBtn` does. Keep the same styling and the same change handler.
+## Completed — B3-09: "Import backup" is unreachable by keyboard [T1]
 
-Files: `index.html`, `app.js`.
-Verify: e2e keyboard test — open the menu, Tab to Import, press Enter, assert the file picker opens (or the input receives a click). Full gate green.
+The `<label>` wrapper is now a real button (`#importBtn`) that clicks the hidden `#importFile`, mirroring Restore (replace); styling and the change handler are unchanged and the modal focus trap now includes it. 1 new e2e (Tab from the menu lands on Import, Enter triggers the file input's click). SW `gym-v45`. Verified 156/156 unit, typecheck clean, 72/72 e2e. Commit: `1be4051` (auto-sync, on origin/main).
 
 ## Completed — B3-08: Import-merge silently adopts the incoming backup's day/lift cursor [T1]
 
