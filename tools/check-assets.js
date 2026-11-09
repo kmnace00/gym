@@ -33,8 +33,24 @@ for (const a of assets) {
   if (!fs.existsSync(path.join(root, a))) problems.push("sw.js ASSETS lists a missing file: " + a);
 }
 
+/* the manifest is the other place icons are named — a renamed icon there is
+   invisible to the page refs, so parse it too. */
+let manifestIcons = [];
+try {
+  const manifest = JSON.parse(read("manifest.webmanifest"));
+  manifestIcons = (manifest.icons || []).map((i) => (i && i.src ? i.src : "")).filter(Boolean);
+} catch (e) {
+  console.error("check-assets FAIL: manifest.webmanifest is not valid JSON — " + e.message);
+  process.exit(1);
+}
+for (const icon of manifestIcons) {
+  const file = icon.replace(/^\.\//, "");
+  if (!fs.existsSync(path.join(root, file))) problems.push("manifest.webmanifest references a missing icon: " + icon);
+  if (!assets.includes(file)) problems.push("manifest.webmanifest references " + icon + " but sw.js ASSETS omits it");
+}
+
 if (problems.length) {
   console.error("check-assets FAIL\n" + problems.join("\n"));
   process.exit(1);
 }
-console.log("check-assets OK — " + refs.length + " page refs, " + assets.length + " cached assets");
+console.log("check-assets OK — " + refs.length + " page refs, " + assets.length + " cached assets, " + manifestIcons.length + " manifest icons");

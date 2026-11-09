@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing package.json, tools/check-ids.js, tools/check-assets.js, docs since 2026-11-09 16:20 CT — B3-28 (tooling guard gaps).
+WIP: OpenCode editing stats.js, test/stats.test.js, docs since 2026-11-09 16:35 CT — B3-29 (Stats maps use Object.create(null)).
+
+## Completed — B3-28: Tooling-guard gaps (check script, check-ids, check-assets) [T1]
+- Built Nov 9 (OpenCode). `check` syntax-checks the two tool files; `check-ids.js` covers single-quoted refs and `data-day` vs `DAYS`; `check-assets.js` parses the manifest. Each guard verified against a broken fixture.
 
 ## Completed — B3-27: `typecheck` never checks `restctl.js` [T1]
 - Built Nov 9 (OpenCode). `restctl.js` added to `jsconfig.json` include; `check-ids.js` now fails if `index.html` loads a script the typecheck doesn't cover. 85/85 e2e, typecheck clean.

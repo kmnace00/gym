@@ -148,7 +148,7 @@
    * @returns {{date:string, volume:number}[]}
    */
   function sessionVolumes(payload) {
-    var lh = (payload && payload.liftHistory) || {}, byDate = {}, k, arr, i, e, d, bw = payload && payload.bodyweight;
+    var lh = (payload && payload.liftHistory) || {}, byDate = Object.create(null), k, arr, i, e, d, bw = payload && payload.bodyweight;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
       for (i = 0; i < arr.length; i++) {
@@ -286,7 +286,7 @@
      `state` is done (all program lifts logged), partial (some), missed (past,
      none), today (today, none yet) or upcoming. Adherence lives here.       */
   function weekLiftIndex(payload) {
-    var lh = (payload && payload.liftHistory) || {}, idx = {}, k, arr, i, e;
+    var lh = (payload && payload.liftHistory) || {}, idx = Object.create(null), k, arr, i, e;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
       for (i = 0; i < arr.length; i++) {
