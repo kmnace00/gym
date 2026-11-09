@@ -531,6 +531,28 @@ test("the richer record wins when both have the same done count", () => {
   assert.equal(merged.state["fri:0"].sets.length, 2);
 });
 
+test("merge stats count new sessions and same-date collisions (B3-19)", () => {
+  const base = { v: 4, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 }] } };
+  const inc = { v: 4, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", load: 55, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
+        { date: "2026-10-01", load: 52, reps: 6, rir: 1, hitTop: false, setsDone: 4 }
+      ]
+    } };
+  const stats = { added: 0, collisions: 0 };
+  const merged = S.mergePayload(base, inc, stats);
+  assert.equal(stats.added, 1);
+  assert.equal(stats.collisions, 1);
+  // the fuller collision winner is the one kept
+  assert.equal(merged.liftHistory["fri:0"].length, 2);
+  assert.equal(merged.liftHistory["fri:0"][0].setsDone, 4);
+  // no stats passed: the old call shape still works
+  const plain = S.mergePayload(base, inc);
+  assert.equal(plain.liftHistory["fri:0"].length, 2);
+});
+
 test("importRaw and importMerge reject a backup larger than 5 MB before parsing (B3-17)", () => {
   const huge = "x".repeat(5000001);
   assert.throws(() => S.importRaw(huge), /too large/i);

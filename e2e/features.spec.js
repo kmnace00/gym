@@ -103,7 +103,7 @@ test("import restores a backup", async ({ page }) => {
   });
   await page.locator("#menuBtn").click();
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
-  await expect(page.locator("#modalMsg")).toContainText("imported");
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
   await page.locator("#modalClose").click();
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal")).toHaveText("77");

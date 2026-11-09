@@ -58,9 +58,30 @@ test("a 6 MB backup is rejected before it is ever read (B3-17)", async ({ page }
   // the store still works: a normal import succeeds afterwards
   const backup = JSON.stringify({ v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [] });
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
-  await expect(page.locator("#modalMsg")).toContainText("merged");
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
 
   expect(errors).toEqual([]);
+});
+
+test("import reports how many sessions merged and how many collisions resolved (B3-19)", async ({ page }) => {
+  await seed(page, {
+    v: 4, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 }] }
+  });
+  const backup = JSON.stringify({
+    v: 4, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", load: 55, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
+        { date: "2026-11-08", load: 60, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
+        { date: "2026-10-01", load: 52, reps: 6, rir: 1, hitTop: false, setsDone: 4 }
+      ]
+    }
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("+2 new sessions");
+  await expect(page.locator("#modalMsg")).toContainText("1 same-date kept the fuller copy");
 });
 
 test("import merges history instead of replacing it", async ({ page }) => {
@@ -74,7 +95,7 @@ test("import merges history instead of replacing it", async ({ page }) => {
   });
   await page.locator("#menuBtn").click();
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
-  await expect(page.locator("#modalMsg")).toContainText("merged");
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
   await page.locator("#modalClose").click();
   await page.locator("#progressBtn").click();
   await expect(page.locator("#pSessions")).toHaveText("2"); // both sessions kept
@@ -89,7 +110,7 @@ test("import-merge keeps the device's day/lift cursor", async ({ page }) => {
   });
   await page.locator("#menuBtn").click();
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
-  await expect(page.locator("#modalMsg")).toContainText("merged");
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
   await page.locator("#modalClose").click();
 
   const saved = await page.evaluate(() => {

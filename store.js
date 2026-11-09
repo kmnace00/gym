@@ -554,7 +554,10 @@
   }
 
   /* ── merge-on-import: union history by date, keep the fuller state record ── */
-  function mergePayload(base, incoming) {
+  /** Merge a backup into the current payload (never discards current data).
+     Optional `stats` object ({added, collisions}) receives merge counts (B3-19). */
+  function mergePayload(base, incoming, stats) {
+    var inc = isObj(stats) ? stats : null;
     var out = JSON.parse(JSON.stringify(base || emptyPayload()));
     out.state = isObj(out.state) ? out.state : {};
     out.liftHistory = isObj(out.liftHistory) ? out.liftHistory : {};
@@ -577,14 +580,22 @@
       var seen = Object.create(null);
       var existing = own(out.liftHistory, k2) && Array.isArray(out.liftHistory[k2]) ? out.liftHistory[k2] : [];
       var added = own(incHist, k2) && Array.isArray(incHist[k2]) ? incHist[k2] : [];
-      existing.concat(added).forEach(function (e) {
+      function keep(e, fromIncoming) {
         if (!e || typeof e !== "object") return;
         var dk = e.date || (e.load + ":" + e.reps + ":" + e.rir + ":" + e.setsDone);
         if (unsafeKey(dk)) return;
         var prev = seen[dk];
         /* same-date collision: keep the fuller session, never blindly clobber */
-        if (!prev || (e.setsDone || (e.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = e;
-      });
+        if (!prev) {
+          seen[dk] = e;
+          if (fromIncoming && inc) inc.added = (inc.added || 0) + 1;
+        } else {
+          if ((e.setsDone || (e.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = e;
+          if (fromIncoming && inc) inc.collisions = (inc.collisions || 0) + 1;
+        }
+      }
+      existing.forEach(function (e) { keep(e, false); });
+      added.forEach(function (e) { keep(e, true); });
       var arr = Object.keys(seen).map(function (dk) { return seen[dk]; });
       arr.sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
       while (arr.length > HISTORY_MAX) arr.shift();
@@ -612,11 +623,11 @@
   }
 
   /** Merge a backup into the current payload (never discards current data). */
-  function importMerge(base, raw) {
+  function importMerge(base, raw, stats) {
     checkImportSize(raw);
     var m = migrate(raw);
     if (!m || m.__future) throw new Error("Not a valid Gym backup");
-    var merged = mergePayload(base, m);
+    var merged = mergePayload(base, m, stats);
     save(merged);
     return merged;
   }
