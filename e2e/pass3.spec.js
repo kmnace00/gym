@@ -75,6 +75,29 @@ test("Restore (replace) swaps the whole payload after a two-tap arm", async ({ p
   await expect(page.locator("#loadVal")).toHaveText("88");
 });
 
+test("restore uses the shared two-tap arm: arm, second tap opens the picker, timeout resets (B3-22)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await page.evaluate(() => {
+    window.__pickerClicks = 0;
+    document.getElementById("replaceFile").addEventListener("click", () => { window.__pickerClicks++; });
+  });
+
+  // first tap arms, second tap within the window opens the picker and resets the label
+  await page.locator("#replaceBtn").click();
+  await expect(page.locator("#replaceBtn")).toHaveText("Tap again to replace");
+  await page.locator("#replaceBtn").click();
+  expect(await page.evaluate(() => window.__pickerClicks)).toBe(1);
+  await expect(page.locator("#replaceBtn")).toHaveText("Restore (replace)");
+
+  // arming then waiting past the window restores the label without opening the picker
+  await page.locator("#replaceBtn").click();
+  await expect(page.locator("#replaceBtn")).toHaveText("Tap again to replace");
+  await page.waitForTimeout(2700);
+  await expect(page.locator("#replaceBtn")).toHaveText("Restore (replace)");
+  expect(await page.evaluate(() => window.__pickerClicks)).toBe(1);
+});
+
 test("undo last reset restores the pre-reset payload", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: RUNNING (OpenCode, Nov 9 14:40 CT) — Batch 3 B3-01…B3-20 are built and gated (docs/`sw.js` pending the next sync tick); **B3-21 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING (OpenCode, Nov 9 14:50 CT) — Batch 3 B3-01…B3-21 are built and gated (docs/`sw.js` pending the next sync tick); **B3-22 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
@@ -14,6 +14,7 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B3-18 load/reps clamped to 0–2000 / 1–999 in all four input paths — 159/159 unit, 78/78 e2e, SW `gym-v54`.
 - B3-19 import-merge reports "+N new sessions, M same-date kept the fuller copy" — 160/160 unit, 79/79 e2e, SW `gym-v55`.
 - B3-20 undo button names its snapshot ("Undo Reset day (Nov 9)") — 160/160 unit, 80/80 e2e, SW `gym-v56`.
+- B3-21 corrupt bar copy names the empty log and the download-first step — 160/160 unit, 80/80 e2e, SW `gym-v57`.
 
 Note: gym-sync batches whatever is dirty at its ~3-minute tick, so two items can share one commit; every item was gated before the next started.
 
@@ -149,8 +150,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: none — B3-20 done (160/160 unit, typecheck clean, 80/80 e2e, SW `gym-v56`).
-- Next in queue: B3-21–B3-35 in order (`QUEUE.md`). Do not invent items or skip B3-21.
+- Current item: none — B3-21 done (160/160 unit, typecheck clean, 80/80 e2e, SW `gym-v57`).
+- Next in queue: B3-22–B3-35 in order (`QUEUE.md`). Do not invent items or skip B3-22.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified

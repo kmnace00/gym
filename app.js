@@ -1287,21 +1287,10 @@
       navigator.clipboard.writeText(text).then(function () { setMsg("Summary copied ✓"); }, function () { setMsg("Share not available"); });
     } else { setMsg("Share not available"); }
   };
-  /* Restore (replace) is destructive: arm it with a second tap before the picker. */
-  var replaceArmedUntil = 0, replaceBtn = document.getElementById("replaceBtn"), replaceFile = document.getElementById("replaceFile");
-  replaceBtn.onclick = function () {
-    if (Date.now() >= replaceArmedUntil) {
-      replaceArmedUntil = Date.now() + 2500;
-      replaceBtn.textContent = "Tap again to replace";
-      setTimeout(function () {
-        if (Date.now() >= replaceArmedUntil) replaceBtn.textContent = "Restore (replace)";
-      }, 2600);
-      return;
-    }
-    replaceArmedUntil = 0;
-    replaceBtn.textContent = "Restore (replace)";
-    replaceFile.click();
-  };
+  /* Restore (replace) is destructive: arm it with the same two-tap guard as
+     Reset day and Clear (B3-22); the second tap opens the picker. */
+  var replaceBtn = document.getElementById("replaceBtn"), replaceFile = document.getElementById("replaceFile");
+  replaceBtn.onclick = function () { twoTap(this, "Tap again to replace", function () { replaceFile.click(); }); };
   /* Import is a plain button so the keyboard can reach the one recovery path
      a switch/keyboard user needs; it clicks the hidden file input. */
   document.getElementById("importBtn").onclick = function () { document.getElementById("importFile").click(); };

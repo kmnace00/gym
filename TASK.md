@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:42 CT — B3-21 (corrupt-payload bar copy).
+WIP: OpenCode editing app.js, e2e/pass3.spec.js, sw.js, docs since 2026-11-09 14:52 CT — B3-22 (restore two-tap via `twoTap()`).
+
+## Completed — B3-21: The corrupt-payload bar understates what happened [T1]
+- Built Nov 9 (OpenCode). Bar copy now names the empty log and the download-first step; download action unchanged. SW `gym-v57`. 160/160 unit, 80/80 e2e.
 
 ## Completed — B3-20: "Undo last reset / restore" never says what it will undo [T1]
 - Built Nov 9 (OpenCode). `updateFoot` renders the snapshot's label + date into the button ("Undo Reset day (Nov 9)"), generic text when there is no snapshot. SW `gym-v56`. 160/160 unit, 80/80 e2e.
