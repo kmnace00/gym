@@ -58,6 +58,39 @@ test("import merges history instead of replacing it", async ({ page }) => {
   await expect(page.locator("#pSessions")).toHaveText("2"); // both sessions kept
 });
 
+test("a payload with absurd counts renders bounded sets, not a hang", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await seed(page, {
+    v: 3, cur: "fri", idx: 0,
+    state: {
+      "fri:0": {
+        done: 1e9, topHits: 1e9, load: 50, reps: 6, rir: 2,
+        sets: new Array(4000).fill({ load: 50, reps: 6, rir: 2 })
+      }
+    },
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, setsDone: 1e9 }] },
+    sessionLog: [{ id: "ses_x", date: "2026-11-01", day: "fri", status: "complete",
+      accSec: 1e9, durationSec: 1e9, lifts: { "fri:0": { done: 1e9, sets: [] } } }],
+    bodyweight: 1e9
+  });
+
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#setCount")).toContainText("All 3 sets done");
+  const rows = await page.locator("#setLog .setrow").count();
+  expect(rows, "the set log is bounded by DONE_MAX, not the imported count").toBeLessThanOrEqual(12);
+  const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(ok, "a hostile payload must not break the no-scroll invariant").toBe(true);
+
+  await page.locator("#progressBtn").click();
+  const stats = await page.evaluate(() => Array.from(document.querySelectorAll(".pv")).map((e) => e.textContent));
+  expect(stats.some((v) => /Infinity|NaN/.test(v)), "no Infinity/NaN in the progress stats").toBe(false);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
+
 test("trend sparkline is opt-in via the Trend pill", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,
