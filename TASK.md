@@ -2,9 +2,9 @@
 
 ## WIP
 
-Status: ACTIVE — continuous loop. Six T1s shipped since L9 (weekStatus, set-edit clobber + undo sibling, derived counts/This-week, rest Finish finalizes the session, extra-set cap + 3 e2e gaps). Next: awaiting planning pass 4 from Pro.
+Status: ACTIVE — continuous loop. Ten T1/T2 fixes since L9 (gate 149/149 unit, 56/56 e2e, SW `gym-v27`, CI green). Next: interaction-loop polish from Pro pass 5 — day pills/rest steppers/undo visibility (a11y), then Plan-today load preservation.
 
-WIP: OpenCode editing app.js, stats.js, store.js, test/stats.test.js, e2e/features.spec.js since 2026-11-09 07:30 CT
+WIP: OpenCode editing style.css, app.js, e2e/a11y.spec.js since 2026-11-09 07:50 CT
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
