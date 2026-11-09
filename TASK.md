@@ -2,25 +2,29 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/pass4.spec.js, sw.js since 2026-11-09 11:45 CT
+WIP: OpenCode editing app.js, e2e/pass3.spec.js, sw.js since 2026-11-09 11:48 CT
 
-Status: ACTIVE — Batch 3, B3-06 (stale history after undoing an extra set).
-B3-05 is done and pushed as `fa383cf`. Batch: `QUEUE.md` B3-06–B3-35, in order.
-When B3-06 is done, copy B3-07 from `QUEUE.md` into this file and start it.
-Base HEAD: `fa383cf`.
+Status: ACTIVE — Batch 3, B3-07 (restart-lift snapshot). B3-06 is done and
+pushed as `f03157c`. Batch: `QUEUE.md` B3-07–B3-35, in order. When B3-07 is
+done, copy B3-08 from `QUEUE.md` into this file and start it. Base HEAD:
+`f03157c`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-06: Undo of an extra set leaves a stale history entry [T1]
+## Active task — B3-07: Restart-lift takes no snapshot [T1]
 
-Why: `undoSet` pops today's history entry only when the lift drops *below* its scheduled sets. Undoing an extra set (4→3 on a 3-set lift) truncates the in-memory set array but leaves the banked entry showing 4 sets — so Prev, tonnage, PRs and CSV overstate by one set until the next bank.
+Why: every other destructive path snapshots first (reset day, clear all, restore, merge), but `doRestartLift` doesn't. `resetLift` pops today's history entry for that lift. Worse, the "Undo last reset / restore" button stays visible from an *older* snapshot, so after a lift restart a user tapping it expecting the lift back gets a snapshot that may predate hours of work, with no staleness warning.
 
 Do:
-- In `app.js` `undoSet`, when the lift is still complete after the undo, call `bankLift(cur, idx)` to re-bank the current set array (same function the set-done path uses at `app.js:785`).
+- In `app.js` `doRestartLift`, snapshot first with label `"pre-restart-lift"` (same `Gym.snapshot` shape the other destructive paths use), so "Undo last reset / restore" restores the pre-restart state.
 
 Files: `app.js`.
-Verify: e2e — complete a lift, add an extra set, undo once, read `localStorage` history entry → 3 sets, not 4. Full gate green.
+Verify: e2e — complete a lift, restart it, tap "Undo last reset / restore" → the lift's history entry is back. Full gate green.
+
+## Completed — B3-06: Undo of an extra set leaves a stale history entry [T1]
+
+`undoSet` now calls `bankLift(cur, idx)` when the lift is still complete after the undo, so undoing 4→3 on a 3-set lift re-banks 3 sets instead of leaving the banked entry at 4 (Prev/tonnage/PRs/CSV are honest); the below-scheduled pop path is unchanged. Extended the existing extra-set e2e. SW `gym-v42`. Verified 155/155 unit, typecheck clean, 69/69 e2e. Commit: `f03157c` (auto-sync, on origin/main).
 
 ## Completed — B3-05: `finalizeSession` logs phantom empty sessions [T1]
 

@@ -119,6 +119,52 @@ test("undo last reset restores the pre-reset payload", async ({ page }) => {
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
 
+test("restarting a lift snapshots first, so the restore button brings it back", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const plan = await page.evaluate((d) => ({
+    s: Gym.DAYS[d].ex[0].s,
+    id: Gym.DAYS[d].ex[0].id
+  }), day);
+
+  await page.evaluate(({ day, date, s, id }) => {
+    const sets = Array.from({ length: s }, () => ({ load: 60, reps: 6, rir: 2 }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 165,
+      state: { [day + ":0"]: { done: s, load: 60, reps: 6, rir: 2, sets } },
+      liftHistory: {
+        [day + ":0"]: [{ date, load: 60, reps: 6, rir: 2, hitTop: true, setsDone: s, sets, exId: id }]
+      },
+      sessionLog: [],
+      active: { id: "ses_restart", date, day, startedAt: Date.now() - 1800000, endedAt: null, accSec: 1800, runningSince: null, status: "active" }
+    }));
+  }, { day, date, s: plan.s, id: plan.id });
+  await page.reload();
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#resetLiftBtn").click();
+  await expect(page.locator("#resetLiftBtn")).toHaveText("Tap again to restart");
+  await page.locator("#resetLiftBtn").click();
+
+  const cleared = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { done: p.state[d + ":0"].done, entries: (p.liftHistory[d + ":0"] || []).length };
+  }, day);
+  expect(cleared).toEqual({ done: 0, entries: 0 });
+
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot")).toBeVisible();
+  await page.locator("#restoreSnapshot").click();
+  await expect(page.locator("#modalMsg")).toContainText("Snapshot restored");
+
+  const back = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    const arr = p.liftHistory[d + ":0"] || [];
+    return { done: p.state[d + ":0"].done, sets: arr.length ? arr[arr.length - 1].sets.length : 0 };
+  }, day);
+  expect(back).toEqual({ done: plan.s, sets: plan.s });
+});
+
 test("a failed snapshot write is reported before a reset", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

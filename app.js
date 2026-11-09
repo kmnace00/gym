@@ -992,6 +992,7 @@
 
   /* restart this lift: clear its sets, keep the working weight (two taps) */
   function doRestartLift() {
+    Gym.snapshot(payload, "pre-restart-lift");
     Gym.resetLift(payload, cur, idx);
     editSet = -1; editBackup = null;
     hintText = ""; hintGood = false;
