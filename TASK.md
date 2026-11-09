@@ -4,7 +4,7 @@
 
 Status: ACTIVE — continuous loop, L9 done. Taking T1 items from BACKLOG/QUEUE while Batch 3's T2s wait on research/Khang. Next: `weekStatus` coupling.
 
-WIP: OpenCode editing stats.js, app.js, test/stats.test.js since 2026-11-09 06:15 CT
+WIP: OpenCode editing app.js, e2e/progress.spec.js since 2026-11-09 06:32 CT
 
 ## Completed — L9: Full rest-controller extraction [T2, approved]
 
