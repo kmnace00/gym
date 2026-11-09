@@ -1020,8 +1020,10 @@
     if (gap === 0) gap = 7;
     return { day: day, gap: gap };
   }
+  var sumFocus = null;
   function showSummary(entry) {
     if (!summary) return;
+    sumFocus = document.activeElement;
     var list = DAYS[cur].ex, sets = 0, i;
     for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, list[i].s);
     var vol = Math.round((Stats.volumeByDay(payload, DAYS) || {})[cur] || 0);
@@ -1053,16 +1055,33 @@
     var first = firstOpenLift(cur, payload.state, 0);
     if (first >= 0) openLift(first);
   };
-  document.getElementById("sumDone").onclick = function () {
+  /* the summary is a modal dialog like the menu: put focus back where it was
+     when it closes, so a keyboard user does not land in the page body. */
+  function closeSummary() {
     summary.hidden = true;
+    var back = sumFocus;
+    sumFocus = null;
+    if (back && document.contains(back) && back.getClientRects().length && typeof back.focus === "function") back.focus();
+    else if (menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
+  }
+  document.getElementById("sumDone").onclick = function () {
+    closeSummary();
     render();
   };
   document.getElementById("sumClose").onclick = function () {
-    summary.hidden = true;
+    closeSummary();
     render();
   };
-  summary.addEventListener("click", function (ev) { if (ev.target === summary) summary.hidden = true; });
-  summary.addEventListener("keydown", function (ev) { if (ev.key === "Escape") summary.hidden = true; });
+  summary.addEventListener("click", function (ev) { if (ev.target === summary) closeSummary(); });
+  summary.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") { closeSummary(); return; }
+    if (ev.key !== "Tab") return;
+    var items = summary.querySelectorAll("button:not([hidden]), input:not([hidden]), [href]");
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  });
 
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the

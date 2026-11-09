@@ -255,3 +255,39 @@ test("day pills and rest steppers meet the 44px target and Plan today is distinc
   await noOverflow(page);
   expect(errors, "no console errors").toEqual([]);
 });
+
+test("the summary traps focus and returns it on close", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => {
+      state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 3, cur: day, idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_a11y", date: date, day: day, startedAt: Date.now() - 1800000, endedAt: null, accSec: 1800, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator("#finishBtn").click();
+  await expect(page.locator("#summary")).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumDone");
+
+  // Tab wraps inside the dialog instead of escaping to the page behind it
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumClose");
+  await page.keyboard.press("Shift+Tab");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumDone");
+
+  // Escape closes and focus lands somewhere usable (the opener is hidden now)
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#summary")).toBeHidden();
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("menuBtn");
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
