@@ -84,6 +84,7 @@ test("a payload with absurd counts renders bounded sets, not a hang", async ({ p
   const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
   expect(ok, "a hostile payload must not break the no-scroll invariant").toBe(true);
 
+  await page.locator("#backBtn").click();
   await page.locator("#progressBtn").click();
   const stats = await page.evaluate(() => Array.from(document.querySelectorAll(".pv")).map((e) => e.textContent));
   expect(stats.some((v) => /Infinity|NaN/.test(v)), "no Infinity/NaN in the progress stats").toBe(false);
