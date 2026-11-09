@@ -1042,8 +1042,10 @@
     var list = DAYS[cur].ex, sets = 0, i;
     for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, list[i].s);
     var vol = Math.round((Stats.volumeByDay(payload, DAYS) || {})[cur] || 0);
-    var today = Gym.dateKey();
-    var prs = Stats.personalRecords(payload, DAYS, progressMetric).filter(function (p) { return p.date === today; }).length;
+    /* the session's own date, not the wall clock: a workout that started
+       before midnight banks its PRs on the day it began (B3-11).          */
+    var sessionDay = Gym.sessionDate(payload);
+    var prs = Stats.personalRecords(payload, DAYS, progressMetric).filter(function (p) { return p.date === sessionDay; }).length;
     var dur = entry && typeof entry.durationSec === "number" ? entry.durationSec : Gym.sessionElapsedSec(payload);
     document.getElementById("sumTitle").textContent = (DAY_LABEL[cur] || "") + " workout complete";
     document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";

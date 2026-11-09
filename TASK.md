@@ -2,7 +2,11 @@
 
 ## WIP
 
-WIP: none claimed — checkpoint after B3-10.
+WIP: OpenCode editing app.js, e2e/journeys.spec.js, sw.js since 2026-11-09 ~13:30 CT — B3-11 (Summary PR count uses the wall-clock date, not the session date).
+
+## Active — B3-11: Summary PR count uses the wall-clock date, not the session date [T1]
+
+Do: in `app.js` `showSummary`, use `Gym.sessionDate(payload)` for the PR filter instead of `Gym.dateKey()`. Extend the midnight journey in `e2e/journeys.spec.js` to finish after midnight and assert `#sumPrs` counts the PRs. Full gate green.
 
 Status: CHECKPOINT (OpenCode, Nov 9 11:57 CT) — Batch 3 items B3-01…B3-10 are
 built, gated and pushed; B3-11 is next. This session stopped for length per
