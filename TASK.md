@@ -4,6 +4,9 @@
 
 WIP: OpenCode editing app.js, store.js, test/store.test.js, BUILD_LOG.md, LOOP_STATE.md, TASK.md since 2026-11-09 14:02 CT — B3-17 (import file-size guard).
 
+## Completed — B3-17: Import has no file-size guard [T1]
+- Built Nov 9 (OpenCode). `app.js` rejects files > 5 MB before reading (both inputs); `store.js` `importRaw`/`importMerge` throw on strings over 5,000,000 chars. SW `gym-v53`. 159/159 unit, 77/77 e2e.
+
 ## Completed — B3-16: The rest screen hides the session elapsed time [T1]
 - Built Nov 9 (OpenCode). `restctl.js` `view()` carries `elapsedSec` (optional `elapsed` getter, null when absent); `app.js` wires `Gym.sessionElapsedSec(payload)` and paints `#restElapsed` ("Workout 42:03") during rest, hidden when idle. SW `gym-v52`. 158/158 unit, 76/76 e2e.
 
