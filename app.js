@@ -753,6 +753,7 @@
       sessBtn.innerHTML = "▶ <span class='startlbl'>Start</span><span id='elapsed'>" + t + "</span>";
     }
     sessBtn.classList.toggle("has-time", sessionSecs() > 0);
+    sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : "Start workout timer");
   }
   function startSessionTimer() {
     if (sInt) return;
@@ -1099,6 +1100,7 @@
     render();
   };
   summary.addEventListener("click", function (ev) { if (ev.target === summary) summary.hidden = true; });
+  summary.addEventListener("keydown", function (ev) { if (ev.key === "Escape") summary.hidden = true; });
 
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
@@ -1158,6 +1160,7 @@
     lastFocus = null;
   }
   modal.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") { closeModal(); return; }
     if (ev.key !== "Tab") return;
     var items = modal.querySelectorAll("button, label.modalbtn, input:not([hidden])");
     if (!items.length) return;

@@ -130,3 +130,36 @@ test("keyboard rest order is +15 / Pause / End rest / Show workout / Undo / prep
   });
   expect(hiddenNotReachable).toBe(true);
 });
+
+test("day tabs announce which day is active", async ({ page }) => {
+  await page.goto(url);
+  const pressed = () => page.evaluate(() => Array.from(document.querySelectorAll(".day")).map((b) => b.getAttribute("aria-pressed")));
+  expect(await pressed()).toEqual(["true", "false", "false"]);
+  await page.locator('.day[data-day="sat"]').click();
+  expect(await pressed()).toEqual(["false", "true", "false"]);
+});
+
+test("keyboard focus is visible on role=button rows and on buttons", async ({ page }) => {
+  await page.goto(url);
+  const outlineShown = (sel) => page.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) return false;
+    el.focus();
+    const st = getComputedStyle(el);
+    return st.outlineStyle !== "none" && parseFloat(st.outlineWidth) > 0;
+  }, sel);
+  expect(await outlineShown(".liftrow")).toBe(true);
+  await page.locator(".liftrow").first().click();
+  expect(await outlineShown("#setLog .setrow")).toBe(true);
+  expect(await outlineShown("#loadUp")).toBe(true);
+  expect(await outlineShown("#doneBtn")).toBe(true);
+});
+
+test("Escape closes the menu, and the menu close control is 44px", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modal")).toBeVisible();
+  await boxAtLeast(page.locator("#modalClose"), 44, 44);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#modal")).toBeHidden();
+});

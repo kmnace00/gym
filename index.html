@@ -29,7 +29,7 @@
     <button class="pill" id="sessBtn" type="button" aria-label="Start or pause session timer">▶ <span class="startlbl">Start</span><span id="elapsed">0:00</span></button>
   </header>
 
-  <div class="savebar" id="saveBar" hidden>
+  <div class="savebar" id="saveBar" role="status" aria-live="polite" hidden>
     <span class="bbtext" id="saveBarText"></span>
     <button class="bbact" id="saveBarAction" type="button">Download copy</button>
   </div>
@@ -68,7 +68,7 @@
   </div>
 
   <section class="view" id="dayView" aria-label="Today's lifts">
-    <div class="backupbar" id="backupBar" hidden>
+    <div class="backupbar" id="backupBar" role="status" aria-live="polite" hidden>
       <span class="bbtext" id="backupBarText"></span>
       <button class="bbact" id="backupBarSave" type="button">Backup</button>
       <button class="bbdismiss" id="backupBarDismiss" type="button" aria-label="Dismiss backup reminder">✕</button>
@@ -130,7 +130,7 @@
       </div>
     </div>
 
-    <div class="hint" id="hint"></div>
+    <div class="hint" id="hint" aria-live="polite"></div>
     <button class="donebtn" id="doneBtn" type="button">Set Done</button>
   </section>
 
@@ -182,7 +182,7 @@
     <button class="modalbtn" id="restoreSnapshot" type="button" hidden>Undo last reset / restore</button>
     <button class="modalbtn" id="resetDay" type="button">Reset day</button>
     <button class="modalbtn modalbtn-danger" id="clearAll" type="button">Clear all data</button>
-    <div class="modalmsg" id="modalMsg"></div>
+    <div class="modalmsg" id="modalMsg" role="status" aria-live="polite"></div>
     <div class="modalfoot" id="modalFoot"></div>
   </div>
 </div>
