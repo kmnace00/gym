@@ -7,7 +7,6 @@
       planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
       sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym, Rest = Gym;
-
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
   var RIR_KEY = "gym-rir-seen";
 
@@ -18,15 +17,63 @@
   function ex() { return DAYS[cur].ex[idx]; }
   function curSt() { return st(cur, idx); }
 
+  /* bodyweight-aware metric: total system weight, so adding a plate to a dip
+     always moves the number up. */
+  function metricFor(e, load, reps) {
+    return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: payload && payload.bodyweight });
+  }
+  function topSetOf(e, sets) {
+    var best = null, bestM = -Infinity, i, m;
+    for (i = 0; i < (sets || []).length; i++) {
+      m = metricFor(e, sets[i].load || 0, sets[i].reps || 0);
+      if (m > bestM) { bestM = m; best = sets[i]; }
+    }
+    return best;
+  }
+  /* Bank the *whole* set array for a lift: this is the single source of truth
+     for tonnage, PRs, CSV and the progression nudge (extra sets included). */
+  function bankLift(d, i) {
+    var e = DAYS[d].ex[i], s = st(d, i);
+    if (!s.sets || !s.sets.length || s.done < e.s) return;
+    var top = topSetOf(e, s.sets) || s.sets[s.sets.length - 1];
+    var hit = false;
+    for (var j = 0; j < s.sets.length; j++) {
+      if (s.sets[j].reps >= e.top && s.sets[j].rir >= e.rir) hit = true;
+    }
+    Gym.upsertHistory(payload, d, i, {
+      date: Gym.dateKey(), load: top.load, reps: top.reps, rir: top.rir,
+      hitTop: hit, setsDone: s.sets.length,
+      sets: s.sets.map(function (x) { return { load: x.load, reps: x.reps, rir: x.rir }; }),
+      bw: !!e.bw, exId: e.id
+    });
+  }
+
   /* ── persistence: immediate by default, coalesced on the 70ms stepper path ──
      The whole payload is small, but writing it ~14×/s during a press-and-hold
      is waste. Steppers schedule a trailing save; everything else saves now.   */
-  var saveTimer = null, saveDirty = false;
+  var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null;
+  function syncSaveBar() {
+    if (!saveBar) return;
+    if (dataWarn === "corrupt") {
+      saveBar.hidden = false;
+      saveBarText.textContent = "Couldn't read saved data — original copy kept";
+      saveBarAction.hidden = false;
+      saveBarAction.textContent = "Download copy";
+    } else if (saveFailed || dataWarn === "save") {
+      saveBar.hidden = false;
+      saveBarText.textContent = "Couldn't save — storage may be full";
+      saveBarAction.hidden = false;
+      saveBarAction.textContent = "Export";
+    } else {
+      saveBar.hidden = true;
+    }
+  }
   function persistNow() {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     payload.cur = cur; payload.idx = idx;
-    Gym.save(payload);
+    saveFailed = !Gym.save(payload);
     saveDirty = false;
+    syncSaveBar();
   }
   /* flush only when there is something to lose — a clean page must never
      overwrite data that changed outside its in-memory copy (e.g. a restore). */
@@ -35,7 +82,10 @@
     saveDirty = true;
     payload.cur = cur; payload.idx = idx;
     if (saveTimer) return;
-    saveTimer = setTimeout(function () { saveTimer = null; payload.cur = cur; payload.idx = idx; Gym.save(payload); saveDirty = false; }, 250);
+    saveTimer = setTimeout(function () {
+      saveTimer = null; payload.cur = cur; payload.idx = idx;
+      saveFailed = !Gym.save(payload); saveDirty = false; syncSaveBar();
+    }, 250);
   }
   function commit() { saveDirty = true; persistNow(); }
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushSave(); });
@@ -65,6 +115,12 @@
   var backupBar = document.getElementById("backupBar");
   var backupBarText = document.getElementById("backupBarText");
   var backupDismissed = false;
+  var saveBar = document.getElementById("saveBar");
+  var saveBarText = document.getElementById("saveBarText");
+  var saveBarAction = document.getElementById("saveBarAction");
+  var weekStrip = document.getElementById("weekStrip");
+  var summary = document.getElementById("summary");
+  var editSet = -1, editBackup = null;
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
@@ -113,14 +169,25 @@
     rPrevBtn.disabled = first;
     rNextBtn.disabled = last;
   }
+  function renderWeekStrip() {
+    if (!weekStrip) return;
+    var status = Stats.weekStatus(payload, Gym.dateKey());
+    weekStrip.innerHTML = status.map(function (d) {
+      var lbl = DAY_LABEL[d.day] || d.day;
+      var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
+      return '<span class="wk ' + d.state + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
+        + '<b>' + esc(lbl) + '</b><i>' + mark + '</i></span>';
+    }).join("");
+  }
   function renderDay() {
     var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i, hasHist = false;
     for (i = 0; i < list.length; i++) {
       totalDone += Math.min(st(cur, i).done, list[i].s); totalSets += list[i].s;
       if (!hasHist && Gym.series(payload, cur, i).length) hasHist = true;
     }
+    var complete = firstOpenLift(cur, payload.state, 0) === -1;
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
-    var summary = (totalSets > 0 && totalDone >= totalSets)
+    var summary = complete
       ? "Workout complete — nice work"
       : "8 lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
     if (!Gym.actualDay()) {
@@ -129,7 +196,22 @@
     }
     if (planMsg) summary += " · " + planMsg;
     document.getElementById("daySummary").textContent = summary;
-    document.getElementById("planBtn").hidden = !hasHist;
+    document.getElementById("planBtn").hidden = !hasHist || complete;
+    renderWeekStrip();
+
+    var firstOpen = firstOpenLift(cur, payload.state, 0);
+    var contBtn = document.getElementById("continueBtn");
+    if (contBtn) {
+      contBtn.hidden = complete || firstOpen < 0 || totalDone === 0;
+      contBtn.textContent = "Continue · Lift " + (firstOpen + 1);
+    }
+    var finBtn = document.getElementById("finishBtn");
+    if (finBtn) {
+      finBtn.hidden = !complete || (payload.active && payload.active.status === "complete");
+      finBtn.textContent = "Finish workout";
+    }
+    var bwNote = document.getElementById("bwNote");
+    if (bwNote) bwNote.textContent = payload.bodyweight ? "BW " + payload.bodyweight + " kg" : "";
 
     var rows = "";
     list.forEach(function (e, i) {
@@ -222,7 +304,11 @@
     var has = entries.length >= 2;
     if (toggle) toggle.hidden = !has;
     if (!has) { wrap.hidden = true; return; }
-    var vals = entries.map(function (h) { return progressMetric(h.load, h.reps); });
+    var vals = entries.map(function (h) {
+      var top = topSetOf(ex(), Stats.entrySets(h));
+      if (!top) return metricFor(ex(), h.load || 0, h.reps || 0);
+      return metricFor(ex(), top.load || 0, top.reps || 0);
+    });
     var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), span = (max - min) || 1;
     var W = 120, H = 28, pad = 2, n = vals.length, d = "";
     for (var i = 0; i < n; i++) {
@@ -246,9 +332,10 @@
     for (var i = 0; i < rows; i++) {
       var done = i < s.done;
       var rec = (done && s.sets && s.sets[i]) ? s.sets[i] : { load: s.load, reps: s.reps, rir: s.rir };
-      var cls = "setrow" + (done ? " done" : (i === s.done ? " now" : ""));
+      var cls = "setrow" + (done ? " done" : (i === s.done ? " now" : ""))
+        + (i === editSet ? " editing" : "");
       var mark = done ? "✓" : (i === s.done ? "●" : "");
-      html += '<div class="' + cls + '">'
+      html += '<div class="' + cls + '"' + (done ? ' data-set="' + i + '" role="button" tabindex="0"' : "") + '>'
         + '<span class="sn">' + (i + 1) + '</span>'
         + '<span class="sr">' + loadLabel(rec.load, e) + " × " + rec.reps + '</span>'
         + '<span class="srir">@' + rec.rir + ' RIR</span>'
@@ -257,9 +344,9 @@
     }
     document.getElementById("setLog").innerHTML = html;
     var complete = s.done >= e.s;
-    document.getElementById("setCount").textContent = complete
-      ? "All " + e.s + " sets done"
-      : "Set " + (s.done + 1) + " of " + e.s;
+    document.getElementById("setCount").textContent = editSet >= 0
+      ? "Editing set " + (editSet + 1) + " — tap Done"
+      : complete ? "All " + e.s + " sets done" : "Set " + (s.done + 1) + " of " + e.s;
   }
   function renderLift() {
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
@@ -290,9 +377,9 @@
 
     var btn = document.getElementById("doneBtn");
     btn.classList.toggle("complete", complete);
-    btn.textContent = complete ? "✓ Add extra set" : "Set Done";
-    btn.setAttribute("aria-pressed", complete ? "true" : "false");
-    btn.setAttribute("aria-label", complete ? "All sets done. Tap to add an extra set." : "Set Done");
+    btn.textContent = editSet >= 0 ? "Done editing" : complete ? "✓ Add extra set" : "Set Done";
+    btn.removeAttribute("aria-pressed");
+    btn.setAttribute("aria-label", editSet >= 0 ? "Finish editing this set" : complete ? "All sets done. Tap to add an extra set." : "Set Done");
 
     var hint = document.getElementById("hint");
     hint.textContent = hintText;
@@ -309,25 +396,31 @@
     Object.keys(payload.liftHistory || {}).forEach(function (k) {
       var arr = payload.liftHistory[k];
       if (!arr || arr.length < 2) return;
-      var first = progressMetric(arr[0].load, arr[0].reps);
-      var last = progressMetric(arr[arr.length - 1].load, arr[arr.length - 1].reps);
       var p = k.split(":"), d = p[0], i = parseInt(p[1], 10);
-      var nm = DAYS[d] && DAYS[d].ex[i] ? DAYS[d].ex[i].n : k;
-      out.push({ name: nm, delta: Math.round((last - first) * 10) / 10 });
+      var e = DAYS[d] && DAYS[d].ex[i] ? DAYS[d].ex[i] : null;
+      if (!e) return;
+      function best(entry) {
+        var top = topSetOf(e, Stats.entrySets(entry)) || entry;
+        return metricFor(e, top.load || 0, top.reps || 0);
+      }
+      var first = best(arr[0]), last = best(arr[arr.length - 1]);
+      if (!first) return;
+      var delta = last - first, pct = Math.round((delta / first) * 1000) / 10;
+      out.push({ name: e.n, delta: Math.round(delta * 10) / 10, pct: pct });
     });
-    out.sort(function (a, b) { return b.delta - a.delta; });
+    out.sort(function (a, b) { return b.pct - a.pct; });
     return out.slice(0, 3);
   }
   function renderProgress() {
-    var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload), days = Stats.uniqueDays(payload);
-    document.getElementById("pSessions").textContent = sessions;
+    var workouts = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload), week = Stats.sessionsLast7(payload, Gym.dateKey());
+    document.getElementById("pSessions").textContent = workouts;
     document.getElementById("pSets").textContent = sets;
-    document.getElementById("pDays").textContent = days;
+    document.getElementById("pDays").textContent = week + "/3";
     var todayKey = Gym.dateKey();
-    document.getElementById("pSub").textContent = sessions
-      ? sessions + " sessions · " + compactVol(Stats.totalVolume(payload)) + " kg · "
-        + Stats.sessionsLast7(payload, todayKey) + "/3 this week"
-      : "No sessions yet — open a lift to begin";
+    document.getElementById("pSub").textContent = workouts
+      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + compactVol(Stats.totalVolume(payload)) + " kg · "
+        + week + "/3 this week"
+      : "No workouts yet — open a lift to begin";
 
     var byDay = Stats.volumeByDay(payload, DAYS);
     var max = Math.max(1, byDay.fri, byDay.sat, byDay.sun);
@@ -377,14 +470,14 @@
       : "Log a full lift to see the trend";
 
     var pr = Stats.personalRecords(payload, DAYS, progressMetric)[0];
-    document.getElementById("pPr").textContent = pr ? "PR " + (pr.load > 0 ? pr.metric + " kg" : pr.metric + " reps") : "";
+    document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " kg" : "";
 
     var movers = topMovers();
     document.getElementById("pMovers").innerHTML = movers.length
       ? movers.map(function (m) {
-          var sign = m.delta > 0 ? "+" : "";
+          var sign = m.pct > 0 ? "+" : "";
           return '<li class="pmover"><span class="pmname">' + esc(m.name) + '</span>'
-            + '<span class="pmdelta ' + (m.delta >= 0 ? "up" : "down") + '">' + sign + m.delta + '</span></li>';
+            + '<span class="pmdelta ' + (m.pct >= 0 ? "up" : "down") + '">' + sign + m.pct + '%</span></li>';
         }).join("")
       : '<li class="pmover empty">No lift logged twice yet</li>';
   }
@@ -452,6 +545,7 @@
     document.getElementById("rbarFill").style.width = "0";
     document.getElementById("restNext").textContent = "";
     setRestLabel(label || "", msg || "Starts after Set Done");
+    renderRestPrep();
     applyVisibility();
   }
   function renderRest() {
@@ -505,6 +599,7 @@
     skipBtn.textContent = Rest.advanceLabel(adv, idx >= DAYS[cur].ex.length - 1);
     setRestLabel("GO", adv ? (idx < DAYS[cur].ex.length - 1 ? "Lift done — next up." : "Workout complete — nice work.") : "Next set — go.");
     renderRest();
+    renderRestPrep();
     if (navigator.vibrate) navigator.vibrate(200);
     beepGo();
     notifyRestDone();
@@ -537,8 +632,22 @@
     restCtx.msg = msg;
     setRestLabel(label, msg);
     renderRest();
+    renderRestPrep();
     applyVisibility();
     startInterval();
+  }
+  /* compact next-set controls on the rest screen — 60% of the session is
+     spent here, so preparing the next set should not require leaving it. */
+  function renderRestPrep() {
+    var prep = document.getElementById("restPrep");
+    if (!prep) return;
+    var e = ex(), s = curSt();
+    var show = rest.phase !== Machine.IDLE && rest.phase !== Machine.GO && editSet < 0 && s.done < e.s;
+    prep.hidden = !show;
+    if (!show) return;
+    document.getElementById("restPrepName").textContent = "Set " + (s.done + 1) + " of " + e.s;
+    document.getElementById("restPrepLoad").textContent = loadLabel(s.load, e);
+    document.getElementById("restPrepReps").textContent = String(s.reps);
   }
   document.getElementById("plus15").onclick = function () {
     if (rest.phase === Machine.IDLE) return;
@@ -629,29 +738,45 @@
   undoBtn.onclick = undoSet;
   undoSetBtn.onclick = undoSet;
 
-  /* ── session timer ─────────────────────────────────────────────────────── */
-  var sSec = 0, sInt = null, sBase = 0, sStart = 0, sAutoStopped = false;
+  /* ── session timer — derived from the persisted active session clock ───── */
+  var sInt = null, sAutoStopped = false;
+  function sessionSecs() { return Gym.sessionElapsedSec(payload); }
   function tickSession() {
-    sSec = sessionElapsed(sBase, sStart, Date.now());
     var el = document.getElementById("elapsed");
-    if (el) el.textContent = fmt(sSec);
-    if (sSec > 0) sessBtn.classList.add("has-time");
+    if (el) el.textContent = fmt(sessionSecs());
+    sessBtn.classList.toggle("has-time", sessionSecs() > 0);
+  }
+  function renderSessionPill() {
+    var t = fmt(sessionSecs());
+    if (sInt) {
+      sessBtn.classList.add("on");
+      sessBtn.innerHTML = "⏸ <span id='elapsed'>" + t + "</span>";
+    } else {
+      sessBtn.classList.remove("on");
+      sessBtn.innerHTML = "▶ <span class='startlbl'>Start</span><span id='elapsed'>" + t + "</span>";
+    }
+    sessBtn.classList.toggle("has-time", sessionSecs() > 0);
+  }
+  function startSessionTimer() {
+    if (sInt) return;
+    sAutoStopped = false;
+    Gym.startSessionClock(payload);
+    renderSessionPill();
+    sInt = setInterval(tickSession, 500);
+    keepAwake();
+    commit();
   }
   function pauseSession() {
     tickSession();
-    clearInterval(sInt); sInt = null; sBase = sSec;
+    clearInterval(sInt); sInt = null;
+    Gym.pauseSessionClock(payload);
     releaseAwake();
-    sessBtn.classList.remove("on");
-    sessBtn.innerHTML = "▶ <span class='startlbl'>Start</span><span id='elapsed'>" + fmt(sSec) + "</span>";
+    renderSessionPill();
+    commit();
   }
   sessBtn.onclick = function () {
     if (sInt) { pauseSession(); sAutoStopped = false; return; }
-    sAutoStopped = false;
-    sessBtn.classList.add("on");
-    sessBtn.innerHTML = "⏸ <span id='elapsed'>" + fmt(sSec) + "</span>";
-    sStart = Date.now();
-    sInt = setInterval(tickSession, 500);
-    keepAwake();
+    startSessionTimer();
   };
 
   /* ── wake lock — best effort, silent if unavailable ────────────────────── */
@@ -686,18 +811,53 @@
       var b = document.createElement("button");
       b.type = "button"; b.className = "rir"; b.textContent = String(rv); b.setAttribute("data-rir", String(rv));
       b.setAttribute("aria-label", "RIR " + rv);
-      b.onclick = function () { curSt().rir = rv; hideRirHint(); commit(); render(); };
+      b.onclick = function () {
+        curSt().rir = rv;
+        if (editSet >= 0) applySetEdit();
+        hideRirHint(); commit(); render(); renderRestPrep();
+      };
       rirRow.appendChild(b);
     })(ri);
   }
 
   /* ── steppers — tap once, press-and-hold repeats ───────────────────────── */
+  function applySetEdit() {
+    var s = curSt(), e = ex();
+    if (editSet < 0) return;
+    if (!s.sets || !s.sets[editSet]) { editSet = -1; return; }
+    s.sets[editSet] = { load: s.load, reps: s.reps, rir: s.rir };
+    if (s.done >= e.s) bankLift(cur, idx);
+  }
+  function startEdit(i) {
+    var s = curSt();
+    if (!s.sets || !s.sets[i]) return;
+    if (editSet !== i) editBackup = { load: s.load, reps: s.reps, rir: s.rir };
+    editSet = i;
+    s.load = s.sets[i].load; s.reps = s.sets[i].reps; s.rir = s.sets[i].rir;
+    hintText = ""; hintGood = false;
+    render();
+  }
+  function finishEdit() {
+    var s = curSt();
+    if (editSet < 0) return;
+    applySetEdit();
+    if (editBackup) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
+    editSet = -1; editBackup = null;
+    hintText = ""; hintGood = false;
+    commit(); render();
+  }
   function stepLoad(d) {
     var s = curSt();
     s.load = d < 0 ? Math.max(0, Math.round((s.load - ex().step) * 100) / 100) : Math.round((s.load + ex().step) * 100) / 100;
-    scheduleSave(); render();
+    if (editSet >= 0) applySetEdit();
+    scheduleSave(); render(); renderRestPrep();
   }
-  function stepReps(d) { var s = curSt(); s.reps = Math.max(1, s.reps + d); scheduleSave(); render(); }
+  function stepReps(d) {
+    var s = curSt();
+    s.reps = Math.max(1, s.reps + d);
+    if (editSet >= 0) applySetEdit();
+    scheduleSave(); render(); renderRestPrep();
+  }
   function bindStepper(id, fn) {
     var b = document.getElementById(id), delay = null, rep = null, held = false;
     function stop() {
@@ -716,6 +876,10 @@
   bindStepper("loadUp", function () { stepLoad(1); });
   bindStepper("repDown", function () { stepReps(-1); });
   bindStepper("repUp", function () { stepReps(1); });
+  bindStepper("restLoadDown", function () { stepLoad(-1); });
+  bindStepper("restLoadUp", function () { stepLoad(1); });
+  bindStepper("restRepDown", function () { stepReps(-1); });
+  bindStepper("restRepUp", function () { stepReps(1); });
 
   /* tap the number to type it — correcting "actually 67.5" shouldn't need
      five taps or a sprint on the press-and-hold repeat. The +/- stay for
@@ -749,12 +913,12 @@
   }
   function editLoad() {
     editValue(document.getElementById("loadVal"), curSt().load, ex().step, function (v) {
-      curSt().load = Math.max(0, Gym.round2(v)); commit(); render();
+      curSt().load = Math.max(0, Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep();
     });
   }
   function editReps() {
     editValue(document.getElementById("repVal"), curSt().reps, 1, function (v) {
-      curSt().reps = Math.max(1, Math.round(v)); commit(); render();
+      curSt().reps = Math.max(1, Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep();
     });
   }
   document.getElementById("loadVal").parentNode.addEventListener("click", editLoad);
@@ -768,14 +932,17 @@
 
   /* ── set done ──────────────────────────────────────────────────────────── */
   document.getElementById("doneBtn").onclick = function () {
+    if (editSet >= 0) { finishEdit(); return; }
     var e = ex(), s = curSt();
     var wasComplete = s.done >= e.s;
     /* capture the log *before* this set so the PR check compares against
        history, not against the set we are about to bank */
-    var priorHist = Gym.series(payload, cur, idx);
-    var prevBest = -Infinity, hi;
+    var priorHist = priorEntries();
+    var prevBest = -Infinity, hi, hj, topEntry;
     for (hi = 0; hi < priorHist.length; hi++) {
-      prevBest = Math.max(prevBest, progressMetric(priorHist[hi].load || 0, priorHist[hi].reps || 0));
+      topEntry = topSetOf(e, Stats.entrySets(priorHist[hi]));
+      if (topEntry) prevBest = Math.max(prevBest, metricFor(e, topEntry.load || 0, topEntry.reps || 0));
+      else prevBest = Math.max(prevBest, metricFor(e, priorHist[hi].load || 0, priorHist[hi].reps || 0));
     }
 
     s.sets = s.sets || [];
@@ -787,10 +954,10 @@
     hintText = ""; hintGood = false;
     var finished = !wasComplete && s.done >= e.s;
     var restNote = "";
-    var newMetric = progressMetric(s.load, s.reps);
+    var newMetric = metricFor(e, s.load, s.reps);
 
     /* a PR beats the progression nudge — celebrate it first */
-    if (priorHist.length && newMetric > prevBest) {
+    if (prevBest > -Infinity && newMetric > prevBest) {
       hintText = "New PR — " + (s.load > 0
         ? loadLabel(s.load, e) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
         : s.reps + " reps");
@@ -804,16 +971,8 @@
       hintGood = true;
     }
 
-    if (finished) {
-      Gym.pushHistory(payload, cur, idx, {
-        date: Gym.dateKey(),
-        load: s.load, reps: s.reps, rir: s.lastRir,
-        hitTop: (s.reps >= e.top && s.lastRir >= e.rir),
-        setsDone: s.done,
-        sets: s.sets.slice(),
-        exId: e.id
-      });
-    }
+    /* the set array is the truth: bank it on completion and on every extra set */
+    bankLift(cur, idx);
 
     var list = DAYS[cur].ex, nextText = "";
     if (s.done >= e.s) {
@@ -833,10 +992,24 @@
 
     ensureAudio();
     if (navigator.vibrate) navigator.vibrate(10);
-    if (!sInt && (sSec === 0 || sAutoStopped)) sessBtn.click();
+    if (!sInt) startSessionTimer();
     keepAwake();
     render();
   };
+
+  /* tap a completed set to correct it with the same adjusters */
+  document.getElementById("setLog").addEventListener("click", function (ev) {
+    var row = ev.target.closest("[data-set]");
+    if (!row) return;
+    startEdit(parseInt(row.getAttribute("data-set"), 10));
+  });
+  document.getElementById("setLog").addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    var row = ev.target.closest("[data-set]");
+    if (!row) return;
+    ev.preventDefault();
+    startEdit(parseInt(row.getAttribute("data-set"), 10));
+  });
 
   /* apply suggested load */
   var applyLoadBtn = document.getElementById("applyLoad");
@@ -845,12 +1018,14 @@
     if (!isNaN(v)) { curSt().load = v; commit(); render(); }
   };
 
-  /* restart this lift: clear its sets, keep the working weight */
-  resetLiftBtn.onclick = function () {
+  /* restart this lift: clear its sets, keep the working weight (two taps) */
+  function doRestartLift() {
     Gym.resetLift(payload, cur, idx);
+    editSet = -1; editBackup = null;
     hintText = ""; hintGood = false;
     commit(); render();
-  };
+  }
+  resetLiftBtn.onclick = function () { twoTap(this, "Tap again to restart", doRestartLift); };
 
   /* plan the whole day: pre-fill each not-yet-started lift from its history */
   document.getElementById("planBtn").onclick = function () {
@@ -871,21 +1046,79 @@
     commit(); render();
   };
 
+  /* ── finish workout + one-screen summary ───────────────────────────────── */
+  function nextTrainingGap() {
+    var order = ["fri", "sat", "sun"], orderDow = { fri: 5, sat: 6, sun: 0 };
+    var now = new Date(), dow = now.getDay(), t = Gym.actualDay();
+    var day;
+    if (!t) day = Gym.todayDay();
+    else {
+      var i = order.indexOf(t);
+      day = order[(i + 1) % 3];
+    }
+    var gap = (orderDow[day] - dow + 7) % 7;
+    if (gap === 0) gap = 7;
+    return { day: day, gap: gap };
+  }
+  function showSummary(entry) {
+    if (!summary) return;
+    var list = DAYS[cur].ex, sets = 0, i;
+    for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, list[i].s);
+    var vol = Math.round((Stats.volumeByDay(payload, DAYS) || {})[cur] || 0);
+    var today = Gym.dateKey();
+    var prs = Stats.personalRecords(payload, DAYS, progressMetric).filter(function (p) { return p.date === today; }).length;
+    var dur = entry && typeof entry.durationSec === "number" ? entry.durationSec : Gym.sessionElapsedSec(payload);
+    document.getElementById("sumTitle").textContent = (DAY_LABEL[cur] || "") + " workout complete";
+    document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";
+    document.getElementById("sumSets").textContent = String(sets);
+    document.getElementById("sumVol").textContent = compactVol(vol) + " kg";
+    document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
+    var nx = nextTrainingGap();
+    var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");
+    if (Gym.backupDue(payload)) txt += " · Back up tonight";
+    document.getElementById("sumNext").textContent = txt;
+    summary.hidden = false;
+    var b = document.getElementById("sumDone");
+    if (b) b.focus();
+  }
+  function finishWorkout() {
+    if (sInt) pauseSession();
+    var entry = Gym.finalizeSession(payload);
+    commit();
+    render();
+    showSummary(entry);
+  }
+  document.getElementById("finishBtn").onclick = finishWorkout;
+  document.getElementById("continueBtn").onclick = function () {
+    var first = firstOpenLift(cur, payload.state, 0);
+    if (first >= 0) openLift(first);
+  };
+  document.getElementById("sumDone").onclick = function () {
+    summary.hidden = true;
+    render();
+  };
+  document.getElementById("sumClose").onclick = function () {
+    summary.hidden = true;
+    render();
+  };
+  summary.addEventListener("click", function (ev) { if (ev.target === summary) summary.hidden = true; });
+
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
   function cancelPendingAdvance() { if (rest.phase !== Machine.IDLE) restCtx.pending = false; }
-  function showDay() { view = "day"; hintText = ""; hintGood = false; commit(); render(); }
-  function showProgress() { view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
+  function resetEdit() { editSet = -1; editBackup = null; }
+  function showDay() { resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render(); }
+  function showProgress() { resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
   function openLift(i) {
     if (i < 0 || i >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance();
+    cancelPendingAdvance(); resetEdit();
     idx = i; view = "lift"; hintText = ""; hintGood = false; commit(); render();
   }
   function navigateLift(delta) {
     var n = idx + delta;
     if (n < 0 || n >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance();
+    cancelPendingAdvance(); resetEdit();
     idx = n; hintText = ""; hintGood = false; commit(); render();
   }
   document.getElementById("backBtn").onclick = showDay;
@@ -907,7 +1140,7 @@
     b.onclick = function () {
       cur = b.getAttribute("data-day");
       idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
-      clearUndo(); sAutoStopped = false;
+      resetEdit(); clearUndo(); sAutoStopped = false;
       var open = firstOpenLift(cur, payload.state, 0);
       idx = open >= 0 ? open : 0;
       commit(); render();
@@ -944,8 +1177,11 @@
   function updateFoot() {
     var age = Gym.backupAgeDays(payload);
     var b = age === null ? "never backed up" : (age === 0 ? "backed up today" : "backed up " + age + "d ago");
-    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + historyCount() + " sessions · " + b;
+    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + Stats.sessionCount(payload) + " workouts · " + b;
     menuBtn.classList.toggle("needs-backup", Gym.backupDue(payload));
+    var snapBtn = document.getElementById("restoreSnapshot");
+    if (snapBtn) snapBtn.hidden = !Gym.readSnapshot();
+    renderBw();
   }
   function noteBackup() {
     Gym.markBackup(payload); commit(); updateFoot();
@@ -983,7 +1219,7 @@
   function summaryText() {
     var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
     var days = Stats.uniqueDays(payload), vol = Math.round(Stats.totalVolume(payload));
-    return "Gym — " + sessions + " sessions · " + sets + " sets · " + days + " training days · " + vol + " kg tonnage";
+    return "Gym — " + sessions + " workouts · " + sets + " sets · " + days + " training days · " + vol + " kg tonnage";
   }
   document.getElementById("shareSummary").onclick = function () {
     var text = summaryText();
@@ -1013,6 +1249,7 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
+        Gym.snapshot(payload, "pre-restore");
         payload = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
@@ -1030,6 +1267,7 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
+        Gym.snapshot(payload, "pre-merge");
         var merged = Gym.importMerge(payload, String(reader.result));
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
@@ -1081,27 +1319,79 @@
       if (armedFn === fn) { armedFn = null; armedUntil = 0; btn.textContent = btn.getAttribute("data-label"); }
     }, 2600);
   }
-  function doResetDay() { Gym.resetDay(payload, cur); commit(); render(); updateFoot(); setMsg("Day reset — sets cleared."); }
+  function doResetDay() {
+    Gym.snapshot(payload, "pre-reset-day");
+    Gym.resetDay(payload, cur); commit(); render(); updateFoot(); setMsg("Day reset — sets cleared.");
+  }
   function doClearAll() {
+    Gym.snapshot(payload, "pre-clear");
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
-    clearUndo(); commit(); render(); updateFoot(); setMsg("All training data cleared.");
+    clearUndo(); resetEdit(); commit(); render(); updateFoot(); setMsg("All training data cleared.");
   }
   document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
 
+  /* ── bodyweight + snapshot recovery ───────────────────────────────────── */
+  function renderBw() {
+    var inp = document.getElementById("bwInput");
+    if (inp) inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 75);
+  }
+  document.getElementById("bwInput").addEventListener("change", function () {
+    var v = parseFloat(this.value);
+    if (isFinite(v) && v >= 30 && v <= 300) {
+      payload.bodyweight = Math.round(v * 10) / 10;
+      commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " kg");
+    } else {
+      renderBw(); setMsg("Bodyweight must be 30–300 kg");
+    }
+  });
+  document.getElementById("restoreSnapshot").onclick = function () {
+    var snap = Gym.readSnapshot();
+    if (!snap || !snap.payload) { setMsg("No snapshot saved yet."); return; }
+    var restored = Gym.migrate(JSON.stringify(snap.payload));
+    if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
+    Gym.snapshot(payload, "pre-snapshot-restore");
+    payload = Gym.reconcile(restored, DAYS);
+    cur = payload.cur; idx = payload.idx;
+    if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
+    if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
+    clearUndo(); resetEdit(); view = "day";
+    commit(); render(); updateFoot();
+    setMsg("Snapshot restored ✓");
+  };
+
+  /* corrupt payload → offer the quarantined bytes; failed save → export now */
+  saveBarAction.onclick = function () {
+    if (dataWarn === "corrupt") {
+      downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
+    } else {
+      openModal();
+    }
+  };
+
   /* ── boot ──────────────────────────────────────────────────────────────── */
   initTheme();
   payload = Gym.reconcile(Gym.load(), DAYS);
+  var loadErr = Gym.lastLoadError();
+  if (loadErr && loadErr.kind === "corrupt") dataWarn = "corrupt";
+  /* a session from an earlier date is banked; today starts fresh but keeps loads */
+  Gym.rollSession(payload, Gym.todayDay());
   cur = payload.cur; idx = payload.idx;
-  if (!DAYS[cur]) cur = "fri";
-  if (idx >= DAYS[cur].ex.length) idx = 0;
+  if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
+  if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
   sessBtn.title = "Workout timer — starts automatically on your first set";
   showRirHintIfNew();
   initNotify();
   updateFoot();
+  /* resume a clock that was running before the reload */
+  if (payload.active && payload.active.runningSince) {
+    sInt = setInterval(tickSession, 500);
+    keepAwake();
+  }
+  renderSessionPill();
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
     navigator.serviceWorker.register("./sw.js").catch(function () {});
   }
   render();
-  commit();
+  if (dataWarn === "corrupt") syncSaveBar(); else commit();
 })();

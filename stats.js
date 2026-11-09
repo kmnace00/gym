@@ -26,14 +26,25 @@
   }
 
   /**
-   * Number of completed lift sessions recorded.
+   * Distinct calendar dates with a completed lift or a logged session.
+   * This is the "workouts" metric: one Friday is one workout, not eight.
+   * @param {any} payload
+   * @returns {string[]}
+   */
+  function workoutDates(payload) {
+    var seen = {}, s = sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
+    for (i = 0; i < s.length; i++) if (s[i].date) seen[s[i].date] = 1;
+    for (i = 0; i < log.length; i++) if (log[i] && log[i].date) seen[log[i].date] = 1;
+    return Object.keys(seen).sort();
+  }
+
+  /**
+   * Number of workouts recorded (distinct dates).
    * @param {any} payload
    * @returns {number}
    */
   function sessionCount(payload) {
-    var n = 0, lh = (payload && payload.liftHistory) || {}, k;
-    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) n += (lh[k] || []).length;
-    return n;
+    return workoutDates(payload).length;
   }
 
   /**
@@ -56,24 +67,44 @@
     var n = 0, lh = (payload && payload.liftHistory) || {}, k, arr, i;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
-      for (i = 0; i < arr.length; i++) n += (arr[i].setsDone || 0);
+      for (i = 0; i < arr.length; i++) n += entrySets(arr[i]).length;
     }
     return n;
   }
 
   /**
-   * Tonnage for one history entry: load × reps × sets.
-   * Bodyweight work (load === 0) is valued at `bwKg` per rep so pull-ups /
-   * dips / calf raises do not read as zero volume on the dashboard.
-   * @param {{load?:number,reps?:number,setsDone?:number}} e
+   * The sets actually logged for a history entry. Legacy entries only stored
+   * a representative load/reps and `setsDone`, so synthesize rows for them.
+   * @param {{load?:number,reps?:number,rir?:number,setsDone?:number,sets?:any[]}} e
+   * @returns {{load:number,reps:number,rir:number}[]}
+   */
+  function entrySets(e) {
+    if (!e) return [];
+    if (Array.isArray(e.sets) && e.sets.length) return e.sets;
+    var n = Math.max(0, Math.round(e.setsDone || 0)), out = [], i;
+    for (i = 0; i < n; i++) out.push({ load: e.load || 0, reps: e.reps || 0, rir: e.rir || 0 });
+    return out;
+  }
+
+  /**
+   * Tonnage for one history entry: sum of load × reps across its sets.
+   * Bodyweight work (explicit `bw`, or legacy load 0) is valued at
+   * `bodyweight + added load` per rep, so adding a plate never lowers tonnage.
+   * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean}} e
    * @param {number} [bwKg] bodyweight in kg (default 75)
    * @returns {number}
    */
   function entryVolume(e, bwKg) {
     if (!e) return 0;
-    var load = typeof e.load === "number" && isFinite(e.load) ? e.load : 0;
-    var eff = load > 0 ? load : (load === 0 ? (typeof bwKg === "number" ? bwKg : 75) : 0);
-    return eff * (e.reps || 0) * (e.setsDone || 0);
+    var bw = typeof bwKg === "number" && isFinite(bwKg) && bwKg > 0 ? bwKg : 75;
+    var sets = entrySets(e), total = 0, i, load, eff;
+    for (i = 0; i < sets.length; i++) {
+      load = typeof sets[i].load === "number" && isFinite(sets[i].load) ? sets[i].load : 0;
+      if (e.bw === true || (e.bw === undefined && load === 0)) eff = bw + Math.max(0, load);
+      else eff = load > 0 ? load : 0;
+      total += eff * (sets[i].reps || 0);
+    }
+    return total;
   }
 
   /**
@@ -82,10 +113,10 @@
    * @returns {number}
    */
   function totalVolume(payload) {
-    var total = 0, lh = (payload && payload.liftHistory) || {}, k, arr, i;
+    var total = 0, lh = (payload && payload.liftHistory) || {}, k, arr, i, bw = payload && payload.bodyweight;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
-      for (i = 0; i < arr.length; i++) total += entryVolume(arr[i]);
+      for (i = 0; i < arr.length; i++) total += entryVolume(arr[i], bw);
     }
     return total;
   }
@@ -96,12 +127,12 @@
    * @returns {{date:string, volume:number}[]}
    */
   function sessionVolumes(payload) {
-    var lh = (payload && payload.liftHistory) || {}, byDate = {}, k, arr, i, e, d;
+    var lh = (payload && payload.liftHistory) || {}, byDate = {}, k, arr, i, e, d, bw = payload && payload.bodyweight;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; d = e.date || "";
-        byDate[d] = (byDate[d] || 0) + entryVolume(e);
+        byDate[d] = (byDate[d] || 0) + entryVolume(e, bw);
       }
     }
     return Object.keys(byDate).sort().map(function (date) { return { date: date, volume: byDate[date] }; });
@@ -125,12 +156,12 @@
    * @returns {Record<string, number>}
    */
   function volumeByDay(payload, DAYS) {
-    var res = {}, lh = (payload && payload.liftHistory) || {}, d, i, arr, total, list;
+    var res = {}, lh = (payload && payload.liftHistory) || {}, d, i, arr, total, list, bw = payload && payload.bodyweight;
     for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
       list = DAYS[d].ex; total = 0;
       for (i = 0; i < list.length; i++) {
         arr = lh[d + ":" + i];
-        if (arr && arr.length) total += entryVolume(arr[arr.length - 1]);
+        if (arr && arr.length) total += entryVolume(arr[arr.length - 1], bw);
       }
       res[d] = total;
     }
@@ -143,9 +174,7 @@
    * @returns {number}
    */
   function uniqueDays(payload) {
-    var s = sessionVolumes(payload), n = 0, last = null, i;
-    for (i = 0; i < s.length; i++) { if (s[i].date && s[i].date !== last) { n++; last = s[i].date; } }
-    return n;
+    return workoutDates(payload).length;
   }
 
   /* ── time-window analytics (deterministic: the caller passes `nowKey`) ─── */
@@ -221,9 +250,50 @@
     return out;
   }
 
+  /* ── week strip: Fri/Sat/Sun of the current training week ────────────────
+     `state` is done (all program lifts logged), partial (some), missed (past,
+     none), today (today, none yet) or upcoming. Adherence lives here.       */
+  function weekLiftIndex(payload) {
+    var lh = (payload && payload.liftHistory) || {}, idx = {}, k, arr, i, e;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
+      arr = lh[k] || [];
+      for (i = 0; i < arr.length; i++) {
+        e = arr[i];
+        if (!e || !e.date) continue;
+        if (!idx[e.date]) idx[e.date] = {};
+        idx[e.date][k] = 1;
+      }
+    }
+    return idx;
+  }
+  /**
+   * Status of the current training week (Fri/Sat/Sun), oldest → newest.
+   * @param {any} payload @param {string} nowKey YYYY-MM-DD
+   * @returns {{day:string,date:string,state:string,lifts:number}[]}
+   */
+  function weekStatus(payload, nowKey) {
+    var today = parseKey(nowKey);
+    if (!today) return [];
+    var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
+    var names = ["fri", "sat", "sun"], out = [], i;
+    for (i = 0; i < 3; i++) {
+      var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);
+      var key = keyOf(dt);
+      var n = lifts[key] ? Object.keys(lifts[key]).length : 0;
+      var state = dt > today ? "upcoming"
+        : n >= 8 ? "done"
+        : n > 0 ? "partial"
+        : key === nowKey ? "today" : "missed";
+      out.push({ day: names[i], date: key, state: state, lifts: n });
+    }
+    return out;
+  }
+
   /* ── CSV export (portability) ──────────────────────────────────────────── */
   function csvCell(v) {
     var s = v == null ? "" : String(v);
+    /* formula injection guard: a backup is untrusted input opened in a sheet */
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
   /**
@@ -252,22 +322,30 @@
    * Best estimated 1RM (or reps for bodyweight) per lift, ranked desc.
    * @param {any} payload
    * @param {Record<string, {ex: any[]}>} DAYS
-   * @param {(load:number, reps:number) => number} metric
+   * @param {(load:number, reps:number, opts?:{bw?:boolean, bodyweight?:number}) => number} metric
    * @returns {{key:string,name:string,load:number,reps:number,date:string,metric:number}[]}
    */
   function personalRecords(payload, DAYS, metric) {
-    var lh = (payload && payload.liftHistory) || {}, out = [], k, arr, i, e, best, bestM, m, p, d, idx, name;
+    var lh = (payload && payload.liftHistory) || {}, bwKg = payload && payload.bodyweight;
+    var out = [], k, arr, i, j, e, sets, best, bestM, m, p, d, idx, name, ex, isBw, opts, set;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || []; best = null; bestM = -Infinity;
+      p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
+      ex = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[idx] : null;
+      name = ex ? ex.n : k;
+      isBw = !!(ex && ex.bw);
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; if (!e) continue;
-        m = metric(e.load || 0, e.reps || 0);
-        if (m > bestM) { bestM = m; best = e; }
+        sets = entrySets(e);
+        for (j = 0; j < sets.length; j++) {
+          set = sets[j] || {};
+          opts = { bw: isBw || e.bw === true, bodyweight: bwKg };
+          m = metric(set.load || 0, set.reps || 0, opts);
+          if (m > bestM) { bestM = m; best = { load: set.load || 0, reps: set.reps || 0, date: e.date }; }
+        }
       }
       if (!best) continue;
-      p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
-      name = DAYS[d] && DAYS[d].ex[idx] ? DAYS[d].ex[idx].n : k;
-      out.push({ key: k, name: name, load: best.load, reps: best.reps, date: best.date, metric: bestM });
+      out.push({ key: k, name: name, load: best.load, reps: best.reps, date: best.date, metric: bestM, bw: isBw });
     }
     out.sort(function (a, b) { return b.metric - a.metric; });
     return out;
@@ -275,9 +353,10 @@
 
   return {
     historyKeys: historyKeys, sessionCount: sessionCount, setsLogged: setsLogged,
-    setsRecorded: setsRecorded,
+    setsRecorded: setsRecorded, entrySets: entrySets,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
+    workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
     trainingDays: trainingDays, toCsv: toCsv
   };

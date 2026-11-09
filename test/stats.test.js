@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const S = require("../stats.js");
+const P = require("../program.js");
 
 function sample() {
   return {
@@ -17,7 +18,7 @@ function sample() {
 
 test("sessionCount and setsLogged", () => {
   const p = sample();
-  assert.equal(S.sessionCount(p), 3);
+  assert.equal(S.sessionCount(p), 2); // two distinct workout dates, not three lifts
   assert.equal(S.setsLogged(p), 4);
   assert.equal(S.sessionCount({}), 0);
   assert.equal(S.setsLogged({}), 0);
@@ -64,4 +65,53 @@ test("volumeByDay uses each lift's latest entry", () => {
 
 test("uniqueDays counts distinct calendar dates", () => {
   assert.equal(S.uniqueDays(sample()), 2);
+});
+
+test("entrySets expands legacy scalar entries into rows", () => {
+  const sets = S.entrySets({ load: 50, reps: 6, rir: 2, setsDone: 3 });
+  assert.equal(sets.length, 3);
+  assert.deepEqual(sets[0], { load: 50, reps: 6, rir: 2 });
+  assert.equal(S.entrySets({ sets: [{ load: 1, reps: 2, rir: 0 }] }).length, 1);
+});
+
+test("mixed sets use every set, not the last one", () => {
+  const e = { sets: [{ load: 60, reps: 8, rir: 2 }, { load: 60, reps: 7, rir: 1 }, { load: 60, reps: 6, rir: 0 }] };
+  assert.equal(S.entryVolume(e), 60 * (8 + 7 + 6));
+});
+
+test("weighted bodyweight work values total system weight", () => {
+  const e = { bw: true, sets: [{ load: 2.5, reps: 6, rir: 2 }, { load: 2.5, reps: 6, rir: 2 }, { load: 2.5, reps: 6, rir: 2 }] };
+  assert.equal(S.entryVolume(e, 75), 77.5 * 6 * 3);
+});
+
+test("personalRecords picks the best set and rewards added bodyweight", () => {
+  const DAYS = { fri: { ex: [{ n: "Dip", bw: true }] } };
+  const payload = {
+    bodyweight: 75, liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", bw: true, sets: [{ load: 0, reps: 6, rir: 2 }] },
+        { date: "2026-11-08", bw: true, sets: [{ load: 2.5, reps: 6, rir: 2 }] }
+      ]
+    }
+  };
+  const prs = S.personalRecords(payload, DAYS, P.progressMetric);
+  assert.equal(prs.length, 1);
+  assert.equal(prs[0].date, "2026-11-08");
+  assert.ok(prs[0].metric > P.progressMetric(0, 6, { bw: true, bodyweight: 75 }));
+});
+
+test("weekStatus marks done / partial / missed in the current week", () => {
+  const liftHistory = {};
+  for (let i = 0; i < 8; i++) liftHistory["fri:" + i] = [{ date: "2026-11-06", load: 50 }];
+  liftHistory["sat:0"] = [{ date: "2026-11-07", load: 50 }];
+  liftHistory["sat:1"] = [{ date: "2026-11-07", load: 50 }];
+  const w = S.weekStatus({ liftHistory }, "2026-11-09"); // Monday after
+  assert.equal(w[0].state, "done");
+  assert.equal(w[1].state, "partial");
+  assert.equal(w[2].state, "missed");
+});
+
+test("toCsv escapes formula-leading cells", () => {
+  const csv = S.toCsv({ liftHistory: { "fri:0": [{ date: "2026-11-08", sets: [{ load: 0, reps: 1, rir: 0 }] }] } }, { fri: { ex: [{ n: "=cmd" }] } });
+  assert.ok(csv.indexOf("'=cmd") !== -1);
 });

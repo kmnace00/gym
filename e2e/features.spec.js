@@ -106,6 +106,7 @@ test("restart lift clears sets but keeps load", async ({ page }) => {
   await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
   const loadBefore = await page.locator("#loadVal").textContent();
   await page.locator("#resetLiftBtn").click();
+  await page.locator("#resetLiftBtn").click(); // two-tap guard
   await expect(page.locator("#setCount")).toContainText("Set 1 of 3");
   await expect(page.locator("#loadVal")).toHaveText(loadBefore);
 });
@@ -131,7 +132,7 @@ test("reset day clears all lifts via the menu (two taps)", async ({ page }) => {
 test("clear all data wipes history", async ({ page }) => {
   await page.goto(url);
   await page.locator("#menuBtn").click();
-  await expect(page.locator("#modalFoot")).toContainText("0 sessions");
+  await expect(page.locator("#modalFoot")).toContainText("0 workouts");
   await page.locator("#clearAll").click();
   await page.locator("#clearAll").click();
   await expect(page.locator("#modalMsg")).toContainText("cleared");

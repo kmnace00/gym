@@ -23,25 +23,39 @@ test("emptyPayload opens on today's training day", () => {
   assert.equal(S.emptyPayload().cur, expected);
 });
 
-test("migrate v1 → v2 carries data forward", () => {
+test("migrate v1 → v3 carries data forward", () => {
   const raw = JSON.stringify({ v: 1, cur: "sat", idx: 2, state: { "sat:0": { done: 1 } } });
   const p = S.migrate(raw);
-  assert.equal(p.v, 2);
+  assert.equal(p.v, 3);
   assert.equal(p.cur, "sat");
   assert.equal(p.idx, 2);
   assert.deepEqual(p.state, { "sat:0": { done: 1 } });
   assert.deepEqual(p.liftHistory, {});
+  assert.ok(p.active && p.active.date);
 });
 
-test("migrate v2 round-trips unchanged (adds the optional lastBackup field)", () => {
+test("migrate v2 round-trips data and adds the v3 session fields", () => {
   const o = { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} };
   const out = S.migrate(JSON.stringify(o));
-  assert.equal(out.v, 2);
+  assert.equal(out.v, 3);
   assert.equal(out.cur, "fri");
   assert.equal(out.idx, 0);
   assert.deepEqual(out.state, {});
   assert.deepEqual(out.liftHistory, {});
   assert.equal(out.lastBackup, null);
+  assert.equal(out.bodyweight, 75);
+  assert.deepEqual(out.sessionLog, []);
+  assert.equal(out.active.status, "active");
+});
+
+test("migrate v2 attaches a done session to its history date", () => {
+  const raw = JSON.stringify({
+    v: 2, cur: "fri", idx: 0, state: { "fri:0": { done: 3 } },
+    liftHistory: { "fri:0": [{ date: "2026-11-06", load: 60, reps: 6, rir: 2, setsDone: 3 }] }
+  });
+  const p = S.migrate(raw);
+  assert.equal(p.active.date, "2026-11-06");
+  assert.equal(p.active.day, "fri");
 });
 
 test("migrate flags a future version instead of dropping it", () => {
@@ -123,10 +137,10 @@ test("export → import round-trips", () => {
   assert.deepEqual(S.load().stats || S.load().state, p.state);
 });
 
-test("load migrates a legacy v1 key into v2", () => {
+test("load migrates a legacy v1 key into v3", () => {
   global.localStorage.setItem(S.LEGACY, JSON.stringify({ v: 1, cur: "sun", idx: 1, state: { "sun:0": { done: 3 } } }));
   const p = S.load();
-  assert.equal(p.v, 2);
+  assert.equal(p.v, 3);
   assert.equal(p.cur, "sun");
   assert.equal(p.idx, 1);
   assert.deepEqual(p.state, { "sun:0": { done: 3 } });
@@ -136,8 +150,18 @@ test("load keeps a copy of an unknown future payload, never overwrites it", () =
   const raw = JSON.stringify({ v: 99, future: true });
   global.localStorage.setItem(S.STORE, raw);
   const p = S.load();
-  assert.equal(p.v, 2); // fresh empty
+  assert.equal(p.v, 3); // fresh empty
   assert.equal(global.localStorage.getItem(S.STORE + "-future"), raw);
+});
+
+test("load quarantines a corrupt payload and never overwrites it", () => {
+  const raw = "{not json";
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(p.v, 3);
+  assert.equal(S.lastLoadError().kind, "corrupt");
+  assert.equal(S.quarantineRaw(), raw);
+  assert.equal(global.localStorage.getItem(S.STORE), raw); // boot copy untouched
 });
 
 test("backupDue: false with no data, true when data exists and never exported", () => {
@@ -186,4 +210,54 @@ test("importMerge never discards current data", () => {
   assert.equal(merged.state["fri:0"].done, 3);
   assert.ok(merged.liftHistory["sat:1"]);
   assert.equal(merged.liftHistory["fri:0"].length, 1);
+});
+
+test("upsertHistory replaces today's entry instead of appending", () => {
+  const p = S.emptyPayload();
+  S.upsertHistory(p, "fri", 0, { date: S.dateKey(), setsDone: 3, load: 60 });
+  S.upsertHistory(p, "fri", 0, { date: S.dateKey(), setsDone: 5, load: 60 });
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(p.liftHistory["fri:0"][0].setsDone, 5);
+});
+
+test("session clock pauses, resumes, and finalizes with duration", () => {
+  const p = S.emptyPayload();
+  S.startSessionClock(p, 1000);
+  assert.equal(S.sessionElapsedSec(p, 61000), 60);
+  S.pauseSessionClock(p, 61000);
+  assert.equal(S.sessionElapsedSec(p, 121000), 60); // frozen while paused
+  S.startSessionClock(p, 121000);
+  assert.equal(S.sessionElapsedSec(p, 151000), 90);
+  p.state["fri:0"] = { done: 3, sets: [{ load: 60, reps: 6, rir: 2 }] };
+  const e = S.finalizeSession(p, 151000);
+  assert.ok(e);
+  assert.equal(e.durationSec, 90);
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(p.active.status, "complete");
+});
+
+test("rollSession banks yesterday and clears today's sets", () => {
+  const p = S.emptyPayload();
+  const fri = new Date(2026, 10, 6, 10).getTime();
+  const sun = new Date(2026, 10, 8, 10).getTime();
+  S.startSessionClock(p, fri);
+  p.active.date = "2026-11-06";
+  p.active.day = "fri";
+  p.state["fri:0"] = { done: 3, load: 60, sets: [{ load: 60, reps: 6, rir: 2 }] };
+  S.rollSession(p, "sun", sun);
+  assert.equal(p.active.day, "sun");
+  assert.equal(p.active.date, "2026-11-08");
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(p.state["fri:0"].done, 0);
+  assert.equal(p.state["fri:0"].load, 60); // working load carried forward
+});
+
+test("snapshot round-trips the current payload", () => {
+  const p = S.emptyPayload();
+  p.bodyweight = 82.5;
+  S.snapshot(p, "test");
+  const snap = S.readSnapshot();
+  assert.equal(snap.label, "test");
+  assert.equal(snap.payload.bodyweight, 82.5);
+  assert.ok(snap.at);
 });

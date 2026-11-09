@@ -1,6 +1,14 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: DONE — UI/UX nav + reset + undo fix + per-set log + pause consistency (Nov 8, Khang's direct ask). Unit + e2e green.
+## WIP
+
+(none)
+
+Status: DONE — Pass 4 “Build all” delivered 2026-11-08; 85/85 unit, 35/35 e2e, typecheck clean. See `BUILD_LOG.md` and `DESIGN.md` Pass 4.
+
+## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)
+
+Delivered: session boundary + session log; per-set truth (extra sets, tap-to-edit); bodyweight metrics; corrupt quarantine + snapshots; week strip; Continue + Finish summary; rest-screen next-set prep; two-tap Restart; SW `gym-v7`.
 
 ## Completed task — UI/UX nav + reset
 

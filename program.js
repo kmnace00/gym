@@ -29,7 +29,7 @@
       { id: "fri-pec-deck", n: "Pec deck fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
       { id: "fri-leg-ext", n: "Leg extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },
       { id: "fri-cable-lat", n: "Cable lateral raise", s: 3, r: 10, top: 12, load: 10, step: 1, rest: 90, rir: 1, partial: 1, cue: "Per side. Arm across body, lead with elbow." },
-      { id: "fri-weighted-dip", n: "Weighted dip", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Lean forward, comfortable depth." }
+      { id: "fri-weighted-dip", n: "Weighted dip", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Lean forward, comfortable depth." }
     ] },
     sat: { label: "Saturday — Pull + Hinge", ex: [
       { id: "sat-front-pulldown", n: "MTS front pulldown", s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
@@ -43,7 +43,7 @@
     ] },
     sun: { label: "Sunday — Light / Machines", ex: [
       { id: "sun-leg-press", n: "Leg press / Hack squat", s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
-      { id: "sun-pullups", n: "Pull-ups", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Bodyweight. Under 5 reps? Use pulldown." },
+      { id: "sun-pullups", n: "Pull-ups", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Bodyweight. Under 5 reps? Use pulldown." },
       { id: "sun-machine-ohp", n: "Machine overhead press", s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
       { id: "sun-cable-fly", n: "Cable fly", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
       { id: "sun-seated-row", n: "Machine seated row", s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
@@ -120,9 +120,17 @@
     return s;
   }
 
-  /* Epley estimated 1RM; bodyweight (load 0) falls back to reps as the metric */
+  /* Epley estimated 1RM; bodyweight work uses total system weight
+     (bodyweight + added load) so adding a plate never makes the metric fall.
+     `opts` is optional: {bw:boolean, bodyweight:number}.                    */
   function epley1rm(load, reps) { return load * (1 + reps / 30); }
-  function progressMetric(load, reps) { return load > 0 ? Math.round(epley1rm(load, reps) * 10) / 10 : reps; }
+  function progressMetric(load, reps, opts) {
+    var bw = opts && typeof opts.bodyweight === "number" && opts.bodyweight > 0 ? opts.bodyweight : BODYWEIGHT_KG;
+    var isBw = !!(opts && opts.bw);
+    var base = isBw ? bw + (load > 0 ? load : 0) : load;
+    if (base > 0) return Math.round(epley1rm(base, reps) * 10) / 10;
+    return reps;
+  }
 
   /* double-progression: if the last session hit top reps at target RIR, add a step */
   function suggestLoad(e, prev) {

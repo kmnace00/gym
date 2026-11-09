@@ -35,7 +35,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
 .app{
   height:100dvh;max-width:520px;margin:0 auto;
   display:flex;flex-direction:column;gap:12px;
-  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
   -webkit-user-select:none;user-select:none;
 }
 
@@ -442,4 +442,88 @@ h1{
   border:1px solid var(--accent);background:var(--surface-2);color:var(--ink);
   font:inherit;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;
   -webkit-user-select:text;user-select:text;
+}
+
+/* ── v3: save/quarantine bar ───────────────────────────────────────────── */
+.savebar{
+  flex:none;display:flex;align-items:center;gap:8px;margin:0;padding:8px 10px;
+  border-radius:12px;background:var(--warn-bg);color:var(--warn);
+  font-size:12px;line-height:1.25;
+}
+.savebar[hidden]{display:none}
+
+/* ── v3: week strip on the day header ──────────────────────────────────── */
+.weekstrip{flex:none;display:flex;gap:6px;margin-top:6px}
+.wk{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  height:22px;border-radius:999px;background:var(--surface-2);
+  font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--faint);
+}
+.wk b{font-weight:800}
+.wk i{font-style:normal;font-size:11px;line-height:1}
+.wk.done{background:var(--accent-soft);color:var(--accent)}
+.wk.partial{background:var(--warn-bg);color:var(--warn)}
+.wk.today{box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
+.wk.missed{color:var(--faint);opacity:.65}
+
+/* ── v3: rest-screen next-set prep ─────────────────────────────────────── */
+.rprep{display:none}
+.app.resting .timer .rprep{
+  display:flex;flex-direction:column;align-items:center;gap:6px;order:6;
+  width:100%;max-width:340px;padding:8px 10px;border-radius:12px;
+  background:var(--surface-2);color:var(--ink);
+}
+.rprep[hidden]{display:none!important}
+.rpname{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.rpctl{display:flex;align-items:center;gap:12px;font-variant-numeric:tabular-nums}
+.rpctl span{min-width:54px;text-align:center;font-size:17px;font-weight:800}
+.rpctl button{
+  width:40px;height:40px;border-radius:999px;background:var(--surface);
+  border:1px solid var(--line);font-size:19px;font-weight:700;line-height:1;
+}
+.rpctl button:active{filter:brightness(1.15)}
+.app.resting .timer.go .rprep{display:none!important}
+.app.resting.show-details .timer .rprep{display:none!important}
+
+/* ── v3: bodyweight row + snapshot recovery ────────────────────────────── */
+.modalrow{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:46px;padding:0 12px;border-radius:12px;background:var(--surface-2);
+  font-weight:700;font-size:14px;
+}
+.modalrow input{
+  width:92px;height:34px;padding:0 8px;border-radius:8px;text-align:right;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  font:inherit;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;
+  -webkit-user-select:text;user-select:text;
+}
+
+/* ── v3: workout summary sheet ─────────────────────────────────────────── */
+.summary{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.66)}
+.summary[hidden]{display:none}
+.summary-card{
+  width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);
+  border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;
+  box-shadow:0 12px 44px rgba(0,0,0,.55);
+}
+.sumgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sumstat{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface-2);border-radius:12px;padding:10px 4px}
+.sumv{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sumk{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.sumnext{font-size:12.5px;color:var(--muted);text-align:center}
+.summary-card .donebtn{margin-top:0}
+
+/* ── v3: per-set edit target ───────────────────────────────────────────── */
+.setrow.done{cursor:pointer}
+.setrow.editing{border-color:var(--accent);background:var(--accent-soft);opacity:1;
+  box-shadow:inset 0 0 0 1px var(--accent)}
+
+@media (max-height:720px){
+  .weekstrip{margin-top:4px}
+  .wk{height:19px;font-size:10px}
+  .app.resting .timer .rprep{padding:5px 8px;gap:3px;max-width:300px}
+  .rpctl button{width:36px;height:36px;font-size:17px}
+  .rpctl span{font-size:15px;min-width:46px}
+  .rpname{font-size:10px}
+  .sumv{font-size:15px}
 }

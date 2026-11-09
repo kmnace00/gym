@@ -24,15 +24,33 @@
       <button class="day" type="button" data-day="sun">Sun</button>
     </div>
     <button class="backbtn" id="backBtn" type="button" aria-label="Back to lift list">‹ Back</button>
-    <button class="menubtn" id="progressBtn" type="button" aria-label="Progress">▤</button>
+    <button class="menubtn" id="progressBtn" type="button" aria-label="Progress" title="Progress">▤</button>
     <button class="menubtn" id="menuBtn" type="button" aria-label="Menu">⋯</button>
     <button class="pill" id="sessBtn" type="button" aria-label="Start or pause session timer">▶ <span class="startlbl">Start</span><span id="elapsed">0:00</span></button>
   </header>
+
+  <div class="savebar" id="saveBar" hidden>
+    <span class="bbtext" id="saveBarText"></span>
+    <button class="bbact" id="saveBarAction" type="button">Download copy</button>
+  </div>
 
   <div class="timer" id="timerBar">
     <div class="clock" id="restTime">Rest</div>
     <div class="tlabel" id="restLive" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
     <div class="rnext" id="restNext"></div>
+    <div class="rprep" id="restPrep" hidden>
+      <span class="rpname" id="restPrepName">Set 1 of 3</span>
+      <div class="rpctl">
+        <button type="button" id="restLoadDown" aria-label="Decrease next-set load">−</button>
+        <span id="restPrepLoad">—</span>
+        <button type="button" id="restLoadUp" aria-label="Increase next-set load">+</button>
+      </div>
+      <div class="rpctl">
+        <button type="button" id="restRepDown" aria-label="Decrease next-set reps">−</button>
+        <span id="restPrepReps">—</span>
+        <button type="button" id="restRepUp" aria-label="Increase next-set reps">+</button>
+      </div>
+    </div>
     <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <div class="tbtns">
       <button id="plus15" type="button">+15</button>
@@ -58,9 +76,12 @@
     <div class="dayhead">
       <div class="daytop">
         <div class="daytitle" id="dayTitle">—</div>
+        <button class="planbtn" id="continueBtn" type="button" hidden>Continue</button>
+        <button class="planbtn" id="finishBtn" type="button" hidden>Finish workout</button>
         <button class="planbtn" id="planBtn" type="button" hidden>Plan today</button>
       </div>
       <div class="daysub" id="daySummary">—</div>
+      <div class="weekstrip" id="weekStrip" aria-label="This training week"></div>
     </div>
     <ul class="liftlist" id="liftList"></ul>
     <div class="progress" id="progressSegs" aria-hidden="true"></div>
@@ -119,9 +140,9 @@
       <div class="psub" id="pSub">—</div>
     </div>
     <div class="pstats">
-      <div class="pstat"><span class="pv" id="pSessions">0</span><span class="pk">Sessions</span></div>
+      <div class="pstat"><span class="pv" id="pSessions">0</span><span class="pk">Workouts</span></div>
       <div class="pstat"><span class="pv" id="pSets">0</span><span class="pk">Sets</span></div>
-      <div class="pstat"><span class="pv" id="pDays">0</span><span class="pk">Days</span></div>
+      <div class="pstat"><span class="pv" id="pDays">0/3</span><span class="pk">This week</span></div>
     </div>
     <div class="pcard">
       <div class="pcardhead"><span>Volume by day</span></div>
@@ -154,13 +175,29 @@
     <label class="modalbtn" id="importLabel">Import backup<input type="file" id="importFile" accept="application/json,text/plain" hidden></label>
     <button class="modalbtn modalbtn-danger" id="replaceBtn" type="button">Restore (replace)</button>
     <input type="file" id="replaceFile" accept="application/json,text/plain" hidden>
+    <label class="modalrow" for="bwInput">Bodyweight (kg)<input type="number" id="bwInput" inputmode="decimal" min="30" max="300" step="0.1"></label>
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
     <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>
+    <button class="modalbtn" id="restoreSnapshot" type="button" hidden>Undo last reset / restore</button>
     <button class="modalbtn" id="resetDay" type="button">Reset day</button>
     <button class="modalbtn modalbtn-danger" id="clearAll" type="button">Clear all data</button>
     <div class="modalmsg" id="modalMsg"></div>
     <div class="modalfoot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="summary" id="summary" hidden>
+  <div class="summary-card" role="dialog" aria-modal="true" aria-label="Workout summary">
+    <div class="modal-head"><strong id="sumTitle">Workout complete</strong><button class="modalclose" id="sumClose" type="button" aria-label="Close summary">✕</button></div>
+    <div class="sumgrid">
+      <div class="sumstat"><span class="sumv" id="sumDuration">—</span><span class="sumk">time</span></div>
+      <div class="sumstat"><span class="sumv" id="sumSets">—</span><span class="sumk">sets</span></div>
+      <div class="sumstat"><span class="sumv" id="sumVol">—</span><span class="sumk">tonnage</span></div>
+      <div class="sumstat"><span class="sumv" id="sumPrs">—</span><span class="sumk">PRs</span></div>
+    </div>
+    <div class="sumnext" id="sumNext"></div>
+    <button class="donebtn" id="sumDone" type="button">Done</button>
   </div>
 </div>
 

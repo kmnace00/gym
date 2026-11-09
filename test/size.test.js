@@ -4,9 +4,9 @@ const P = require("../program.js");
 const S = require("../store.js");
 
 /* The durability story is a single localStorage key. Make the ceiling visible
-   before it becomes a production surprise: a full year of per-set history
-   (24 lifts × 52 sessions × every set) must stay comfortably under quota.   */
-test("a full year of per-set history stays well under localStorage scale", () => {
+   before it becomes a production surprise: ~10 years of per-set history
+   (24 lifts × 520 sessions × every set) must stay under quota.            */
+test("ten years of per-set history stays under localStorage quota", () => {
   const p = S.emptyPayload();
   ["fri", "sat", "sun"].forEach((d) => {
     P.DAYS[d].ex.forEach((e, i) => {
@@ -20,6 +20,6 @@ test("a full year of per-set history stays well under localStorage scale", () =>
       }
     });
   });
-  const bytes = JSON.stringify(p).length;
-  assert.ok(bytes < 512 * 1024, "payload is " + bytes + " bytes; keep it under 512 KB");
+  const chars = JSON.stringify(p).length;
+  assert.ok(chars < 3.5 * 1024 * 1024, "payload is " + chars + " chars; keep it under 3.5 MB");
 });

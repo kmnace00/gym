@@ -147,3 +147,47 @@ Work items (files): `program.js`, `store.js`, `stats.js`, `rest.js` (new),
 Verification: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and
 390×844, keeping the no-scroll invariant and the 24-lift program numbers intact.
 
+
+## Pass 4 (2026-11-08) — "Build all" (PM/architect review, release A+B)
+
+Scope: the ranked review list, limited to changes that can be verified in one
+run. Schema v3 is additive on top of the v2 payload; the v2 storage key is kept
+so existing data and the e2e seeds keep loading (the key name is legacy, the
+payload `v` is authoritative).
+
+Decisions:
+
+1. **A session is a first-class record, but history stays the per-lift index.**
+   `active` carries `{id,date,day,startedAt,endedAt,status}`; `sessionLog`
+   carries completed sessions with duration. On boot a session from an earlier
+   date is finalised (partial sets are preserved in the log) and a new session
+   starts for today's training day. Completed data is in `liftHistory`.
+   "Sessions" means workouts (distinct dates), not completed lifts.
+2. **The set is the unit of truth for aggregates.** History entries keep the
+   full `sets[]`; `entrySets()` is the fallback for legacy scalars. Volume, PRs,
+   CSV and tonnage read sets, not the last set. Extra sets upsert the same-day
+   history entry instead of living only in `state`.
+3. **Progression uses the top set, not the last set.** The representative
+   `load/reps/rir` and `hitTop` come from the set with the best metric, so a
+   strong first set is not erased by a fatigued last set.
+4. **Bodyweight is total system weight.** Exercises tagged `bw` value volume at
+   `bodyweight + added load`; `progressMetric` takes `{bw, bodyweight}`. A
+   user-entered bodyweight replaces the 75 kg constant. This fixes the
+   weighted-dip inversion (2.5 kg added used to collapse tonnage/e1RM).
+5. **Data safety is a boundary, not a banner.** Corrupt payloads are copied to
+   a quarantine key before returning empty and boot never overwrites them;
+   every destructive action snapshots the current payload; `save()` failures
+   surface; `HISTORY_MAX` rises to 520 (~10 years).
+6. **Rest is the preparation surface.** The rest screen gets compact next-set
+   load/reps steppers for the current lift; the full workout stays hidden.
+7. **Deferred:** ESM migration, controller/store split, block coaching,
+   calendar/Shortcuts, History API. Each needs its own T2; doing them here would
+   make the data migration and the no-scroll invariant unverifiable in one pass.
+
+Work items (files): `program.js`, `store.js`, `stats.js`, `app.js`,
+`index.html`, `style.css`, `sw.js`, `test/*`, `e2e/*`, `README.md`,
+`BUILD_LOG.md`, `TASK.md` (WIP only).
+
+Verification: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and
+390×844; v2→v3 migration, rollover, extra-set/edit round-trip, bodyweight
+volume/metric, corruption quarantine, and no-scroll.

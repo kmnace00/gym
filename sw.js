@@ -1,5 +1,9 @@
-/* Gym service worker — network-first so updates always land, cache fallback offline. */
-const CACHE = "gym-v6";
+/* Gym service worker:
+   - navigation requests: network-first, offline falls back to the app shell
+   - static assets: stale-while-revalidate (instant from cache, refreshed behind)
+   A failed script request must never return index.html — that surfaced as a
+   parse error in the gym basement. Only navigations get the shell.          */
+const CACHE = "gym-v7";
 const ASSETS = [
   "./", "./index.html", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./app.js",
@@ -19,13 +23,33 @@ self.addEventListener("activate", (e) => {
 });
 
 self.addEventListener("fetch", (e) => {
-  if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
-  // network-first: online users always get the latest deploy; offline falls back to cache
+  const req = e.request;
+  if (req.method !== "GET" || !req.url.startsWith(self.location.origin)) return;
+
+  if (req.mode === "navigate") {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put("./index.html", copy));
+          return res;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
   e.respondWith(
-    fetch(e.request).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy));
-      return res;
-    }).catch(() => caches.match(e.request).then((hit) => hit || caches.match("./index.html")))
+    caches.open(CACHE).then((cache) =>
+      cache.match(req).then((hit) => {
+        const network = fetch(req)
+          .then((res) => {
+            if (res && res.ok) cache.put(req, res.clone());
+            return res;
+          })
+          .catch(() => hit);
+        return hit || network;
+      })
+    )
   );
 });
