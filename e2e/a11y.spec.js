@@ -391,3 +391,40 @@ test("the menu is reachable on a short phone", async ({ page }) => {
   expect(clear.top >= 0 && clear.bottom <= clear.inner, "Clear all is reachable after scrolling").toBe(true);
   expect(clear.h).toBeGreaterThanOrEqual(44);
 });
+
+/* B3-24 — adherence is drawn with symbols and colour, so a screen reader needs
+   the states in words: every week cell carries an aria-label, and the heat card
+   carries a hidden sentence instead of a bare "11/24". */
+test("the week strip names each day's state and the heat card states the count (B3-24)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  const key = (dt) => dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+  const fri = new Date();
+  fri.setDate(fri.getDate() - ((fri.getDay() + 2) % 7)); // most recent Friday
+  const sat = new Date(fri); sat.setDate(sat.getDate() + 1);
+  const history = {};
+  for (let i = 0; i < 8; i++) history["fri:" + i] = [{ date: key(fri), load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 8 }];
+  for (let i = 0; i < 3; i++) history["sat:" + i] = [{ date: key(sat), load: 40, reps: 6, rir: 2, hitTop: false, setsDone: 3 }];
+
+  await page.goto(url);
+  await page.evaluate((h) => localStorage.setItem("gym-tool-v2", JSON.stringify({ v: 2, cur: "fri", idx: 0, state: {}, liftHistory: h })), history);
+  await page.reload();
+
+  const cells = await page.locator(".wk").all();
+  expect(cells.length).toBe(3);
+  const labels = [];
+  for (const c of cells) labels.push(await c.ariaLabel());
+  expect(labels[0], "week cell names its state").toBe("Friday, done");
+  expect(labels[1], "week cell names its state").toBe("Saturday, in progress");
+  expect(labels[2], "week cell names its state").toBe("Sunday, missed");
+  expect(await page.locator(".wk i").first().getAttribute("aria-hidden"), "the symbol is decorative").toBe("true");
+
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#heatSummary")).toBeHidden();
+  const count = (await page.locator("#pHeatCount").textContent()).split("/")[0];
+  expect((await page.locator("#heatSummary").textContent()) || "", "heat card names the count")
+    .toContain(count + " of 24 training days in the last 8 weeks");
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});

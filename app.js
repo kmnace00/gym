@@ -193,14 +193,16 @@
     rNextBtn.disabled = last;
   }
   /* the strip is symbol + colour only, so every cell needs a spoken state */
+  var WK_DAY = { fri: "Friday", sat: "Saturday", sun: "Sunday" };
   var WK_WORD = { done: "done", partial: "in progress", missed: "missed", today: "today", upcoming: "upcoming" };
   function renderWeekStrip() {
     if (!weekStrip) return;
     var status = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
     weekStrip.innerHTML = status.map(function (d) {
       var lbl = DAY_LABEL[d.day] || d.day;
+      var name = WK_DAY[d.day] || lbl;
       var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
-      return '<span class="wk ' + d.state + '" aria-label="' + esc(lbl + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
+      return '<span class="wk ' + d.state + '" aria-label="' + esc(name + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
         + '<b>' + esc(lbl) + '</b><i aria-hidden="true">' + mark + '</i></span>';
     }).join("");
   }
