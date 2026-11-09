@@ -66,3 +66,42 @@ any code changes.
 `npm test` (pure modules + store) and `npm run e2e` at 390×667 and 390×844,
 keeping the no-scroll invariant. Manual: progress view fits, backup dot clears
 after export, import merges, GO announces assertively.
+
+## Pass 2 (2026-11-08) — UX / data / architecture hardening
+
+Second T2 pass. Decisions:
+
+1. **Sanitize at the store boundary, not in the renderer.** `normalize()`
+   coerces every *present* numeric field on `state`, `state.sets` and
+   `liftHistory` to a real number and never adds/removes keys. Missing fields
+   stay missing so `getLift()` still injects program defaults. Cheaper and
+   safer than auditing every `innerHTML` template, and it neutralises a
+   hostile imported backup before any render.
+2. **Rest orchestration consolidated, not extracted.** The ten loose flags
+   (`pendingNext`, `pendingIdx`, `pendingDay`, `rNote`, `rNextText`, `rMsg`,
+   `goAt`, `finishArmedUntil`, `skipResetId`, `rLabel`) became one `restCtx`
+   object. This preserves behaviour (verified by the full e2e suite) and makes
+   the implicit state machine auditable. A dedicated rest-controller module
+   remains the longer-term goal but is deferred to avoid a no-value refactor
+   of the most user-critical path in the same pass.
+3. **Rest locks the lift context.** The full-screen timer no longer renders
+   the ‹ › arrows; changing lift mid-rest requires Show workout (peek). This
+   removes an ambiguous escape hatch next to the GO advance surface.
+4. **Deload is part of progression, not a new engine.** `stallLoad` reuses the
+   existing suggestion line + Apply button: three consecutive missed-top
+   sessions surface a ~10% deload instead of "keep". No new screen or state.
+5. **PRs are a hint, not a dashboard card.** A set whose e1RM beats logged
+   history shows a one-line New PR hint on the lift view; this keeps the
+   no-scroll Progress layout intact while adding the highest-value feedback.
+
+### Deferred (with reason)
+
+- **Exercise swap** — needs a curated alternate-exercise map in `program.js`;
+  the repo rule reserves program-data changes for Khang's explicit sign-off,
+  and per-exercise progression needs a model change. Dedicated T2 later.
+- **Apple Watch / lockscreen live activity** — native packaging (non-goal).
+- **Backend sync / IndexedDB** — violates the free-static-Web-Pages constraint;
+  prompted backups + merge remain the durability story.
+- **Full ESM / module namespacing** — `file://` e2e CORS + CJS harness, as in
+  pass 1. Mitigated here with a duplicate-export warning in the UMD wrapper.
+

@@ -8,7 +8,8 @@
     "icons": "node tools/make-icons.js",
     "e2e": "playwright test",
     "typecheck": "tsc -p jsconfig.json --noEmit",
-    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check stats.js && node --check app.js && node --check sw.js && node --test test/"
+    "check:assets": "node tools/check-assets.js",
+    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check stats.js && node --check app.js && node --check sw.js && node tools/check-assets.js && node --test test/"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

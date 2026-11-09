@@ -3,7 +3,8 @@
   "use strict";
 
   var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc, dayMins = Gym.dayMins, dayMinsLeft = Gym.dayMinsLeft,
-      getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, progressMetric = Gym.progressMetric,
+      getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
+      progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
       sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym;
 
@@ -61,6 +62,9 @@
   var modal = document.getElementById("modal");
   var undoSetBtn = document.getElementById("undoSetBtn");
   var resetLiftBtn = document.getElementById("resetLiftBtn");
+  var backupBar = document.getElementById("backupBar");
+  var backupBarText = document.getElementById("backupBarText");
+  var backupDismissed = false;
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
@@ -138,24 +142,41 @@
       segs += '<span class="pseg"><i style="width:' + (pct * 100) + '%"></i></span>';
     });
     document.getElementById("progressSegs").innerHTML = segs;
+
+    /* assertive backup nudge: localStorage is one Safari cleanup from gone */
+    var due = !backupDismissed && Gym.backupDue(payload);
+    backupBar.hidden = !due;
+    if (due) {
+      var age = Gym.backupAgeDays(payload);
+      backupBarText.textContent = age === null
+        ? "Never backed up — this log lives only on this phone"
+        : "Backup " + age + " day" + (age === 1 ? "" : "s") + " old — keep your log safe";
+    }
   }
 
-  /* previous-session entry for the suggestion. If the current lift is already
-     complete, the newest history entry is *this* session, so skip it. */
-  function prevForSuggest() {
+  /* history entries *before* this session. If the current lift is already
+     complete, the newest entry is this session, so skip it. */
+  function priorEntries() {
     var entries = Gym.series(payload, cur, idx);
     var s = curSt();
     var skip = (s.done >= ex().s && entries.length > 0) ? 1 : 0;
-    var i = entries.length - 1 - skip;
-    return i >= 0 ? entries[i] : null;
+    return skip ? entries.slice(0, entries.length - 1) : entries;
   }
   function renderSuggest() {
     var line = document.getElementById("suggestLine"), txt = document.getElementById("suggestText"), applyBtn = document.getElementById("applyLoad");
-    var su = suggestLoad(ex(), prevForSuggest());
+    var pri = priorEntries();
+    var last = pri.length ? pri[pri.length - 1] : null;
+    var stall = stallLoad(ex(), pri);
+    var su = suggestLoad(ex(), last);
     if (!su.last) { line.hidden = true; applyBtn.hidden = true; return; }
-    var base = "Last " + (DAY_LABEL[cur] || "") + ": " + su.last.load + " × " + su.last.reps + " @" + su.last.rir + " RIR";
-    if (su.hitTop && su.suggest !== su.last.load) {
-      txt.innerHTML = base + " (hit top) → try <b>" + su.suggest + "</b>";
+    var base = "Last " + (DAY_LABEL[cur] || "") + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
+    if (stall) {
+      /* a plateau — double progression can't help, so recommend the deload */
+      txt.innerHTML = base + " · 3 sessions stalled → deload to <b>" + esc(stall.load) + "</b>";
+      applyBtn.hidden = false;
+      applyBtn.setAttribute("data-load", String(stall.load));
+    } else if (su.hitTop && su.suggest !== su.last.load) {
+      txt.innerHTML = base + " (hit top) → try <b>" + esc(su.suggest) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(su.suggest));
     } else {
@@ -239,7 +260,7 @@
 
     var btn = document.getElementById("doneBtn");
     btn.classList.toggle("complete", complete);
-    btn.textContent = complete ? "✓ Done — tap for extra set" : "Set Done";
+    btn.textContent = complete ? "✓ Add extra set" : "Set Done";
     btn.setAttribute("aria-pressed", complete ? "true" : "false");
     btn.setAttribute("aria-label", complete ? "All sets done. Tap to add an extra set." : "Set Done");
 
@@ -272,8 +293,10 @@
     document.getElementById("pSessions").textContent = sessions;
     document.getElementById("pSets").textContent = sets;
     document.getElementById("pDays").textContent = days;
+    var todayKey = Gym.dateKey();
     document.getElementById("pSub").textContent = sessions
-      ? sessions + " sessions · " + compactVol(Stats.totalVolume(payload)) + " kg lifted"
+      ? sessions + " sessions · " + compactVol(Stats.totalVolume(payload)) + " kg · "
+        + Stats.sessionsLast7(payload, todayKey) + "/3 this week"
       : "No sessions yet — open a lift to begin";
 
     var byDay = Stats.volumeByDay(payload, DAYS);
@@ -301,8 +324,17 @@
       }
       svg.innerHTML = '<path d="' + path + '" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
     }
+    var wow = Stats.weekOverWeek(payload, todayKey);
+    var wowTxt = "";
+    if (recent.length) {
+      if (wow.hasPrev) {
+        wowTxt = " · " + (wow.deltaPct >= 0 ? "▲" : "▼") + Math.abs(wow.deltaPct) + "% vs prior 7d";
+      } else {
+        wowTxt = " · tonnage trend";
+      }
+    }
     document.getElementById("pNote").textContent = recent.length
-      ? "Last " + recent.length + " session" + (recent.length === 1 ? "" : "s") + " · tonnage trend"
+      ? "Last " + recent.length + " session" + (recent.length === 1 ? "" : "s") + wowTxt
       : "Log a full lift to see the trend";
 
     var movers = topMovers();
@@ -334,8 +366,15 @@
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
   var rest = Machine.idle();
-  var rInt = null, rLabel = "", pendingNext = false, pendingIdx = -1,
-      pendingDay = "", rNote = "", rNextText = "", rMsg = "", goAt = 0, finishArmedUntil = 0, skipResetId = null;
+  var rInt = null;
+  /* One object for the rest *orchestration*. These used to be ten loose
+     module-level variables that together encoded a second, implicit state
+     machine (idle → resting → go → advance-or-finish) around the pure clock
+     in machine.js. Keeping them together makes the control flow auditable.  */
+  var restCtx = {
+    label: "", pending: false, pIdx: -1, pDay: "",
+    note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, skipTimer: null
+  };
 
   function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
@@ -361,8 +400,8 @@
     timerBar.classList.remove("active", "go");
     appEl.classList.remove("resting");
     setRestDetails(false);
-    pendingNext = false; pendingIdx = -1; pendingDay = "";
-    finishArmedUntil = 0;
+    restCtx.pending = false; restCtx.pIdx = -1; restCtx.pDay = "";
+    restCtx.finishUntil = 0;
     resetPauseUi();
     skipBtn.textContent = "End rest";
     document.getElementById("restTime").textContent = "Rest";
@@ -413,14 +452,14 @@
     stopInterval();
     rest = { phase: Machine.GO, endMs: 0, left: 0, total: rest.total };
     resetPauseUi();
-    goAt = Date.now();
+    restCtx.goAtMs = Date.now();
     timerBar.classList.remove("paused");
     timerBar.classList.add("go");
     document.getElementById("restLive").setAttribute("aria-live", "assertive");
     var rn = document.getElementById("restNext");
     rn.textContent = rn.textContent.replace("Up next —", "Up now —");
-    finishArmedUntil = 0;
-    var adv = pendingNext && cur === pendingDay && idx === pendingIdx;
+    restCtx.finishUntil = 0;
+    var adv = restCtx.pending && cur === restCtx.pDay && idx === restCtx.pIdx;
     skipBtn.textContent = adv ? (idx < DAYS[cur].ex.length - 1 ? "Next lift" : "Finish") : "Start next set";
     setRestLabel("GO", adv ? (idx < DAYS[cur].ex.length - 1 ? "Lift done — next up." : "Workout complete — nice work.") : "Next set — go.");
     renderRest();
@@ -436,10 +475,10 @@
   function startRest(sec, label, lastSet, note, nextText) {
     stopInterval();
     rest = Machine.start(sec, Date.now());
-    pendingNext = !!lastSet;
-    if (pendingNext && pendingIdx < 0) { pendingIdx = idx; pendingDay = cur; }
-    rNote = note || ""; rNextText = nextText || "";
-    document.getElementById("restNext").textContent = rNextText;
+    restCtx.pending = !!lastSet;
+    if (restCtx.pending && restCtx.pIdx < 0) { restCtx.pIdx = idx; restCtx.pDay = cur; }
+    restCtx.note = note || ""; restCtx.nextText = nextText || "";
+    document.getElementById("restNext").textContent = restCtx.nextText;
     document.getElementById("restTime").setAttribute("aria-label", "Rest time remaining");
     document.getElementById("restLive").setAttribute("aria-live", "polite");
     timerBar.classList.add("active"); timerBar.classList.remove("go");
@@ -447,13 +486,13 @@
     if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur();
     setRestDetails(false);
     resetPauseUi();
-    finishArmedUntil = 0;
+    restCtx.finishUntil = 0;
     skipBtn.textContent = "End rest";
     var msg = note === "partials"
       ? "Add bottom-half partials to failure — then rest."
       : "Stretch — set up the next set.";
     if (sec > ex().rest) msg = "+30s for 0–1 RIR · " + msg;
-    rMsg = msg;
+    restCtx.msg = msg;
     setRestLabel(label, msg);
     renderRest();
     applyVisibility();
@@ -461,7 +500,7 @@
   }
   document.getElementById("plus15").onclick = function () {
     if (rest.phase === Machine.IDLE) return;
-    if (rest.phase === Machine.GO) { startRest(15, rLabel, pendingNext, rNote, rNextText); return; }
+    if (rest.phase === Machine.GO) { startRest(15, restCtx.label, restCtx.pending, restCtx.note, restCtx.nextText); return; }
     timerBar.classList.remove("go");
     skipBtn.textContent = "End rest";
     rest = Machine.extend(rest, 15);
@@ -473,7 +512,7 @@
       rest = Machine.resume(rest, Date.now());
       timerBar.classList.remove("paused");
       pauseBtn.textContent = "Pause";
-      document.getElementById("restMsg").textContent = rMsg;
+      document.getElementById("restMsg").textContent = restCtx.msg;
       startInterval();
       renderRest();
       return;
@@ -491,40 +530,40 @@
   timerBar.addEventListener("click", function (ev) {
     if (!timerBar.classList.contains("go")) return;
     if (ev.target.closest("button")) return;
-    if (Date.now() - goAt < 400) return;
+    if (Date.now() - restCtx.goAtMs < 400) return;
     skipBtn.click();
   });
   function clearUndo() { appEl.classList.remove("can-undo"); }
   skipBtn.onclick = function () {
     var wasGo = rest.phase === Machine.GO;
     stopInterval();
-    var adv = pendingNext && cur === pendingDay && idx === pendingIdx && curSt().done >= ex().s;
+    var adv = restCtx.pending && cur === restCtx.pDay && idx === restCtx.pIdx && curSt().done >= ex().s;
     if (adv) {
       if (idx < DAYS[cur].ex.length - 1) {
-        pendingNext = false;
+        restCtx.pending = false;
         var next = firstOpenLift(cur, payload.state, idx + 1);
         idx = next >= 0 ? next : idx + 1;
         hintText = ""; hintGood = false; commit();
         timerIdle("", "Next lift — go."); render();
       } else {
         /* last lift done — require a second tap so a stray tap can't end the session */
-        if (Date.now() > finishArmedUntil) {
-          finishArmedUntil = Date.now() + 2500;
+        if (Date.now() > restCtx.finishUntil) {
+          restCtx.finishUntil = Date.now() + 2500;
           skipBtn.textContent = "Tap again to finish";
-          clearTimeout(skipResetId);
-          skipResetId = setTimeout(function () {
-            if (timerBar.classList.contains("go") && Date.now() >= finishArmedUntil) skipBtn.textContent = "Finish";
+          clearTimeout(restCtx.skipTimer);
+          restCtx.skipTimer = setTimeout(function () {
+            if (timerBar.classList.contains("go") && Date.now() >= restCtx.finishUntil) skipBtn.textContent = "Finish";
           }, 2600);
           return;
         }
-        pendingNext = false; finishArmedUntil = 0;
+        restCtx.pending = false; restCtx.finishUntil = 0;
         timerIdle("", "Workout complete — nice work.");
         clearUndo();
         if (sInt) { pauseSession(); sAutoStopped = true; }
       }
       return;
     }
-    pendingNext = false;
+    restCtx.pending = false;
     timerIdle("", wasGo ? "Next set — go." : "Skipped — next set, go.");
   };
   /* undo always acts on the lift you are looking at, so the change is visible */
@@ -540,7 +579,7 @@
       if (arr && arr.length && arr[arr.length - 1].date === Gym.dateKey()) arr.pop();
     }
     stopInterval();
-    pendingNext = false;
+    restCtx.pending = false;
     hintText = ""; hintGood = false;
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
@@ -636,6 +675,49 @@
   bindStepper("repDown", function () { stepReps(-1); });
   bindStepper("repUp", function () { stepReps(1); });
 
+  /* tap the number to type it — correcting "actually 67.5" shouldn't need
+     five taps or a sprint on the press-and-hold repeat. The +/- stay for
+     fine nudging; typing is for precision.                                  */
+  var editingValue = false;
+  function editValue(valueEl, current, step, apply) {
+    if (editingValue) return;
+    editingValue = true;
+    var mid = valueEl.parentNode;
+    var inp = document.createElement("input");
+    inp.type = "number"; inp.inputMode = "decimal"; inp.step = String(step);
+    inp.className = "vin"; inp.value = String(current);
+    inp.setAttribute("aria-label", "Enter value");
+    valueEl.style.display = "none";
+    mid.appendChild(inp);
+    inp.focus(); inp.select();
+    function finish(commit) {
+      if (!editingValue) return;
+      editingValue = false;
+      var v = parseFloat(inp.value);
+      inp.remove();
+      valueEl.style.display = "";
+      if (commit && isFinite(v)) apply(v);
+      else render();
+    }
+    inp.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
+      else if (ev.key === "Escape") { ev.preventDefault(); finish(false); }
+    });
+    inp.addEventListener("blur", function () { finish(true); });
+  }
+  function editLoad() {
+    editValue(document.getElementById("loadVal"), curSt().load, ex().step, function (v) {
+      curSt().load = Math.max(0, Gym.round2(v)); commit(); render();
+    });
+  }
+  function editReps() {
+    editValue(document.getElementById("repVal"), curSt().reps, 1, function (v) {
+      curSt().reps = Math.max(1, Math.round(v)); commit(); render();
+    });
+  }
+  document.getElementById("loadVal").parentNode.addEventListener("click", editLoad);
+  document.getElementById("repVal").parentNode.addEventListener("click", editReps);
+
   /* trend sparkline is opt-in — reclaims vertical space on short phones */
   document.getElementById("trendToggle").onclick = function () {
     appEl.classList.toggle("show-trend");
@@ -646,6 +728,14 @@
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
     var wasComplete = s.done >= e.s;
+    /* capture the log *before* this set so the PR check compares against
+       history, not against the set we are about to bank */
+    var priorHist = Gym.series(payload, cur, idx);
+    var prevBest = -Infinity, hi;
+    for (hi = 0; hi < priorHist.length; hi++) {
+      prevBest = Math.max(prevBest, progressMetric(priorHist[hi].load || 0, priorHist[hi].reps || 0));
+    }
+
     s.sets = s.sets || [];
     s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
     s.done = s.sets.length;
@@ -655,9 +745,19 @@
     hintText = ""; hintGood = false;
     var finished = !wasComplete && s.done >= e.s;
     var restNote = "";
+    var newMetric = progressMetric(s.load, s.reps);
+
+    /* a PR beats the progression nudge — celebrate it first */
+    if (priorHist.length && newMetric > prevBest) {
+      hintText = "New PR — " + (s.load > 0
+        ? loadLabel(s.load, e) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
+        : s.reps + " reps");
+      hintGood = true;
+    }
+
     if (finished && e.partial && s.lastRir <= 1) {
       restNote = "partials";
-    } else if (finished && s.topHits >= 1 && s.reps >= e.top && s.lastRir >= e.rir) {
+    } else if (!hintText && finished && s.topHits >= 1 && s.reps >= e.top && s.lastRir >= e.rir) {
       hintText = e.n + ": top reps at target RIR — do it again next session to add weight.";
       hintGood = true;
     }
@@ -683,7 +783,7 @@
         (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load));
     }
 
-    pendingIdx = -1; pendingDay = "";
+    restCtx.pIdx = -1; restCtx.pDay = "";
     commit();
     startRest(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText);
 
@@ -711,7 +811,7 @@
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
-  function cancelPendingAdvance() { if (rest.phase !== Machine.IDLE) pendingNext = false; }
+  function cancelPendingAdvance() { if (rest.phase !== Machine.IDLE) restCtx.pending = false; }
   function showDay() { view = "day"; hintText = ""; hintGood = false; commit(); render(); }
   function showProgress() { view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
   function openLift(i) {
@@ -786,6 +886,8 @@
   }
   function noteBackup() { Gym.markBackup(payload); commit(); updateFoot(); }
   menuBtn.onclick = openModal;
+  document.getElementById("backupBarSave").onclick = openModal;
+  document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; renderDay(); };
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
   document.getElementById("exportCopy").onclick = function () {
@@ -846,7 +948,7 @@
   function notifyRestDone() {
     if (!notifyOn() || !("Notification" in window)) return;
     if (Notification.permission !== "granted" || !document.hidden) return;
-    try { new Notification("Rest done — GO", { body: rNextText || "Next set", tag: "gym-rest" }); } catch (e) {}
+    try { new Notification("Rest done — GO", { body: restCtx.nextText || "Next set", tag: "gym-rest" }); } catch (e) {}
   }
 
   /* two-tap confirm for destructive menu actions */

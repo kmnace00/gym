@@ -6,7 +6,16 @@
    Browser global (window.Gym) + Node module (module.exports).               */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else { root.Gym = root.Gym || {}; Object.assign(root.Gym, factory()); }
+  else {
+    /* flat-namespace registration with a collision guard: two modules that
+       export the same key must never silently clobber each other.            */
+    root.Gym = root.Gym || {};
+    var mod = factory(), k;
+    for (k in mod) if (Object.prototype.hasOwnProperty.call(mod, k)) {
+      if (Object.prototype.hasOwnProperty.call(root.Gym, k) && typeof console === "object") console.warn("[gym] duplicate export: " + k);
+      root.Gym[k] = mod[k];
+    }
+  }
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 

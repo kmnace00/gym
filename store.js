@@ -3,7 +3,16 @@
    call time and guarded, so requiring this file in Node never throws.        */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else { root.Gym = root.Gym || {}; Object.assign(root.Gym, factory()); }
+  else {
+    /* flat-namespace registration with a collision guard: two modules that
+       export the same key must never silently clobber each other.            */
+    root.Gym = root.Gym || {};
+    var mod = factory(), k;
+    for (k in mod) if (Object.prototype.hasOwnProperty.call(mod, k)) {
+      if (Object.prototype.hasOwnProperty.call(root.Gym, k) && typeof console === "object") console.warn("[gym] duplicate export: " + k);
+      root.Gym[k] = mod[k];
+    }
+  }
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -20,6 +29,50 @@
   function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
   function emptyPayload() { return { v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {}, lastBackup: null }; }
 
+  /* ── sanitize on the way in ───────────────────────────────────────────────
+     A backup is *untrusted input*: it is parsed and later rendered through
+     innerHTML templates. Coerce every numeric field that is present to a real
+     number (turning a hostile string into NaN-safe data), without adding or
+     removing keys — missing fields must stay missing so getLift() can inject
+     program defaults. This closes the import → innerHTML injection vector at
+     the data boundary, before any render.                                    */
+  function num(v, dflt) {
+    var n = typeof v === "number" ? v : Number(v);
+    return isFinite(n) ? n : dflt;
+  }
+  function coerceNum(obj, key) {
+    if (obj && Object.prototype.hasOwnProperty.call(obj, key)) obj[key] = num(obj[key], 0);
+  }
+  function sanitizeRecord(r) {
+    if (!r || typeof r !== "object") return r;
+    var i, set;
+    coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
+    coerceNum(r, "done"); coerceNum(r, "topHits");
+    if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
+    if (Array.isArray(r.sets)) {
+      for (i = 0; i < r.sets.length; i++) {
+        set = r.sets[i];
+        if (set && typeof set === "object") { coerceNum(set, "load"); coerceNum(set, "reps"); coerceNum(set, "rir"); }
+      }
+    }
+    return r;
+  }
+  function sanitizeEntry(e) {
+    if (!e || typeof e !== "object") return e;
+    if (Object.prototype.hasOwnProperty.call(e, "date")) e.date = typeof e.date === "string" ? e.date : String(e.date);
+    coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir"); coerceNum(e, "setsDone");
+    if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
+    return e;
+  }
+  function sanitizePayload(p) {
+    var k, i;
+    for (k in p.state) if (Object.prototype.hasOwnProperty.call(p.state, k)) sanitizeRecord(p.state[k]);
+    for (k in p.liftHistory) if (Object.prototype.hasOwnProperty.call(p.liftHistory, k) && Array.isArray(p.liftHistory[k])) {
+      for (i = 0; i < p.liftHistory[k].length; i++) sanitizeEntry(p.liftHistory[k][i]);
+    }
+    return p;
+  }
+
   function normalize(p) {
     if (!p.state || typeof p.state !== "object") p.state = {};
     if (!p.liftHistory || typeof p.liftHistory !== "object") p.liftHistory = {};
@@ -27,7 +80,7 @@
     if (!p.cur) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null; // additive, no version bump
     p.v = CURRENT;
-    return p;
+    return sanitizePayload(p);
   }
 
   /* v1 → v2 carries data forward; unknown/future versions are flagged, never dropped */

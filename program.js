@@ -3,7 +3,16 @@
    Node module (module.exports) so node:test can import it without a build.   */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else { root.Gym = root.Gym || {}; Object.assign(root.Gym, factory()); }
+  else {
+    /* flat-namespace registration with a collision guard: two modules that
+       export the same key must never silently clobber each other.            */
+    root.Gym = root.Gym || {};
+    var mod = factory(), k;
+    for (k in mod) if (Object.prototype.hasOwnProperty.call(mod, k)) {
+      if (Object.prototype.hasOwnProperty.call(root.Gym, k) && typeof console === "object") console.warn("[gym] duplicate export: " + k);
+      root.Gym[k] = mod[k];
+    }
+  }
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -116,10 +125,28 @@
     return { suggest: suggest, last: prev, hitTop: hitTop };
   }
 
+  /* stall guard: three consecutive sessions that all missed top reps at the
+     same load = a plateau. Double progression alone would keep you stuck, so
+     recommend a ~10% deload (snapped to the machine's step) to reset fatigue
+     and let the next block climb again. `entries` is oldest → newest.        */
+  function stallLoad(e, entries) {
+    if (!entries || entries.length < 3) return null;
+    var last3 = entries.slice(entries.length - 3), i;
+    for (i = 0; i < last3.length; i++) if (last3[i] && last3[i].hitTop) return null;
+    var load = last3[2] && typeof last3[2].load === "number" ? last3[2].load : null;
+    if (!load) return null;
+    var raw = round2(load * 0.9);
+    var snapped = e.step > 0 ? round2(Math.round(raw / e.step) * e.step) : raw;
+    if (snapped >= load) snapped = round2(load - e.step);
+    if (snapped <= 0) return null;
+    return { load: snapped, last: last3[2], sessions: 3 };
+  }
+
   return {
     DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
-    epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad
+    epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
+    stallLoad: stallLoad
   };
 });

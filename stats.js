@@ -5,7 +5,16 @@
    Browser global (window.Gym) + Node module.                                */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
-  else { root.Gym = root.Gym || {}; Object.assign(root.Gym, factory()); }
+  else {
+    /* flat-namespace registration with a collision guard: two modules that
+       export the same key must never silently clobber each other.            */
+    root.Gym = root.Gym || {};
+    var mod = factory(), k;
+    for (k in mod) if (Object.prototype.hasOwnProperty.call(mod, k)) {
+      if (Object.prototype.hasOwnProperty.call(root.Gym, k) && typeof console === "object") console.warn("[gym] duplicate export: " + k);
+      root.Gym[k] = mod[k];
+    }
+  }
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
@@ -131,10 +140,78 @@
     return n;
   }
 
+  /* ── time-window analytics (deterministic: the caller passes `nowKey`) ─── */
+  function parseKey(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function keyOf(dt) {
+    return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+  }
+  function shiftKey(nowKey, days) {
+    var d = parseKey(nowKey);
+    if (!d) return null;
+    d.setDate(d.getDate() + days);
+    return keyOf(d);
+  }
+  function volumeInRange(payload, fromKey, toKey) {
+    var s = sessionVolumes(payload), t = 0, i;
+    for (i = 0; i < s.length; i++) if (s[i].date >= fromKey && s[i].date <= toKey) t += s[i].volume;
+    return t;
+  }
+  /**
+   * Rolling 7-day tonnage vs the previous 7 days, anchored on `nowKey`.
+   * @param {any} payload @param {string} nowKey @returns {{thisWeek:number,lastWeek:number,deltaPct:number,hasPrev:boolean}}
+   */
+  function weekOverWeek(payload, nowKey) {
+    var thisStart = shiftKey(nowKey, -6), lastStart = shiftKey(nowKey, -13), lastEnd = shiftKey(nowKey, -7);
+    if (!thisStart) return { thisWeek: 0, lastWeek: 0, deltaPct: 0, hasPrev: false };
+    var tw = volumeInRange(payload, thisStart, nowKey);
+    var lw = volumeInRange(payload, lastStart, lastEnd);
+    var pct = lw > 0 ? Math.round(((tw - lw) / lw) * 100) : (tw > 0 ? 100 : 0);
+    return { thisWeek: tw, lastWeek: lw, deltaPct: pct, hasPrev: lw > 0 };
+  }
+  /**
+   * Distinct session dates inside the last 7 days.
+   * @param {any} payload @param {string} nowKey @returns {number}
+   */
+  function sessionsLast7(payload, nowKey) {
+    var start = shiftKey(nowKey, -6);
+    if (!start) return 0;
+    var s = sessionVolumes(payload), n = 0, i;
+    for (i = 0; i < s.length; i++) if (s[i].date >= start && s[i].date <= nowKey) n++;
+    return n;
+  }
+  /**
+   * Best estimated 1RM (or reps for bodyweight) per lift, ranked desc.
+   * @param {any} payload
+   * @param {Record<string, {ex: any[]}>} DAYS
+   * @param {(load:number, reps:number) => number} metric
+   * @returns {{key:string,name:string,load:number,reps:number,date:string,metric:number}[]}
+   */
+  function personalRecords(payload, DAYS, metric) {
+    var lh = (payload && payload.liftHistory) || {}, out = [], k, arr, i, e, best, bestM, m, p, d, idx, name;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
+      arr = lh[k] || []; best = null; bestM = -Infinity;
+      for (i = 0; i < arr.length; i++) {
+        e = arr[i]; if (!e) continue;
+        m = metric(e.load || 0, e.reps || 0);
+        if (m > bestM) { bestM = m; best = e; }
+      }
+      if (!best) continue;
+      p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
+      name = DAYS[d] && DAYS[d].ex[idx] ? DAYS[d].ex[idx].n : k;
+      out.push({ key: k, name: name, load: best.load, reps: best.reps, date: best.date, metric: bestM });
+    }
+    out.sort(function (a, b) { return b.metric - a.metric; });
+    return out;
+  }
+
   return {
     historyKeys: historyKeys, sessionCount: sessionCount, setsLogged: setsLogged,
     setsRecorded: setsRecorded,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
-    recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays
+    recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
+    weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords
   };
 });

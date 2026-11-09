@@ -5,11 +5,11 @@ Personal one-screen workout tool for Khang — Fri–Sun 3-day hypertrophy plan.
 - **Day → Lift** two views: an 8-lift overview for the day, and a focused lift view you drill into.
 - One screen, no scroll, 100dvh, free.
 - Dark-first theme with a light toggle (first load follows the system preference when no theme is saved yet).
-- Lift view has a **per-set log** — one row per set with load × reps @ RIR, completed sets checked, and the next set highlighted — plus always-visible load / reps / RIR adjusters, Undo / Restart, and Set Done.
-- **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions (folded behind a **Trend** pill so it doesn't crowd short phones).
-- **Progress view:** `▤` in the header opens a one-screen dashboard — sessions, sets, training days, tonnage per day, a recent-session tonnage trend, and your biggest movers.
-- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek. Pausing freezes the countdown and turns the Pause pill into an accented Resume. At GO it beeps and vibrates; with **Rest notifications** enabled it also posts a notification while the tab is backgrounded.
-- **Backup:** the `⋯` menu exports/imports the full state as JSON (copy or download), so the log survives Safari data cleanup. The menu dot turns accent-coloured when a backup is overdue (7 days), and **import merges history by date** instead of overwriting, so two devices can be reconciled.
+- Lift view has a **per-set log** — one row per set with load × reps @ RIR, completed sets checked, and the next set highlighted — plus always-visible load / reps / RIR adjusters (tap a value to type it precisely), Undo / Restart, and Set Done (after the last set it becomes **Add extra set**).
+- **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions (folded behind a **Trend** pill so it doesn't crowd short phones). Three sessions without hitting top reps triggers a **deload** suggestion instead of "keep"; beating your logged best shows a **New PR** hint.
+- **Progress view:** `▤` in the header opens a one-screen dashboard — sessions, sets, training days, tonnage per day, a recent-session tonnage trend, and your biggest movers, with this week's session count and a week-over-week tonnage delta.
+- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek. Pausing freezes the countdown and turns the Pause pill into an accented Resume. At GO it beeps and vibrates; with **Rest notifications** enabled it also posts a notification while the tab is backgrounded. The full-screen rest hides the ‹ › lift arrows so a mid-rest tap can't silently jump you to another lift — use **Show workout** to navigate.
+- **Backup:** an overdue-backup banner appears on the day view with a one-tap **Backup** button (dismissible for the session), so the log survives Safari data cleanup. The `⋯` menu exports/imports the full state as JSON (copy or download); its dot turns accent-coloured when a backup is overdue (7 days), and **import merges history by date** instead of overwriting, so two devices can be reconciled.
 - **Undo / Reset:** next to the sets, **`↺ Undo`** removes your last set (the count visibly goes from e.g. "Set 3 of 3" back to "Set 2 of 3"), and **`↺ Restart`** clears the whole lift (keeps your working weight). The `⋯` menu has **Reset day** and **Clear all data** (both two-tap confirm).
 - **Navigation:** `‹ Back` returns to the day list and the lift header shows the day + lift number (`Sun · Lift 1 of 8`); the `‹ ›` arrows step between lifts.
 - The `⋯` menu also holds the theme toggle, so the header stays down to Back/Menu/Session.
@@ -37,11 +37,14 @@ Open it on iPhone from the Pages URL, add to Home Screen.
 
 ## Develop / verify
 
-- `npm test` — 50 unit tests (`node --test test/`), no dependencies needed.
+- `npm test` — 60 unit tests (`node --test test/`), no dependencies needed.
 - `npm run e2e` — Playwright tests at 390×667 and 390×844; uses system Chrome (`channel: "chrome"`). Run `npm install` first.
-- `npm run check` — syntax check + unit tests.
+- `npm run check` — syntax check + asset-manifest drift guard + unit tests.
+- `npm run check:assets` — verify `sw.js` `ASSETS` matches the files `index.html` loads and that every cached file exists.
 - `npm run typecheck` — `tsc --checkJs` over the JSDoc-annotated modules (needs `npm install`).
 - `npm run icons` — regenerate the PNG icons.
+
+CI (`.github/workflows/ci.yml`) runs `npm run check` and the Playwright suite on every push to `main` and every pull request.
 
 ## How Muse + OpenCode work here
 

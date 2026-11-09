@@ -215,9 +215,10 @@ h1{
 .app.resting .timer .clock{order:1}
 .app.resting .timer .tlabel{order:3}
 .app.resting .timer .tbtns{order:5}
-.app.resting .timer .rnav{
-  display:flex;gap:10px;align-items:center;justify-content:center;order:6;
-}
+/* rest locks the lift context: the ‹ › pair is gone from the full-screen
+   timer so a mid-rest tap can't silently jump you to another lift. Peek
+   (Show workout) is the deliberate way to change lift while resting.       */
+.app.resting .timer .rnav{display:none}
 .app.resting .timer .rnav button{
   width:54px;height:44px;border-radius:999px;flex:none;
   border:1px solid var(--line);background:transparent;color:inherit;
@@ -394,4 +395,27 @@ h1{
   .pstat .pv{font-size:19px}
   .pcard{padding:8px 10px;gap:4px}
   .pdaybars{gap:5px}
+}
+
+/* ── backup reminder banner (day view only) ─────────────────────────────── */
+.backupbar{
+  flex:none;display:flex;align-items:center;gap:8px;margin:0 0 8px;
+  padding:8px 10px;border-radius:12px;background:var(--warn-bg);color:var(--warn);
+  font-size:12px;line-height:1.25;
+}
+.backupbar[hidden]{display:none}
+.bbtext{flex:1;min-width:0}
+.bbact{
+  flex:none;height:28px;padding:0 10px;border-radius:999px;
+  background:var(--warn);color:var(--bg);font-weight:800;font-size:12px;
+}
+.bbdismiss{flex:none;width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-size:13px;opacity:.7}
+
+/* ── tap-to-type value editor (load / reps) ─────────────────────────────── */
+.ctl .mid{cursor:pointer}
+.ctl .mid .vin{
+  width:66px;height:30px;padding:0 4px;border-radius:8px;text-align:center;
+  border:1px solid var(--accent);background:var(--surface-2);color:var(--ink);
+  font:inherit;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;
+  -webkit-user-select:text;user-select:text;
 }
