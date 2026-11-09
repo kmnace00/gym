@@ -2,12 +2,22 @@
 
 ## WIP
 
-WIP: OpenCode editing stats.js, test/stats.test.js since 20:10
+Triage: T1 — fully specified accessibility pass; local lead, no subagents.
 
-Status: ACTIVE — Batch 1, L3 (day-time model vs real sessions).
-L1 shipped (`28b0c7b`), L2 shipped (`b6645ea` + `78f319a`). Batch:
-`QUEUE.md` L1–L5, in order. When L3 is done, copy L4 from `QUEUE.md`
-into this file and start it. Base HEAD: `a18272b`.
+WIP: OpenCode editing style.css, index.html, e2e/a11y.spec.js since 20:21
+
+Status: ACTIVE — Batch 1, L4 (accessibility pass).
+L1 shipped (`28b0c7b`), L2 shipped (`b6645ea` + `78f319a`), L3 shipped
+(`09798ca` + `36489b3`). Batch: `QUEUE.md` L1–L5, in order. When L4 is
+done, copy L5 from `QUEUE.md` into this file and start it. Base HEAD:
+`a18272b`.
+
+## Completed — L3: day-time model vs real sessions [T1, audit]
+
+Delivered: pure `Stats.sessionDrift(payload, day, estimate)` in
+`stats.js`, five unit tests in `test/stats.test.js`, fixture-only
+report in `BUILD_LOG.md`, SW `gym-v9`. Verified 93/93 unit, typecheck
+clean, 38/38 e2e at 390×667/844. Commit: `09798ca` + `36489b3`.
 
 ## Completed — L2: audit the lengthened-partials prompt [T1]
 
@@ -18,32 +28,38 @@ audit: 10 `partial: 1` lifts, 9 match `RESEARCH.md`, Sun overhead
 cable extension is the outlier (flag untouched, T3). Verified 88/88
 unit, typecheck clean, 38/38 e2e at 390×667/844.
 
-## Active task — L3: day-time model vs real sessions [T1, audit]
+## Active task — L4: accessibility pass [T1]
 
-Why: day length is still estimated as 50 s/set + rest + 60 s
-transition (`program.js` `dayMins`, `SET_SECS`/`TRANSITION_SECS`).
-Pass 4 `sessionLog` entries carry `day`, `durationSec`,
-`status: "complete"`, so estimate vs actual is measurable with a
-pure function — but real data lives only on Khang's phone and the
-sessions are brand new.
+Why: focus trap + GO assertive + Set Done pressed state shipped in
+Pass 2. Measured against Pass 4 CSS, these controls are below the 44
+px target: `.mini` lift arrows 44×36, `.resetlift` (Trend / Undo /
+Restart) 30 px tall, `.applybtn` 30 px (28 px short-phone), `.bbdismiss`
+26×26, short-phone `.stepbtn` 40×40 + `.setrow` 38 px min-height,
+peek-strip `.tbtns button` 40 px, peek `.detailsbtn` 42 px. Rest arrows
+are already out of the tab order (`.rnav{display:none}` while resting)
+— verify, don't assume.
 
 Do:
-- Add pure `Stats.sessionDrift(...)` in `stats.js` (no DOM, no
-  "now", deterministic): from completed `sessionLog` entries for
-  that day with `durationSec > 0`, return
-  `{ n, estimateMin, medianActualMin, driftPct }`; return
-  `{ n, insufficient: true }` when n < 3. Export it.
-- Unit tests in `test/stats.test.js` with fixtures: 0 sessions →
-  insufficient; 1–2 → insufficient; ≥3 → median + drift math;
-  non-complete / zero-duration entries ignored.
-- Report in `BUILD_LOG.md`: per-day n and drift from fixtures only,
-  plus the plain statement that the real-data verdict is pending.
-  No constants change, no UI change in this item.
+- e2e bounding-box assertions at 390×667/844 for each control above;
+  fix the ones that fit without breaking the no-scroll invariant (hit
+  area via padding/min-height, not layout redesign). Anything that does
+  not fit stays as an open item in `BUILD_LOG.md` + `LOOP_STATE.md`
+  phone-check list with its measured overflow cost — do not force it.
+- Compute WCAG contrast ratios for `--ink` / `--muted` / `--faint` on
+  `--bg` / `--surface` in both themes; report the numbers; fix any
+  normal-text pair under 4.5:1 if fixable without a redesign.
+- Keyboard Tab through the rest screen: verify the order is +15 /
+  Pause / End rest / Show workout / Undo / prep steppers and that
+  hidden controls (rest arrows, peek-hidden items) are not reachable;
+  fix code-only tab-order issues.
 
-Files: `stats.js`, `test/stats.test.js`.
-Verify: `npm run check`, typecheck green. No behaviour change to
-the app itself. One line in `BUILD_LOG.md`, update `LOOP_STATE.md`.
-If verification fails, log it and STOP — do not move on.
+Files: `style.css`, `index.html`, `app.js` (only if a focus fix needs
+it), `e2e/*`.
+
+Verify: e2e viewport checks at both sizes, no-overflow gate green,
+`npm run check` + typecheck green. One line in `BUILD_LOG.md`, update
+`LOOP_STATE.md`. If verification fails, log it and STOP — do not move
+on.
 
 ## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)
 
