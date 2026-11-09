@@ -111,3 +111,32 @@ test("full-screen rest hides the lift nav arrows", async ({ page }) => {
   await expect(page.locator("#rPrevBtn")).toBeHidden();
   await expect(page.locator("#rNextBtn")).toBeHidden();
 });
+
+/* B3-26 — the tempo cue used to disappear after lift 1; it now follows the
+   lifter into the deep part of the session, and the short-phone layout must
+   still fit on one screen. */
+test("every lift shows the tempo cue and lift 5 still fits 390x667 (B3-26)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 667 });
+  await seed(page, {
+    v: 2, cur: "fri", idx: 4,
+    state: {
+      "fri:0": { done: 3, load: 55, reps: 6, rir: 2, topHits: 0, lastRir: 2 },
+      "fri:1": { done: 3, load: 45, reps: 8, rir: 2, topHits: 0, lastRir: 2 },
+      "fri:2": { done: 3, load: 40, reps: 8, rir: 1, topHits: 0, lastRir: 1 },
+      "fri:3": { done: 3, load: 35, reps: 10, rir: 1, topHits: 0, lastRir: 1 },
+      "fri:4": { done: 0, load: 30, reps: 10, rir: 2, topHits: 0, lastRir: null }
+    },
+    liftHistory: { "fri:4": [{ date: "2026-11-01", load: 28, reps: 10, rir: 2, hitTop: false, setsDone: 3 }] }
+  });
+
+  await page.locator(".liftrow").nth(4).click();
+  await expect(page.locator("#exName")).toBeVisible();
+  await expect(page.locator("#tempoLine"), "the cue must be on lift 5 too").toBeVisible();
+  await expect(page.locator("#tempoLine")).toContainText("explode up");
+  // the rest of the worst case is on screen too: prior line, suggestion, RIR hint
+  await expect(page.locator("#prevLine")).toBeVisible();
+  await expect(page.locator("#suggestText")).toBeVisible();
+  await expect(page.locator("#rirHint")).toBeVisible();
+  const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(ok, "lift 5 at 390x667 must not scroll").toBe(true);
+});

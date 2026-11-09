@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, docs since 2026-11-09 15:55 CT — B3-26 (tempo line on every lift).
+WIP: OpenCode editing jsconfig.json, tools/check-ids.js, docs since 2026-11-09 16:05 CT — B3-27 (typecheck `restctl.js` + script/include cross-check).
+
+## Completed — B3-26: The tempo line only exists on the first lift of the day [T1]
+- Built Nov 9 (OpenCode). `#tempoLine` is now shown on every lift. SW `gym-v62`. 160/160 unit, typecheck clean, 85/85 e2e.
 
 ## Completed — B3-25: "Planned +2" stays in the day summary after the workout starts [T1]
 - Built Nov 9 (OpenCode). `renderDay` only appends `planMsg` while no sets are logged. SW `gym-v61`. 160/160 unit, typecheck clean, 84/84 e2e.
