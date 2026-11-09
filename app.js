@@ -597,7 +597,7 @@
     restCtx.finishUntil = 0;
     var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, true);
     skipBtn.textContent = Rest.advanceLabel(adv, idx >= DAYS[cur].ex.length - 1);
-    setRestLabel("GO", adv ? (idx < DAYS[cur].ex.length - 1 ? "Lift done — next up." : "Workout complete — nice work.") : "Next set — go.");
+    setRestLabel("GO", Rest.goLabel(adv, idx >= DAYS[cur].ex.length - 1));
     renderRest();
     renderRestPrep();
     if (navigator.vibrate) navigator.vibrate(200);
@@ -625,10 +625,7 @@
     resetPauseUi();
     restCtx.finishUntil = 0;
     skipBtn.textContent = "End rest";
-    var msg = note === "partials"
-      ? "Add bottom-half partials to failure — then rest."
-      : "Stretch — set up the next set.";
-    if (sec > ex().rest) msg = "+30s for 0–1 RIR · " + msg;
+    var msg = Rest.restMsg(note, sec, ex().rest);
     restCtx.msg = msg;
     setRestLabel(label, msg);
     renderRest();
@@ -642,7 +639,7 @@
     var prep = document.getElementById("restPrep");
     if (!prep) return;
     var e = ex(), s = curSt();
-    var show = rest.phase !== Machine.IDLE && rest.phase !== Machine.GO && editSet < 0 && s.done < e.s;
+    var show = Rest.prepVisible(rest.phase, editSet, s.done, e.s);
     prep.hidden = !show;
     if (!show) return;
     document.getElementById("restPrepName").textContent = "Set " + (s.done + 1) + " of " + e.s;

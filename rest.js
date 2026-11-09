@@ -74,8 +74,50 @@
     return isLastLift ? "Finish" : "Next lift";
   }
 
+  /**
+   * Rest-screen message: the partials cue on flagged lifts, else the stretch
+   * cue, both prefixed when this rest was lengthened for a 0–1 RIR set.
+   * @param {string} note
+   * @param {number} sec
+   * @param {number} baseRest
+   * @returns {string}
+   */
+  function restMsg(note, sec, baseRest) {
+    var msg = note === "partials"
+      ? "Add bottom-half partials to failure — then rest."
+      : "Stretch — set up the next set.";
+    return sec > baseRest ? "+30s for 0–1 RIR · " + msg : msg;
+  }
+
+  /**
+   * Copy for the GO screen: moving to the next lift, finishing the workout,
+   * or just another set of the same lift.
+   * @param {boolean} isAdvance
+   * @param {boolean} isLastLift
+   * @returns {string}
+   */
+  function goLabel(isAdvance, isLastLift) {
+    if (!isAdvance) return "Next set — go.";
+    return isLastLift ? "Workout complete — nice work." : "Lift done — next up.";
+  }
+
+  /**
+   * True when the next-set prep steppers belong on the rest screen: while a
+   * rest is running (not idle, not GO), not editing a logged set, and with
+   * sets still open on this lift.
+   * @param {string} phase
+   * @param {number} editSet
+   * @param {number} done
+   * @param {number} sets
+   * @returns {boolean}
+   */
+  function prepVisible(phase, editSet, done, sets) {
+    return phase !== "idle" && phase !== "go" && editSet < 0 && done < sets;
+  }
+
   return {
     canAdvance: canAdvance, nextLift: nextLift,
-    armFinish: armFinish, finishArmed: finishArmed, advanceLabel: advanceLabel
+    armFinish: armFinish, finishArmed: finishArmed, advanceLabel: advanceLabel,
+    restMsg: restMsg, goLabel: goLabel, prepVisible: prepVisible
   };
 });

@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 QUEUED — L1 active.
+Status: BATCH 1 IN PROGRESS — L1 built, awaiting auto-sync push; L2 next.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L1
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -9,24 +9,23 @@ OpenCode once and it works the queue.
 
 ## Last verified
 
-- HEAD: `a18272b` — framework push (on Pass 4 `cbbf6a8`).
+- L1 build (OpenCode, Nov 8 19:50 CT): `restMsg` / `goLabel` /
+  `prepVisible` live in `rest.js`, `app.js` wired to them, no
+  behaviour change. `npm run check` **88/88 unit** (3 new),
+  `npm run typecheck` clean, `npm run e2e` **35/35** at
+  390×667/844, no overflow, no console errors. SW `gym-v8`.
+  Commit: auto-sync `pending` (SHA recorded when it lands).
+- Base: `7705a46` (Batch 1 queued) on Pass 4 `cbbf6a8`.
 - Pass 4 verified: 85 unit / 35 e2e green, typecheck clean,
   SW `gym-v7`, schema v3 (key still `gym-tool-v2`), 24 lifts
   intact. Pages: https://kmnace00.github.io/gym/
-- Re-check (Muse, Nov 8, read against Pass 4 source): L1 revised
-  to the pure slice (full controller extraction is T2, new
-  backlog L9); L2 timing looks correct in source, needs e2e
-  proof, overhead-extension flag is the one outlier; L3 now
-  measurable via `sessionLog` but expect "insufficient data";
-  L4 has concrete sub-44px targets; L5 has precise probes
-  (`__proto__` via merge, `1e999`, hostile session lifts).
 
 ## Current / next
 
-- Current item: L1 — rest decisions into `rest.js` (pure slice).
+- Current item: L1 — built, checks green; waiting for the
+  gym-sync commit to appear on origin/main before starting L2.
 - Next in queue: L2 → L3 → L4 → L5 (`QUEUE.md`, in order).
-- Blocked on: Khang pasting the loop prompt into OpenCode.
-  After the batch, Muse reviews (ping "check the loop").
+- After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
 
@@ -96,3 +95,7 @@ Pass 4 build, same phone check:
   backlog L9 [T2]; L2/L3/L4/L5 revised with Pass 4 findings).
   `TASK.md` now has L1 active. Awaiting Khang pasting the loop
   prompt into OpenCode.
+- 2026-11-08 19:50 CT: OpenCode built L1 (rest decisions into
+  `rest.js`). 88/88 unit, typecheck clean, 35/35 e2e at
+  390×667/844, no overflow, no console errors. SW `gym-v8`.
+  Waiting for gym-sync to commit/push before starting L2.

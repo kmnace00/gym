@@ -2,7 +2,7 @@
 
 ## WIP
 
-(none)
+WIP: OpenCode editing rest.js, app.js, test/rest.test.js since 19:48
 
 Status: ACTIVE — Batch 1, L1 (rest decisions into `rest.js`).
 Batch: `QUEUE.md` L1–L5, in order. When L1 is done, copy L2 from
