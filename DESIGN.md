@@ -422,6 +422,9 @@ current index, or −1); the wrap search is a second pass from 0, and
 must not return the current lift itself when it is the only open one
 (the current lift is done by construction on the GO path — if it is
 somehow open, returning it is correct: the lifter is still on it).
+*Clarification (OpenCode, Nov 9): the parenthetical is authoritative — the wrap
+returns `idx` when `idx` is the only open lift; the case is unreachable on the
+GO path, because `canAdvance` requires the current lift to be complete.*
 
 Files: `rest.js` (the fallback), `restctl.js` (interface unchanged —
 `skip()` already handles a −1 by arming Finish), `test/rest.test.js`
