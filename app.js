@@ -478,21 +478,110 @@
   }
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
-  var rest = Machine.idle();
-  var rInt = null;
-  /* One object for the rest *orchestration*. These used to be ten loose
-     module-level variables that together encoded a second, implicit state
-     machine (idle → resting → go → advance-or-finish) around the pure clock
-     in machine.js. Keeping them together makes the control flow auditable.  */
-  var restCtx = {
-    label: "", pending: false, pIdx: -1, pDay: "",
-    note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, skipTimer: null
-  };
+  /* The rest *orchestration* lives in restctl.js; this shell applies the
+     effects it returns and paints its view model. `rInt` drives the 200 ms
+     ticks and `rArmT` is the 2,600 ms two-tap finish window.                 */
+  var rInt = null, rArmT = null, restNextRaw = "";
 
   function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
   function stopInterval() { if (rInt) { clearInterval(rInt); rInt = null; } }
   function startInterval() { stopInterval(); rInt = setInterval(tickRest, 200); }
+  /* the interval follows the view phase: active ticks, everything else stops */
+  function syncRestInterval(phase) {
+    if (phase === "active") { if (!rInt) startInterval(); }
+    else stopInterval();
+  }
+  var restCtl = Gym.createRestController({
+    Machine: Machine, Rest: Rest,
+    now: function () { return Date.now(); },
+    cur: function () { return cur; },
+    idx: function () { return idx; },
+    dayLen: function () { return DAYS[cur].ex.length; },
+    done: function () { return curSt().done; },
+    sets: function () { return ex().s; },
+    exRest: function () { return ex().rest; },
+    editSet: function () { return editSet; },
+    firstOpen: function (from) { return firstOpenLift(cur, payload.state, from); },
+    prep: function () {
+      var e = ex(), s = curSt();
+      return { name: "Set " + (s.done + 1) + " of " + e.s, load: loadLabel(s.load, e), reps: String(s.reps) };
+    }
+  });
+  /* apply the controller's effect list in order, then paint its view */
+  function apply(out) {
+    var fx = out.effects, i, e;
+    for (i = 0; i < fx.length; i++) {
+      e = fx[i];
+      if (e.type === "beep") beepGo();
+      else if (e.type === "vibrate") { if (navigator.vibrate) navigator.vibrate(e.ms); }
+      else if (e.type === "notify") notifyRestDone();
+      else if (e.type === "advanceTo") { idx = e.idx; hintText = ""; hintGood = false; }
+      else if (e.type === "finishWorkout") { clearUndo(); if (sInt) { pauseSession(); sAutoStopped = true; } }
+      else if (e.type === "commit") commit();
+      else if (e.type === "render") render();
+      else if (e.type === "scheduleFinishReset") {
+        if (rArmT) clearTimeout(rArmT);
+        rArmT = setTimeout(function () {
+          var o = restCtl.finishReset();
+          if (o.view.phase === "go") renderRestView(o.view);
+        }, e.ms);
+      }
+      else if (e.type === "clearSchedule") { if (rArmT) { clearTimeout(rArmT); rArmT = null; } }
+      else if (e.type === "closeDetails") setRestDetails(false);
+      else if (e.type === "blurIfOutside") { if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur(); }
+    }
+    renderRestView(out.view);
+  }
+  /* one paint routine for every phase — idle, GO and the running clock */
+  function renderRestView(v) {
+    syncRestInterval(v.phase);
+    if (v.phase === "idle") {
+      if (timerBar.contains(document.activeElement)) document.activeElement.blur();
+      timerBar.classList.remove("active", "go");
+      appEl.classList.remove("resting");
+      setRestDetails(false);
+      resetPauseUi();
+      skipBtn.textContent = "End rest";
+      restClock.textContent = "Rest";
+      restClock.removeAttribute("aria-label");
+      restLive.setAttribute("aria-live", "polite");
+      restBarFill.style.width = "0";
+      restNext.textContent = "";
+      setRestLabel(v.label || "", v.msg || "Starts after Set Done");
+      renderRestPrep(v);
+      applyVisibility();
+      return;
+    }
+    if (v.phase === "go") {
+      timerBar.classList.remove("paused");
+      timerBar.classList.add("go");
+      resetPauseUi();
+      restLive.setAttribute("aria-live", "assertive");
+      restClock.textContent = "GO";
+      restClock.setAttribute("aria-label", "Rest complete — GO");
+      restBarFill.style.width = "100%";
+      restNext.textContent = v.nextText;
+      skipBtn.textContent = v.skipLabel;
+      setRestLabel("GO", v.msg);
+      renderRestPrep(v);
+      return;
+    }
+    timerBar.classList.add("active");
+    timerBar.classList.remove("go");
+    appEl.classList.add("resting");
+    restLive.setAttribute("aria-live", "polite");
+    if (v.phase === "paused") { timerBar.classList.add("paused"); pauseBtn.textContent = "Resume"; }
+    else { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
+    restClock.textContent = fmt(v.secs);
+    restClock.setAttribute("aria-label", v.phase === "paused" ? "Rest paused — " + fmt(v.secs) + " remaining" : "Rest time remaining");
+    restBarFill.style.width = Math.round(v.progress * 100) + "%";
+    restNext.textContent = v.nextText;
+    skipBtn.textContent = v.skipLabel;
+    setRestLabel(v.label, v.msg);
+    renderRestPrep(v);
+    applyVisibility();
+  }
   function setRestLabel(t, m) {
     document.getElementById("restLabel").textContent = t;
     document.getElementById("restMsg").textContent = m;
@@ -506,39 +595,8 @@
   }
   detailsBtn.onclick = function () { setRestDetails(!appEl.classList.contains("show-details")); };
 
-  function timerIdle(label, msg) {
-    if (timerBar.contains(document.activeElement)) document.activeElement.blur();
-    stopInterval();
-    rest = Machine.idle();
-    timerBar.classList.remove("active", "go");
-    appEl.classList.remove("resting");
-    setRestDetails(false);
-    restCtx.pending = false; restCtx.pIdx = -1; restCtx.pDay = "";
-    restCtx.finishUntil = 0;
-    resetPauseUi();
-    skipBtn.textContent = "End rest";
-    restClock.textContent = "Rest";
-    restClock.removeAttribute("aria-label");
-    restLive.setAttribute("aria-live", "polite");
-    restBarFill.style.width = "0";
-    restNext.textContent = "";
-    setRestLabel(label || "", msg || "Starts after Set Done");
-    renderRestPrep();
-    applyVisibility();
-  }
-  function renderRest() {
-    var now = Date.now();
-    if (rest.phase === Machine.GO) {
-      restClock.textContent = "GO";
-      restClock.setAttribute("aria-label", "Rest complete — GO");
-      restBarFill.style.width = "100%";
-      return;
-    }
-    var secs = Machine.remaining(rest, now);
-    restClock.textContent = fmt(secs);
-    restClock.setAttribute("aria-label", rest.phase === Machine.PAUSED ? "Rest paused — " + fmt(secs) + " remaining" : "Rest time remaining");
-    restBarFill.style.width = Math.round(Machine.progress(rest, now) * 100) + "%";
-  }
+  function tickRest() { apply(restCtl.tick(Date.now())); }
+  function timerIdle(label, msg) { apply(restCtl.idle(label, msg)); }
 
   var actx = null;
   function ensureAudio() {
@@ -562,135 +620,32 @@
       });
     } catch (e) {}
   }
-  function finishRest() {
-    stopInterval();
-    rest = { phase: Machine.GO, endMs: 0, left: 0, total: rest.total };
-    resetPauseUi();
-    restCtx.goAtMs = Date.now();
-    timerBar.classList.remove("paused");
-    timerBar.classList.add("go");
-    restLive.setAttribute("aria-live", "assertive");
-    restNext.textContent = restNext.textContent.replace("Up next —", "Up now —");
-    restCtx.finishUntil = 0;
-    var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, true);
-    skipBtn.textContent = Rest.advanceLabel(adv, idx >= DAYS[cur].ex.length - 1);
-    setRestLabel("GO", Rest.goLabel(adv, idx >= DAYS[cur].ex.length - 1));
-    renderRest();
-    renderRestPrep();
-    if (navigator.vibrate) navigator.vibrate(200);
-    beepGo();
-    notifyRestDone();
-  }
-  function tickRest() {
-    rest = Machine.tick(rest, Date.now());
-    if (rest.phase === Machine.GO) { finishRest(); return; }
-    renderRest();
-  }
-  function startRest(sec, label, lastSet, note, nextText) {
-    stopInterval();
-    rest = Machine.start(sec, Date.now());
-    restCtx.pending = !!lastSet;
-    if (restCtx.pending && restCtx.pIdx < 0) { restCtx.pIdx = idx; restCtx.pDay = cur; }
-    restCtx.note = note || ""; restCtx.nextText = nextText || "";
-    restNext.textContent = restCtx.nextText;
-    restClock.setAttribute("aria-label", "Rest time remaining");
-    restLive.setAttribute("aria-live", "polite");
-    timerBar.classList.add("active"); timerBar.classList.remove("go");
-    appEl.classList.add("resting");
-    if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur();
-    setRestDetails(false);
-    resetPauseUi();
-    restCtx.finishUntil = 0;
-    skipBtn.textContent = "End rest";
-    var msg = Rest.restMsg(note, sec, ex().rest);
-    restCtx.msg = msg;
-    setRestLabel(label, msg);
-    renderRest();
-    renderRestPrep();
-    applyVisibility();
-    startInterval();
-  }
   /* compact next-set controls on the rest screen — 60% of the session is
      spent here, so preparing the next set should not require leaving it. */
-  function renderRestPrep() {
+  function renderRestPrep(v) {
     var prep = document.getElementById("restPrep");
     if (!prep) return;
-    var e = ex(), s = curSt();
-    var show = Rest.prepVisible(rest.phase, editSet, s.done, e.s);
-    prep.hidden = !show;
-    if (!show) return;
-    document.getElementById("restPrepName").textContent = "Set " + (s.done + 1) + " of " + e.s;
-    document.getElementById("restPrepLoad").textContent = loadLabel(s.load, e);
-    document.getElementById("restPrepReps").textContent = String(s.reps);
+    prep.hidden = !v.showPrep;
+    if (!v.showPrep) return;
+    document.getElementById("restPrepName").textContent = v.prepName;
+    document.getElementById("restPrepLoad").textContent = v.prepLoad;
+    document.getElementById("restPrepReps").textContent = v.prepReps;
   }
-  document.getElementById("plus15").onclick = function () {
-    if (rest.phase === Machine.IDLE) return;
-    if (rest.phase === Machine.GO) { startRest(15, restCtx.label, restCtx.pending, restCtx.note, restCtx.nextText); return; }
-    timerBar.classList.remove("go");
-    skipBtn.textContent = "End rest";
-    rest = Machine.extend(rest, 15);
-    if (rest.phase === Machine.ACTIVE) startInterval();
-    renderRest();
-  };
+  document.getElementById("plus15").onclick = function () { apply(restCtl.extend15()); };
   pauseBtn.onclick = function () {
-    if (rest.phase === Machine.PAUSED) {
-      rest = Machine.resume(rest, Date.now());
-      timerBar.classList.remove("paused");
-      pauseBtn.textContent = "Pause";
-      document.getElementById("restMsg").textContent = restCtx.msg;
-      startInterval();
-      renderRest();
-      return;
-    }
-    if (rest.phase !== Machine.ACTIVE) return;
-    rest = Machine.pause(rest, Date.now());
-    stopInterval();
-    timerBar.classList.add("paused");
-    pauseBtn.textContent = "Resume";
-    document.getElementById("restMsg").textContent = "Paused — tap Resume to continue.";
-    renderRest();
+    var ph = restCtl.view().phase;
+    if (ph === "paused") apply(restCtl.resume());
+    else if (ph === "active") apply(restCtl.pause());
   };
   /* at GO the whole timer surface is the advance button (guarded against the
      same tap that just finished the rest) */
   timerBar.addEventListener("click", function (ev) {
     if (!timerBar.classList.contains("go")) return;
     if (ev.target.closest("button")) return;
-    if (Date.now() - restCtx.goAtMs < 400) return;
-    skipBtn.click();
+    apply(restCtl.skip(true));
   });
   function clearUndo() { appEl.classList.remove("can-undo"); }
-  skipBtn.onclick = function () {
-    var wasGo = rest.phase === Machine.GO;
-    stopInterval();
-    var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, curSt().done >= ex().s);
-    if (adv) {
-      var nx = Rest.nextLift(idx, DAYS[cur].ex.length, firstOpenLift(cur, payload.state, idx + 1));
-      if (nx >= 0) {
-        restCtx.pending = false;
-        idx = nx;
-        hintText = ""; hintGood = false; commit();
-        timerIdle("", "Next lift — go."); render();
-      } else {
-        /* last lift done — require a second tap so a stray tap can't end the session */
-        if (!Rest.finishArmed(Date.now(), restCtx.finishUntil)) {
-          restCtx.finishUntil = Rest.armFinish(Date.now());
-          skipBtn.textContent = "Tap again to finish";
-          clearTimeout(restCtx.skipTimer);
-          restCtx.skipTimer = setTimeout(function () {
-            if (timerBar.classList.contains("go") && !Rest.finishArmed(Date.now(), restCtx.finishUntil)) skipBtn.textContent = "Finish";
-          }, 2600);
-          return;
-        }
-        restCtx.pending = false; restCtx.finishUntil = 0;
-        timerIdle("", "Workout complete — nice work.");
-        clearUndo();
-        if (sInt) { pauseSession(); sAutoStopped = true; }
-      }
-      return;
-    }
-    restCtx.pending = false;
-    timerIdle("", wasGo ? "Next set — go." : "Skipped — next set, go.");
-  };
+  skipBtn.onclick = function () { apply(restCtl.skip(false)); };
   /* undo always acts on the lift you are looking at, so the change is visible */
   function undoSet() {
     var s = curSt();
@@ -704,7 +659,6 @@
       if (arr && arr.length && arr[arr.length - 1].date === Gym.dateKey()) arr.pop();
     }
     stopInterval();
-    restCtx.pending = false;
     hintText = ""; hintGood = false;
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
@@ -790,7 +744,7 @@
       b.onclick = function () {
         curSt().rir = rv;
         if (editSet >= 0) applySetEdit();
-        hideRirHint(); commit(); render(); renderRestPrep();
+        hideRirHint(); commit(); render(); renderRestPrep(restCtl.view());
       };
       rirRow.appendChild(b);
     })(ri);
@@ -826,13 +780,13 @@
     var s = curSt();
     s.load = d < 0 ? Math.max(0, Math.round((s.load - ex().step) * 100) / 100) : Math.round((s.load + ex().step) * 100) / 100;
     if (editSet >= 0) applySetEdit();
-    scheduleSave(); render(); renderRestPrep();
+    scheduleSave(); render(); renderRestPrep(restCtl.view());
   }
   function stepReps(d) {
     var s = curSt();
     s.reps = Math.max(1, s.reps + d);
     if (editSet >= 0) applySetEdit();
-    scheduleSave(); render(); renderRestPrep();
+    scheduleSave(); render(); renderRestPrep(restCtl.view());
   }
   function bindStepper(id, fn) {
     var b = document.getElementById(id), delay = null, rep = null, held = false;
@@ -889,12 +843,12 @@
   }
   function editLoad() {
     editValue(document.getElementById("loadVal"), curSt().load, ex().step, function (v) {
-      curSt().load = Math.max(0, Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep();
+      curSt().load = Math.max(0, Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   function editReps() {
     editValue(document.getElementById("repVal"), curSt().reps, 1, function (v) {
-      curSt().reps = Math.max(1, Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep();
+      curSt().reps = Math.max(1, Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   document.getElementById("loadVal").parentNode.addEventListener("click", editLoad);
@@ -962,9 +916,9 @@
         (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load));
     }
 
-    restCtx.pIdx = -1; restCtx.pDay = "";
     commit();
-    startRest(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText);
+    restNextRaw = nextText;
+    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText));
 
     ensureAudio();
     if (navigator.vibrate) navigator.vibrate(10);
@@ -1083,7 +1037,7 @@
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
-  function cancelPendingAdvance() { if (rest.phase !== Machine.IDLE) restCtx.pending = false; }
+  function cancelPendingAdvance() { restCtl.cancelPendingAdvance(); }
   function resetEdit() { editSet = -1; editBackup = null; }
   function showDay() { resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render(); }
   function showProgress() { resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
@@ -1281,7 +1235,7 @@
   function notifyRestDone() {
     if (!notifyOn() || !("Notification" in window)) return;
     if (Notification.permission !== "granted" || !document.hidden) return;
-    try { new Notification("Rest done — GO", { body: restCtx.nextText || "Next set", tag: "gym-rest" }); } catch (e) {}
+    try { new Notification("Rest done — GO", { body: restNextRaw || "Next set", tag: "gym-rest" }); } catch (e) {}
   }
 
   /* two-tap confirm for destructive menu actions */
