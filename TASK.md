@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing jsconfig.json, tools/check-ids.js, docs since 2026-11-09 16:05 CT — B3-27 (typecheck `restctl.js` + script/include cross-check).
+WIP: OpenCode editing package.json, tools/check-ids.js, tools/check-assets.js, docs since 2026-11-09 16:20 CT — B3-28 (tooling guard gaps).
+
+## Completed — B3-27: `typecheck` never checks `restctl.js` [T1]
+- Built Nov 9 (OpenCode). `restctl.js` added to `jsconfig.json` include; `check-ids.js` now fails if `index.html` loads a script the typecheck doesn't cover. 85/85 e2e, typecheck clean.
 
 ## Completed — B3-26: The tempo line only exists on the first lift of the day [T1]
 - Built Nov 9 (OpenCode). `#tempoLine` is now shown on every lift. SW `gym-v62`. 160/160 unit, typecheck clean, 85/85 e2e.
