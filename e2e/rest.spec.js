@@ -81,3 +81,35 @@ test("rest is re-derived after a simulated sleep", async ({ page }) => {
   await expect(page.locator("#restTime")).toHaveText(fmt(startSecs - 60));
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
+
+test("the rest screen shows the session elapsed time advancing (B3-16)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+
+  // a session that has already been running for 42 minutes
+  await page.evaluate(({ day, date }) => {
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 75, state: {}, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_elapsed", date, day, startedAt: Date.now() - 2520000, endedAt: null, accSec: 2520, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#restElapsed")).toBeHidden(); // idle: no elapsed line
+
+  await page.locator("#doneBtn").click(); // log a set -> rest starts
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await expect(page.locator("#restElapsed")).toBeVisible();
+  await expect(page.locator("#restElapsed")).toContainText("Workout 42:00");
+
+  await page.clock.runFor(3000); // the workout keeps running while resting
+  await expect(page.locator("#restElapsed")).toContainText("Workout 42:03");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
