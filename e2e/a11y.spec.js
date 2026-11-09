@@ -241,6 +241,44 @@ test("the RIR picker exposes which value is selected", async ({ page }) => {
   expect(errors, "no console errors").toEqual([]);
 });
 
+test("view changes place keyboard focus where the user is looking", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url);
+
+  // open a lift with the keyboard: focus the row, press Enter
+  await page.locator('.liftrow[data-i="2"]').focus();
+  await page.keyboard.press("Enter");
+  const inLift = await page.evaluate(() => {
+    const el = document.activeElement;
+    return {
+      id: el ? el.id : "",
+      inLiftView: !!(el && document.getElementById("liftView").contains(el))
+    };
+  });
+  expect(inLift.inLiftView, "focus lands inside the lift view").toBe(true);
+  expect(inLift.id, "the landing spot is the lift heading").toBe("exName");
+
+  // Back returns focus to the row that was left
+  await page.locator("#backBtn").focus();
+  await page.keyboard.press("Enter");
+  const back = await page.evaluate(() => {
+    const el = document.activeElement;
+    return { cls: el ? el.className : "", dataI: el ? el.getAttribute("data-i") : "" };
+  });
+  expect(back.cls, "Back returns focus to the lift row").toContain("liftrow");
+  expect(back.dataI, "it is the row the user was on").toBe("2");
+
+  // Progress gets a landing spot too
+  await page.locator("#progressBtn").focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => document.activeElement.id), "progress focus lands on its title").toBe("progTitle");
+
+  expect(errors, "no console errors").toEqual([]);
+});
+
 test("status messages are announced to screen readers", async ({ page }) => {
   await page.goto(url);
   const live = await page.evaluate(() => {

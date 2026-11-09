@@ -1119,18 +1119,31 @@
     if (editBackup && s) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null;
   }
-  function showDay() { resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render(); }
-  function showProgress() { resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
+  function showDay() {
+    var left = idx;
+    resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render();
+    /* focus back to the row the user just left — otherwise Tab restarts from
+       the top of the document (the element they were on is now hidden).     */
+    var row = liftList.querySelector('.liftrow[data-i="' + left + '"]');
+    if (row) row.focus();
+  }
+  function showProgress() {
+    resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render();
+    var head = document.getElementById("progTitle");
+    if (head) head.focus();
+  }
   function openLift(i) {
     if (i < 0 || i >= DAYS[cur].ex.length) return;
     cancelPendingAdvance(); resetEdit();
     idx = i; view = "lift"; hintText = ""; hintGood = false; commit(); render();
+    document.getElementById("exName").focus();
   }
   function navigateLift(delta) {
     var n = idx + delta;
     if (n < 0 || n >= DAYS[cur].ex.length) return;
     cancelPendingAdvance(); resetEdit();
     idx = n; hintText = ""; hintGood = false; commit(); render();
+    document.getElementById("exName").focus();
   }
   document.getElementById("backBtn").onclick = showDay;
   document.getElementById("progressBtn").onclick = showProgress;
