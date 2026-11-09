@@ -304,7 +304,7 @@
     return p;
   }
 
-  /* v1 → v2 → v3; unknown/future versions are flagged, never dropped */
+  /* v1 → v2 → v3 → v4; unknown/future versions are flagged, never dropped */
   function migrate(raw) {
     var p;
     try { p = JSON.parse(raw); } catch (e) { return null; }

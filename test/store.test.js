@@ -695,3 +695,12 @@ test("v3 payloads convert bodyweight to pounds exactly once", () => {
   assert.equal(again.bodyweight, 165.3);
   assert.equal(S.emptyPayload().bodyweight, 165);
 });
+
+test("merge adopts an imported bodyweight only while the local one is default", () => {
+  const inc = S.emptyPayload();
+  inc.bodyweight = 200;
+  assert.equal(S.mergePayload(S.emptyPayload(), inc).bodyweight, 200);
+  const mine = S.emptyPayload();
+  mine.bodyweight = 150; // the user set it — never overwritten by an import
+  assert.equal(S.mergePayload(mine, inc).bodyweight, 150);
+});
