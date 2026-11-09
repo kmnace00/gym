@@ -397,3 +397,9 @@ surface that printed `kg` now prints `lb` (progress tonnage, PR, summary,
 share text, bodyweight field). Load numbers, steps and programme data are
 unchanged. Migration is one-way and idempotent: a v4 payload is never
 converted twice; v1/v2 payloads chain through v3 → v4.
+Two edges are accepted and documented: (a) an imported bodyweight is only
+adopted while the local value is still the 165 default (a user whose real
+weight is exactly 165 would have it overwritten by a merge, and a migrated
+user at 165.3 never adopts one) — the alternative needs a "user set this"
+flag; (b) the field and the store both cap at 700 lb, so an imported value
+above that falls back to the default.

@@ -1331,11 +1331,11 @@
   }
   document.getElementById("bwInput").addEventListener("change", function () {
     var v = parseFloat(this.value);
-    if (isFinite(v) && v >= 66 && v <= 660) {
+    if (isFinite(v) && v >= 66 && v <= 700) {
       payload.bodyweight = Math.round(v * 10) / 10;
       commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
     } else {
-      renderBw(); setMsg("Bodyweight must be 66–660 lb");
+      renderBw(); setMsg("Bodyweight must be 66–700 lb");
     }
   });
   document.getElementById("restoreSnapshot").onclick = function () {

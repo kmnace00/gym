@@ -2,9 +2,9 @@
 
 ## WIP
 
-Status: ACTIVE — Khang's unit request (imperial) + set-row sizing. T2: schema v4 kg→lb migration + labels; T1: compact set rows (done, measured 56/64 px). Gate after: check + typecheck + e2e both viewports.
+Status: ACTIVE — imperial units (schema v4) and compact set rows shipped at `gym-v31` (151/151 unit, 58/58 e2e, CI green). Next: continuous loop, no approved item queued.
 
-WIP: OpenCode editing store.js, program.js, stats.js, app.js, index.html, test/store.test.js, test/stats.test.js, test/size.test.js, e2e/features.spec.js, README.md since 2026-11-09 08:45 CT
+WIP: none claimed
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
