@@ -202,3 +202,27 @@ test("prep is hidden at GO and while editing a logged set", () => {
   e.ctl.start(90, "Fri — set 1 done", false, "", "");
   assert.equal(e.ctl.view().showPrep, false);
 });
+
+test("End rest on the last lift arms and freezes the visible clock", () => {
+  const s = mk({ idx: 2, len: 3, done: 3, sets: 3 });
+  const a = s.ctl.start(120, "Bench — set 3 done", true, "", "Up next — nothing");
+  assert.equal(a.view.phase, "active");
+  assert.equal(a.view.ticking, true);
+
+  s.clock.t = 10000;
+  const b = s.ctl.skip(false);
+  assert.equal(b.view.phase, "active");
+  assert.equal(b.view.ticking, false);
+  assert.equal(b.view.skipLabel, "End rest"); // arm label is a GO-phase concern
+  assert.deepEqual(b.effects, [{ type: "scheduleFinishReset", ms: 2600 }]);
+
+  const c = s.ctl.finishReset();
+  assert.equal(c.view.phase, "active");
+  assert.equal(c.view.skipLabel, "End rest");
+  assert.equal(c.view.ticking, false);
+
+  const d = s.ctl.start(120, "Bench — set 3 done", true, "", "Up next — nothing");
+  assert.equal(d.view.ticking, true);
+  assert.equal(s.ctl.pause().view.ticking, false);
+  assert.equal(s.ctl.resume().view.ticking, true);
+});
