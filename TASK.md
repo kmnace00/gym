@@ -2,9 +2,27 @@
 
 ## WIP
 
-Status: DONE — pipeline pass 2 (5 phases) + a menu reachability fix complete at `gym-v35`: 154/154 unit, 63/63 e2e, CI green. Phase gates: P1 `a15af57` (units on the lift screen), P2 `976615d` (`progressSnapshot`), P3 `4cf6e7a` (shared aggregate, 4.6→3.4 ms), P4 `3815cbe` (midnight/off-day/summary journeys), P5 `4c8a977` (corrupt-date drop + cleanup). Remaining work is Khang's (Batch 3 research, reconcile schema, caps sign-off).
+WIP: none claimed yet
 
-WIP: none claimed
+Status: ACTIVE — Batch 3, B3-01 (mid-rest finish-arm freeze).
+Batch: `QUEUE.md` B3-01–B3-35, in order. When B3-01 is done, copy B3-02 from
+`QUEUE.md` into this file and start it. Base HEAD: `6b3ffd6`.
+Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
+answered by this batch — the Batch 3 research (L7/L8) is done and in
+`RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
+
+## Active task — B3-01: Mid-rest finish-arm freeze [T1]
+
+Why: the one genuine bug in the Nov 9 audits, rest-critical, verified by Muse in source. After the final lift, tapping "End rest" once and hesitating >2.6 s freezes the rest clock and strands the finish flow: each later tap just re-arms. (The L9 note below claims this was "found in review and fixed" — it was not; the code at HEAD still does it.)
+
+Do:
+- In `restctl.js`, make `finishReset()` clear `finishUntil` AND `ctx.frozen` in all phases, not only when phase is `"go"` (today `finishReset()` returns early unless phase is `"go"`, so on an active rest the arm and the freeze survive the 2,600 ms window; `skip()` sets `ctx.frozen = true` when arming mid-rest, and `view()` stops ticking while frozen).
+- In `app.js`, repaint the rest view unconditionally when the 2,600 ms `scheduleFinishReset` timer fires (today it repaints only `if (o.view.phase === "go")`, so the stale "Tap again to finish" label is never repainted mid-rest).
+- Update the existing unit test that documents this as parity ("End rest on the last lift arms and freezes the visible clock" in `test/restctl.test.js`) to the new behaviour; do not keep a test asserting the bug.
+
+Do not: change the two-tap arm itself, the 2,600 ms window, the 400 ms GO guard, or any other rest behaviour.
+Files: `restctl.js`, `app.js`, `test/restctl.test.js`.
+Verify: unit test — arm mid-rest, advance the fake clock past the window, call `finishReset()` → `view.ticking` true again, skip label back to "End rest"; e2e with `page.clock` — complete all 8 lifts, tap "End rest" during the final rest, wait 3 s, assert the clock is ticking again and the button reads "End rest". Full gate green (`npm run check`, typecheck, e2e at 390×667/844, no overflow, no console errors). `BUILD_LOG.md` one line.
 
 ## Completed — set log sizing (Nov 9, Khang: "Not quite fixed") [T1]
 

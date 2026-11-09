@@ -5,6 +5,111 @@ Not instructions. An item becomes work only when Muse promotes it into
 `[T1]` buildable now · `[T2]` needs a Muse design first ·
 `[T3]` Khang-only proposal — the loop never builds it.
 
+## Batch 3 — QUEUED Nov 9 (33 T1 + 2 T2, from three Muse audits)
+
+Full specs in `QUEUE.md` (B3-01–B3-35); `TASK.md` has B3-01 active. Sources: code audit (20 items), UX audit (20 items), science research pass (L7/L8 unblocked, L6 list ready). Two findings merged (mid-rest freeze = UX #1 + code #12; pill "Start" = UX #8 + code #16). Muse spot-verified the top claims in source before queuing (future-version wipe, SW `res.ok` gaps, `jsconfig` gap, phantom sessions, merge cursor, undo-extra-set, summary PR date, restart snapshot, import size, SW register) and two key citations (Singer 2024, Goto 2019 — see `RESEARCH.md`).
+
+Status corrections Nov 9: L9 is BUILT (verified 145/145 unit, 48/48 e2e, SW `gym-v20`) — the "proposed for Batch 3" line below is stale. Batch 2 (B1–B3) is COMPLETE + self-reviewed by OpenCode at `9556a73`. Pipeline Phases 1–5 + Pass 2 DONE (154/154 unit, 63/63 e2e, SW `gym-v35`, schema v4). The pipeline's "remaining work is Khang's" is answered by this batch (research done) and the T3 proposals below.
+
+| # | Item | Triage |
+|---|---|---|
+| B3-01 | Mid-rest finish-arm freeze (rest clock strands after final lift) | T1 |
+| B3-02 | Future-version payload silently wiped at boot | T1 |
+| B3-03 | SW e2e harness (HTTP, not `file://`) — gates B3-04 | T1 |
+| B3-04 | SW caches error pages as shell / serves errors over cache | T1 |
+| B3-05 | `finalizeSession` logs phantom empty sessions | T1 |
+| B3-06 | Undo of an extra set leaves a stale history entry | T1 |
+| B3-07 | Restart-lift takes no snapshot | T1 |
+| B3-08 | Import-merge silently adopts incoming cursor | T1 |
+| B3-09 | "Import backup" unreachable by keyboard | T1 |
+| B3-10 | PR / top-reps hint wiped before the lifter sees it | T1 |
+| B3-11 | Summary PR count uses wall-clock date, not session date | T1 |
+| B3-12 | +15 at GO blanks the rest label | T1 |
+| B3-13 | Session pill says "Start" after a pause, not "Resume" | T1 |
+| B3-14 | RIR buttons expose no selected state to a screen reader | T1 |
+| B3-15 | No focus placement on day ↔ lift ↔ progress navigation | T1 |
+| B3-16 | Rest screen hides the session elapsed time | T1 |
+| B3-17 | Import has no file-size guard | T1 |
+| B3-18 | No upper bound on typed/stepped load and reps | T1 |
+| B3-19 | Import-merge reports no counts | T1 |
+| B3-20 | "Undo last reset / restore" never says what it will undo | T1 |
+| B3-21 | Corrupt-payload bar understates what happened (copy only) | T1 |
+| B3-22 | Restore (replace) re-implements the two-tap arm | T1 |
+| B3-23 | SW never checks for updates while the app stays open | T1 |
+| B3-24 | Week strip / heatmap states invisible to screen readers | T1 |
+| B3-25 | "Planned +2" stays in the day summary after the workout starts | T1 |
+| B3-26 | Tempo line only exists on the first lift of the day | T1 |
+| B3-27 | `typecheck` never checks `restctl.js` | T1 |
+| B3-28 | Tooling-guard gaps (check script, check-ids, check-assets) | T1 |
+| B3-29 | Stats maps use plain `{}` keyed by user-controlled dates | T1 |
+| B3-30 | Untested pure-store paths + program-id uniqueness (tests) | T1 |
+| B3-31 | No automated check that the SW `CACHE` version bumps | T1 |
+| B3-32 | First run has no guidance at all | T1 |
+| B3-33 | No deploy version anywhere in the UI | T1 |
+| B3-34 | `nextLift` never wraps to an earlier open lift | T2 (designed) |
+| B3-35 | Bodyweight-resolution rule duplicated in four places | T2 (designed) |
+
+## Next (T2 — designs in `DESIGN.md`, not queued)
+
+### Off-day logging is misattributed (UX audit #5) [T2, blocked on Khang's decision]
+Logging on Mon–Thu banks sets under Friday's key with the wrong date (`store.js:49` maps Mon–Thu to `"fri"`); the sets count toward totals but are invisible in the week strip and heatmap. Needs a decision first — either block logging on off days with a one-line message, or attribute the session to the next training day. Design follows the decision; do not build either silently.
+
+### Corrupt-payload salvage [T2]
+B3-21 fixes only the bar copy. The deeper fix — salvage whatever history entries still parse instead of dropping the whole payload on a corrupt load — is new recovery logic and needs a design first.
+
+### `bodyweightSet` flag (code audit #19) [T2, schema change]
+The merge bodyweight rule adopts the imported bodyweight only while the local one is the 165 default, so it cannot distinguish "never set" from "Khang genuinely weighs 165 lb". Fixing that needs a `bodyweightSet` flag, i.e. a schema change. Design in `DESIGN.md` first; Khang's call (see also P4).
+
+## Proposals (T3 — Khang only, never auto-built)
+
+### P5 — Bulgarian split squat rest 120 s → 150 s (L8, Nov 9)
+The only per-lift rest change the audit found: Bulgarian sits exactly on the floor of the 2–3 min lower-compound range, and unilateral leg work carries high local fatigue. Medium-low confidence — no study compares 2 vs 2.5 min directly; this is the rule's own range, not a measured effect. Time cost +90 s on Friday (~73.5 → ~75 min). All other 23 lifts: keep (see `RESEARCH.md`).
+
+### P6 — Progression trigger: adopt the 2-for-2 rule (L7, Nov 9)
+Today one top-hit session adds a step (`suggestLoad` reads only the last entry). The NSCA standard is 2+ reps over the goal on the last set for 2 consecutive workouts before adding weight (Baechle & Earle, Ch. 18; ACSM 2009, 2–10% band — all app step sizes already inside it). Effect: slower, more conservative load increases; fewer grinds at RIR 0–1. Medium confidence (textbook/position-stand consensus, not an RCT). Needs a T2 design after approval (`suggestLoad`/`planFor` must read the last two entries).
+
+### P7 — Planned program-wide deload week every ~5–6 weeks (L7, Nov 9)
+The app has no deload concept; `stallLoad` is a per-lift reactive reset, not a deload (literature deload: planned, program-wide, ~7 days every 4–6 weeks, volume is the main lever — Bell 2023, Rogerson 2024). Adding a deload mode (fewer sets and/or lighter loads for one week) is a new feature: T3 decision + T2 design if approved. Not urgent — Coleman 2024: a week off costs a little strength but no muscle, so the cost of *not* deloading on a schedule is low while he's still progressing. Companion note: stop calling `stallLoad` a deload in docs; rename the concept to "stall reset".
+
+### P8 — Finish a partial workout (UX audit #14)
+"Finish workout" only appears when all 8 lifts are done. A lifter who runs out of time at lift 6 gets no summary and no clean session close. Proposal: show Finish whenever there is any logged data, with the summary titled to say it's partial (e.g. "Friday — partial, 6 of 8 lifts"). Changes what "finish" means — Khang's call.
+
+### P9 — Off-day logging: block or attribute? (see T2 above)
+The decision that unblocks the off-day design: block logging on Mon–Thu with a one-line message, or attribute the session to the next training day.
+
+### P10 — Overhead cable extension `partial: 1` flag: KEEP (recommended, Nov 9)
+The evidence for triceps lengthened partials is the strongest in the partials literature — Goto 2019 (partial-ROM triceps extensions at long muscle lengths grew CSA +48.7% vs +28.2% full ROM, trained men, 8 weeks) and Maeo 2023 (overhead cable extensions — the exact exercise — grew the long head +28.5% vs +19.6% neutral, 12 weeks). The Nov 8 list was incomplete, not the flag wrong. `RESEARCH.md` now lists triceps; the flag stays unless Khang says otherwise. Counterweight recorded: Wolf 2025 — in trained lifters, lengthened partials tie full ROM rather than beating it; the app's conservative use (only after full-ROM failure, last set only) is exactly the "extend the last set" application, so "tie" still supports keeping it.
+
+### P11 — L6 exercise-swap alternates (PROPOSAL — approve/edit per lift, Nov 9)
+One substitute per lift for "machine taken / no equipment". Same muscle, similar loading, standard coaching substitutions (medium confidence — coaching practice, not literature-derived; nothing here is decided). Progression model if approved: log the swap under the original lift's `id` (keeps `suggestLoad`/`stallLoad` working, no schema change), with a swap flag on the entry — Khang decides; the alternative (alternates get their own history) needs a design.
+
+| Lift | Proposed alternate |
+|---|---|
+| Fri Smith squat | Barbell back squat (start conservative — no Smith rail) |
+| Fri Smith incline | Barbell incline press |
+| Fri Bulgarian | DB reverse lunge |
+| Fri incline DB | Barbell incline press |
+| Fri pec deck | Incline DB fly |
+| Fri leg extension | Sissy squat (assisted, hold a rack) |
+| Fri cable lateral | DB lateral raise |
+| Fri weighted dip | Close-grip bench press |
+| Sat front pulldown | Pull-ups (band-assisted if <5 reps) |
+| Sat cable RDL | DB Romanian deadlift |
+| Sat T-bar row | One-arm DB row (chest-supported if possible) |
+| Sat leg curl | Nordic hamstring curl (eccentric-only, assisted; fallback: lying leg curl machine) |
+| Sat Bayesian curl | Incline DB curl |
+| Sat preacher curl | Spider curl (chest-supported on incline bench) |
+| Sat rear delt | Bent-over DB reverse fly |
+| Sat calf raise | Single-leg DB calf raise on a step |
+| Sun leg press | Barbell back squat (if no rack: goblet squat, heels elevated) |
+| Sun pull-ups | Lat pulldown |
+| Sun machine OHP | Seated DB overhead press |
+| Sun cable fly | Pec deck fly |
+| Sun seated row | Barbell bent-over row |
+| Sun lateral↔pec deck (superset) | DB lateral raise + bent-over DB reverse fly |
+| Sun overhead extension | Single-arm DB overhead extension |
+| Sun calf raise | Single-leg DB calf raise on a step |
+
 ## Batch 2 — QUEUED Nov 8 (B1–B3, all T1, hardening from Muse's Batch 1 review)
 
 `QUEUE.md` holds the full specs. `TASK.md` has B1 active. B1: null / non-object
@@ -77,9 +182,7 @@ Design is in `DESIGN.md` ("L9 design"): new `restctl.js`, controller owns
 `rest` + `restCtx` + interval + finish-arming, returns `{state, view,
 effects}`; `app.js` stays the DOM shell and performs effects (beep /
 vibrate / notify / advance / finish). Pure `machine.js` / `rest.js` untouched.
-Build is proposed for Batch 3 — not queued until Khang approves the design
-+ the batch. Next T2 designs, in order: L6 (needs Khang's alternate list
-first), then L7/L8 (research proposals, program numbers are T3). 
+BUILT Nov 9 (verified 145/145 unit, 48/48 e2e, SW `gym-v20`) — see `TASK.md`. Next T2 designs, in order: L6 (alternate list now proposed as P11, needs Khang's approval first), then L7/L8 (research done Nov 9; proposals P5–P7, program numbers are T3).
 
 ## Proposals (T3 — Khang only, never auto-built)
 

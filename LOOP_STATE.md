@@ -1,13 +1,11 @@
 # LOOP_STATE — checkpoint
 
-Status: SET-LOG SIZING FIX (OpenCode, Nov 9 11:34 CT) — Khang flagged the set section as still oversized after `gym-v31`; rows are now a fixed 44 px (tap-target floor, no 56/64 px growth), gap 6 px, `.setlog` hugs its rows (144 px for 3 sets vs 180/208), and the 44 px Undo/Restart pills clear the first row by 9/7 px (they were 1 px into it). 154/154 unit, typecheck clean, 65/65 e2e at 390×667/844, SW `gym-v37`.
+Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-01 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
+
+Previous: SET-LOG SIZING FIX (OpenCode, Nov 9 11:34 CT) — Khang flagged the set section as still oversized after `gym-v31`; rows are now a fixed 44 px (tap-target floor, no 56/64 px growth), gap 6 px, `.setlog` hugs its rows (144 px for 3 sets vs 180/208), and the 44 px Undo/Restart pills clear the first row by 9/7 px (they were 1 px into it). 154/154 unit, typecheck clean, 65/65 e2e at 390×667/844, SW `gym-v37`.
 
 Previous: PIPELINE PASS 2 DONE (OpenCode, Nov 9 09:12 CT) — 154/154 unit, typecheck clean, 63/63 e2e at 390×667/844, SW `gym-v35`, CI green. P1 units on the lift screen (`a15af57`) + menu/summary reachability on short phones (`1b66b46`); P2 `Stats.progressSnapshot` (`976615d`); P3 shared session aggregate 4.6 → 3.4 ms (`4cf6e7a`); P4 midnight / off-day / summary journeys (`3815cbe`); P5 corrupt-date drop + dead-code cleanup (`4c8a977`). Batch 3 still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 alternate list).
-Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
-Muse re-checked each item against Pass 4 source. `TASK.md` has L4
-active; `QUEUE.md` holds the full batch. OpenCode prompt is live
-in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into
-OpenCode once and it works the queue.
+Loop: Batch 1 (L1–L5) and Batch 2 (B1–B3) complete and verified; L9 rest controller built. `TASK.md` has B3-01 active; `QUEUE.md` holds Batch 3 (B3-01–B3-35, in order). OpenCode prompt is live in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into a fresh OpenCode session and it works the queue. The queue is long by Khang's explicit ask — if the session gets long, finish the current item, checkpoint here, and stop; Khang restarts with the same prompt and work resumes from the checkpoint.
 
 ## Last verified
 
@@ -130,10 +128,9 @@ Muse.**
 
 ## Current / next
 
-- Current item: none — Batch 2 (B1, B2, B3) complete and self-reviewed.
-- Next in queue: none — stop and wait for Muse (Batch 3 = L9 rest
-  controller, designed in `DESIGN.md`, not queued yet).
-- After the batch, Muse reviews (ping "check the loop").
+- Current item: B3-01 — mid-rest finish-arm freeze (verified bug, rest-critical).
+- Next in queue: B3-02–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
+- After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
 
@@ -233,3 +230,17 @@ Pass 4 build, same phone check:
   later sessions (L6 needs Khang's alternate list; L7/L8 are proposals).
   Phone check is async, not blocking. OpenCode stopped — Khang pastes
   the loop prompt again to start Batch 2.
+- 2026-11-09 11:08–11:12 CT: set-log sizing fix (OpenCode, Khang:
+  "Not quite fixed") — `.setrow` fixed 44 px, `.setlog` hugs its rows,
+  Undo/Restart pills clear the first row. Commits `5db9414` + `6b3ffd6`
+  (SW `gym-v36` → `gym-v37`, 65/65 e2e). HEAD moved to `6b3ffd6`.
+- 2026-11-09 ~11:30 CT: Muse queued Batch 3 (B3-01–B3-35, 33 T1 + 2 T2)
+  from three read-only audits, at Khang's "plan new improvements… very
+  long list" ask. B3-01 is the mid-rest finish-arm freeze (verified by
+  Muse in source; the L9 "fixed in review" note was wrong — the bug is
+  still in the code at HEAD). L7/L8 unblocked by the research pass
+  (citations in `RESEARCH.md`; Singer 2024 + Goto 2019 re-verified by
+  Muse). T3 proposals P5–P11 in `BACKLOG.md` for Khang. **Push:** held
+  while the set-log session was committing at 11:12 CT; pushed ~11:24
+  CT after the head check showed no new commits since 11:12. Queue is
+  live — Khang can paste the loop prompt.

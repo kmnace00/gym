@@ -403,3 +403,58 @@ weight is exactly 165 would have it overwritten by a merge, and a migrated
 user at 165.3 never adopts one) — the alternative needs a "user set this"
 flag; (b) the field and the store both cap at 700 lb, so an imported value
 above that falls back to the default.
+
+## Batch 3 T2: nextLift wrap (Nov 9, Muse)
+
+Problem: `rest.js` `nextLift(idx, len, firstOpen)` falls back to the
+literal next index when no open lift exists *after* the current one,
+even if that lift is already done — and it never looks *before* the
+current lift. Complete lifts out of order (finish lift 1 after 2–7
+are done) and GO takes you to a completed lift instead of the one open
+lift, or to Finish. The fallback is tested and deliberate, so this is
+a contract change, not a silent fix.
+
+Contract (new): search forward from the current lift for the first
+open lift; if none, wrap and search from index 0 for the earliest open
+lift; only when the whole day is done return −1 (two-tap Finish).
+`firstOpen` keeps its current meaning (first open lift after the
+current index, or −1); the wrap search is a second pass from 0, and
+must not return the current lift itself when it is the only open one
+(the current lift is done by construction on the GO path — if it is
+somehow open, returning it is correct: the lifter is still on it).
+
+Files: `rest.js` (the fallback), `restctl.js` (interface unchanged —
+`skip()` already handles a −1 by arming Finish), `test/rest.test.js`
+(update the existing fallback assertion
+`assert.equal(R.nextLift(0, 8, -1), 1)` to the new contract and add
+forward-open, wrap-around, and all-done cases), `e2e/rest.spec.js`
+(out-of-order completion journey).
+
+Invariants: the 400 ms GO guard and the 2,500/2,600 ms two-tap finish
+are untouched; a fully-done day still reaches Finish, never an
+infinite advance loop; no program-data change. Rollback: one revert.
+
+## Batch 3 T2: bodyweight resolution helper (Nov 9, Muse)
+
+Problem: "Banked `bwKg` wins, else current bodyweight, else 165" is
+re-implemented in `app.js` `bwFor` and three separate inline ternaries
+in `stats.js` (`entryVolume`, `personalRecords`, `topMovers`'
+`optsFor`). A future change to the rule must be made in four places to
+stay consistent.
+
+Design: add one exported pure helper in `stats.js`,
+`resolveBodyweight(entry, fallback)`, implementing the rule exactly as
+it exists today — banked `bwKg` when it is a finite number in range,
+else `fallback` (the payload bodyweight), else 165. `app.js` `bwFor`
+and the three `stats.js` call sites call it instead of inlining the
+ternary. No change to the rule itself, no change to any number: the
+byte-identical-outputs requirement is verified by the existing suite
+plus a before/after spot check on a bodyweight lift's tonnage.
+
+Files: `stats.js` (helper + three call sites), `app.js` (`bwFor`),
+`test/stats.test.js` (helper tests: banked wins, fallback, invalid
+banked value), `test/enhancements.test.js` (only if it covers
+`bwFor`). Rollback: one revert. Note: the 165-default merge ambiguity
+(a real 165 lb bodyweight being clobbered by a merge) is NOT fixed
+here — that needs a `bodyweightSet` schema flag (BACKLOG, Khang's
+call); this item only de-duplicates the rule.
