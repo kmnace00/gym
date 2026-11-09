@@ -40,6 +40,23 @@ for (const size of sizes) {
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
 
+    test("the set log stays compact: one-line rows, no stretched section", async ({ page }) => {
+      await page.goto(url);
+      await page.locator(".liftrow").first().click();
+      await expect(page.locator("#setLog .setrow")).toHaveCount(3);
+      const m = await page.evaluate(() => {
+        const rows = [...document.querySelectorAll("#setLog .setrow")];
+        const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
+        const log = document.getElementById("setLog").getBoundingClientRect().height;
+        return { hs, log: Math.round(log) };
+      });
+      const tallest = Math.max(...m.hs);
+      const shortest = Math.min(...m.hs);
+      expect(shortest, "rows must keep the 44px tap target").toBeGreaterThanOrEqual(44);
+      expect(tallest, "a set row is one compact line, not a stretched card").toBeLessThanOrEqual(46);
+      expect(m.log, "the log hugs its rows").toBeLessThanOrEqual(3 * 46 + 2 * 8);
+    });
+
     test("no overflow with suggestion + sparkline + RIR hint (worst case)", async ({ page }) => {
       await page.goto(url);
       await page.evaluate(() => {

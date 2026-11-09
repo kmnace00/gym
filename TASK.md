@@ -6,6 +6,10 @@ Status: DONE — pipeline pass 2 (5 phases) + a menu reachability fix complete a
 
 WIP: none claimed
 
+## Completed — set log sizing (Nov 9, Khang: "Not quite fixed") [T1]
+
+`.setrow` is a fixed 44 px (the L4 tap-target floor) at both viewports instead of 56/64, gap 6 px, and `.setlog` hugs its rows (`flex:0 1 auto`) so the section no longer keeps the leftover height as dead space — 144 px for 3 sets, down from 180 px at 390×667 and 208 px at 390×844. Short-phone `max-height:56px` + negative-margin override removed. 1 new e2e (rows 44–46 px, log ≤ 3×46 + gaps) at both viewports. SW `gym-v36`. Verified 154/154 unit, typecheck clean, 65/65 e2e.
+
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
 1. `weekStatus` takes a per-day lift-count map (`DAY_LIFTS` derived from `DAYS`), no more `n >= 8` (1 unit test).
