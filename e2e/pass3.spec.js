@@ -118,3 +118,44 @@ test("undo last reset restores the pre-reset payload", async ({ page }) => {
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("a failed snapshot write is reported before a reset", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 3, cur: day, idx: 0, bodyweight: 75, liftHistory: {}, sessionLog: [],
+      state: {
+        [day + ":0"]: {
+          done: 3, load: 50, reps: 6, rir: 2,
+          sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }]
+        }
+      },
+      active: { id: "ses_quota", date: date, day: day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  /* every snapshot write now throws, exactly like a full storage quota */
+  await page.evaluate(() => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (String(k).indexOf("-snapshot") >= 0) throw new Error("QuotaExceededError");
+      return orig.call(this, k, v);
+    };
+  });
+
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#resetDay")).toContainText("Tap again");
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#modalMsg")).toContainText("no undo copy");
+
+  const cleared = await page.evaluate((d) => JSON.parse(localStorage.getItem("gym-tool-v2")).state[d + ":0"].done, day);
+  expect(cleared, "the reset still happens even without an undo copy").toBe(0);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});

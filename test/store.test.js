@@ -626,3 +626,34 @@ test("a zero or negative count stays zero", () => {
   assert.equal(payload.liftHistory["fri:0"][0].setsDone, 0);
   assert.equal(payload.state["fri:0"].sets.length, 1);  /* a valid array is not truncated */
 });
+
+/* a session that runs past midnight banks into the day it started, so undo
+   and reset can still reach the late lifts.                                   */
+test("sessionDate anchors history to the live session across midnight", () => {
+  assert.equal(S.sessionDate({ active: { date: "2001-01-02" } }), "2001-01-02");
+  assert.equal(S.sessionDate({}), S.dateKey());
+  assert.equal(S.sessionDate({ active: { date: "junk" } }), S.dateKey());
+
+  const p = S.emptyPayload();
+  p.active.date = "2001-01-02";
+  p.liftHistory["fri:0"] = [
+    { date: "2000-12-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+    { date: "2001-01-02", load: 50, reps: 6, rir: 2, setsDone: 3 }
+  ];
+  assert.equal(S.hasTodayEntry(p, "fri", 0), true);
+  S.removeTodayEntry(p, "fri", 0);
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(p.liftHistory["fri:0"][0].date, "2000-12-01");
+
+  const q = S.emptyPayload();
+  q.active.date = "2001-01-02";
+  q.state["fri:0"] = { done: 3, sets: [{}] };
+  q.liftHistory["fri:0"] = [
+    { date: "2000-12-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+    { date: "2001-01-02", load: 50, reps: 6, rir: 2, setsDone: 3 }
+  ];
+  S.resetDay(q, "fri");
+  assert.equal(q.liftHistory["fri:0"].length, 1);
+  assert.equal(q.liftHistory["fri:0"][0].date, "2000-12-01");
+  assert.equal(q.state["fri:0"].done, 0);
+});

@@ -1221,14 +1221,14 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        Gym.snapshot(payload, "pre-merge");
+        var snapOk = Gym.snapshot(payload, "pre-merge");
         var merged = Gym.importMerge(payload, String(reader.result));
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg("Backup imported — history merged ✓");
+        setMsg("Backup imported — history merged ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
       } catch (e) { setMsg("Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);
