@@ -43,8 +43,8 @@ for (const size of sizes) {
         },
         liftHistory: {
           "fri:0": [
-            { date: "2026-10-01", load: 50, reps: 6, rir: 2, sets: [{ load: 50, reps: 6, rir: 2 }] },
-            { date: "2026-10-08", load: 52.5, reps: 6, rir: 2, sets: [{ load: 52.5, reps: 6, rir: 2 }] }
+            { date: "2026-10-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
+            { date: "2026-10-08", load: 52.5, reps: 6, rir: 2, hitTop: true, setsDone: 3 }
           ]
         }
       });
@@ -123,7 +123,9 @@ test("keyboard rest order is +15 / Pause / End rest / Show workout / Undo / prep
     const ids = ["rPrevBtn", "rNextBtn"];
     return ids.every((id) => {
       const el = document.getElementById(id);
-      return getComputedStyle(el).display === "none" && !el.hasAttribute("tabindex");
+      const wrap = el.closest(".rnav");
+      el.focus();
+      return wrap && getComputedStyle(wrap).display === "none" && !el.hasAttribute("tabindex") && document.activeElement !== el;
     });
   });
   expect(hiddenNotReachable).toBe(true);
