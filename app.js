@@ -770,8 +770,24 @@
     var w = wakeLock; wakeLock = null;
     try { var p = w.release(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
   }
+  /* A page installed to the home screen can stay open for days without ever
+     reloading, so it never revalidates the deploy. Ask the service worker for
+     a newer sw.js whenever the app comes back into view (throttled, silent);
+     the existing network-first navigation then serves the new build. */
+  var swCheckAt = 0;
+  function checkForDeploy() {
+    if (!swReg || typeof swReg.update !== "function") return;
+    if (Date.now() - swCheckAt < 600000) return; // at most once every 10 min
+    swCheckAt = Date.now();
+    try {
+      var p = swReg.update();
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && sInt) keepAwake();
+    if (document.visibilityState !== "visible") return;
+    if (sInt) keepAwake();
+    checkForDeploy();
   });
 
   /* ── RIR picker — built once, with a one-time explainer ────────────────── */
@@ -1457,8 +1473,9 @@
     keepAwake();
   }
   renderSessionPill();
+  var swReg = null;
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
-    navigator.serviceWorker.register("./sw.js").catch(function () {});
+    navigator.serviceWorker.register("./sw.js").then(function (reg) { swReg = reg; }).catch(function () {});
   }
   render();
   if (dataWarn) syncSaveBar(); else commit();

@@ -1,9 +1,10 @@
 /* Service-worker behaviour over real HTTP. Every other e2e spec loads the app
    from file://, where service workers cannot register — so install, the
-   offline shell and stale-while-revalidate were never exercised. This spec
-   starts its own tiny static server (no playwright.config.js change) and
-   covers the offline promise the app makes: registration, the offline shell,
-   a failed asset revalidation, and a failed navigation never poisoning it. */
+   offline shell, stale-while-revalidate and the update check were never
+   exercised. This spec starts its own tiny static server (no
+   playwright.config.js change) and covers the offline promise the app makes:
+   registration, the offline shell, a failed asset revalidation, a failed
+   navigation never poisoning it, and the visibility-triggered deploy check. */
 const { test, expect } = require("@playwright/test");
 const http = require("http");
 const fs = require("fs");
@@ -23,6 +24,7 @@ let server = null;
 let base = "";
 let failAppJs = false;
 let failNav = false;
+let swHits = 0;
 
 test.describe.configure({ mode: "serial" });
 
@@ -40,6 +42,7 @@ test.beforeAll(async () => {
       res.end("app.js failed");
       return;
     }
+    if (rel === "sw.js") swHits++;
     const file = path.resolve(ROOT, rel);
     if (!file.startsWith(ROOT + path.sep) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404, { "Content-Type": "text/plain" });

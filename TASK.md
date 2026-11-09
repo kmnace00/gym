@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/pass3.spec.js, sw.js, docs since 2026-11-09 14:52 CT — B3-22 (restore two-tap via `twoTap()`).
+WIP: OpenCode editing app.js, e2e/sw.spec.js, docs since 2026-11-09 15:10 CT — B3-23 (service worker update check on visibility).
+
+## Completed — B3-22: Restore (replace) re-implements the two-tap arm instead of using `twoTap()` [T1]
+- Built Nov 9 (OpenCode). `replaceBtn` now routes through the shared `twoTap()` arm (2.5 s window, 2.6 s label reset); `replaceArmedUntil` and its ad-hoc timer are gone. The action had to be hoisted to a named `openReplacePicker` — `twoTap` compares function identity, so an inline literal armed forever. 1 new e2e (single tap arms, second tap clicks the picker, timeout restores the label). SW `gym-v58`. 160/160 unit, typecheck clean, 81/81 e2e.
 
 ## Completed — B3-21: The corrupt-payload bar understates what happened [T1]
 - Built Nov 9 (OpenCode). Bar copy now names the empty log and the download-first step; download action unchanged. SW `gym-v57`. 160/160 unit, 80/80 e2e.
