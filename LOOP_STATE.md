@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: CONTINUOUS LOOP ACTIVE (OpenCode, Nov 9 08:05 CT) — 149/149 unit, typecheck clean, 58/58 e2e at 390×667/844, SW `gym-v31`, CI green. Shipped since L9 (`6ae2432`): `weekStatus` per-day counts; set-edit navigation/undo restore the working load; derived count strings + the Fri–Sun "This week" counter; rest-screen Finish finalizes the session; extra-set cap; per-entry `bwKg`; midnight session anchoring; snapshot-failure reporting; 44 px day pills/rest steppers + visible Undo; `tools/check-ids.js` gate; summary dialog focus trap + restore. Batch 3 in `QUEUE.md` still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 needs his alternate list; B4 delivered). Full state and the deliberately-unbuilt list are in `HANDOFF.md`.
+Status: PIPELINE PASS 2 DONE (OpenCode, Nov 9 09:05 CT) — 154/154 unit, typecheck clean, 62/62 e2e at 390×667/844, SW `gym-v34`, CI green. Phase 1 units on the lift screen; Phase 2 `Stats.progressSnapshot`; Phase 3 shared session aggregate (4.6 → 3.4 ms at the 24×520 cap); Phase 4 midnight / off-day / summary journeys; Phase 5 corrupt-date drop + dead-code cleanup. Batch 3 still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 alternate list).
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live

@@ -2,7 +2,7 @@
 
 ## WIP
 
-Status: ACTIVE — imperial units (schema v4) and compact set rows shipped at `gym-v31` (151/151 unit, 58/58 e2e, CI green). Next: continuous loop, no approved item queued.
+Status: DONE — pipeline pass 2 (5 phases) complete at `gym-v34`: 154/154 unit, 62/62 e2e, CI green. P1 units on the lift screen (v32) · P2 progressSnapshot extraction · P3 shared session aggregate, 4.6→3.4 ms (v33) · P4 midnight/off-day/summary journeys · P5 corrupt-date drop + cleanup (v34). Remaining work is Khang's (Batch 3 research, reconcile schema, caps sign-off).
 
 WIP: none claimed
 
