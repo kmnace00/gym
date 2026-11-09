@@ -1,5 +1,8 @@
 # TASK — for OpenCode (planner: Muse)
 
+## WIP
+WIP: OpenCode editing stats.js, app.js, test/stats.test.js, sw.js, version.js since 2026-11-09 17:45 CT — B3-35 (bodyweight-resolution helper).
+
 ## Completed — B3-34: `nextLift` never wraps to an earlier open lift [T2, designed]
 - Built Nov 9 (OpenCode). `nextLift` searches forward, then wraps to the earliest open lift, and returns -1 only when the day is done; `restctl.js` passes `firstOpen(0)`. Rewrote the fallback unit test, added `e2e/nextlift.spec.js` (out-of-order journey → wrap → two-tap Finish → summary), and fixed `e2e/features.spec.js` which relied on the old resting state. SW `gym-v65`. 167/167 unit, 91/91 e2e, reviewer PASS.
 

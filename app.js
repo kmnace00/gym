@@ -26,9 +26,7 @@
   /* bodyweight work is valued at the weight in force when that session was
      banked, so editing today's weight never rewrites past PRs. */
   function bwFor(entry) {
-    return entry && typeof entry.bwKg === "number" && isFinite(entry.bwKg) && entry.bwKg > 0
-      ? entry.bwKg
-      : (payload && payload.bodyweight);
+    return Stats.resolveBodyweight(entry, payload && payload.bodyweight);
   }
   function metricForEntry(e, entry, load, reps) {
     return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: bwFor(entry) });

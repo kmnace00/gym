@@ -98,6 +98,20 @@
   }
 
   /**
+   * The bodyweight in force for an entry: the banked `bwKg` when it is a sane
+   * positive number, else `fallback` (usually the payload's current scalar),
+   * else 165. One rule, four call sites (B3-35) — `app.js bwFor` and the three
+   * places in this module that used to inline the same ternary.
+   * @param {{bwKg?:number}} [entry]
+   * @param {number} [fallback]
+   * @returns {number}
+   */
+  function resolveBodyweight(entry, fallback) {
+    if (entry && typeof entry.bwKg === "number" && isFinite(entry.bwKg) && entry.bwKg > 0) return entry.bwKg;
+    return typeof fallback === "number" && isFinite(fallback) && fallback > 0 ? fallback : 165;
+  }
+
+  /**
    * Tonnage for one history entry: sum of load × reps across its sets.
    * Bodyweight work (explicit `bw`, or legacy load 0) is valued at
    * `bodyweight + added load` per rep, so adding a plate never lowers tonnage.
@@ -109,9 +123,7 @@
    */
   function entryVolume(e, bwLb) {
     if (!e) return 0;
-    var bw = e && typeof e.bwKg === "number" && isFinite(e.bwKg) && e.bwKg > 0
-      ? e.bwKg
-      : (typeof bwLb === "number" && isFinite(bwLb) && bwLb > 0 ? bwLb : 165);
+    var bw = resolveBodyweight(e, bwLb);
     var sets = entrySets(e), total = 0, i, load, eff;
     for (i = 0; i < sets.length; i++) {
       load = typeof sets[i].load === "number" && isFinite(sets[i].load) ? sets[i].load : 0;
@@ -373,7 +385,7 @@
         sets = entrySets(e);
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
-          opts = { bw: isBw || e.bw === true, bodyweight: (typeof e.bwKg === "number" && isFinite(e.bwKg) && e.bwKg > 0 ? e.bwKg : bwKg) };
+          opts = { bw: isBw || e.bw === true, bodyweight: resolveBodyweight(e, bwKg) };
           m = metric(set.load || 0, set.reps || 0, opts);
           if (m > bestM) { bestM = m; best = { load: set.load || 0, reps: set.reps || 0, date: e.date }; }
         }
@@ -406,7 +418,7 @@
       e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
       if (!e) continue;
       function optsFor(en) {
-        return { bw: !!e.bw, bodyweight: en && typeof en.bwKg === "number" && isFinite(en.bwKg) && en.bwKg > 0 ? en.bwKg : bwKg };
+        return { bw: !!e.bw, bodyweight: resolveBodyweight(en, bwKg) };
       }
       first = topSet(entrySets(arr[0]), metric, optsFor(arr[0])) || arr[0];
       last = topSet(entrySets(arr[arr.length - 1]), metric, optsFor(arr[arr.length - 1])) || arr[arr.length - 1];
@@ -496,6 +508,7 @@
   return {
     sessionCount: sessionCount, setsLogged: setsLogged,
     setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
+    resolveBodyweight: resolveBodyweight,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
     workoutDates: workoutDates, weekStatus: weekStatus,

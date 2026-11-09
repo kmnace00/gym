@@ -347,3 +347,34 @@ test("progressSnapshot equals the individual stats", () => {
   assert.deepEqual(S.recentVolume(p, 5, vols), S.recentVolume(p, 5));
   assert.deepEqual(S.weekOverWeek(p, "2026-11-09", vols), S.weekOverWeek(p, "2026-11-09"));
 });
+
+test("resolveBodyweight: banked weight wins, then the fallback, then 165", () => {
+  assert.equal(S.resolveBodyweight({ bwKg: 220 }, 175), 220);
+  assert.equal(S.resolveBodyweight({}, 175), 175);
+  assert.equal(S.resolveBodyweight(null, 175), 175);
+  assert.equal(S.resolveBodyweight(undefined, 175), 175);
+  for (const bad of [0, -3, NaN, Infinity, "220", null]) {
+    assert.equal(S.resolveBodyweight({ bwKg: bad }, 175), 175, `invalid banked ${bad} falls back`);
+  }
+  for (const bad of [0, -1, NaN, "175", undefined, null]) {
+    assert.equal(S.resolveBodyweight({}, bad), 165, `invalid fallback ${bad} uses the default`);
+  }
+});
+
+test("the helper leaves tonnage and PR numbers exactly as the inlined rule did", () => {
+  const DAYS = { fri: { ex: [{ n: "Dip", bw: true, s: 3, r: 6, step: 2.5 }] } };
+  const payload = {
+    bodyweight: 75,
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", bw: true, bwKg: 75, sets: [{ load: 0, reps: 6, rir: 2 }] },
+        { date: "2026-11-08", bw: true, bwKg: 220, sets: [{ load: 2.5, reps: 6, rir: 2 }] }
+      ]
+    }
+  };
+  // entry 2 is valued at its banked 220 lb, not today's 75
+  assert.equal(S.entryVolume(payload.liftHistory["fri:0"][1], payload.bodyweight), 222.5 * 6);
+  assert.equal(S.totalVolume(payload), 75 * 6 + 222.5 * 6);
+  const pr = S.personalRecords(payload, DAYS, P.progressMetric)[0];
+  assert.equal(pr.metric, P.progressMetric(2.5, 6, { bw: true, bodyweight: 220 }));
+});
