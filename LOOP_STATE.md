@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: PIPELINE ACTIVE (OpenCode, Nov 9 05:00 CT) — Khang's 5-phase autonomous pipeline (4:00 AM–7:00 PM CT Mon) is running off HEAD `f170c07`. Phase 1 gated at `a0afe70`, Phase 2 gated at `2e4bcb0`, Phase 3 (performance) gated: 114/114 unit, typecheck clean, 44/44 e2e at 390×667/844, SW `gym-v17`. Phase 4 (test coverage) next. Queue empty; pipeline phases drive the work, program data stays read-only.
+Status: PIPELINE ACTIVE (OpenCode, Nov 9 05:15 CT) — Khang's 5-phase autonomous pipeline (4:00 AM–7:00 PM CT Mon) is running off HEAD `f170c07`. Phase 1 gated `a0afe70`, Phase 2 gated `2e4bcb0`, Phase 3 gated `44d65a5`, Phase 4 (test coverage) gated: 127/127 unit, typecheck clean, 46/46 e2e at 390×667/844, SW `gym-v18`. Phase 5 (hardening/cleanup) next. Queue empty; pipeline phases drive the work, program data stays read-only.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
