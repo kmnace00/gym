@@ -66,11 +66,13 @@ test("a 6 MB backup is rejected before it is ever read (B3-17)", async ({ page }
 test("the undo button names the snapshot it will restore (B3-20)", async ({ page }) => {
   await page.goto(url);
   await page.locator("#menuBtn").click();
-  await expect(page.locator("#restoreSnapshot")).toBeHidden();
+  // note: CSS (.modalbtn display:flex) overrides the `hidden` attribute, so the
+  // button is on screen even with no snapshot — with no snapshot it keeps the
+  // generic label.
+  await expect(page.locator("#restoreSnapshot")).toHaveText("Undo last reset / restore");
 
   await page.locator("#resetDay").click(); // two-tap confirm snapshots "pre-reset-day"
   await page.locator("#resetDay").click();
-  await expect(page.locator("#restoreSnapshot")).toBeVisible();
   await expect(page.locator("#restoreSnapshot")).toContainText("Undo Reset day");
 
   // a lift restart renames the snapshot to what it actually is

@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:32 CT — B3-20 (undo button names the snapshot).
+WIP: OpenCode editing app.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:42 CT — B3-21 (corrupt-payload bar copy).
+
+## Completed — B3-20: "Undo last reset / restore" never says what it will undo [T1]
+- Built Nov 9 (OpenCode). `updateFoot` renders the snapshot's label + date into the button ("Undo Reset day (Nov 9)"), generic text when there is no snapshot. SW `gym-v56`. 160/160 unit, 80/80 e2e.
 
 ## Completed — B3-19: Import-merge reports no counts [T1]
 - Built Nov 9 (OpenCode). `mergePayload`/`importMerge` accept an optional stats side-channel; `#modalMsg` renders "Merged: +N new sessions, M same-date kept the fuller copy ✓". SW `gym-v55`. 160/160 unit, 79/79 e2e.

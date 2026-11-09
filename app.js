@@ -69,7 +69,7 @@
     if (!saveBar) return;
     if (dataWarn === "corrupt") {
       saveBar.hidden = false;
-      saveBarText.textContent = "Couldn't read saved data — original copy kept";
+      saveBarText.textContent = "Saved data couldn't be read — showing an empty log. Your original file is kept; download it before doing anything else.";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Download copy";
     } else if (dataWarn === "future") {
@@ -1233,7 +1233,7 @@
       } else {
         snapBtn.hidden = false;
         // name the snapshot: what it was and when it was taken (B3-20)
-        var label = String(snap.label || "last change").replace(/^pre-/, "");
+        var label = String(snap.label || "last change").replace(/^pre-/, "").replace(/-/g, " ");
         label = label.charAt(0).toUpperCase() + label.slice(1);
         var when = fmtDate(new Date(snap.at || 0).toISOString().slice(0, 10));
         snapBtn.textContent = "Undo " + label + (when ? " (" + when + ")" : "");

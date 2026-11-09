@@ -39,7 +39,11 @@ test("a corrupt payload is quarantined, never silently overwritten", async ({ pa
   await page.evaluate(() => localStorage.setItem("gym-tool-v2", "{broken"));
   await page.reload();
   await expect(page.locator("#saveBar")).toBeVisible();
-  await expect(page.locator("#saveBarText")).toContainText("Couldn't read");
+  // B3-21: the bar names the empty log and tells the lifter to download first
+  await expect(page.locator("#saveBarText")).toContainText("couldn't be read");
+  await expect(page.locator("#saveBarText")).toContainText("empty log");
+  await expect(page.locator("#saveBarText")).toContainText("download it before doing anything else");
+  await expect(page.locator("#saveBarAction")).toHaveText("Download copy");
   const raw = await page.evaluate(() => localStorage.getItem("gym-tool-v2-corrupt"));
   expect(raw).toBe("{broken");
 });
