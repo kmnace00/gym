@@ -3,7 +3,7 @@
    - static assets: stale-while-revalidate (instant from cache, refreshed behind)
    A failed script request must never return index.html — that surfaced as a
    parse error in the gym basement. Only navigations get the shell.          */
-const CACHE = "gym-v32";
+const CACHE = "gym-v33";
 const ASSETS = [
   "./", "./index.html", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./restctl.js", "./app.js",
