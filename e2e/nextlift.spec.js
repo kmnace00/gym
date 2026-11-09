@@ -15,7 +15,7 @@ test("GO after the last lift wraps back to the earliest open lift, then Finish w
   await page.goto(url);
   const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
 
-  // lifts 2, 3, 5, 6, 7 are done; lift 4 (index 3) and lift 8 (index 7) are one
+  // lifts 1–3 and 5–7 are done; lift 4 (index 3) and lift 8 (index 7) are one
   // set short. The journey finishes lift 8 last — out of order.
   await page.evaluate(({ day, date }) => {
     const ex = Gym.DAYS[day].ex;
@@ -46,6 +46,9 @@ test("GO after the last lift wraps back to the earliest open lift, then Finish w
   await page.locator("#doneBtn").click();
   await page.locator("#skipRest").click();
   await expect(page.locator("#skipRest")).toHaveText("Tap again to finish");
+  await page.locator("#skipRest").click(); // second tap actually ends the session
+  await expect(page.locator("#summary")).toBeVisible();
+  await expect(page.locator("#sumTitle")).toContainText("workout complete");
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
