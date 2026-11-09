@@ -1,8 +1,32 @@
 # LOOP_STATE — checkpoint
 
-Status: IDLE — framework drafted Nov 8, not started.
-Loop: none active. `TASK.md` is DONE/idle. `QUEUE.md` does not exist
-yet — it is created only when Khang approves the first batch.
+Status: BATCH 1 QUEUED — L1 active.
+Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
+Muse re-checked each item against Pass 4 source. `TASK.md` has L1
+active; `QUEUE.md` holds the full batch. OpenCode prompt is live
+in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into
+OpenCode once and it works the queue.
+
+## Last verified
+
+- HEAD: `a18272b` — framework push (on Pass 4 `cbbf6a8`).
+- Pass 4 verified: 85 unit / 35 e2e green, typecheck clean,
+  SW `gym-v7`, schema v3 (key still `gym-tool-v2`), 24 lifts
+  intact. Pages: https://kmnace00.github.io/gym/
+- Re-check (Muse, Nov 8, read against Pass 4 source): L1 revised
+  to the pure slice (full controller extraction is T2, new
+  backlog L9); L2 timing looks correct in source, needs e2e
+  proof, overhead-extension flag is the one outlier; L3 now
+  measurable via `sessionLog` but expect "insufficient data";
+  L4 has concrete sub-44px targets; L5 has precise probes
+  (`__proto__` via merge, `1e999`, hostile session lifts).
+
+## Current / next
+
+- Current item: L1 — rest decisions into `rest.js` (pure slice).
+- Next in queue: L2 → L3 → L4 → L5 (`QUEUE.md`, in order).
+- Blocked on: Khang pasting the loop prompt into OpenCode.
+  After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
 
@@ -66,3 +90,9 @@ Pass 4 build, same phone check:
   BACKLOG.md, RESEARCH.md, LOOP_STATE.md, OPENCODE_LOOP_PROMPT.md,
   PLAN.md, AGENTS.md, README.md). Batch 1 still awaiting approval;
   `QUEUE.md` not created, `TASK.md` still DONE/idle.
+- 2026-11-08 19:41 CT: Khang approved Batch 1 with a Pass 4
+  re-check. Muse re-read Pass 4 source and queued L1–L5 in
+  `QUEUE.md` (L1 revised to the pure slice, full controller →
+  backlog L9 [T2]; L2/L3/L4/L5 revised with Pass 4 findings).
+  `TASK.md` now has L1 active. Awaiting Khang pasting the loop
+  prompt into OpenCode.

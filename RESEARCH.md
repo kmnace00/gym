@@ -32,6 +32,10 @@ one-line source note as a verified citation yet.
   Source note: Nov 8 research revision. App rule: `partial: 1`
   flag + partials prompt (audit pending — BACKLOG L2).
   Status: settled as a rule; app timing unverified. Re-cite: yes.
+  Open question (Nov 8, from the Pass 4 re-check): the app also
+  flags Sun overhead cable extension (triceps) `partial: 1`, which
+  is NOT in the list above. Flag stays until Khang decides (L2
+  reports it; the loop does not change it).
 - **Rest: ~90 s isolations, ~2 min upper compounds, ~2–3 min lower
   compounds.**
   Source note: Nov 8 research revision. App rule: app rests are

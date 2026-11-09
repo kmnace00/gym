@@ -4,7 +4,47 @@
 
 (none)
 
-Status: DONE — Pass 4 “Build all” delivered 2026-11-08; 85/85 unit, 35/35 e2e, typecheck clean. See `BUILD_LOG.md` and `DESIGN.md` Pass 4.
+Status: ACTIVE — Batch 1, L1 (rest decisions into `rest.js`).
+Batch: `QUEUE.md` L1–L5, in order. When L1 is done, copy L2 from
+`QUEUE.md` into this file and start it. Base HEAD: `a18272b`.
+
+## Active task — L1: rest decisions into rest.js (pure slice) [T1]
+
+Why: `restCtx` still lives in `app.js` (1,397 lines, ~20 touch
+points) and the pure rest decisions sit beside the DOM. `rest.js`
+already holds `canAdvance` / `nextLift` / `armFinish` /
+`finishArmed` / `advanceLabel`. Finish that slice. (The full
+rest-controller extraction is backlog item L9 [T2] — it needs a
+Muse DESIGN first, so it is NOT this item.)
+
+Do:
+- Add to `rest.js` (pure, unit-tested, same UMD pattern):
+  `restMsg(note, sec, baseRest)` — "Add bottom-half partials to
+  failure — then rest." when `note` is `"partials"`, else
+  "Stretch — set up the next set.", prefixed with
+  "+30s for 0–1 RIR · " when `sec > baseRest`. Strings move
+  verbatim — no wording changes.
+  `goLabel(adv, isLastLift)` — "Lift done — next up." /
+  "Workout complete — nice work." / "Next set — go." (the three
+  states in `finishRest`).
+  `prepVisible(phase, editSet, done, sets)` — true only when the
+  phase is neither IDLE nor GO, `editSet < 0`, and `done < sets`
+  (the `renderRestPrep` show-condition).
+- Wire `app.js` (`startRest`, `finishRest`, `renderRestPrep`) to
+  call them. No behaviour change.
+- Unit tests in `test/rest.test.js` for all three, including edges
+  (+30s only when `sec > baseRest`; all three GO labels; prep
+  hidden at GO / IDLE / while editing / when the lift is done).
+
+Do not: move `restCtx` itself, rewire `Machine`, change any
+user-visible string, touch `program.js`.
+Files: `rest.js`, `app.js`, `test/rest.test.js`.
+Verify: `npm run check`, `npm run typecheck`, `npm run e2e`
+(rest pause / advance / GO + prep-visibility paths) at 390×667
+and 390×844, no overflow, no console errors. One line in
+`BUILD_LOG.md`, update `LOOP_STATE.md` (commit + test counts),
+then copy L2 from `QUEUE.md` into this file and start it.
+If verification fails, log it and STOP — do not move on.
 
 ## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)
 
@@ -60,8 +100,12 @@ Verified:
 
 ## Open decisions (need Khang, not a loop edit)
 
-- Persistence schema is a single key `gym-tool-v1`; bump the version to migrate if the shape changes.
-- Session history / auto-progression: not requested, not added.
+- Any change to `program.js` numbers (loads, reps, rests, sets,
+  exercises, split, days) or any new feature — T3 proposals in
+  `BACKLOG.md`, never auto-built.
+- Overhead cable extension is flagged `partial: 1` but is not in
+  the `RESEARCH.md` partials list (L2 open question) — flag stays
+  until Khang decides.
 
 ## How to use this file
 

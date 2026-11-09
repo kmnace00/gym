@@ -5,54 +5,44 @@ Not instructions. An item becomes work only when Muse promotes it into
 `[T1]` buildable now · `[T2]` needs a Muse design first ·
 `[T3]` Khang-only proposal — the loop never builds it.
 
-## Proposed first batch (L1–L5, all T1)
+## Batch 1 — QUEUED Nov 8 (L1–L5, all T1, verified vs Pass 4)
 
-### L1 — Extract the rest controller [T1]
-Why: `app.js` (1,107 lines) still owns rest orchestration. Pass 2
-deferred the dedicated controller; Pass 3 added pure helpers in
-`rest.js` as the low-risk slice. Finish the slice: move the
-advance/finish/arm decisions out of the controller into `rest.js` /
-`machine.js`, keep the DOM in `app.js`, no behaviour change.
-Files: `rest.js`, `machine.js`, `app.js`, `test/rest.test.js`,
-`test/machine.test.js`. Verify: `npm run check`, typecheck, e2e
-(rest pause / advance / GO paths).
+`QUEUE.md` holds the full specs. `TASK.md` has L1 active.
+Re-check notes from Muse's Pass 4 read are in `QUEUE.md`.
+
+### L1 — Rest decisions into rest.js (pure slice) [T1] — ACTIVE
+Revised in re-check: full controller extraction is T2 (new item
+L9 below), so this batch takes the safe pure slice only — the
+remaining pure decisions (`restMsg`, `goLabel`, `prepVisible`)
+into `rest.js` + tests, `restCtx` stays in `app.js`.
 
 ### L2 — Audit the lengthened-partials prompt [T1]
-Why: research (Nov 8) says lengthened partials only after full-ROM
-failure, on the last set, for calves, leg extensions, curls,
-laterals, flys. The app flags `partial: 1` on 10 lifts. Check when
-the prompt actually fires — every set or last set only? — and fix it
-to match the rule. No program-data change; prompt timing only.
-Files: `app.js`, `program.js` (read-only), `e2e/features.spec.js`.
-Verify: e2e for a partial lift (last set prompts, earlier sets do
-not) + a non-partial lift (never prompts).
+Re-check: timing looks correct in source (`app.js:967` — fires
+only on lift completion with last RIR ≤1); this item verifies it
+with e2e. Open question found: Sun overhead cable extension is
+flagged `partial: 1` but is NOT in the `RESEARCH.md` list —
+report it, do not change the flag.
 
-### L3 — Audit the day-time model against real sessions [T1, audit]
-Why: day length is estimated as 50 s/set + rest + 60 s transition
-(`program.js` `dayMins`). The app now logs real history (`stats.js`,
-`liftHistory`). Compare estimate vs actual session durations and
-report the drift per day. Code change only if drift is >10% — and
-then as a constants proposal in the report, not a silent edit.
-Files: `stats.js` (read + report), `test/stats.test.js`. Verify:
-unit tests on the comparison; report in `BUILD_LOG.md` + `RESEARCH.md`.
+### L3 — Day-time model vs real sessions [T1, audit]
+Re-check: Pass 4 `sessionLog` (`day` + `durationSec` +
+`status`) makes this measurable at last — add pure
+`Stats.sessionDrift`, test with fixtures, report. Expect
+"insufficient data" (sessions are brand new; no phone data
+reaches this session). No constants change, no UI change.
 
 ### L4 — Accessibility pass [T1]
-Why: focus trap + GO assertive + Set Done pressed state shipped in
-Pass 2. Unverified since: touch targets ≥44 px on rest + lift
-controls, contrast in both themes, focus order on the rest screen.
-Files: `index.html`, `style.css`, `app.js`, `e2e/*`. Verify: e2e
-viewport checks at 390×667/844 + a manual checklist in `LOOP_STATE.md`
-for Khang's phone tap-through.
+Re-check: concrete sub-44px controls found in Pass 4 CSS —
+`.mini` 44×36, `.resetlift` 30px, `.applybtn` 30px (28px
+short-phone), `.bbdismiss` 26×26, short-phone steppers 40px,
+peek-strip buttons 40px. Rest arrows already out of tab order
+(`.rnav{display:none}` while resting) — verify.
 
 ### L5 — Security audit: import + service worker [T1]
-Why: import sanitization shipped in Pass 2 (hostile strings → safe
-numbers at the store boundary). Extend it: fuzz the import path with
-hostile JSON (nested objects, huge numbers, prototype keys), confirm
-the SW cache-version discipline (`gym-v6`, bump on asset change) and
-the asset-drift guard still hold, and write the threat model down
-(one paragraph in `PLAN.md`: what the loop trusts, what it does not).
-Files: `test/store.test.js`, `test/size.test.js`, `PLAN.md`.
-Verify: new hostile-payload tests green; no behaviour change.
+Re-check: Pass 4 extended sanitization to sessions; existing
+hostile coverage is one test. Probes: `__proto__` /
+`constructor` keys via merge, `1e999` / `Infinity` numbers,
+non-array sets, hostile session lifts. Plus SW discipline
+(`gym-v7`) and the threat-model paragraph in `PLAN.md`.
 
 ## Next (T2 — Muse designs first)
 
@@ -73,6 +63,14 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 `RESEARCH.md`) generally favours ~2–3 min for compounds, ~1–2 min
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
+
+### L9 — Full rest-controller extraction [T2]
+Move `restCtx` + the `Machine` wiring + the DOM handlers out of
+`app.js` into a `rest.js` controller, with the pure decisions
+(L1) already extracted. Needs a Muse `DESIGN.md` section first:
+the seam (what the controller owns vs what stays DOM in
+`app.js`), the `renderRestPrep` ownership, and the test plan.
+Rest is the most user-critical path; do not attempt without it.
 
 ## Proposals (T3 — Khang only, never auto-built)
 
