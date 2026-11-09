@@ -4,12 +4,12 @@
   "private": true,
   "description": "Personal one-screen 3-day hypertrophy tool.",
   "scripts": {
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "icons": "node tools/make-icons.js",
     "e2e": "playwright test",
     "typecheck": "tsc -p jsconfig.json --noEmit",
     "check:assets": "node tools/check-assets.js",
-    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check stats.js && node --check app.js && node --check sw.js && node tools/check-assets.js && node --test test/"
+    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check stats.js && node --check app.js && node --check sw.js && node tools/check-assets.js && node --test test/*.test.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

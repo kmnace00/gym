@@ -2,38 +2,31 @@
 
 ## WIP
 
-Status: ACTIVE — Batch 2, B2 (nested unsafe keys inside records). Base HEAD: `b937acb` (B1 pushed).
+Status: IDLE — Batch 2 complete (B1, B2, B3 built and verified). Queue empty; OpenCode stops and waits for Muse. Base HEAD for the batch: `b7d61f0`.
 
-WIP: OpenCode editing store.js, test/store.test.js since 2026-11-08 21:20 CT
+## Completed — B2: Nested unsafe keys inside records / entries / sessions [T1]
 
-## Active — B2: Nested unsafe keys inside records / entries / sessions [T1]
+Delivered: `store.js` calls `stripUnsafeKeys` at the top of `sanitizeRecord`,
+`sanitizeEntry` and `sanitizeSession`, and on every `sets` element through
+`sanitizeSets`, so `__proto__` / `constructor` / `prototype` nested inside a
+record, history entry, session or set cannot survive the store boundary. A
+record left with only unsafe keys is still a valid record — `getLift()` fills
+the defaults, the lift is not dropped. 3 new unit tests (JSON-string
+payloads); merge winner rule unchanged. SW bumped to `gym-v13` (`store.js`
+changed). Verified: `npm run check` 106/106 unit, typecheck clean,
+`npm run e2e` 41/41 at 390×667/844, no overflow, no console errors.
 
-Why: L5 stripped unsafe keys from the top-level maps (`state`,
-`liftHistory`, session `lifts`), but not inside the record itself.
-`state["fri:0"].__proto__` survives `importRaw` today.
+## Completed — B3: Fix the Node test script (`node --test test/` fails on Node 24) [T1]
 
-Do (full spec in `QUEUE.md`, Batch 2, B2):
-- In `store.js`, call `stripUnsafeKeys` at the start of `sanitizeRecord`,
-  `sanitizeEntry`, and `sanitizeSession` (and on session `lifts` values
-  after `sanitizeRecord` — verify the lifts values are covered, do not
-  assume). Reuse the existing `unsafeKey` / `stripUnsafeKeys` helpers;
-  do not invent a new list — `__proto__`, `constructor`, `prototype` only.
-- A record that is only unsafe keys after stripping must still be a valid
-  record (numbers coerced to 0 / defaults by the existing coerce logic) —
-  do not drop the whole lift.
-
-Tests (in `test/store.test.js`, JSON-string payloads):
-- `importRaw` with `state["fri:0"] = {"done":3, "__proto__":{"evil":1}}`
-  → no own `__proto__` on the record, `Object.prototype.evil` undefined,
-  `done` still 3.
-- Same for a history entry (`liftHistory["fri:0"][0]`) and a session
-  (`sessionLog[0].lifts["fri:0"]` and the session object itself).
-- `importMerge` with a nested-`__proto__` record → same assertions, merge
-  winner rule unchanged.
-
-Files: `store.js`, `test/store.test.js`.
-Verify: `npm run check`, typecheck, e2e at both viewports. SW bump only
-if an asset changed.
+Delivered: `package.json` `test` and the unit step of `check` now run
+`node --test test/*.test.js` (explicit glob). Finding worth recording:
+`npm run check` does not call `npm test` — it runs the unit step inline — so
+both strings were changed to keep the gate identical. Glob expands under the
+sh npm uses on macOS and on the CI runner (Node 20, unchanged in
+`.github/workflows/ci.yml`). No code change, no SW bump; asset-drift guard
+still green (11 page refs, 12 cached assets). Verified: `npm run check`
+106/106, `npm test` 106/106, typecheck clean, `npm run e2e` 41/41 at
+390×667/844.
 
 ## Completed — B1: Null / non-object records: sanitize at the boundary, guard every consumer [T1]
 
