@@ -656,4 +656,17 @@ test("sessionDate anchors history to the live session across midnight", () => {
   assert.equal(q.liftHistory["fri:0"].length, 1);
   assert.equal(q.liftHistory["fri:0"][0].date, "2000-12-01");
   assert.equal(q.state["fri:0"].done, 0);
+
+  /* resetting one lift follows the same anchor */
+  const r = S.emptyPayload();
+  r.active.date = "2001-01-02";
+  r.state["fri:0"] = { done: 3, sets: [{}] };
+  r.liftHistory["fri:0"] = [
+    { date: "2000-12-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+    { date: "2001-01-02", load: 50, reps: 6, rir: 2, setsDone: 3 }
+  ];
+  S.resetLift(r, "fri", 0);
+  assert.equal(r.liftHistory["fri:0"].length, 1);
+  assert.equal(r.liftHistory["fri:0"][0].date, "2000-12-01");
+  assert.equal(r.state["fri:0"].done, 0);
 });

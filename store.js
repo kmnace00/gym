@@ -647,7 +647,7 @@
     var k = d + ":" + i, rec = p.state && p.state[k];
     if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = []; }
     var arr = p.liftHistory && p.liftHistory[k];
-    if (arr && arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
+    if (arr && arr.length && arr[arr.length - 1].date === sessionDate(p)) arr.pop();
     reopenSession(p);
   }
 
