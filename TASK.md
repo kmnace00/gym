@@ -1,5 +1,8 @@
 # TASK — for OpenCode (planner: Muse)
 
+## Completed — B3-34: `nextLift` never wraps to an earlier open lift [T2, designed]
+- Built Nov 9 (OpenCode). `nextLift` searches forward, then wraps to the earliest open lift, and returns -1 only when the day is done; `restctl.js` passes `firstOpen(0)`. Rewrote the fallback unit test, added `e2e/nextlift.spec.js` (out-of-order journey → wrap → two-tap Finish → summary), and fixed `e2e/features.spec.js` which relied on the old resting state. SW `gym-v65`. 167/167 unit, 91/91 e2e, reviewer PASS.
+
 ## WIP
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
