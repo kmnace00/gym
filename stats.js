@@ -100,16 +100,16 @@
    * Bodyweight work (explicit `bw`, or legacy load 0) is valued at
    * `bodyweight + added load` per rep, so adding a plate never lowers tonnage.
    * An entry's own `bwKg` (the weight in force when it was banked) wins over
-   * the `bwKg` argument, so editing the scalar never rewrites past tonnage.
+   * the `bwLb` argument, so editing the scalar never rewrites past tonnage.
    * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean,bwKg?:number}} e
-   * @param {number} [bwKg] bodyweight in kg (default 75)
+   * @param {number} [bwLb] bodyweight in lb (default 165)
    * @returns {number}
    */
-  function entryVolume(e, bwKg) {
+  function entryVolume(e, bwLb) {
     if (!e) return 0;
     var bw = e && typeof e.bwKg === "number" && isFinite(e.bwKg) && e.bwKg > 0
       ? e.bwKg
-      : (typeof bwKg === "number" && isFinite(bwKg) && bwKg > 0 ? bwKg : 75);
+      : (typeof bwLb === "number" && isFinite(bwLb) && bwLb > 0 ? bwLb : 165);
     var sets = entrySets(e), total = 0, i, load, eff;
     for (i = 0; i < sets.length; i++) {
       load = typeof sets[i].load === "number" && isFinite(sets[i].load) ? sets[i].load : 0;

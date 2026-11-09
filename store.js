@@ -73,7 +73,7 @@
     return {
       v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {},
       lastBackup: null, active: emptySession(todayDay()), sessionLog: [],
-      bodyweight: 75
+      bodyweight: 165
     };
   }
 
@@ -239,7 +239,7 @@
     if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
-    p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 75;
+    p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 165;
     if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];
@@ -586,7 +586,7 @@
       .sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
     while (out.sessionLog.length > SESSION_MAX) out.sessionLog.shift();
 
-    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && incoming.bodyweight <= BODYWEIGHT_MAX && out.bodyweight === 75) {
+    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && incoming.bodyweight <= BODYWEIGHT_MAX && out.bodyweight === 165) {
       out.bodyweight = incoming.bodyweight;
     }
     out.v = CURRENT;

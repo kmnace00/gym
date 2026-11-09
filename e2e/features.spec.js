@@ -227,16 +227,16 @@ test("bodyweight history is frozen at the weight in force", async ({ page }) => 
   await page.locator("#detailsBtn").click();
 
   await page.locator("#menuBtn").click();
-  await page.locator("#bwInput").fill("100");
+  await page.locator("#bwInput").fill("220");
   await page.locator("#bwInput").press("Tab");
   await page.locator("#modalClose").click();
 
   // lift-mode hides the progress button; back to the day list first
   await page.locator("#backBtn").click();
   await page.locator("#progressBtn").click();
-  // the sets were banked at 75 kg, so editing the scalar to 100 does not
-  // rewrite the tonnage that was logged ("1.8k kg" under the old behaviour)
-  await expect(page.locator("#pSub")).toContainText("1.4k kg");
+  // the sets were banked at 165 lb, so editing the scalar to 220 does not
+  // rewrite the tonnage that was logged ("4.0k lb" under the old behaviour)
+  await expect(page.locator("#pSub")).toContainText("3.0k lb");
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });

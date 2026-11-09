@@ -30,8 +30,8 @@ test("setsRecorded sums sets across history entries", () => {
 
 test("entryVolume is load × reps × sets, bodyweight valued at bwKg", () => {
   assert.equal(S.entryVolume({ load: 50, reps: 6, setsDone: 3 }), 900);
-  // bodyweight no longer reads as zero volume (default 75 kg per rep)
-  assert.equal(S.entryVolume({ load: 0, reps: 10, setsDone: 3 }), 75 * 10 * 3);
+  // bodyweight no longer reads as zero volume (default 165 lb per rep)
+  assert.equal(S.entryVolume({ load: 0, reps: 10, setsDone: 3 }), 165 * 10 * 3);
   assert.equal(S.entryVolume({ load: 0, reps: 10, setsDone: 3 }, 80), 80 * 10 * 3);
 });
 

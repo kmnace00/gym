@@ -27,7 +27,7 @@ test("emptyPayload opens on today's training day", () => {
 test("migrate v1 → v3 carries data forward", () => {
   const raw = JSON.stringify({ v: 1, cur: "sat", idx: 2, state: { "sat:0": { done: 1 } } });
   const p = S.migrate(raw);
-  assert.equal(p.v, 3);
+  assert.equal(p.v, 4);
   assert.equal(p.cur, "sat");
   assert.equal(p.idx, 2);
   assert.deepEqual(p.state, { "sat:0": { done: 1 } });
@@ -38,13 +38,13 @@ test("migrate v1 → v3 carries data forward", () => {
 test("migrate v2 round-trips data and adds the v3 session fields", () => {
   const o = { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} };
   const out = S.migrate(JSON.stringify(o));
-  assert.equal(out.v, 3);
+  assert.equal(out.v, 4);
   assert.equal(out.cur, "fri");
   assert.equal(out.idx, 0);
   assert.deepEqual(out.state, {});
   assert.deepEqual(out.liftHistory, {});
   assert.equal(out.lastBackup, null);
-  assert.equal(out.bodyweight, 75);
+  assert.equal(out.bodyweight, 165.3);
   assert.deepEqual(out.sessionLog, []);
   assert.equal(out.active.status, "active");
 });
@@ -138,10 +138,10 @@ test("export → import round-trips", () => {
   assert.deepEqual(S.load().stats || S.load().state, p.state);
 });
 
-test("load migrates a legacy v1 key into v3", () => {
+test("load migrates a legacy v1 key into v4", () => {
   global.localStorage.setItem(S.LEGACY, JSON.stringify({ v: 1, cur: "sun", idx: 1, state: { "sun:0": { done: 3 } } }));
   const p = S.load();
-  assert.equal(p.v, 3);
+  assert.equal(p.v, 4);
   assert.equal(p.cur, "sun");
   assert.equal(p.idx, 1);
   assert.deepEqual(p.state, { "sun:0": { done: 3 } });
@@ -151,7 +151,7 @@ test("load keeps a copy of an unknown future payload, never overwrites it", () =
   const raw = JSON.stringify({ v: 99, future: true });
   global.localStorage.setItem(S.STORE, raw);
   const p = S.load();
-  assert.equal(p.v, 3); // fresh empty
+  assert.equal(p.v, 4); // fresh empty
   assert.equal(global.localStorage.getItem(S.STORE + "-future"), raw);
 });
 
@@ -159,7 +159,7 @@ test("load quarantines a corrupt payload and never overwrites it", () => {
   const raw = "{not json";
   global.localStorage.setItem(S.STORE, raw);
   const p = S.load();
-  assert.equal(p.v, 3);
+  assert.equal(p.v, 4);
   assert.equal(S.lastLoadError().kind, "corrupt");
   assert.equal(S.quarantineRaw(), raw);
   assert.equal(global.localStorage.getItem(S.STORE), raw); // boot copy untouched
@@ -372,7 +372,7 @@ test("importMerge with a null incoming record keeps the base record", () => {
 
 test("migrate v2 with a null state record does not crash", () => {
   const p = S.migrate('{"v":2,"cur":"fri","idx":0,"state":{"fri:0":null,"sat:0":{"done":2}},"liftHistory":{}}');
-  assert.equal(p.v, 3);
+  assert.equal(p.v, 4);
   assert.ok(!Object.hasOwn(p.state, "fri:0"));
   assert.equal(p.state["sat:0"].done, 2);
   assert.ok(p.active && p.active.status === "active");
@@ -613,7 +613,7 @@ test("hostile counts are clamped before anything iterates them", () => {
   assert.equal(payload.sessionLog[0].accSec, S.ACC_SEC_MAX);
   assert.equal(payload.sessionLog[0].durationSec, S.ACC_SEC_MAX);
   assert.equal(payload.sessionLog[0].lifts["fri:0"].done, S.DONE_MAX);
-  assert.equal(payload.bodyweight, 75);          /* out of range → default */
+  assert.equal(payload.bodyweight, 165);          /* out of range → default */
 });
 
 test("a zero or negative count stays zero", () => {
@@ -680,5 +680,18 @@ test("bwKg is bounded: a hostile value is dropped, a real one survives", () => {
     }
   }));
   assert.equal(p.liftHistory["fri:7"][0].bwKg, undefined);
-  assert.equal(p.liftHistory["fri:7"][1].bwKg, 82.5);
+  assert.equal(p.liftHistory["fri:7"][1].bwKg, 181.9);
+});
+
+test("v3 payloads convert bodyweight to pounds exactly once", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 3, bodyweight: 75,
+    liftHistory: { "fri:7": [{ date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 75 }] }
+  }));
+  assert.equal(p.v, 4);
+  assert.equal(p.bodyweight, 165.3);
+  assert.equal(p.liftHistory["fri:7"][0].bwKg, 165.3);
+  const again = S.migrate(JSON.stringify(p));   // idempotent: v4 is not re-converted
+  assert.equal(again.bodyweight, 165.3);
+  assert.equal(S.emptyPayload().bodyweight, 165);
 });

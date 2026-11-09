@@ -412,7 +412,7 @@
     document.getElementById("pSets").textContent = sets;
     document.getElementById("pDays").textContent = week + "/" + weekTotal;
     document.getElementById("pSub").textContent = workouts
-      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " kg · "
+      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " lb · "
         + week + "/" + weekTotal + " this week"
       : "No workouts yet — open a lift to begin";
 
@@ -424,7 +424,7 @@
       var v = byDay[d], pct = Math.round((v / max) * 100);
       bars += '<div class="pdayrow"><span class="pdname">' + labels[d] + '</span>'
         + '<span class="pdbar"><i style="width:' + pct + '%"></i></span>'
-        + '<span class="pdval">' + (v ? Stats.compactVol(v) + " kg" : "—") + '</span></div>';
+        + '<span class="pdval">' + (v ? Stats.compactVol(v) + " lb" : "—") + '</span></div>';
     });
     document.getElementById("pDayBars").innerHTML = bars;
 
@@ -464,7 +464,7 @@
       : "Log a full lift to see the trend";
 
     var pr = Stats.personalRecords(payload, DAYS, progressMetric)[0];
-    document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " kg" : "";
+    document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " lb" : "";
 
     var movers = Stats.topMovers(payload, DAYS, progressMetric);
     document.getElementById("pMovers").innerHTML = movers.length
@@ -1033,7 +1033,7 @@
     document.getElementById("sumTitle").textContent = (DAY_LABEL[cur] || "") + " workout complete";
     document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";
     document.getElementById("sumSets").textContent = String(sets);
-    document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " kg";
+    document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " lb";
     document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
     var nx = nextTrainingGap();
     var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");
@@ -1210,7 +1210,7 @@
   function summaryText() {
     var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
     var days = Stats.uniqueDays(payload), vol = Math.round(Stats.totalVolume(payload));
-    return "Gym — " + sessions + " workouts · " + sets + " sets · " + days + " training days · " + vol + " kg tonnage";
+    return "Gym — " + sessions + " workouts · " + sets + " sets · " + days + " training days · " + vol + " lb tonnage";
   }
   document.getElementById("shareSummary").onclick = function () {
     var text = summaryText();
@@ -1327,15 +1327,15 @@
   /* ── bodyweight + snapshot recovery ───────────────────────────────────── */
   function renderBw() {
     var inp = document.getElementById("bwInput");
-    if (inp) inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 75);
+    if (inp) inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 165);
   }
   document.getElementById("bwInput").addEventListener("change", function () {
     var v = parseFloat(this.value);
-    if (isFinite(v) && v >= 30 && v <= 300) {
+    if (isFinite(v) && v >= 66 && v <= 660) {
       payload.bodyweight = Math.round(v * 10) / 10;
-      commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " kg");
+      commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
     } else {
-      renderBw(); setMsg("Bodyweight must be 30–300 kg");
+      renderBw(); setMsg("Bodyweight must be 66–660 lb");
     }
   });
   document.getElementById("restoreSnapshot").onclick = function () {

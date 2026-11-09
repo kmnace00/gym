@@ -55,9 +55,9 @@
 
   /* named model constants (were magic numbers 50 / 60 in dayMins) */
   var SET_SECS = 50, TRANSITION_SECS = 60;
-  /* bodyweight work has no external load; value a load:0 set at this many kg
+  /* bodyweight work has no external load; value a load:0 set at this many lb
      per rep so pull-ups / dips / calf raises are not invisible in tonnage.  */
-  var BODYWEIGHT_KG = 75;
+  var BODYWEIGHT_LB = 165;
 
   /** Format seconds as m:ss, never negative. */
   function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
@@ -132,7 +132,7 @@
      `opts` is optional: {bw:boolean, bodyweight:number}.                    */
   function epley1rm(load, reps) { return load * (1 + reps / 30); }
   function progressMetric(load, reps, opts) {
-    var bw = opts && typeof opts.bodyweight === "number" && opts.bodyweight > 0 ? opts.bodyweight : BODYWEIGHT_KG;
+    var bw = opts && typeof opts.bodyweight === "number" && opts.bodyweight > 0 ? opts.bodyweight : BODYWEIGHT_LB;
     var isBw = !!(opts && opts.bw);
     var base = isBw ? bw + (load > 0 ? load : 0) : load;
     if (base > 0) return Math.round(epley1rm(base, reps) * 10) / 10;
@@ -182,7 +182,7 @@
   }
 
   return {
-    DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_KG: BODYWEIGHT_KG,
+    DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,

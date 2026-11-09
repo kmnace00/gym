@@ -14,9 +14,9 @@ test("ten years of per-set history stays under localStorage quota", () => {
     P.DAYS[d].ex.forEach((e, i) => {
       for (let n = 0; n < S.HISTORY_MAX; n++) {
         const sets = [];
-        for (let s = 0; s < e.s; s++) sets.push({ load: e.load || P.BODYWEIGHT_KG, reps: e.r, rir: e.rir });
+        for (let s = 0; s < e.s; s++) sets.push({ load: e.load || P.BODYWEIGHT_LB, reps: e.r, rir: e.rir });
         S.pushHistory(p, d, i, {
-          date: "2026-01-01", load: e.load || P.BODYWEIGHT_KG, reps: e.r, rir: e.rir,
+          date: "2026-01-01", load: e.load || P.BODYWEIGHT_LB, reps: e.r, rir: e.rir,
           hitTop: true, setsDone: e.s, sets: sets, exId: e.id
         });
       }
