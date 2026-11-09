@@ -2,36 +2,54 @@
 
 ## WIP
 
-Status: ACTIVE — Batch 2, B1 (null / non-object records). Base HEAD: `b7d61f0`.
+Status: ACTIVE — Batch 2, B2 (nested unsafe keys inside records). Base HEAD: `b937acb` (B1 pushed).
 
-WIP: OpenCode editing store.js, test/store.test.js, sw.js since 2026-11-08 21:02 CT
+WIP: OpenCode editing store.js, test/store.test.js since 2026-11-08 21:20 CT
 
-## Active — B1: Null / non-object records: sanitize at the boundary, guard every consumer [T1]
+## Active — B2: Nested unsafe keys inside records / entries / sessions [T1]
 
-Why: a corrupt or hostile backup with a null record must never crash the
-app. Reproduced by Muse on `b7d61f0`: base with `state["fri:0"]` done 1,
-incoming `state["fri:0"]: null` via JSON → `Cannot read properties of null
-(reading 'done')` in `mergePayload` (`store.js:440-442`). Same class at
-`migrateV2` (`store.js:206`) and `resetDay` (`store.js:571`, no null guard
-unlike `startSession`). Root cause: `sanitizeRecord` returns null records
-as-is, so null survives `normalize()`.
+Why: L5 stripped unsafe keys from the top-level maps (`state`,
+`liftHistory`, session `lifts`), but not inside the record itself.
+`state["fri:0"].__proto__` survives `importRaw` today.
 
-Do (full spec in `QUEUE.md`, Batch 2, B1):
-- In `store.js`, make `sanitizePayload` / `normalize` drop or replace null /
-  non-object values in `state`, `liftHistory` entries, `sessionLog` entries,
-  and session `lifts` values, before any consumer reads them. Prefer drop
-  the null state record so `getLift()` defaults apply on next read.
-- Guard `mergePayload` (`theirs` null → skip), `migrateV2` (null → not-done),
-  `resetDay` (null → skip, as in `startSession`).
-- Tests in `test/store.test.js` (JSON-string payloads, L5 pattern):
-  `importMerge` null state over a done base; `importRaw` null state →
-  readable via `getLift`; v2 migrate with null record; `resetDay` with null
-  record; merge with null history/session entries (lock in Muse's verified
-  case). No schema change, no program-data change, no UI change.
+Do (full spec in `QUEUE.md`, Batch 2, B2):
+- In `store.js`, call `stripUnsafeKeys` at the start of `sanitizeRecord`,
+  `sanitizeEntry`, and `sanitizeSession` (and on session `lifts` values
+  after `sanitizeRecord` — verify the lifts values are covered, do not
+  assume). Reuse the existing `unsafeKey` / `stripUnsafeKeys` helpers;
+  do not invent a new list — `__proto__`, `constructor`, `prototype` only.
+- A record that is only unsafe keys after stripping must still be a valid
+  record (numbers coerced to 0 / defaults by the existing coerce logic) —
+  do not drop the whole lift.
+
+Tests (in `test/store.test.js`, JSON-string payloads):
+- `importRaw` with `state["fri:0"] = {"done":3, "__proto__":{"evil":1}}`
+  → no own `__proto__` on the record, `Object.prototype.evil` undefined,
+  `done` still 3.
+- Same for a history entry (`liftHistory["fri:0"][0]`) and a session
+  (`sessionLog[0].lifts["fri:0"]` and the session object itself).
+- `importMerge` with a nested-`__proto__` record → same assertions, merge
+  winner rule unchanged.
 
 Files: `store.js`, `test/store.test.js`.
-Verify: `npm run check`, typecheck, e2e at 390x667 and 390x844, no overflow,
-no console errors. `BUILD_LOG.md` one line. SW bump if `store.js` changed.
+Verify: `npm run check`, typecheck, e2e at both viewports. SW bump only
+if an asset changed.
+
+## Completed — B1: Null / non-object records: sanitize at the boundary, guard every consumer [T1]
+
+Delivered: `store.js` `sanitizePayload` now drops null / non-object `state`
+records, history entries, `sessionLog` entries and session `lifts` values at
+the boundary (dropped state records fall back to `getLift()` defaults — no
+new defaults invented), and `normalize` / `mergePayload` / `migrateV2` /
+`reconcile` use an `isObj` check so an array can no longer masquerade as
+`state` / `liftHistory`. Defence-in-depth guards added in `mergePayload`
+(null incoming record skipped), `migrateV2` (null record not counted as
+done), `resetDay` (null record skipped, non-array history skipped) and
+`hasData`. 7 new unit tests in `test/store.test.js` (JSON-string payloads).
+No schema, program-data or UI change. SW bumped to `gym-v12` (`store.js`
+changed). Verified: `npm run check` 103/103 unit, typecheck clean,
+`npm run e2e` 41/41 at 390×667/844, no overflow, no console errors.
+Commit: `37a4034` + `8c71719` + `8bdd583` (auto-sync, on origin/main).
 
 ## Completed — L5: security audit: import + service worker [T1]
 

@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 2 ACTIVE — B1 in progress; finish B1–B3 before 4:00 AM Mon (DeepSeek pipeline start). ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse.
+Status: BATCH 2 ACTIVE — B1 built + verified (103/103 unit, typecheck clean, 41/41 e2e, pushed); B2 in progress; finish B2–B3 before 4:00 AM Mon (DeepSeek pipeline start). ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse. (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -9,6 +9,17 @@ OpenCode once and it works the queue.
 
 ## Last verified
 
+- B1 build (OpenCode, Nov 8 21:18 CT): null / non-object records.
+  `store.js` `sanitizePayload` drops null / non-object `state` records,
+  history entries, `sessionLog` entries and session `lifts` values at the
+  boundary; dropped state records fall back to `getLift()` defaults (no new
+  defaults added). `normalize` / `mergePayload` / `migrateV2` / `reconcile`
+  use an `isObj` check, and `mergePayload` skips a null incoming record,
+  `migrateV2` treats it as not-done, `resetDay` skips it, `hasData` guards
+  it. 7 new unit tests (JSON-string payloads). SW `gym-v12` because
+  `store.js` changed. `npm run check` **103/103 unit**, `npm run typecheck`
+  clean, `npm run e2e` **41/41** at 390×667/844. Commits: `37a4034` +
+  `8c71719` + `8bdd583` (auto-sync, on origin/main).
 - L5 build (OpenCode, Nov 8 20:42 CT): security audit probe. Added
   hostile payload tests for `__proto__` / `constructor` keys, `1e999`
   numbers, non-array `sets`, hostile session `lifts`, and oversized
@@ -64,8 +75,9 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: none — Batch 1 complete.
-- Next in queue: none — stop and wait for Muse.
+- Current item: B2 — nested unsafe keys inside records/entries/sessions
+  (B1 complete and pushed as `b937acb` chain).
+- Next in queue: B3 (Node test-script glob), then stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified

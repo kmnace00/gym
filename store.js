@@ -100,6 +100,7 @@
     for (var i = 0; i < arr.length; i++) {
       var set = arr[i];
       if (set && typeof set === "object") {
+        stripUnsafeKeys(set);
         coerceNum(set, "load"); coerceNum(set, "reps"); coerceNum(set, "rir");
         if (Object.prototype.hasOwnProperty.call(set, "kind")) set.kind = String(set.kind);
       }
@@ -113,7 +114,8 @@
     }
   }
   function sanitizeRecord(r) {
-    if (!r || typeof r !== "object") return r;
+    if (!isObj(r)) return r;
+    stripUnsafeKeys(r);               // nested `__proto__` must not survive the boundary
     coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
     coerceNum(r, "done"); coerceNum(r, "topHits");
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
@@ -123,7 +125,8 @@
     return r;
   }
   function sanitizeEntry(e) {
-    if (!e || typeof e !== "object") return e;
+    if (!isObj(e)) return e;
+    stripUnsafeKeys(e);
     if (Object.prototype.hasOwnProperty.call(e, "date")) e.date = typeof e.date === "string" ? e.date : String(e.date);
     coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir"); coerceNum(e, "setsDone");
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
@@ -133,7 +136,8 @@
     return e;
   }
   function sanitizeSession(s) {
-    if (!s || typeof s !== "object") return s;
+    if (!isObj(s)) return s;
+    stripUnsafeKeys(s);
     s.id = typeof s.id === "string" && s.id && !unsafeKey(s.id) ? s.id : uid("ses");
     s.date = validDate(s.date) ? s.date : dateKey();
     s.day = validDay(s.day) ? s.day : "fri";
