@@ -1,7 +1,7 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 IN PROGRESS — L1–L3 shipped; L4 built and green,
-awaiting auto-sync push; L5 next.
+Status: BATCH 1 IN PROGRESS — L1–L4 shipped; L5 built and green,
+awaiting auto-sync push; batch complete after this push.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -10,6 +10,16 @@ OpenCode once and it works the queue.
 
 ## Last verified
 
+- L5 build (OpenCode, Nov 8 20:42 CT): security audit probe. Added
+  hostile payload tests for `__proto__` / `constructor` keys, `1e999`
+  numbers, non-array `sets`, hostile session `lifts`, and oversized
+  history/session caps. `store.js` now strips unsafe keys before
+  sanitize/merge, uses null prototype objects in merge maps, rejects
+  unsafe session ids, normalizes non-array `sets`, and keeps
+  `Object.prototype` unpolluted. SW `gym-v11` because `store.js`
+  changed. Threat model added to `PLAN.md`. `npm run check` **96/96
+  unit**, `npm run typecheck` clean, `npm run e2e` **41/41** at
+  390×667/844. Commit: `pending`.
 - L4 build (OpenCode, Nov 8 20:21 CT): accessibility pass. Requested
   sub-44px controls now measure ≥44 px at 390×667/844: `.mini`,
   `.resetlift`, `.applybtn`, `.bbdismiss`, short-phone `.stepbtn`,
@@ -22,7 +32,8 @@ OpenCode once and it works the queue.
   7.81/7.06, faint 5.23/4.73 on bg/surface; light ink 17.25/18.69,
   muted 5.48/5.93, faint 4.80/5.20. SW `gym-v10`. `npm run check`
   **93/93 unit**, `npm run typecheck` clean, `npm run e2e` **41/41**
-  at 390×667/844. Commit: `pending`.
+  at 390×667/844. Commits: `d9cc70f` + `abcf5bd` (both on origin/main,
+  Pages live).
 - L3 build (OpenCode, Nov 8 20:10 CT): pure `Stats.sessionDrift`
   added + 5 unit tests; fixture-only audit (model 74/69/72 min for
   Fri/Sat/Sun), real-data verdict pending — no sessions recorded
@@ -53,9 +64,9 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: L4 — built, checks green; waiting for the
-  gym-sync commit to appear on origin/main before starting L5.
-- Next in queue: L5 (`QUEUE.md`, in order).
+- Current item: L5 — built, checks green; waiting for the
+  gym-sync commit to appear on origin/main before closing the batch.
+- Next in queue: none — stop and wait for Muse after this push.
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
