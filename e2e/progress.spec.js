@@ -25,7 +25,7 @@ test("progress view opens, shows stats, and Back returns to the day", async ({ p
   await page.locator("#progressBtn").click();
   await expect(page.locator("#progressView")).toBeVisible();
   await expect(page.locator("#pSessions")).toHaveText("3");
-  await expect(page.locator("#pSets")).toHaveText("3");
+  await expect(page.locator("#pSets")).toHaveText("9");
   await expect(page.locator("#pDays")).toHaveText("2");
   await expect(page.locator("#pMovers .pmover")).toHaveCount(1); // only fri:0 has two entries
   await page.locator("#backBtn").click();

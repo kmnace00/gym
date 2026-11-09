@@ -23,6 +23,10 @@ test("sessionCount and setsLogged", () => {
   assert.equal(S.setsLogged({}), 0);
 });
 
+test("setsRecorded sums sets across history entries", () => {
+  assert.equal(S.setsRecorded(sample()), 9); // three entries × 3 sets
+});
+
 test("entryVolume is load × reps × sets", () => {
   assert.equal(S.entryVolume({ load: 50, reps: 6, setsDone: 3 }), 900);
   assert.equal(S.entryVolume({ load: 0, reps: 10, setsDone: 3 }), 0);

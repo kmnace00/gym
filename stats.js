@@ -39,6 +39,20 @@
   }
 
   /**
+   * Total sets recorded across all history entries.
+   * @param {any} payload
+   * @returns {number}
+   */
+  function setsRecorded(payload) {
+    var n = 0, lh = (payload && payload.liftHistory) || {}, k, arr, i;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
+      arr = lh[k] || [];
+      for (i = 0; i < arr.length; i++) n += (arr[i].setsDone || 0);
+    }
+    return n;
+  }
+
+  /**
    * Tonnage for one history entry: load × reps × sets.
    * @param {{load?:number,reps?:number,setsDone?:number}} e
    * @returns {number}
@@ -119,6 +133,7 @@
 
   return {
     historyKeys: historyKeys, sessionCount: sessionCount, setsLogged: setsLogged,
+    setsRecorded: setsRecorded,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays
   };

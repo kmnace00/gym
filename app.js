@@ -268,13 +268,12 @@
     return out.slice(0, 3);
   }
   function renderProgress() {
-    var sessions = Stats.sessionCount(payload), sets = Stats.setsLogged(payload), days = Stats.uniqueDays(payload);
+    var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload), days = Stats.uniqueDays(payload);
     document.getElementById("pSessions").textContent = sessions;
     document.getElementById("pSets").textContent = sets;
     document.getElementById("pDays").textContent = days;
-    document.getElementById("pVolume").textContent = compactVol(Stats.totalVolume(payload)) + " kg";
     document.getElementById("pSub").textContent = sessions
-      ? "Last " + days + " training day" + (days === 1 ? "" : "s")
+      ? sessions + " sessions · " + compactVol(Stats.totalVolume(payload)) + " kg lifted"
       : "No sessions yet — open a lift to begin";
 
     var byDay = Stats.volumeByDay(payload, DAYS);
