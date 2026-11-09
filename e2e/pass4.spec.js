@@ -244,3 +244,39 @@ test("finishing from the rest screen finalizes the session and shows the summary
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("extra sets stop at the store limit", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day, date } = await today(page);
+  await page.evaluate(({ day, date }) => {
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 3, cur: day, idx: 0, bodyweight: 75, liftHistory: {}, sessionLog: [],
+      state: {
+        [day + ":0"]: {
+          done: 12, load: 50, reps: 6, rir: 2,
+          sets: Array.from({ length: 12 }, () => ({ load: 50, reps: 6, rir: 2 }))
+        }
+      },
+      active: { id: "ses_cap", date: date, day: day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#doneBtn")).toHaveText("✓ Add extra set");
+  await page.locator("#doneBtn").click();
+
+  const saved = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { done: p.state[d + ":0"].done, sets: p.state[d + ":0"].sets.length };
+  }, day);
+  expect(saved.done, "done stays capped at SETS_MAX").toBe(12);
+  expect(saved.sets, "sets array stays capped at SETS_MAX").toBe(12);
+  await expect(page.locator("#setLog .setrow")).toHaveCount(12);
+  await expect(page.locator("#hint")).toContainText("Set limit");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
