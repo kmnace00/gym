@@ -189,7 +189,7 @@
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
     var summary = complete
       ? "Workout complete — nice work"
-      : "8 lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
+      : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
     if (!Gym.actualDay()) {
       var gap = Gym.daysUntil(Gym.todayDay());
       summary = "Off day · next " + (DAY_LABEL[Gym.todayDay()] || "session") + (gap > 0 ? " in " + gap + "d" : "") + " · " + summary;
@@ -391,11 +391,13 @@
   }
   /* ── progress view ─────────────────────────────────────────────────────── */
   function renderProgress() {
-    var workouts = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload), week = Stats.sessionsLast7(payload, Gym.dateKey());
+    var workouts = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
+    var todayKey = Gym.dateKey();
+    var wk = Stats.weekStatus(payload, todayKey, DAY_LIFTS), week = 0, weekTotal = wk.length, wi;
+    for (wi = 0; wi < wk.length; wi++) if (wk[wi].state === "done") week++;
     document.getElementById("pSessions").textContent = workouts;
     document.getElementById("pSets").textContent = sets;
-    document.getElementById("pDays").textContent = week + "/3";
-    var todayKey = Gym.dateKey();
+    document.getElementById("pDays").textContent = week + "/" + weekTotal;
     document.getElementById("pSub").textContent = workouts
       ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " kg · "
         + week + "/3 this week"
@@ -420,7 +422,7 @@
         return '<i class="hday' + (w[d] ? " on" : "") + '"></i>';
       }).join("") + "</span>";
     }).join("");
-    document.getElementById("pHeatCount").textContent = heatCount + "/24";
+    document.getElementById("pHeatCount").textContent = heatCount + "/" + (weeks.length * Object.keys(DAYS).length);
 
     var recent = Stats.recentVolume(payload, 12), svg = document.getElementById("pSpark");
     if (recent.length < 2) { svg.innerHTML = ""; }

@@ -92,6 +92,35 @@ test("a payload with absurd counts renders bounded sets, not a hang", async ({ p
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
 
+test("the This-week counter uses the Fri–Sun block, not a rolling 7 days", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  await seed(page, {
+    v: 3, cur: "fri", idx: 0, state: {}, bodyweight: 75, sessionLog: [],
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-10-31", load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { date: "2026-11-06", load: 50, reps: 6, rir: 2, setsDone: 3 }
+      ],
+      "sat:0": [{ date: "2026-11-01", load: 60, reps: 6, rir: 2, setsDone: 3 }],
+      "sun:0": [{ date: "2026-10-31", load: 40, reps: 8, rir: 2, setsDone: 3 }]
+    }
+  });
+
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pDays")).toHaveText("1/3");
+  await expect(page.locator("#pSub")).toContainText("1/3 this week");
+  await expect(page.locator("#pHeatCount")).toHaveText(/\/24$/);
+
+  await page.locator("#backBtn").click();
+  await expect(page.locator("#daySummary")).toContainText("8 lifts · ");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
+
 test("trend sparkline is opt-in via the Trend pill", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,
