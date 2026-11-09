@@ -173,7 +173,7 @@ h1{
 }
 .timer.active{display:flex}
 .timer.go{cursor:pointer}
-.timer.paused .clock{opacity:.5}
+/* paused: keep the clock legible; signal the state through the Resume pill + message */
 /* Pause is meaningless at GO — the button is inert there (pauseBtn ignores .go),
    so it must not sit on screen looking tappable. */
 .timer.go #pauseRest{display:none}
@@ -191,7 +191,7 @@ h1{
 .timer .rbar{display:none}
 .timer .rnav{display:none}
 .timer .detailsbtn,.timer .undobtn{display:none}
-.timer .tbtns #pauseRest{border:0;background:transparent;text-decoration:underline;text-underline-offset:3px;opacity:.7;padding:0 8px;font-weight:600}
+.timer.paused #pauseRest{border-color:var(--accent);color:var(--accent)}
 
 /* full-screen rest focus */
 .app.resting .timer{
@@ -204,7 +204,7 @@ h1{
 .app.resting .timer .tlabel span{margin-top:4px}
 .app.resting .timer .tbtns{display:flex;gap:10px}
 .app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px}
-.app.resting .timer .tbtns #pauseRest{height:44px;padding:0 8px;font-size:13.5px}
+
 .app.resting .timer .rbar{
   display:block;width:100%;max-width:340px;height:7px;border-radius:99px;
   background:var(--surface-2);overflow:hidden;order:2;
@@ -231,7 +231,7 @@ h1{
 .app.resting .timer .detailsbtn{order:7}
 .app.resting .timer .undobtn{order:8;display:none}
 .app.resting.can-undo .timer .undobtn{display:inline-flex}
-.app.resting .timer.paused .tlabel strong::after{content:" — paused";font-weight:600;opacity:.75}
+.app.resting .timer.paused .rbar i{background:var(--muted)}
 
 /* GO: one unmistakable, tappable advance screen */
 .app.resting .timer.go{background:var(--accent);color:var(--accent-ink)}

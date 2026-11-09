@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: DONE — UI/UX nav + reset + undo fix + per-set log redesign (Nov 8, Khang's direct ask). Unit + e2e green.
+Status: DONE — UI/UX nav + reset + undo fix + per-set log + pause consistency (Nov 8, Khang's direct ask). Unit + e2e green.
 
 ## Completed task — UI/UX nav + reset
 

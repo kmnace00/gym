@@ -238,7 +238,7 @@
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
   var rLeft = 0, rInt = null, rEnd = 0, rTotal = 0, rLabel = "", pendingNext = false, pendingIdx = -1,
-      pendingDay = "", rPaused = false, rNote = "", rNextText = "", goAt = 0, finishArmedUntil = 0, skipResetId = null;
+      pendingDay = "", rPaused = false, rNote = "", rNextText = "", rMsg = "", goAt = 0, finishArmedUntil = 0, skipResetId = null;
 
   function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
   function resetPause() { rPaused = false; timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
@@ -340,6 +340,7 @@
       ? "Add bottom-half partials to failure — then rest."
       : "Stretch — set up the next set.";
     if (sec > ex().rest) msg = "+30s for 0–1 RIR · " + msg;
+    rMsg = msg;
     setRestLabel(label, msg);
     applyVisibility();
     rInt = setInterval(tickRest, 200);
@@ -365,6 +366,8 @@
       pauseBtn.textContent = "Pause";
       rEnd = resumeEndMs(Date.now(), rLeft);
       rInt = setInterval(tickRest, 200);
+      document.getElementById("restMsg").textContent = rMsg;
+      document.getElementById("restTime").setAttribute("aria-label", "Rest time remaining");
       tickRest();
       return;
     }
@@ -375,6 +378,8 @@
     timerBar.classList.add("paused");
     pauseBtn.textContent = "Resume";
     document.getElementById("restTime").textContent = fmt(rLeft);
+    document.getElementById("restTime").setAttribute("aria-label", "Rest paused — " + fmt(rLeft) + " remaining");
+    document.getElementById("restMsg").textContent = "Paused — tap Resume to continue.";
     updateRbar();
   };
   /* at GO the whole timer surface is the advance button (guarded against the

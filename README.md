@@ -7,7 +7,7 @@ Personal one-screen workout tool for Khang — Fri–Sun 3-day hypertrophy plan.
 - Dark-first theme with a light toggle (first load follows the system preference when no theme is saved yet).
 - Lift view has a **per-set log** — one row per set with load × reps @ RIR, completed sets checked, and the next set highlighted — plus always-visible load / reps / RIR adjusters, Undo / Restart, and Set Done.
 - **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions.
-- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek.
+- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek. Pausing freezes the countdown and turns the Pause pill into an accented Resume.
 - **Backup:** the `⋯` menu exports/imports the full state as JSON (copy or download), so the log survives Safari data cleanup.
 - **Undo / Reset:** next to the sets, **`↺ Undo`** removes your last set (the count visibly goes from e.g. "Set 3 of 3" back to "Set 2 of 3"), and **`↺ Restart`** clears the whole lift (keeps your working weight). The `⋯` menu has **Reset day** and **Clear all data** (both two-tap confirm).
 - **Navigation:** `‹ Back` returns to the day list and the lift header shows the day + lift number (`Sun · Lift 1 of 8`); the `‹ ›` arrows step between lifts.

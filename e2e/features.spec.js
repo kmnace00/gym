@@ -21,6 +21,23 @@ test("Set Done persists across reload", async ({ page }) => {
   await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
 });
 
+test("pausing the rest freezes the clock and shows a consistent paused state", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  const before = await page.locator("#restTime").textContent();
+  await page.locator("#pauseRest").click();
+  await expect(page.locator("#pauseRest")).toHaveText("Resume");
+  await expect(page.locator("#timerBar")).toHaveClass(/paused/);
+  await expect(page.locator("#restMsg")).toContainText("Paused");
+  await page.waitForTimeout(1200);
+  expect(await page.locator("#restTime").textContent()).toBe(before);
+  await page.locator("#pauseRest").click();
+  await expect(page.locator("#pauseRest")).toHaveText("Pause");
+  await expect(page.locator("#timerBar")).not.toHaveClass(/paused/);
+  await expect(page.locator("#restMsg")).toContainText("Stretch");
+});
+
 test("set log shows a row per set and records the values", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
