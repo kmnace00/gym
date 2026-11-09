@@ -24,7 +24,7 @@
    * @typedef {{phase: string, secs: number, progress: number, label: string,
    *            msg: string, nextText: string, skipLabel: string,
    *            showPrep: boolean, prepName: string, prepLoad: string,
-   *            prepReps: string}} RestView
+   *            prepReps: string, elapsedSec: number | null}} RestView
    * @typedef {{type: string, [key: string]: any}} RestEffect
    * @typedef {{state: {phase: string, pending: boolean},
    *            view: RestView, effects: RestEffect[]}} RestOut
@@ -32,6 +32,7 @@
    *            idx: () => number, dayLen: () => number, done: () => number,
    *            sets: () => number, exRest: () => number, editSet: () => number,
    *            firstOpen: (from: number) => number,
+    *            elapsed?: () => number,
    *            prep: () => {name: string, load: string, reps: string}}} RestDeps
    */
 

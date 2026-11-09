@@ -183,6 +183,7 @@ h1{
 .timer .tlabel strong{display:block;font-weight:700;color:var(--ink);font-size:13.5px}
 .timer .tlabel span{display:block;opacity:.75}
 .timer .rnext{font-size:12px;opacity:.8;font-variant-numeric:tabular-nums}
+.timer .relapsed{font-size:11px;opacity:.6;font-variant-numeric:tabular-nums}
 .timer .tbtns{display:none;gap:8px;flex:none}
 .timer.active .tbtns{display:flex}
 .timer .tbtns button{

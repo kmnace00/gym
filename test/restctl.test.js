@@ -25,6 +25,7 @@ function mk(over) {
     firstOpen: (from) => data.firstOpen,
     prep: () => data.prep
   };
+  if (data.elapsed !== undefined) deps.elapsed = () => data.elapsed;
   return { ctl: C.createRestController(deps), clock, data };
 }
 
@@ -239,4 +240,18 @@ test("End rest on the last lift arms the finish; the expired window thaws the cl
   assert.equal(d.view.ticking, true);
   assert.equal(s.ctl.pause().view.ticking, false);
   assert.equal(s.ctl.resume().view.ticking, true);
+});
+
+test("view carries session elapsed seconds when the host provides them (B3-16)", () => {
+  const s = mk({ elapsed: 2530 });
+  const out = s.ctl.start(90, "Fri — set 1 done", false, "", "Up next — Set 2 of 3");
+  assert.equal(out.view.elapsedSec, 2530);
+
+  s.clock.t = 90000;
+  const go = s.ctl.tick(s.clock.t);
+  assert.equal(go.view.phase, "go");
+  assert.equal(go.view.elapsedSec, 2530);
+
+  // no getter supplied: the field is null, never undefined or NaN
+  assert.equal(mk().ctl.view().elapsedSec, null);
 });

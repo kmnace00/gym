@@ -120,6 +120,7 @@
   var restClock = document.getElementById("restTime");
   var restBarFill = document.getElementById("rbarFill");
   var restNext = document.getElementById("restNext");
+  var restElapsedEl = document.getElementById("restElapsed");
   var restLive = document.getElementById("restLive");
   var detailsBtn = document.getElementById("detailsBtn");
   var skipBtn = document.getElementById("skipRest");
@@ -530,6 +531,7 @@
     exRest: function () { return ex().rest; },
     editSet: function () { return editSet; },
     firstOpen: function (from) { return firstOpenLift(cur, payload.state, from); },
+    elapsed: function () { return Gym.sessionElapsedSec(payload); },
     prep: function () {
       var e = ex(), s = curSt();
       return { name: "Set " + (s.done + 1) + " of " + e.s, load: loadText(s.load, e), reps: String(s.reps) };
@@ -574,6 +576,7 @@
       restLive.setAttribute("aria-live", "polite");
       restBarFill.style.width = "0";
       restNext.textContent = "";
+      setRestElapsed(null);
       setRestLabel(v.label || "", v.msg || "Starts after Set Done");
       renderRestPrep(v);
       applyVisibility();
@@ -588,6 +591,7 @@
       restClock.setAttribute("aria-label", "Rest complete — GO");
       restBarFill.style.width = "100%";
       restNext.textContent = v.nextText;
+      setRestElapsed(v.elapsedSec);
       skipBtn.textContent = v.skipLabel;
       setRestLabel("GO", v.msg);
       renderRestPrep(v);
@@ -603,10 +607,21 @@
     restClock.setAttribute("aria-label", v.phase === "paused" ? "Rest paused — " + fmt(v.secs) + " remaining" : "Rest time remaining");
     restBarFill.style.width = Math.round(v.progress * 100) + "%";
     restNext.textContent = v.nextText;
+    setRestElapsed(v.elapsedSec);
     skipBtn.textContent = v.skipLabel;
     setRestLabel(v.label, v.msg);
     renderRestPrep(v);
     applyVisibility();
+  }
+  /* B3-16: the rest screen shows how long the workout has been running */
+  function setRestElapsed(sec) {
+    if (sec === null || sec === undefined) {
+      restElapsedEl.hidden = true;
+      restElapsedEl.textContent = "";
+      return;
+    }
+    restElapsedEl.textContent = "Workout " + fmt(sec);
+    restElapsedEl.hidden = false;
   }
   function setRestLabel(t, m) {
     document.getElementById("restLabel").textContent = t;
