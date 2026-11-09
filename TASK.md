@@ -2,9 +2,21 @@
 
 ## WIP
 
-Status: ACTIVE — autonomous 5-phase pipeline (Khang directive, Mon 4:00 AM–7:00 PM CT). Queue empty; phase work comes from the pipeline directive + BACKLOG. Base HEAD: `f170c07`.
+Status: DONE — autonomous 5-phase pipeline (Khang directive, Mon 4:00 AM–7:00 PM CT) finished at 05:40 CT. All five phases gated; queue empty. Nothing further queued — L9 awaits Khang's approval.
 
-WIP: OpenCode editing store.js, program.js, stats.js, test/store.test.js, test/program.test.js, sw.js since 2026-11-09 05:20 CT
+## Completed — Phase 5: hardening & cleanup (input bounds, JSDoc, dead-code audit) [T1]
+
+Delivered: `store.js` bounds the count fields on the untrusted-input boundary
+(`DONE_MAX`/`SETS_MAX` 12, `ACC_SEC_MAX` 8 h, bodyweight 0–300 kg), and
+`program.js` `getLift` caps the legacy placeholder backfill at the lift's
+scheduled `e.s` — an imported `done: 1e9` can no longer spin the loop. Dead-code
+audit: no unreferenced functions or exports (the "never called" hits are handler
+references such as `undoSetBtn.onclick = undoSet`). JSDoc added to the 34
+undocumented `store.js` functions, `fmt`/`esc`/`round2`/`dayMins` in `program.js`
+and `keyOf`/`shiftKey`/`volumeInRange` in `stats.js`; no trailing whitespace or
+tabs anywhere. 3 new unit tests + 1 new e2e (hostile payload renders bounded
+sets, keeps the no-scroll invariant, no `Infinity`/`NaN` in the progress stats).
+SW `gym-v19`. Verified 130/130 unit, typecheck clean, 47/47 e2e at 390×667/844.
 
 ## Completed — B2: Nested unsafe keys inside records / entries / sessions [T1]
 
