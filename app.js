@@ -884,7 +884,10 @@
     document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + historyCount() + " sessions · " + b;
     menuBtn.classList.toggle("needs-backup", Gym.backupDue(payload));
   }
-  function noteBackup() { Gym.markBackup(payload); commit(); updateFoot(); }
+  function noteBackup() {
+    Gym.markBackup(payload); commit(); updateFoot();
+    if (view === "day") renderDay(); // clear the overdue banner immediately
+  }
   menuBtn.onclick = openModal;
   document.getElementById("backupBarSave").onclick = openModal;
   document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; renderDay(); };
