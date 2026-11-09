@@ -2,27 +2,31 @@
 
 ## WIP
 
-WIP: OpenCode editing restctl.js, app.js, test/restctl.test.js, e2e/rest.spec.js since 2026-11-09 11:28 CT
+WIP: OpenCode editing store.js, app.js, test/store.test.js, e2e/pass4.spec.js since 2026-11-09 11:33 CT
 
-Status: ACTIVE — Batch 3, B3-01 (mid-rest finish-arm freeze).
-Batch: `QUEUE.md` B3-01–B3-35, in order. When B3-01 is done, copy B3-02 from
-`QUEUE.md` into this file and start it. Base HEAD: `6b3ffd6`.
+Status: ACTIVE — Batch 3, B3-02 (future-version payload). B3-01 is done and
+pushed as `b3476d7`. Batch: `QUEUE.md` B3-02–B3-35, in order. When B3-02 is
+done, copy B3-03 from `QUEUE.md` into this file and start it. Base HEAD:
+`b3476d7`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-01: Mid-rest finish-arm freeze [T1]
+## Active task — B3-02: Future-version payload is silently wiped at boot [T1]
 
-Why: the one genuine bug in the Nov 9 audits, rest-critical, verified by Muse in source. After the final lift, tapping "End rest" once and hesitating >2.6 s freezes the rest clock and strands the finish flow: each later tap just re-arms. (The L9 note below claims this was "found in review and fixed" — it was not; the code at HEAD still does it.)
+Why: `load()` detects a newer-version payload, saves a copy to `gym-tool-v2-future`, and returns an empty payload — but the boot path never tells the user and immediately overwrites the store with the empty payload. The copy survives but there is no accessor and no UI to retrieve it, so the data is effectively lost. Reachable in practice: a stale cached SW serving an old `app.js` after a newer build wrote a newer schema.
 
 Do:
-- In `restctl.js`, make `finishReset()` clear `finishUntil` AND `ctx.frozen` in all phases, not only when phase is `"go"` (today `finishReset()` returns early unless phase is `"go"`, so on an active rest the arm and the freeze survive the 2,600 ms window; `skip()` sets `ctx.frozen = true` when arming mid-rest, and `view()` stops ticking while frozen).
-- In `app.js`, repaint the rest view unconditionally when the 2,600 ms `scheduleFinishReset` timer fires (today it repaints only `if (o.view.phase === "go")`, so the stale "Tap again to finish" label is never repainted mid-rest).
-- Update the existing unit test that documents this as parity ("End rest on the last lift arms and freezes the visible clock" in `test/restctl.test.js`) to the new behaviour; do not keep a test asserting the bug.
+- In `store.js`, add a `futureRaw()` export (same shape as `quarantineRaw()`, reading `STORE + "-future"`).
+- In `app.js`, add a `"future"` branch to `syncSaveBar` / `saveBarAction` offering download of the future copy, mirroring the corrupt branch (bar text must say the saved data is from a newer version and the log on screen is empty; do not auto-restore it, do not delete the `-future` copy).
+- Do not change the load behaviour itself (empty payload + preserved copy stays).
 
-Do not: change the two-tap arm itself, the 2,600 ms window, the 400 ms GO guard, or any other rest behaviour.
-Files: `restctl.js`, `app.js`, `test/restctl.test.js`.
-Verify: unit test — arm mid-rest, advance the fake clock past the window, call `finishReset()` → `view.ticking` true again, skip label back to "End rest"; e2e with `page.clock` — complete all 8 lifts, tap "End rest" during the final rest, wait 3 s, assert the clock is ticking again and the button reads "End rest". Full gate green (`npm run check`, typecheck, e2e at 390×667/844, no overflow, no console errors). `BUILD_LOG.md` one line.
+Files: `store.js`, `app.js`, `test/store.test.js`, `e2e/pass4.spec.js`.
+Verify: unit test seeding `v: 99` → `load()` returns empty and preserves the bytes; e2e seeding a `v: 99` payload → bar visible, STORE bytes intact after boot, download returns the original JSON. Full gate green.
+
+## Completed — B3-01: Mid-rest finish-arm freeze [T1]
+
+`restctl.js` `finishReset()` now clears `finishUntil` and `ctx.frozen` in every phase (it used to return early unless phase was `"go"`), and `app.js` repaints the rest view unconditionally when the 2,600 ms `scheduleFinishReset` timer fires. After "End rest" on the final lift, hesitating past the window resumes the countdown and the button reads "End rest" instead of stranding "Tap again to finish" on a frozen clock. The two-tap arm, the 2,600 ms window and the 400 ms GO guard are unchanged. Existing parity unit test updated to the new contract + 1 `page.clock` e2e (last lift → arm mid-rest → window expires → ticking clock, label restored). SW `gym-v38`. Verified 154/154 unit, typecheck clean, 66/66 e2e at 390×667/844. Commit: `b3476d7` (auto-sync, on origin/main).
 
 ## Completed — set log sizing (Nov 9, Khang: "Not quite fixed") [T1]
 

@@ -153,6 +153,9 @@ test("load keeps a copy of an unknown future payload, never overwrites it", () =
   const p = S.load();
   assert.equal(p.v, 4); // fresh empty
   assert.equal(global.localStorage.getItem(S.STORE + "-future"), raw);
+  assert.equal(S.lastLoadError().kind, "future");
+  assert.equal(S.futureRaw(), raw);
+  assert.equal(global.localStorage.getItem(S.STORE), raw); // boot copy untouched
 });
 
 test("load quarantines a corrupt payload and never overwrites it", () => {

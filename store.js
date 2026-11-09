@@ -361,6 +361,8 @@
   }
   /** The raw bytes quarantined by the last failed load, or null. */
   function quarantineRaw() { return read(QUARANTINE); }
+  /** The raw bytes of the newer-version payload preserved by load(), or null. */
+  function futureRaw() { return read(STORE + "-future"); }
 
   /** Serialize a payload for export. */
   function exportPayload(p) { return JSON.stringify(p); }
@@ -723,7 +725,7 @@
     SETS_MAX: SETS_MAX, DONE_MAX: DONE_MAX, ACC_SEC_MAX: ACC_SEC_MAX,
     QUARANTINE: QUARANTINE, SNAPSHOT: SNAPSHOT,
     emptyPayload: emptyPayload, emptySession: emptySession, migrate: migrate, load: load, save: save,
-    lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, snapshot: snapshot, readSnapshot: readSnapshot,
+    lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, futureRaw: futureRaw, snapshot: snapshot, readSnapshot: readSnapshot,
     exportPayload: exportPayload, importRaw: importRaw,
     pushHistory: pushHistory, upsertHistory: upsertHistory, hasTodayEntry: hasTodayEntry,
     removeTodayEntry: removeTodayEntry, lastEntry: lastEntry, series: series, popHistory: popHistory,

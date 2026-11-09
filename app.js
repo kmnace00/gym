@@ -72,6 +72,11 @@
       saveBarText.textContent = "Couldn't read saved data — original copy kept";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Download copy";
+    } else if (dataWarn === "future") {
+      saveBar.hidden = false;
+      saveBarText.textContent = "Saved data is from a newer version — showing an empty log; original copy kept";
+      saveBarAction.hidden = false;
+      saveBarAction.textContent = "Download copy";
     } else if (saveFailed || dataWarn === "save") {
       saveBar.hidden = false;
       saveBarText.textContent = "Couldn't save — storage may be full";
@@ -1358,10 +1363,13 @@
     setMsg(snapOk ? "Snapshot restored ✓" : "Snapshot restored ✓ — no undo copy (storage full)");
   };
 
-  /* corrupt payload → offer the quarantined bytes; failed save → export now */
+  /* corrupt payload → offer the quarantined bytes; newer-version payload →
+     offer the preserved copy; failed save → export now */
   saveBarAction.onclick = function () {
     if (dataWarn === "corrupt") {
       downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
+    } else if (dataWarn === "future") {
+      downloadText(Gym.futureRaw() || "", "gym-future-" + Gym.dateKey() + ".json", "application/json");
     } else {
       openModal();
     }
@@ -1371,7 +1379,7 @@
   initTheme();
   payload = Gym.reconcile(Gym.load(), DAYS);
   var loadErr = Gym.lastLoadError();
-  if (loadErr && loadErr.kind === "corrupt") dataWarn = "corrupt";
+  if (loadErr && (loadErr.kind === "corrupt" || loadErr.kind === "future")) dataWarn = loadErr.kind;
   /* a session from an earlier date is banked; today starts fresh but keeps loads */
   Gym.rollSession(payload, Gym.todayDay());
   cur = payload.cur; idx = payload.idx;
@@ -1391,5 +1399,5 @@
     navigator.serviceWorker.register("./sw.js").catch(function () {});
   }
   render();
-  if (dataWarn === "corrupt") syncSaveBar(); else commit();
+  if (dataWarn) syncSaveBar(); else commit();
 })();

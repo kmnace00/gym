@@ -1,6 +1,7 @@
 /* Pass 4: session boundary, set truth, corruption quarantine, finish summary. */
 const { test, expect } = require("@playwright/test");
 const path = require("path");
+const fs = require("fs");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
@@ -41,6 +42,29 @@ test("a corrupt payload is quarantined, never silently overwritten", async ({ pa
   await expect(page.locator("#saveBarText")).toContainText("Couldn't read");
   const raw = await page.evaluate(() => localStorage.getItem("gym-tool-v2-corrupt"));
   expect(raw).toBe("{broken");
+});
+
+test("a newer-version payload is preserved, reported, and downloadable at boot", async ({ page }) => {
+  await page.goto(url);
+  const raw = JSON.stringify({ v: 99, sentinel: "keep-me" });
+  await page.evaluate((raw) => localStorage.setItem("gym-tool-v2", raw), raw);
+  await page.reload();
+
+  await expect(page.locator("#saveBar")).toBeVisible();
+  await expect(page.locator("#saveBarText")).toContainText("newer version");
+  await expect(page.locator("#saveBarText")).toContainText("empty log");
+  await expect(page.locator("#saveBarAction")).toHaveText("Download copy");
+
+  // boot says so and keeps both copies: the store and the -future copy
+  expect(await page.evaluate(() => localStorage.getItem("gym-tool-v2"))).toBe(raw);
+  expect(await page.evaluate(() => localStorage.getItem("gym-tool-v2-future"))).toBe(raw);
+  expect(await page.evaluate(() => Gym.futureRaw())).toBe(raw);
+
+  const dlPromise = page.waitForEvent("download");
+  await page.locator("#saveBarAction").click();
+  const dl = await dlPromise;
+  expect(dl.suggestedFilename()).toContain("gym-future-");
+  expect(fs.readFileSync(await dl.path(), "utf8")).toBe(raw);
 });
 
 test("all lifts done shows Finish workout and a summary sheet", async ({ page }) => {
