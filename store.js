@@ -76,6 +76,18 @@
     var n = typeof v === "number" ? v : Number(v);
     return isFinite(n) ? n : dflt;
   }
+  function unsafeKey(k) {
+    return k === "__proto__" || k === "constructor" || k === "prototype";
+  }
+  function stripUnsafeKeys(obj) {
+    if (!obj || typeof obj !== "object") return obj;
+    var keys = Object.keys(obj), i;
+    for (i = 0; i < keys.length; i++) if (unsafeKey(keys[i])) delete obj[keys[i]];
+    return obj;
+  }
+  function own(obj, key) {
+    return obj && Object.prototype.hasOwnProperty.call(obj, key);
+  }
   function coerceNum(obj, key) {
     if (obj && Object.prototype.hasOwnProperty.call(obj, key)) obj[key] = num(obj[key], 0);
   }
@@ -89,6 +101,13 @@
       }
     }
   }
+  function sanitizeSetsField(obj) {
+    if (!obj || typeof obj !== "object") return;
+    if (Object.prototype.hasOwnProperty.call(obj, "sets")) {
+      if (Array.isArray(obj.sets)) sanitizeSets(obj.sets);
+      else obj.sets = [];
+    }
+  }
   function sanitizeRecord(r) {
     if (!r || typeof r !== "object") return r;
     coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
@@ -96,7 +115,7 @@
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
     if (Object.prototype.hasOwnProperty.call(r, "exId")) r.exId = typeof r.exId === "string" ? r.exId : String(r.exId);
     if (Object.prototype.hasOwnProperty.call(r, "bw")) r.bw = !!r.bw;
-    sanitizeSets(r.sets);
+    sanitizeSetsField(r);
     return r;
   }
   function sanitizeEntry(e) {
@@ -106,12 +125,12 @@
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;
     if (Object.prototype.hasOwnProperty.call(e, "exId")) e.exId = typeof e.exId === "string" ? e.exId : String(e.exId);
-    sanitizeSets(e.sets);
+    sanitizeSetsField(e);
     return e;
   }
   function sanitizeSession(s) {
     if (!s || typeof s !== "object") return s;
-    s.id = typeof s.id === "string" && s.id ? s.id : uid("ses");
+    s.id = typeof s.id === "string" && s.id && !unsafeKey(s.id) ? s.id : uid("ses");
     s.date = validDate(s.date) ? s.date : dateKey();
     s.day = validDay(s.day) ? s.day : "fri";
     s.status = s.status === "complete" ? "complete" : "active";
@@ -121,12 +140,17 @@
     s.runningSince = typeof s.runningSince === "number" && isFinite(s.runningSince) ? s.runningSince : null;
     coerceNum(s, "durationSec");
     if (!s.lifts || typeof s.lifts !== "object") s.lifts = {};
+    stripUnsafeKeys(s.lifts);
+    for (var k in s.lifts) if (own(s.lifts, k)) sanitizeRecord(s.lifts[k]);
     return s;
   }
   function sanitizePayload(p) {
     var k, i;
-    for (k in p.state) if (Object.prototype.hasOwnProperty.call(p.state, k)) sanitizeRecord(p.state[k]);
-    for (k in p.liftHistory) if (Object.prototype.hasOwnProperty.call(p.liftHistory, k) && Array.isArray(p.liftHistory[k])) {
+    stripUnsafeKeys(p.state);
+    stripUnsafeKeys(p.liftHistory);
+    for (k in p.state) if (own(p.state, k)) sanitizeRecord(p.state[k]);
+    for (k in p.liftHistory) if (own(p.liftHistory, k)) {
+      if (!Array.isArray(p.liftHistory[k])) p.liftHistory[k] = [];
       for (i = 0; i < p.liftHistory[k].length; i++) sanitizeEntry(p.liftHistory[k][i]);
     }
     if (Array.isArray(p.sessionLog)) for (i = 0; i < p.sessionLog.length; i++) sanitizeSession(p.sessionLog[i]);
@@ -137,6 +161,8 @@
   function normalize(p) {
     if (!p.state || typeof p.state !== "object") p.state = {};
     if (!p.liftHistory || typeof p.liftHistory !== "object") p.liftHistory = {};
+    stripUnsafeKeys(p.state);
+    stripUnsafeKeys(p.liftHistory);
     if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
@@ -403,22 +429,29 @@
   /* ── merge-on-import: union history by date, keep the fuller state record ── */
   function mergePayload(base, incoming) {
     var out = JSON.parse(JSON.stringify(base || emptyPayload()));
-    out.state = out.state || {};
-    out.liftHistory = out.liftHistory || {};
-    out.sessionLog = out.sessionLog || [];
+    out.state = out.state && typeof out.state === "object" ? out.state : {};
+    out.liftHistory = out.liftHistory && typeof out.liftHistory === "object" ? out.liftHistory : {};
+    out.sessionLog = Array.isArray(out.sessionLog) ? out.sessionLog : [];
+    stripUnsafeKeys(out.state);
+    stripUnsafeKeys(out.liftHistory);
+
     var incState = (incoming && incoming.state) || {}, k;
-    for (k in incState) if (Object.prototype.hasOwnProperty.call(incState, k)) {
-      var mine = out.state[k], theirs = incState[k];
+    for (k in incState) if (own(incState, k) && !unsafeKey(k)) {
+      var mine = own(out.state, k) ? out.state[k] : null, theirs = incState[k];
       if (!mine || (typeof theirs.done === "number" && theirs.done > (mine.done || 0))) {
         out.state[k] = JSON.parse(JSON.stringify(theirs));
       }
     }
+
     var incHist = (incoming && incoming.liftHistory) || {}, k2;
-    for (k2 in incHist) if (Object.prototype.hasOwnProperty.call(incHist, k2)) {
-      var seen = {};
-      (out.liftHistory[k2] || []).concat(incHist[k2] || []).forEach(function (e) {
-        if (!e) return;
+    for (k2 in incHist) if (own(incHist, k2) && !unsafeKey(k2)) {
+      var seen = Object.create(null);
+      var existing = own(out.liftHistory, k2) && Array.isArray(out.liftHistory[k2]) ? out.liftHistory[k2] : [];
+      var added = own(incHist, k2) && Array.isArray(incHist[k2]) ? incHist[k2] : [];
+      existing.concat(added).forEach(function (e) {
+        if (!e || typeof e !== "object") return;
         var dk = e.date || (e.load + ":" + e.reps + ":" + e.rir + ":" + e.setsDone);
+        if (unsafeKey(dk)) return;
         var prev = seen[dk];
         /* same-date collision: keep the fuller session, never blindly clobber */
         if (!prev || (e.setsDone || (e.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = e;
@@ -428,17 +461,22 @@
       while (arr.length > HISTORY_MAX) arr.shift();
       out.liftHistory[k2] = arr;
     }
+
     /* session log: union by id, keep the longer duration */
-    var byId = {};
-    (out.sessionLog || []).concat((incoming && incoming.sessionLog) || []).forEach(function (s) {
-      if (!s) return;
+    var byId = Object.create(null);
+    out.sessionLog.concat(Array.isArray(incoming && incoming.sessionLog) ? incoming.sessionLog : []).forEach(function (s) {
+      if (!s || typeof s !== "object") return;
       var id = s.id || (s.date + ":" + s.day);
+      if (unsafeKey(id)) return;
       if (!byId[id] || (s.durationSec || 0) > (byId[id].durationSec || 0)) byId[id] = s;
     });
     out.sessionLog = Object.keys(byId).map(function (id) { return byId[id]; })
       .sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
     while (out.sessionLog.length > SESSION_MAX) out.sessionLog.shift();
-    if (incoming && typeof incoming.bodyweight === "number" && incoming.bodyweight > 0 && out.bodyweight === 75) out.bodyweight = incoming.bodyweight;
+
+    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && out.bodyweight === 75) {
+      out.bodyweight = incoming.bodyweight;
+    }
     out.v = CURRENT;
     if (!out.lastBackup && incoming && incoming.lastBackup) out.lastBackup = incoming.lastBackup;
     if (incoming && incoming.cur) out.cur = incoming.cur;
