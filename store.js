@@ -83,6 +83,13 @@
      and numbers are not data the app can read, so they are dropped at the
      boundary instead of reaching a consumer that dereferences them.          */
   function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
+  /* how much real progress a record carries, used to break merge ties:
+     a record with no sets and no done count is just a program default, so an
+     imported record with the same done count must win over it. */
+  function progressScore(r) {
+    if (!isObj(r)) return -1;
+    return (r.done || 0) * 1000 + (Array.isArray(r.sets) ? r.sets.length : 0) * 10 + (r.topHits || 0);
+  }
   function stripUnsafeKeys(obj) {
     if (!obj || typeof obj !== "object") return obj;
     var keys = Object.keys(obj), i;
@@ -465,7 +472,8 @@
     for (k in incState) if (own(incState, k) && !unsafeKey(k)) {
       var mine = own(out.state, k) ? out.state[k] : null, theirs = incState[k];
       if (!isObj(theirs)) continue;            // a null record carries nothing
-      if (!mine || (typeof theirs.done === "number" && theirs.done > (mine.done || 0))) {
+      var mineScore = progressScore(mine), theirsScore = progressScore(theirs);
+      if (!mine || theirsScore > mineScore || (theirsScore === mineScore && mineScore === 0)) {
         out.state[k] = JSON.parse(JSON.stringify(theirs));
       }
     }

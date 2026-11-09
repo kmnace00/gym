@@ -460,3 +460,30 @@ test("importMerge strips nested unsafe keys without changing the merge winner ru
   assert.equal(merged.sessionLog.length, 1);
   assert.ok(!Object.hasOwn(merged.sessionLog[0], "constructor"));
 });
+
+test("an imported record with no progress wins over an unmodified default record", () => {
+  const base = { v: 3, cur: "fri", idx: 0, liftHistory: {}, sessionLog: [],
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, topHits: 0, sets: [] } } };
+  const raw = '{"v":3,"cur":"fri","idx":0,"liftHistory":{},"sessionLog":[],"state":{"fri:0":{"done":0,"load":77,"reps":6,"rir":2,"topHits":0,"sets":[]}}}';
+  const merged = S.importMerge(base, raw);
+  assert.equal(merged.state["fri:0"].load, 77);
+});
+
+test("a local record with real progress is not clobbered by an equal-done import", () => {
+  const base = { v: 3, cur: "fri", idx: 0, liftHistory: {}, sessionLog: [],
+    state: { "fri:0": { done: 2, load: 70, reps: 6, rir: 2, topHits: 1,
+      sets: [{ load: 70, reps: 6, rir: 2 }, { load: 70, reps: 6, rir: 1 }] } } };
+  const raw = '{"v":3,"cur":"fri","idx":0,"liftHistory":{},"sessionLog":[],"state":{"fri:0":{"done":2,"load":77,"reps":6,"rir":2,"sets":[]}}}';
+  const merged = S.importMerge(base, raw);
+  assert.equal(merged.state["fri:0"].load, 70);
+  assert.equal(merged.state["fri:0"].done, 2);
+});
+
+test("the richer record wins when both have the same done count", () => {
+  const base = { v: 3, cur: "fri", idx: 0, liftHistory: {}, sessionLog: [],
+    state: { "fri:0": { done: 2, load: 70, reps: 6, rir: 2, topHits: 0, sets: [{ load: 70, reps: 6, rir: 2 }] } } };
+  const raw = '{"v":3,"cur":"fri","idx":0,"liftHistory":{},"sessionLog":[],"state":{"fri:0":{"done":2,"load":85,"reps":6,"rir":2,"topHits":0,"sets":[{"load":85,"reps":6,"rir":2},{"load":85,"reps":6,"rir":1}]}}}';
+  const merged = S.importMerge(base, raw);
+  assert.equal(merged.state["fri:0"].load, 85);
+  assert.equal(merged.state["fri:0"].sets.length, 2);
+});
