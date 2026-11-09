@@ -64,7 +64,7 @@ for (const size of sizes) {
       // reset button + persistent undo pill must not push Set Done off-screen
       await page.locator("#doneBtn").click();
       await page.locator("#skipRest").click();
-      await expect(page.locator("#undoPill")).toBeVisible();
+      await expect(page.locator("#undoSetBtn")).toBeEnabled();
       const fits2 = await page.evaluate(() => {
         const r = document.getElementById("doneBtn").getBoundingClientRect();
         return document.documentElement.scrollHeight <= window.innerHeight + 1 && r.bottom <= window.innerHeight + 1;

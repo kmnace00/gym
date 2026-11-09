@@ -313,10 +313,10 @@ h1{
 .rirhint{flex:none;margin:8px 0 0;font-size:11px;line-height:1.3;color:var(--faint)}
 .rirhint[hidden]{display:none}
 
-/* ── persistent undo pill + menu extras ────────────────────────────────── */
-.undopill{flex:none;height:42px;padding:0 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:13px}
+/* ── menu extras + per-lift undo ───────────────────────────────────────── */
 .modalsep{height:1px;background:var(--line);margin:4px 0}
 .modalbtn-danger{color:#ef4444}
+.resetlift.undoset{color:var(--accent)}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){

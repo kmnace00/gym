@@ -12,7 +12,6 @@
 
   /* ── state ─────────────────────────────────────────────────────────────── */
   var payload, cur, idx, view = "day", hintText = "", hintGood = false;
-  var actionLog = [];   // undo stack; survives navigation, cleared on day switch / workout complete
 
   function st(d, i) { return getLift(payload.state, d, i, DAYS[d].ex[i]); }
   function ex() { return DAYS[cur].ex[idx]; }
@@ -37,7 +36,7 @@
   var rirHint = document.getElementById("rirHint");
   var menuBtn = document.getElementById("menuBtn");
   var modal = document.getElementById("modal");
-  var undoPill = document.getElementById("undoPill");
+  var undoSetBtn = document.getElementById("undoSetBtn");
   var resetLiftBtn = document.getElementById("resetLiftBtn");
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
@@ -194,11 +193,16 @@
     hint.className = "hint" + (hintText ? " show" : "") + (hintGood ? " good" : "");
 
     setNavDisabled();
-    resetLiftBtn.disabled = s.done === 0;
     renderSuggest();
     renderSpark();
   }
-  function syncUndo() { undoPill.hidden = actionLog.length === 0; }
+  /* undo/restart are per-lift controls: enabled only when the visible lift has sets */
+  function syncUndo() {
+    var done = view === "lift" ? curSt().done : 0;
+    undoSetBtn.disabled = done === 0;
+    resetLiftBtn.disabled = done === 0;
+    appEl.classList.toggle("can-undo", done > 0);
+  }
   function render() {
     appEl.classList.toggle("lift-mode", view === "lift");
     syncDays();
@@ -356,7 +360,7 @@
     if (Date.now() - goAt < 400) return;
     skipBtn.click();
   });
-  function clearUndo() { actionLog = []; appEl.classList.remove("can-undo"); if (undoPill) undoPill.hidden = true; }
+  function clearUndo() { appEl.classList.remove("can-undo"); }
   skipBtn.onclick = function () {
     var wasGo = timerBar.classList.contains("go");
     clearInterval(rInt); rInt = null; rLeft = 0;
@@ -387,21 +391,25 @@
     pendingNext = false;
     timerIdle("", wasGo ? "Next set — go." : "Skipped — next set, go.");
   };
-  function undoLast() {
-    if (!actionLog.length) return;
-    var a = actionLog.pop();
-    var s = st(a.day, a.i);
-    s.done = a.done; s.topHits = a.topHits; s.lastRir = a.lastRir;
-    if (a.historyPushed) Gym.popHistory(payload, a.day, a.i);
+  /* undo always acts on the lift you are looking at, so the change is visible */
+  function undoSet() {
+    var s = curSt();
+    if (s.done <= 0) return;
+    var wasComplete = s.done >= ex().s;
+    s.done--;
+    if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
+    if (wasComplete && s.done < ex().s) {
+      var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
+      if (arr && arr.length && arr[arr.length - 1].date === Gym.dateKey()) arr.pop();
+    }
     clearInterval(rInt); rInt = null; rLeft = 0; pendingNext = false;
     resetPause();
-    if (!actionLog.length) appEl.classList.remove("can-undo");
     hintText = ""; hintGood = false;
-    timerIdle("", "Set undone — ready when you are.");
+    timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
   }
-  undoBtn.onclick = undoLast;
-  undoPill.onclick = undoLast;
+  undoBtn.onclick = undoSet;
+  undoSetBtn.onclick = undoSet;
 
   /* ── session timer ─────────────────────────────────────────────────────── */
   var sSec = 0, sInt = null, sBase = 0, sStart = 0, sAutoStopped = false;
@@ -494,7 +502,6 @@
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
     var wasComplete = s.done >= e.s;
-    var logEntry = { day: cur, i: idx, done: s.done, topHits: s.topHits, lastRir: s.lastRir, historyPushed: false };
     s.done++; s.lastRir = s.rir;
     if (s.reps >= e.top && s.rir >= e.rir) s.topHits++;
 
@@ -515,11 +522,7 @@
         hitTop: (s.reps >= e.top && s.lastRir >= e.rir),
         setsDone: s.done
       });
-      logEntry.historyPushed = true;
     }
-    actionLog.push(logEntry);
-    if (actionLog.length > 10) actionLog.shift();
-    appEl.classList.add("can-undo");
 
     var list = DAYS[cur].ex, nextText = "";
     if (s.done >= e.s) {
@@ -553,8 +556,6 @@
   /* restart this lift: clear its sets, keep the working weight */
   resetLiftBtn.onclick = function () {
     Gym.resetLift(payload, cur, idx);
-    actionLog = actionLog.filter(function (a) { return !(a.day === cur && a.i === idx); });
-    if (!actionLog.length) appEl.classList.remove("can-undo");
     hintText = ""; hintGood = false;
     commit(); render();
   };

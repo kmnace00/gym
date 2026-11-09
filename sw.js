@@ -1,5 +1,5 @@
-/* Gym service worker — cache-first, versioned. Bump CACHE on any asset change. */
-const CACHE = "gym-v1";
+/* Gym service worker — network-first so updates always land, cache fallback offline. */
+const CACHE = "gym-v3";
 const ASSETS = [
   "./", "./index.html", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./app.js",
@@ -20,11 +20,12 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || !e.request.url.startsWith(self.location.origin)) return;
+  // network-first: online users always get the latest deploy; offline falls back to cache
   e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
+    fetch(e.request).then((res) => {
       const copy = res.clone();
       caches.open(CACHE).then((c) => c.put(e.request, copy));
       return res;
-    }).catch(() => caches.match("./index.html")))
+    }).catch(() => caches.match(e.request).then((hit) => hit || caches.match("./index.html")))
   );
 });

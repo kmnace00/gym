@@ -25,7 +25,6 @@
     </div>
     <button class="backbtn" id="backBtn" type="button" aria-label="Back to lift list">‹ Back</button>
     <button class="menubtn" id="menuBtn" type="button" aria-label="Menu">⋯</button>
-    <button class="undopill" id="undoPill" type="button" aria-label="Undo last set" hidden>Undo</button>
     <button class="pill" id="sessBtn" type="button" aria-label="Start or pause session timer">▶ <span class="startlbl">Start</span><span id="elapsed">0:00</span></button>
   </header>
 
@@ -68,6 +67,7 @@
     <p class="tempo" id="tempoLine">Tempo — explode up · 2s down · 1s hold</p>
     <div class="setdots" aria-label="Sets">
       <div class="dotsline" id="setDots"></div>
+      <button class="resetlift undoset" id="undoSetBtn" type="button" aria-label="Undo last set">↺ Undo</button>
       <button class="resetlift" id="resetLiftBtn" type="button" aria-label="Restart this lift">↺ Restart</button>
     </div>
 

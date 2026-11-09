@@ -9,9 +9,10 @@ Personal one-screen workout tool for Khang — Fri–Sun 3-day hypertrophy plan.
 - **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions.
 - Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek.
 - **Backup:** the `⋯` menu exports/imports the full state as JSON (copy or download), so the log survives Safari data cleanup.
-- **Reset:** `↺ Restart` clears a lift's sets without losing your working weight; the `⋯` menu has **Reset day** and **Clear all data** (both two-tap confirm).
-- **Navigation:** `‹ Back` returns to the day list and the lift header shows the day + lift number (`Sun · Lift 1 of 8`). An **Undo** pill appears after any Set Done (not just on the rest screen).
+- **Undo / Reset:** next to the sets, **`↺ Undo`** removes your last set (the count visibly goes from e.g. "Set 3 of 3" back to "Set 2 of 3"), and **`↺ Restart`** clears the whole lift (keeps your working weight). The `⋯` menu has **Reset day** and **Clear all data** (both two-tap confirm).
+- **Navigation:** `‹ Back` returns to the day list and the lift header shows the day + lift number (`Sun · Lift 1 of 8`); the `‹ ›` arrows step between lifts.
 - The `⋯` menu also holds the theme toggle, so the header stays down to Back/Menu/Session.
+- Updates land automatically: the service worker is **network-first** (online gets the latest deploy, offline falls back to the cached copy).
 - Adjusted load / reps / RIR and set progress persist in localStorage (`gym-tool-v2`; v1 data is migrated on first load), so a reload doesn't lose the session. Per-lift session history is kept for progression.
 - Offline-capable: a service worker (`sw.js`) caches the app so it works with no signal; installable via `manifest.webmanifest`.
 - 24 lifts, Fri/Sat/Sun, 8 per day, with loads, rests, cues — program data unchanged.
@@ -51,4 +52,4 @@ No paste loop — the repo is the handoff.
 - Persistence is localStorage only (`gym-tool-v2`, versioned); no backend. Bump `CURRENT` in `store.js` and add a migration branch to change the schema.
 - No new features / fluff without Khang's explicit ask.
 - Tempo: 2 s down. Tempo line is "explode up · 2s down · 1s hold".
-- Bump `CACHE` in `sw.js` on any asset change so the offline copy refreshes.
+- The service worker is network-first, so updates land on reload; bump `CACHE` in `sw.js` only to force a clean offline cache.

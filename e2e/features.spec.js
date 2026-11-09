@@ -96,25 +96,25 @@ test("clear all data wipes history", async ({ page }) => {
   await expect(page.locator("#modalMsg")).toContainText("cleared");
 });
 
-test("undo pill appears after a set and undoes it", async ({ page }) => {
+test("undo on the lift steps back one set (visible)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
+  await expect(page.locator("#undoSetBtn")).toBeDisabled();
   await page.locator("#doneBtn").click();
   await page.locator("#skipRest").click();
-  await expect(page.locator("#undoPill")).toBeVisible();
-  await page.locator("#undoPill").click();
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 2 of 3");
+  await page.locator("#undoSetBtn").click();
   await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
-  await expect(page.locator("#undoPill")).toBeHidden();
+  await expect(page.locator("#undoSetBtn")).toBeDisabled();
 });
 
-test("undo survives navigating to another lift while resting", async ({ page }) => {
+test("undo on the rest screen after the final set restores it", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
-  await page.locator("#doneBtn").click();
-  await page.locator("#rNextBtn").click(); // navigate during rest
-  await expect(page.locator("#liftMeta")).toContainText("Lift 2 of 8");
+  await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click(); // completes all sets, resting
+  await expect(page.locator("#undoBtn")).toBeVisible();
   await page.locator("#undoBtn").click();
-  await page.locator("#backBtn").click();
-  await page.locator(".liftrow").first().click();
-  await expect(page.locator("#setDots .setcount")).toContainText("Set 1 of 3");
+  await expect(page.locator("#setDots .setcount")).toContainText("Set 3 of 3");
 });
