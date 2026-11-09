@@ -165,7 +165,11 @@
   function sanitizeEntry(e) {
     if (!isObj(e)) return e;
     stripUnsafeKeys(e);
-    if (Object.prototype.hasOwnProperty.call(e, "date")) e.date = typeof e.date === "string" ? e.date : String(e.date);
+    /* a date that is present but is not a real YYYY-MM-DD is corrupt — and a
+       "__proto__" date would collide with the date-keyed analytics maps — so
+       the entry is dropped instead of poisoning them. Dateless legacy entries
+       (older than Pass 3) are kept: the merge key has a value fallback.      */
+    if (own(e, "date") && !validDate(e.date)) return null;
     coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir");
     if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
@@ -215,7 +219,7 @@
       if (!Array.isArray(p.liftHistory[k])) p.liftHistory[k] = [];
       for (i = 0; i < p.liftHistory[k].length; i++) {
         if (!isObj(p.liftHistory[k][i])) p.liftHistory[k][i] = null;
-        else sanitizeEntry(p.liftHistory[k][i]);
+        else p.liftHistory[k][i] = sanitizeEntry(p.liftHistory[k][i]);
       }
       p.liftHistory[k] = p.liftHistory[k].filter(function (e) { return e !== null; });
     }

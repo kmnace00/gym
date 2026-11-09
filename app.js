@@ -6,7 +6,7 @@
       getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
       planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
-      sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym, Rest = Gym;
+      Machine = Gym, Stats = Gym, Rest = Gym;
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
   var RIR_KEY = "gym-rir-seen";
@@ -33,6 +33,7 @@
   function metricForEntry(e, entry, load, reps) {
     return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: bwFor(entry) });
   }
+  /** Highest-value set in a list for the lift's metric; `entry` supplies its banked weight. */
   function topSetOf(e, sets, entry) {
     if (entry && typeof entry.bwKg === "number" && isFinite(entry.bwKg) && entry.bwKg > 0) {
       return Stats.topSet(sets, function (l, r) { return metricForEntry(e, entry, l, r); });
@@ -41,6 +42,7 @@
   }
   /* Bank the *whole* set array for a lift: this is the single source of truth
      for tonnage, PRs, CSV and the progression nudge (extra sets included). */
+  /** Bank a lift's whole set array into today's history entry (volume/PR/CSV truth). */
   function bankLift(d, i) {
     var e = DAYS[d].ex[i], s = st(d, i);
     if (!s.sets || !s.sets.length || s.done < e.s) return;
@@ -768,6 +770,7 @@
   }
 
   /* ── steppers — tap once, press-and-hold repeats ───────────────────────── */
+  /** Write the working load/reps/RIR into the set currently being edited. */
   function applySetEdit() {
     var s = curSt(), e = ex();
     if (editSet < 0) return;
@@ -781,6 +784,7 @@
     s.sets[editSet] = { load: s.load, reps: s.reps, rir: s.rir };
     if (s.done >= e.s) bankLift(cur, idx);
   }
+  /** Enter inline edit for a completed set, snapshotting the working values. */
   function startEdit(i) {
     var s = curSt();
     if (!s.sets || !s.sets[i]) return;
@@ -790,6 +794,7 @@
     hintText = ""; hintGood = false;
     render();
   }
+  /** Apply the edited set, then restore the working load/reps/RIR. */
   function finishEdit() {
     var s = curSt();
     if (editSet < 0) return;

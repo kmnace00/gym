@@ -704,3 +704,21 @@ test("merge adopts an imported bodyweight only while the local one is default", 
   mine.bodyweight = 150; // the user set it — never overwritten by an import
   assert.equal(S.mergePayload(mine, inc).bodyweight, 150);
 });
+
+test("history entries with a corrupt date are dropped at the boundary", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4,
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { date: "__proto__", load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { date: 20261101, load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { load: 50, reps: 6, rir: 2, setsDone: 3 }
+      ]
+    }
+  }));
+  assert.equal(p.liftHistory["fri:0"].length, 2, "valid + dateless legacy survive");
+  assert.equal(p.liftHistory["fri:0"][0].date, "2026-11-01");
+  assert.equal(p.liftHistory["fri:0"][1].date, undefined);
+  assert.equal({}.date, undefined, "no prototype pollution");
+});

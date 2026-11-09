@@ -333,7 +333,6 @@ h1{
 /* ── menu extras + per-lift undo ───────────────────────────────────────── */
 .modalsep{height:1px;background:var(--line);margin:4px 0}
 .modalbtn-danger{color:#ef4444}
-.resetlift.undoset{color:var(--accent)}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){
@@ -440,7 +439,6 @@ h1{
 .hweek{display:flex;flex-direction:column;gap:2px}
 .hday{display:block;width:12px;height:12px;border-radius:3px;background:var(--surface-2)}
 .hday.on{background:var(--accent)}
-.hday.today{box-shadow:0 0 0 1.5px var(--accent);box-shadow:0 0 0 1.5px var(--accent),inset 0 0 0 1px var(--bg)}
 
 /* ── tap-to-type value editor (load / reps) ─────────────────────────────── */
 .ctl .mid{cursor:pointer}
