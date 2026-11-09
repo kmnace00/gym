@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: PAUSED — review-only mode, Nov 8, 21:08 CT. Khang: Muse back-and-forth is too much overhead; use Muse once in a while to review, DeepSeek review when off-peak. OpenCode loop: finish the current item (B1) if already in progress, then STOP — do not start B2/B3. Batch 2 queue stays queued, not active. Batch 1 complete + verified.
+Status: BATCH 2 ACTIVE — B1 in progress; finish B1–B3 before 4:00 AM Mon (DeepSeek pipeline start). ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -113,7 +113,7 @@ Pass 4 build, same phone check:
 - `NEEDS_RESEARCH`: none.
 - `NEEDS_DESIGN`: none.
 - `NEEDS_FIX`: none.
-- `PAUSED`: yes — Nov 8, 21:08 CT, review-only mode (Khang's call). OpenCode finishes the current item, then stops; do not start B2/B3.
+- `PAUSED`: no — resumed Nov 8, 21:09 CT. Finish Batch 2 (B1–B3) before 4:00 AM Mon, then stop and wait for Muse review. Muse is review-only after Batch 2.
 
 ## Log
 
