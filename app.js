@@ -1225,7 +1225,20 @@
     document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + Stats.sessionCount(payload) + " workouts · " + b;
     menuBtn.classList.toggle("needs-backup", Gym.backupDue(payload));
     var snapBtn = document.getElementById("restoreSnapshot");
-    if (snapBtn) snapBtn.hidden = !Gym.readSnapshot();
+    if (snapBtn) {
+      var snap = Gym.readSnapshot();
+      if (!snap) {
+        snapBtn.hidden = true;
+        snapBtn.textContent = "Undo last reset / restore";
+      } else {
+        snapBtn.hidden = false;
+        // name the snapshot: what it was and when it was taken (B3-20)
+        var label = String(snap.label || "last change").replace(/^pre-/, "");
+        label = label.charAt(0).toUpperCase() + label.slice(1);
+        var when = fmtDate(new Date(snap.at || 0).toISOString().slice(0, 10));
+        snapBtn.textContent = "Undo " + label + (when ? " (" + when + ")" : "");
+      }
+    }
     renderBw();
   }
   function noteBackup() {

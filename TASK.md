@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, store.js, test/store.test.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:20 CT — B3-18 (load/reps caps) awaiting sync; B3-19 next.
+WIP: OpenCode editing app.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:32 CT — B3-20 (undo button names the snapshot).
+
+## Completed — B3-19: Import-merge reports no counts [T1]
+- Built Nov 9 (OpenCode). `mergePayload`/`importMerge` accept an optional stats side-channel; `#modalMsg` renders "Merged: +N new sessions, M same-date kept the fuller copy ✓". SW `gym-v55`. 160/160 unit, 79/79 e2e.
 
 ## Completed — B3-18: No upper bound on user-typed / stepped load and reps [T1]
 - Built Nov 9 (OpenCode). `clampLoad` (0–2000) and `clampReps` (1–999) applied in `stepLoad`, `stepReps`, `editLoad`, `editReps`. SW `gym-v54`. 159/159 unit, 78/78 e2e.

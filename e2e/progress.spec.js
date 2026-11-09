@@ -63,6 +63,23 @@ test("a 6 MB backup is rejected before it is ever read (B3-17)", async ({ page }
   expect(errors).toEqual([]);
 });
 
+test("the undo button names the snapshot it will restore (B3-20)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot")).toBeHidden();
+
+  await page.locator("#resetDay").click(); // snapshots "pre-reset-day"
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot")).toBeVisible();
+  await expect(page.locator("#restoreSnapshot")).toContainText("Undo Reset day");
+
+  // a restart lift renames the snapshot to what it actually is
+  await page.locator(".liftrow").first().click();
+  await page.locator("#resetLiftBtn").click();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot")).toContainText("Undo Restart lift");
+});
+
 test("import reports how many sessions merged and how many collisions resolved (B3-19)", async ({ page }) => {
   await seed(page, {
     v: 4, cur: "fri", idx: 0, state: {}, sessionLog: [],
