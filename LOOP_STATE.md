@@ -14,7 +14,7 @@ OpenCode once and it works the queue.
   behaviour change. `npm run check` **88/88 unit** (3 new),
   `npm run typecheck` clean, `npm run e2e` **35/35** at
   390×667/844, no overflow, no console errors. SW `gym-v8`.
-  Commit: auto-sync `pending` (SHA recorded when it lands).
+  Commit: `28b0c7b` (auto-sync, on origin/main, Pages live).
 - Base: `7705a46` (Batch 1 queued) on Pass 4 `cbbf6a8`.
 - Pass 4 verified: 85 unit / 35 e2e green, typecheck clean,
   SW `gym-v7`, schema v3 (key still `gym-tool-v2`), 24 lifts
