@@ -340,7 +340,7 @@ createRestController(deps) → {
 }
 out  = { state, view, effects }   // state is a read-only snapshot for tests
 view = { phase, secs, progress, label, msg, nextText, skipLabel,
-         showPrep, prepName, prepLoad, prepReps }
+         ticking, showPrep, prepName, prepLoad, prepReps }
 effects = [] | ordered array of
   {type:"beep"} · {type:"vibrate", ms:200} · {type:"notify"}
   {type:"advanceTo", idx} · {type:"finishWorkout"}
@@ -359,8 +359,13 @@ Rules (each one is today's app.js behaviour, preserved byte for byte):
 - Effect order at GO: `vibrate(200)`, `beep`, `notify`. At next-lift: `advanceTo`, `commit`, `render`.
 - `cancelPendingAdvance()` never emits effects and its callers do not re-render.
 - `extend15()` at GO restarts a 15 s rest with `ctx.label` (which stays `""`, as today).
-- Interval stays in `app.js`: the shell starts it when `view.phase === "active"` and
-  stops it otherwise; the controller never touches timers except the injected arm timer.
+- Interval stays in `app.js`: the shell starts it only while `view.ticking`
+  (phase `active`), and stops it otherwise; the controller never touches timers
+  except the injected arm timer.
+- `ticking` is false when the two-tap arm froze the clock (old `skipBtn`
+  behaviour: `stopInterval()` before the last-lift arm), so "End rest"
+  mid-rest on the final lift freezes the display until the workout is
+  finished — no silent boost to the rest clock.
 - `ctx.label` is never written (today it is always `""`); keep that to avoid a string change.
 
 Files: new `restctl.js`; `app.js` (rest block only); `index.html` (script tag before

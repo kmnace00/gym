@@ -49,7 +49,7 @@
        today that value is always "" — keeping it preserves the strings.      */
     var ctx = {
       label: "", pending: false, pIdx: -1, pDay: "",
-      note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0,
+      note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, frozen: false,
       startLabel: "", idleLabel: "", idleMsg: ""
     };
 
@@ -83,6 +83,7 @@
       var prep = showPrep ? deps.prep() : null;
       return {
         phase: phase,
+        ticking: phase === "active" && !ctx.frozen,
         secs: Machine.remaining(rest, now),
         progress: Machine.progress(rest, now),
         label: label, msg: msg, nextText: nextText, skipLabel: skipLabel,
@@ -102,13 +103,14 @@
     function toIdle(label, msg) {
       rest = Machine.idle();
       ctx.pending = false; ctx.pIdx = -1; ctx.pDay = "";
-      ctx.finishUntil = 0;
+      ctx.finishUntil = 0; ctx.frozen = false;
       ctx.idleLabel = label || ""; ctx.idleMsg = msg || "";
     }
 
     function go(nowMs) {
       ctx.goAtMs = nowMs;
       ctx.finishUntil = 0;
+      ctx.frozen = false;
       /* current finishRest order: vibrate, beep, notification */
       return out([{ type: "vibrate", ms: 200 }, { type: "beep" }, { type: "notify" }]);
     }
@@ -119,7 +121,7 @@
       if (ctx.pending) { ctx.pIdx = deps.idx(); ctx.pDay = deps.cur(); }
       ctx.startLabel = label;
       ctx.note = note || ""; ctx.nextText = nextText || "";
-      ctx.finishUntil = 0;
+      ctx.finishUntil = 0; ctx.frozen = false;
       ctx.msg = Rest.restMsg(note, sec, deps.exRest());
       return out([{ type: "closeDetails" }, { type: "blurIfOutside" }]);
     }
@@ -145,18 +147,21 @@
     function pause() {
       if (rest.phase !== "active") return out([]);
       rest = Machine.pause(rest, deps.now());
+      ctx.frozen = false;
       return out([]);
     }
 
     function resume() {
       if (rest.phase !== "paused") return out([]);
       rest = Machine.resume(rest, deps.now());
+      ctx.frozen = false;
       return out([]);
     }
 
     function extend15() {
       if (rest.phase === "idle") return out([]);
       if (rest.phase === "go") return start(15, ctx.label, ctx.pending, ctx.note, ctx.nextText);
+      ctx.frozen = false;
       rest = Machine.extend(rest, 15);
       return out([]);
     }
@@ -177,6 +182,7 @@
         /* last lift done — require a second tap so a stray tap can't end the session */
         if (!Rest.finishArmed(deps.now(), ctx.finishUntil)) {
           ctx.finishUntil = Rest.armFinish(deps.now());
+          if (rest.phase !== "go") ctx.frozen = true;
           return out([{ type: "scheduleFinishReset", ms: 2600 }]);
         }
         toIdle("", "Workout complete — nice work.");

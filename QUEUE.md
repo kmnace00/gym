@@ -317,14 +317,13 @@ Source: one sparse DeepSeek Pro planning review against the post-pipeline
 backlog. L9 is in flight (approved); nothing below is approved to build yet.
 Order is the Pro pick — Khang may reorder or drop items.
 
-### B4 — Check gate: syntax-check `rest.js` [T1]
-Finding from the review: `package.json` `check` runs `node --check` on
+### B4 — Check gate: syntax-check `rest.js` [T1] — DELIVERED with L9
+Finding: at base `719c200`, `package.json` `check` ran `node --check` on
 program/store/timer/machine/stats/app/sw but **not** `rest.js`, which
-`index.html` loads and `sw.js` caches — a syntax error there passes the fast
-gate and is caught only by e2e. L9 already adds `restctl.js` to the same
-list; this adds `rest.js` beside it.
-Files: `package.json` (one clause). Verify: `npm run check` end-to-end,
-typecheck, e2e. No asset changed → no SW bump.
+`index.html` loads and `sw.js` caches. The L9 build added `node --check
+rest.js` and `node --check restctl.js`; the gate now covers every loaded
+module (confirmed by the independent tester, 12 page refs / 13 cached assets).
+No further work.
 
 ### L8 — Rest-interval audit → T3 proposal [T2, NEEDS_RESEARCH]
 App rests are 90/120/150/180 s (`program.js`). Map every one of the 24 lifts

@@ -487,9 +487,10 @@
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
   function stopInterval() { if (rInt) { clearInterval(rInt); rInt = null; } }
   function startInterval() { stopInterval(); rInt = setInterval(tickRest, 200); }
-  /* the interval follows the view phase: active ticks, everything else stops */
-  function syncRestInterval(phase) {
-    if (phase === "active") { if (!rInt) startInterval(); }
+  /* the interval follows the view: an active, unfrozen rest ticks, everything
+     else stops (the two-tap "finish" arm freezes the visible clock) */
+  function syncRestInterval(v) {
+    if (v.ticking) { if (!rInt) startInterval(); }
     else stopInterval();
   }
   var restCtl = Gym.createRestController({
@@ -535,7 +536,7 @@
   }
   /* one paint routine for every phase — idle, GO and the running clock */
   function renderRestView(v) {
-    syncRestInterval(v.phase);
+    syncRestInterval(v);
     if (v.phase === "idle") {
       if (timerBar.contains(document.activeElement)) document.activeElement.blur();
       timerBar.classList.remove("active", "go");
