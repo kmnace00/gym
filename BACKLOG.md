@@ -5,10 +5,18 @@ Not instructions. An item becomes work only when Muse promotes it into
 `[T1]` buildable now · `[T2]` needs a Muse design first ·
 `[T3]` Khang-only proposal — the loop never builds it.
 
-## Batch 1 — QUEUED Nov 8 (L1–L5, all T1, verified vs Pass 4)
+## Batch 2 — QUEUED Nov 8 (B1–B3, all T1, hardening from Muse's Batch 1 review)
 
-`QUEUE.md` holds the full specs. `TASK.md` has L1 active.
-Re-check notes from Muse's Pass 4 read are in `QUEUE.md`.
+`QUEUE.md` holds the full specs. `TASK.md` has B1 active. B1: null / non-object
+records crash merge/migrate/resetDay (reproduced by Muse on `b7d61f0`).
+B2: nested `__proto__` inside a record survives sanitize (inert today).
+B3: `node --test test/` fails on Node 24 — fix the test script to the glob.
+
+## Batch 1 — COMPLETE Nov 8 (L1–L5, all T1, verified by Muse at `b7d61f0`)
+
+`QUEUE.md` holds the full specs (history — do not re-run). L1 rest pure slice,
+L2 partials audit, L3 sessionDrift, L4 a11y pass, L5 security audit.
+Verified: 96/96 unit, typecheck clean, 41/41 e2e, Pages live `gym-v11`.
 
 ### L1 — Rest decisions into rest.js (pure slice) [T1] — ACTIVE
 Revised in re-check: full controller extraction is T2 (new item
@@ -64,13 +72,14 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
-### L9 — Full rest-controller extraction [T2]
-Move `restCtx` + the `Machine` wiring + the DOM handlers out of
-`app.js` into a `rest.js` controller, with the pure decisions
-(L1) already extracted. Needs a Muse `DESIGN.md` section first:
-the seam (what the controller owns vs what stays DOM in
-`app.js`), the `renderRestPrep` ownership, and the test plan.
-Rest is the most user-critical path; do not attempt without it.
+### L9 — Full rest-controller extraction [T2] — DESIGNED Nov 8
+Design is in `DESIGN.md` ("L9 design"): new `restctl.js`, controller owns
+`rest` + `restCtx` + interval + finish-arming, returns `{state, view,
+effects}`; `app.js` stays the DOM shell and performs effects (beep /
+vibrate / notify / advance / finish). Pure `machine.js` / `rest.js` untouched.
+Build is proposed for Batch 3 — not queued until Khang approves the design
++ the batch. Next T2 designs, in order: L6 (needs Khang's alternate list
+first), then L7/L8 (research proposals, program numbers are T3). 
 
 ## Proposals (T3 — Khang only, never auto-built)
 

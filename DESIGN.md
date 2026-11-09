@@ -191,3 +191,130 @@ Work items (files): `program.js`, `store.js`, `stats.js`, `app.js`,
 Verification: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and
 390×844; v2→v3 migration, rollover, extra-set/edit round-trip, bodyweight
 volume/metric, corruption quarantine, and no-scroll.
+
+## L9 design (2026-11-08, Muse) — Full rest-controller extraction [T2]
+
+Status: DESIGNED — not built. Build is a future batch item (proposed Batch 3),
+not queued until Khang approves this design + the batch. This design is the
+one T2 design for this Muse session; L6/L7/L8 designs follow in later sessions,
+in backlog order, and L7/L8 outcomes are proposals to Khang, not silent changes.
+
+### Why now, why this seam
+
+`app.js` is 1,394 lines. The rest timer is the most user-critical path
+(60% of a session is spent on it, and a wrong advance can end a workout
+or jump lifts), and it is currently split across three layers:
+- Pure clock in `machine.js` (`idle/start/tick/pause/resume/extend/progress`,
+  frozen-clock testable) — already extracted, do not touch.
+- Pure decisions in `rest.js` (Batch 1 L1: `restMsg/goLabel/prepVisible`,
+  plus `canAdvance/nextLift/armFinish/finishArmed/advanceLabel`) — already
+  extracted, do not touch.
+- Orchestration + DOM in `app.js` (~250 lines, `app.js:503-750`): `rest`
+  (Machine state), `restCtx` (10 fields: `label, pending, pIdx, pDay, note,
+  nextText, msg, goAtMs, finishUntil, skipTimer`), `rInt` interval,
+  `timerIdle/renderRest/finishRest/tickRest/startRest/renderRestPrep`,
+  `plus15` / `pauseBtn` / `timerBar` click / `skipBtn` handlers, and the
+  `undoSet` rest-clearing path (`restCtx.pending = false` + `timerIdle`).
+Pass 2 deferred the controller for exactly this reason ("no-value refactor
+of the most user-critical path in the same pass"). Batch 1 L1 proved the
+pure slice can move with byte-identical strings and a green e2e suite.
+The remaining move is the controller, not the decisions.
+
+### The seam — what moves, what stays
+
+New file `restctl.js` (same UMD pattern as `machine.js` / `rest.js`,
+registered on `window.Gym`, `module.exports` for tests). It owns:
+- The orchestration state: `rest` (Machine state) + `restCtx` + `rInt`
+  handle, as one opaque controller object created by `createRestController(deps)`.
+- The transitions: `start(sec, label, lastSet, note, nextText)`,
+  `tick(nowMs)`, `finish()`, `idle(label, msg)`, `pause()`, `resume()`,
+  `extend15()`, `skip()` (advance / two-tap finish), `cancelPendingAdvance()`.
+  Each transition returns a plain effect list (see below) instead of
+  touching the DOM itself.
+- The finish-arming timer: `skipTimer` lives in the controller, with a
+  `setTimeout` injected via deps (`schedule` / `clearSchedule`) so tests
+  can drive it with a fake clock. No real `setTimeout` in unit tests.
+- Audio / vibration / notification triggers as effects, not direct calls:
+  the controller emits `beep`, `vibrate`, `notify` effects; `app.js`
+  performs them (it already owns `beepGo`, `notifyRestDone`, `navigator.vibrate`).
+
+Stays in `app.js` (the DOM shell, unchanged in behaviour):
+- All `document.getElementById` / classList / textContent writes
+  (`renderRest`, `setRestLabel`, `setRestDetails`, `renderRestPrep` DOM
+  writes, `skipBtn.textContent`, `rbarFill` width, `restTime` clock).
+  The controller hands the shell a view model (`{phase, secs, progress,
+  label, msg, nextText, skipLabel, showPrep, prepName, prepLoad, prepReps}`)
+  and the shell renders it — one render function, no logic in the shell.
+- The lift / session context the controller needs as deps, not globals:
+  `cur`, `idx`, `DAYS[cur].ex.length`, `curSt().done`, `ex().s`,
+  `ex().rest`, `firstOpenLift(...)`, `commit()`, `render()`, `timerIdle`
+  callers (`undoSet`, `skipBtn` finish path), `pauseSession` / `sInt`.
+  These stay in `app.js`; the controller receives them as a deps object
+  with the same names, so a future split does not rewire the store.
+- `Machine` and `Rest` (pure) stay as they are; the controller calls
+  `Machine.start/tick/pause/resume/extend` and `Rest.canAdvance/nextLift/
+  armFinish/finishArmed/advanceLabel/restMsg/goLabel/prepVisible`.
+  No pure function is re-implemented in the controller.
+
+### Effect list (the contract that makes it testable)
+
+Every controller method returns `{ state, view, effects }` where:
+- `state` is the new opaque controller state (for the next call only).
+- `view` is the render model above (phase, secs, progress, labels, prep).
+- `effects` is an ordered array of `{type, ...}`: `beep`, `vibrate(200)`,
+  `notify`, `advanceTo(idx)`, `finishWorkout`, `commit`, `render`,
+  `scheduleFinishReset(2600)`, `clearSchedule`.
+`app.js` applies effects in order and renders `view`. No effect is
+performed inside the controller, so unit tests can assert the exact
+sequence (e.g. GO tap within 400 ms of `goAtMs` → no advance; second
+tap within the 2,500 ms arm window → `finishWorkout`; manual nav →
+`cancelPendingAdvance` clears `pending` so GO cannot jump lifts).
+
+### Invariants that must survive (regression tests, not just e2e)
+
+1. Timestamp-derived clock: rest stays honest across phone sleep — the
+   controller never accumulates seconds from the interval; `tick(nowMs)`
+   re-derives from `Machine` timestamps, interval stays 200 ms in `app.js`.
+2. GO guard: a tap within 400 ms of `goAtMs` is ignored (same tap that
+   finished the rest cannot advance).
+3. Two-tap finish: last lift done → first tap arms (label "Tap again to
+   finish", 2,500 ms window, reset timer at 2,600 ms), second tap inside
+   the window finishes; a tap after the window re-arms instead of finishing.
+4. Manual nav cancels pending advance: `cancelPendingAdvance` clears
+   `pending` whenever the user navigates, so GO never jumps to a lift the
+   user did not choose (Pass 2 rest-desync fix, preserved).
+5. Pause is a normal pill, paused clock stays full-opacity, message is
+   "Paused — tap Resume to continue." (Pass 2 pause fix, preserved).
+6. Prep steppers show only when `prepVisible` is true (not idle, not GO,
+   not editing, sets still open) — same condition, now computed in the
+   controller and rendered by the shell.
+7. No-scroll invariant at 390x667 and 390x844; no console errors; program
+   numbers unchanged (24 lifts).
+
+### Test plan (for the build batch, not this design)
+
+- New `test/restctl.test.js`: frozen-clock unit tests for every transition
+  above, including the 400 ms GO guard, the 2,500 ms finish arm, pause /
+  resume / extend15, `cancelPendingAdvance`, and the effect sequences.
+  Target: the controller is testable without DOM, timers, or `app.js`.
+- Existing e2e suite must pass unchanged at both viewports (rest pause /
+  advance / GO / prep-visibility / a11y keyboard order), plus one new e2e
+  case: rest survives a simulated sleep (clock re-derived, not accumulated).
+- `npm run check` (now 96+ unit, with the new tests), typecheck clean.
+- SW bump only if an asset changed (`restctl.js` is a new asset → add it to
+  `sw.js` ASSETS and bump `CACHE`, and add the page ref in `index.html`;
+  the asset-drift guard in `npm run check` must agree).
+
+### Risks and non-goals
+
+- Risk: the controller is the most user-critical path; a behaviour drift
+  here is worse than the tech debt it removes. Mitigation: byte-identical
+  strings, same pure functions, effect-list tests, and the full e2e suite
+  before/after with no other change in the same batch. If any e2e fails,
+  stop and revert the controller move — do not fix forward in the same batch.
+- Non-goals: no ESM migration (file:// e2e CORS + CJS harness), no
+  IndexedDB, no change to the rest durations / program numbers (those are
+  L7/L8 proposals to Khang), no change to the session clock, no UI redesign.
+- Rollback: the move is one commit; reverting it restores `app.js` rest
+  orchestration exactly (the pure `machine.js` / `rest.js` layers are
+  untouched by the move, so a revert does not touch them). 

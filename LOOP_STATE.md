@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 COMPLETE — VERIFIED BY MUSE Nov 8, 20:50 CT — L1–L5 shipped; OpenCode stopped, waits for Khang's next-batch call.
+Status: BATCH 2 QUEUED — B1 active; OpenCode stopped, waits for Khang to paste the loop prompt again. Batch 1 complete + verified. Phone check (L4, async) is NOT blocking — loop continues; a phone fail becomes a backlog item, blocks only if rest-timer-critical.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -158,3 +158,12 @@ Pass 4 build, same phone check:
   Node 24 (`node --test test/` quirk) — CI uses Node 20, so CI
   should pass; fix test script to `node --test test/*.test.js`.
   Next batch is all T2 (L6–L9) — needs Muse design + Khang call.
+- 2026-11-08 20:53 CT: Khang said "Do all recommended". Muse queued
+  Batch 2 (B1 null-record hardening, B2 nested-proto strip, B3 test
+  script glob — all T1, specs in `QUEUE.md`, B1 active in `TASK.md`)
+  and designed L9 in `DESIGN.md` (new `restctl.js`, `{state, view,
+  effects}` contract, 7 invariants, test plan, rollback = one revert).
+  L9 build is proposed Batch 3, not queued. L6/L7/L8 designs follow in
+  later sessions (L6 needs Khang's alternate list; L7/L8 are proposals).
+  Phone check is async, not blocking. OpenCode stopped — Khang pastes
+  the loop prompt again to start Batch 2.
