@@ -38,19 +38,6 @@
     <div class="clock" id="restTime">Rest</div>
     <div class="tlabel" id="restLive" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
     <div class="rnext" id="restNext"></div>
-    <div class="rprep" id="restPrep" hidden aria-label="Next set adjustments">
-      <span class="rpname" id="restPrepName">Set 1 of 3</span>
-      <div class="rpctl">
-        <button type="button" id="restLoadDown" aria-label="Decrease next-set load">−</button>
-        <span id="restPrepLoad">—</span>
-        <button type="button" id="restLoadUp" aria-label="Increase next-set load">+</button>
-      </div>
-      <div class="rpctl">
-        <button type="button" id="restRepDown" aria-label="Decrease next-set reps">−</button>
-        <span id="restPrepReps">—</span>
-        <button type="button" id="restRepUp" aria-label="Increase next-set reps">+</button>
-      </div>
-    </div>
     <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <div class="tbtns">
       <button id="plus15" type="button" aria-label="Add 15 seconds to rest">+15</button>
@@ -64,6 +51,19 @@
     <div class="restfooter">
       <button class="detailsbtn" id="detailsBtn" type="button" aria-expanded="false" data-show="Show workout" data-hide="Hide workout">Show workout</button>
       <button class="undobtn" id="undoBtn" type="button">Undo last set</button>
+    </div>
+    <div class="rprep" id="restPrep" hidden aria-label="Next set adjustments">
+      <span class="rpname" id="restPrepName">Set 1 of 3</span>
+      <div class="rpctl">
+        <button type="button" id="restLoadDown" aria-label="Decrease next-set load">−</button>
+        <span id="restPrepLoad">—</span>
+        <button type="button" id="restLoadUp" aria-label="Increase next-set load">+</button>
+      </div>
+      <div class="rpctl">
+        <button type="button" id="restRepDown" aria-label="Decrease next-set reps">−</button>
+        <span id="restPrepReps">—</span>
+        <button type="button" id="restRepUp" aria-label="Increase next-set reps">+</button>
+      </div>
     </div>
   </div>
 
