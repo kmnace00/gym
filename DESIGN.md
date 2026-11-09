@@ -373,3 +373,15 @@ Files: new `restctl.js`; `app.js` (rest block only); `index.html` (script tag be
 e2e that jumps the clock with `page.clock` (simulated phone sleep) and asserts the
 remaining time is re-derived, not accumulated.
 
+
+## bwKg on history entries (Nov 9, continuous loop)
+
+Bodyweight lifts were valued at the *current* `payload.bodyweight` across all
+history, so editing the bodyweight scalar silently rewrote past tonnage, PRs,
+movers and the sparkline (a lifter cutting 90→80 kg would see old PRs "drop"
+with no new set logged). History entries for bodyweight lifts now carry
+`bwKg` (the weight in force when the set was banked); `entryVolume`,
+`personalRecords`, `topMovers` and the app's own PR check value each entry at
+its own `bwKg`, falling back to `payload.bodyweight` and then 75 for legacy
+entries. Nothing in `program.js` changes, and legacy payloads keep today's
+numbers because the fallback is the same scalar.
