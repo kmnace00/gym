@@ -2,24 +2,29 @@
 
 ## WIP
 
-WIP: OpenCode editing sw.js, e2e/sw.spec.js since 2026-11-09 11:39 CT
+WIP: OpenCode editing store.js, test/store.test.js, sw.js since 2026-11-09 11:42 CT
 
-Status: ACTIVE — Batch 3, B3-04 (SW error handling). B3-03 is done and pushed as
-`120f5ae`. Batch: `QUEUE.md` B3-04–B3-35, in order. When B3-04 is done, copy
-B3-05 from `QUEUE.md` into this file and start it. Base HEAD: `120f5ae`.
+Status: ACTIVE — Batch 3, B3-05 (phantom empty sessions). B3-04 is done and
+pushed as `5181d7e`. Batch: `QUEUE.md` B3-05–B3-35, in order. When B3-05 is
+done, copy B3-06 from `QUEUE.md` into this file and start it. Base HEAD:
+`5181d7e`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-04: SW caches error pages as the shell and serves errors instead of cached assets [T1]
+## Active task — B3-05: `finalizeSession` logs phantom empty sessions [T1]
 
-Why: two `res.ok` gaps in the offline path — the app's core promise is "works in the gym basement". (a) The navigation handler caches *any* response as `./index.html`, so one transient 500/404 from Pages permanently poisons the offline shell until the next successful online load. (b) The asset SWR handler returns a non-ok revalidation response to the page instead of the good cached copy, so a transient 500 on `app.js` breaks the app even though a valid copy is cached. Verified by Muse in `sw.js:30-41` (no `res.ok` check on the navigation `put`) and `:62-64` (a 404/500 falls through to `return res`).
+Why: the no-data guard requires `!a.startedAt`, so a session whose clock was started but in which nothing was ever logged still gets a `sessionLog` entry with empty `lifts`. Reachable via `rollSession`: tap Start on the session pill, do nothing, open the app the next day. Consequences: the Progress "Workouts" count inflates, and a phantom entry with `durationSec > 0` pollutes `sessionDrift`'s median (L3's audit), since that function only filters on `status === "complete"` and `durationSec > 0`.
 
 Do:
-- Guard both `put`s with `res.ok`; when revalidation is not ok, return the cached `hit` instead of the error response. Do not change the 304 path, the conditional-revalidation headers, or the cache-first/offline behaviour otherwise.
+- In `store.js`, drop the `!a.startedAt` condition — return null whenever there is no data and no existing entry for the id. Keep the existing-entry update path (a session that already has a `sessionLog` entry still updates it).
 
-Files: `sw.js`; also remove the temporary `test.fail()` marker from `e2e/sw.spec.js` (the fixed spec must run as a normal test, or the expected failure becomes a failure when it passes).
-Verify: B3-03's spec now fully green (in-test server returns 500 for `app.js` after first load → app still loads from cache; navigation 500 → offline shell still serves). SW `CACHE` bump. Full gate green.
+Files: `store.js`, `test/store.test.js`.
+Verify: unit test — start clock, finalize/roll with no lifts → no `sessionLog` entry, `sessionCount` unchanged; existing-entry update still works. Full gate green.
+
+## Completed — B3-04: SW caches error pages as the shell and serves errors instead of cached assets [T1]
+
+Navigation caches the shell only when `res.ok` (a transient 500/404 can no longer become `./index.html`); asset revalidation returns the cached `hit` when non-ok instead of serving the error. 304 path, conditional headers and cache-first/offline behaviour unchanged. B3-03's harness is fully green (app.js 500 and navigation 500) and its temporary `test.fail()` marker is removed. SW `gym-v40`. Verified 154/154 unit, typecheck clean, 69/69 e2e. Commit: `5181d7e` (auto-sync, on origin/main).
 
 ## Completed — B3-03: SW e2e harness (HTTP, not `file://`) [T1]
 

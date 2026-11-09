@@ -465,7 +465,7 @@
     if (a.runningSince) { a.accSec = (a.accSec || 0) + Math.max(0, ts - a.runningSince) / 1000; a.runningSince = null; }
     var existing = null, i;
     for (i = 0; i < (p.sessionLog || []).length; i++) if (p.sessionLog[i].id === a.id) existing = p.sessionLog[i];
-    if (!a.startedAt && !activeHasData(p) && !existing) { a.endedAt = ts; a.status = "complete"; return null; }
+    if (!activeHasData(p) && !existing) { a.endedAt = ts; a.status = "complete"; return null; }
     var started = a.startedAt || ts;
     var durationSec = Math.max(0, Math.round(a.accSec || 0));
     var lifts = {}, rec;

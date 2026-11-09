@@ -1,8 +1,8 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-04 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
+Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-05 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
 
-Previous: B3-04 BUILT (OpenCode, Nov 9 11:38 CT) — SW error handling: the navigation handler caches the shell only when `res.ok`, and non-ok asset revalidation returns the cached copy instead of the error. B3-03's harness (app.js 500, navigation 500) is fully green and the temporary `test.fail()` marker is gone. 154/154 unit, typecheck clean, 69/69 e2e, SW `gym-v40`. Commit: auto-sync (pending hash).
+Previous: B3-05 BUILT (OpenCode, Nov 9 11:40 CT) — phantom empty sessions: `finalizeSession` no longer exempts a clock-started session from the no-data guard (`!a.startedAt` removed), so Start → do nothing → next-day roll banks no `sessionLog` entry with empty lifts; existing-entry updates still work. 1 new unit test. 155/155 unit, typecheck clean, 69/69 e2e, SW `gym-v41`. Commit: auto-sync (pending hash).
 
 Previous: B3-01 BUILT (OpenCode, Nov 9 11:27 CT) — mid-rest finish-arm freeze fixed: `restctl.js` `finishReset()` clears `finishUntil` + `ctx.frozen` in every phase (it used to return early unless phase was `go`), and `app.js` repaints the rest view unconditionally when the 2,600 ms arm timer fires. After "End rest" on the final lift, a >2.6 s hesitation no longer strands a frozen clock / "Tap again to finish": the countdown resumes and the button reads "End rest" (second tap inside the window still finishes). Unit test updated to the new contract + 1 `page.clock` e2e. 154/154 unit, typecheck clean, 66/66 e2e at 390×667/844, no overflow, no console errors, SW `gym-v38`. Commit: `b3476d7` (auto-sync, on origin/main).
 
@@ -132,8 +132,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: B3-04 built and gated (154/154 unit, typecheck clean, 69/69 e2e, SW `gym-v40`); waiting for auto-sync to publish it, then B3-05 starts.
-- Next in queue: B3-05–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
+- Current item: B3-05 built and gated (155/155 unit, typecheck clean, 69/69 e2e, SW `gym-v41`); waiting for auto-sync to publish it, then B3-06 starts.
+- Next in queue: B3-06–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
@@ -275,3 +275,9 @@ Pass 4 build, same phone check:
   non-ok response. B3-03 harness fully green; `test.fail()` marker
   removed. 154/154 unit, typecheck clean, 69/69 e2e, SW `gym-v40`.
   Waiting for auto-sync to publish before starting B3-05.
+- 2026-11-09 11:40 CT: B3-05 built (OpenCode). `finalizeSession` drops the
+  `!startedAt` exemption, so a clock-started session with no logged sets
+  banks nothing (finalize and next-day roll covered); an existing entry
+  still updates. 1 new unit test. 155/155 unit, typecheck clean, 69/69
+  e2e, SW `gym-v41`. Waiting for auto-sync to publish before starting
+  B3-06.

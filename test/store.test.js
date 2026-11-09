@@ -224,6 +224,34 @@ test("upsertHistory replaces today's entry instead of appending", () => {
   assert.equal(p.liftHistory["fri:0"][0].setsDone, 5);
 });
 
+test("an empty started session logs nothing, but an existing entry still updates", () => {
+  // starting the clock without logging a set must not bank a phantom workout
+  const p = S.emptyPayload();
+  S.startSessionClock(p, 1000);
+  assert.equal(S.finalizeSession(p, 5000), null);
+  assert.equal(p.sessionLog.length, 0);
+  assert.equal(p.active.status, "complete");
+
+  // the next-day roll path is the reachable one: start the clock, do nothing
+  const q = S.emptyPayload();
+  q.active.date = "2026-11-06";
+  q.active.day = "fri";
+  const fri = new Date(2026, 10, 6, 10).getTime();
+  const sun = new Date(2026, 10, 8, 10).getTime();
+  S.startSessionClock(q, fri);
+  S.rollSession(q, "sun", sun);
+  assert.equal(q.sessionLog.length, 0);
+  assert.equal(q.active.date, "2026-11-08");
+
+  // a session that already has a log entry still takes the update path
+  const r = S.emptyPayload();
+  r.sessionLog = [{ id: r.active.id, date: r.active.date, day: r.active.day, lifts: {}, status: "complete" }];
+  const e = S.finalizeSession(r, 7000);
+  assert.ok(e);
+  assert.equal(r.sessionLog.length, 1);
+  assert.equal(r.sessionLog[0].status, "complete");
+});
+
 test("session clock pauses, resumes, and finalizes with duration", () => {
   const p = S.emptyPayload();
   S.startSessionClock(p, 1000);
