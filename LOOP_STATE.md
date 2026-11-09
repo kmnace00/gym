@@ -2,6 +2,8 @@
 
 Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-01 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
 
+Previous: B3-01 BUILT (OpenCode, Nov 9 11:27 CT) — mid-rest finish-arm freeze fixed: `restctl.js` `finishReset()` clears `finishUntil` + `ctx.frozen` in every phase (it used to return early unless phase was `go`), and `app.js` repaints the rest view unconditionally when the 2,600 ms arm timer fires. After "End rest" on the final lift, a >2.6 s hesitation no longer strands a frozen clock / "Tap again to finish": the countdown resumes and the button reads "End rest" (second tap inside the window still finishes). Unit test updated to the new contract + 1 `page.clock` e2e. 154/154 unit, typecheck clean, 66/66 e2e at 390×667/844, no overflow, no console errors, SW `gym-v38`. Commit: auto-sync (pending hash).
+
 Previous: SET-LOG SIZING FIX (OpenCode, Nov 9 11:34 CT) — Khang flagged the set section as still oversized after `gym-v31`; rows are now a fixed 44 px (tap-target floor, no 56/64 px growth), gap 6 px, `.setlog` hugs its rows (144 px for 3 sets vs 180/208), and the 44 px Undo/Restart pills clear the first row by 9/7 px (they were 1 px into it). 154/154 unit, typecheck clean, 65/65 e2e at 390×667/844, SW `gym-v37`.
 
 Previous: PIPELINE PASS 2 DONE (OpenCode, Nov 9 09:12 CT) — 154/154 unit, typecheck clean, 63/63 e2e at 390×667/844, SW `gym-v35`, CI green. P1 units on the lift screen (`a15af57`) + menu/summary reachability on short phones (`1b66b46`); P2 `Stats.progressSnapshot` (`976615d`); P3 shared session aggregate 4.6 → 3.4 ms (`4cf6e7a`); P4 midnight / off-day / summary journeys (`3815cbe`); P5 corrupt-date drop + dead-code cleanup (`4c8a977`). Batch 3 still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 alternate list).
@@ -128,7 +130,7 @@ Muse.**
 
 ## Current / next
 
-- Current item: B3-01 — mid-rest finish-arm freeze (verified bug, rest-critical).
+- Current item: B3-01 built and gated (154/154 unit, typecheck clean, 66/66 e2e, SW `gym-v38`); waiting for auto-sync to publish it, then B3-02 starts.
 - Next in queue: B3-02–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
@@ -244,3 +246,11 @@ Pass 4 build, same phone check:
   while the set-log session was committing at 11:12 CT; pushed ~11:24
   CT after the head check showed no new commits since 11:12. Queue is
   live — Khang can paste the loop prompt.
+- 2026-11-09 11:27 CT: B3-01 built (OpenCode). `finishReset()` now
+  clears the arm + freeze in every phase; the 2,600 ms timeout repaints
+  the rest view unconditionally. Old parity unit test replaced with
+  the new contract; new `page.clock` e2e covers arm-mid-rest → expired
+  window → ticking clock + "End rest". 154/154 unit, typecheck clean,
+  66/66 e2e at 390×667/844, no overflow, no console errors, SW
+  `gym-v38`. BUILD_LOG line written; waiting for auto-sync to publish
+  before starting B3-02.

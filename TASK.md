@@ -2,7 +2,7 @@
 
 ## WIP
 
-WIP: none claimed yet
+WIP: OpenCode editing restctl.js, app.js, test/restctl.test.js, e2e/rest.spec.js since 2026-11-09 11:28 CT
 
 Status: ACTIVE — Batch 3, B3-01 (mid-rest finish-arm freeze).
 Batch: `QUEUE.md` B3-01–B3-35, in order. When B3-01 is done, copy B3-02 from

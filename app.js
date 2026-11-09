@@ -543,8 +543,7 @@
       else if (e.type === "scheduleFinishReset") {
         if (rArmT) clearTimeout(rArmT);
         rArmT = setTimeout(function () {
-          var o = restCtl.finishReset();
-          if (o.view.phase === "go") renderRestView(o.view);
+          renderRestView(restCtl.finishReset().view);
         }, e.ms);
       }
       else if (e.type === "clearSchedule") { if (rArmT) { clearTimeout(rArmT); rArmT = null; } }

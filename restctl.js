@@ -195,10 +195,10 @@
       return out([]);
     }
 
-    /** The 2,600 ms two-tap window expired. */
+    /** The 2,600 ms two-tap window expired: forget the arm and thaw the clock. */
     function finishReset() {
-      if (rest.phase !== "go") return out([]);
       ctx.finishUntil = 0;
+      ctx.frozen = false;
       return out([]);
     }
 
