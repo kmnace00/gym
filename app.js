@@ -94,6 +94,10 @@
   var progressView = document.getElementById("progressView");
   var liftList = document.getElementById("liftList");
   var timerBar = document.getElementById("timerBar");
+  var restClock = document.getElementById("restTime");
+  var restBarFill = document.getElementById("rbarFill");
+  var restNext = document.getElementById("restNext");
+  var restLive = document.getElementById("restLive");
   var detailsBtn = document.getElementById("detailsBtn");
   var skipBtn = document.getElementById("skipRest");
   var pauseBtn = document.getElementById("pauseRest");
@@ -513,27 +517,27 @@
     restCtx.finishUntil = 0;
     resetPauseUi();
     skipBtn.textContent = "End rest";
-    document.getElementById("restTime").textContent = "Rest";
-    document.getElementById("restTime").removeAttribute("aria-label");
-    document.getElementById("restLive").setAttribute("aria-live", "polite");
-    document.getElementById("rbarFill").style.width = "0";
-    document.getElementById("restNext").textContent = "";
+    restClock.textContent = "Rest";
+    restClock.removeAttribute("aria-label");
+    restLive.setAttribute("aria-live", "polite");
+    restBarFill.style.width = "0";
+    restNext.textContent = "";
     setRestLabel(label || "", msg || "Starts after Set Done");
     renderRestPrep();
     applyVisibility();
   }
   function renderRest() {
-    var clock = document.getElementById("restTime"), now = Date.now();
+    var now = Date.now();
     if (rest.phase === Machine.GO) {
-      clock.textContent = "GO";
-      clock.setAttribute("aria-label", "Rest complete — GO");
-      document.getElementById("rbarFill").style.width = "100%";
+      restClock.textContent = "GO";
+      restClock.setAttribute("aria-label", "Rest complete — GO");
+      restBarFill.style.width = "100%";
       return;
     }
     var secs = Machine.remaining(rest, now);
-    clock.textContent = fmt(secs);
-    clock.setAttribute("aria-label", rest.phase === Machine.PAUSED ? "Rest paused — " + fmt(secs) + " remaining" : "Rest time remaining");
-    document.getElementById("rbarFill").style.width = Math.round(Machine.progress(rest, now) * 100) + "%";
+    restClock.textContent = fmt(secs);
+    restClock.setAttribute("aria-label", rest.phase === Machine.PAUSED ? "Rest paused — " + fmt(secs) + " remaining" : "Rest time remaining");
+    restBarFill.style.width = Math.round(Machine.progress(rest, now) * 100) + "%";
   }
 
   var actx = null;
@@ -565,9 +569,8 @@
     restCtx.goAtMs = Date.now();
     timerBar.classList.remove("paused");
     timerBar.classList.add("go");
-    document.getElementById("restLive").setAttribute("aria-live", "assertive");
-    var rn = document.getElementById("restNext");
-    rn.textContent = rn.textContent.replace("Up next —", "Up now —");
+    restLive.setAttribute("aria-live", "assertive");
+    restNext.textContent = restNext.textContent.replace("Up next —", "Up now —");
     restCtx.finishUntil = 0;
     var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, true);
     skipBtn.textContent = Rest.advanceLabel(adv, idx >= DAYS[cur].ex.length - 1);
@@ -589,9 +592,9 @@
     restCtx.pending = !!lastSet;
     if (restCtx.pending && restCtx.pIdx < 0) { restCtx.pIdx = idx; restCtx.pDay = cur; }
     restCtx.note = note || ""; restCtx.nextText = nextText || "";
-    document.getElementById("restNext").textContent = restCtx.nextText;
-    document.getElementById("restTime").setAttribute("aria-label", "Rest time remaining");
-    document.getElementById("restLive").setAttribute("aria-live", "polite");
+    restNext.textContent = restCtx.nextText;
+    restClock.setAttribute("aria-label", "Rest time remaining");
+    restLive.setAttribute("aria-live", "polite");
     timerBar.classList.add("active"); timerBar.classList.remove("go");
     appEl.classList.add("resting");
     if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur();
@@ -713,9 +716,10 @@
   var sInt = null, sAutoStopped = false;
   function sessionSecs() { return Gym.sessionElapsedSec(payload); }
   function tickSession() {
+    var secs = sessionSecs();
     var el = document.getElementById("elapsed");
-    if (el) el.textContent = fmt(sessionSecs());
-    sessBtn.classList.toggle("has-time", sessionSecs() > 0);
+    if (el) el.textContent = fmt(secs);
+    sessBtn.classList.toggle("has-time", secs > 0);
   }
   function renderSessionPill() {
     var t = fmt(sessionSecs());

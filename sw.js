@@ -3,7 +3,7 @@
    - static assets: stale-while-revalidate (instant from cache, refreshed behind)
    A failed script request must never return index.html — that surfaced as a
    parse error in the gym basement. Only navigations get the shell.          */
-const CACHE = "gym-v16";
+const CACHE = "gym-v17";
 const ASSETS = [
   "./", "./index.html", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./app.js",
@@ -42,13 +42,28 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     caches.open(CACHE).then((cache) =>
       cache.match(req).then((hit) => {
-        const network = fetch(req)
-          .then((res) => {
+        if (!hit) {
+          return fetch(req).then((res) => {
             if (res && res.ok) cache.put(req, res.clone());
+            return res;
+          });
+        }
+        /* stale-while-revalidate, but conditionally: an unchanged asset costs a
+           304 header instead of re-downloading ~183 KB of JS/CSS on every load. */
+        const cond = {};
+        const etag = hit.headers.get("etag");
+        if (etag) cond["If-None-Match"] = etag;
+        else {
+          const lm = hit.headers.get("last-modified");
+          if (lm) cond["If-Modified-Since"] = lm;
+        }
+        return fetch(req, { headers: cond })
+          .then((res) => {
+            if (res.status === 304) return hit;
+            if (res.ok) cache.put(req, res.clone());
             return res;
           })
           .catch(() => hit);
-        return hit || network;
       })
     )
   );

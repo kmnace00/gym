@@ -1,5 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const path = require("node:path");
 const P = require("../program.js");
 const S = require("../store.js");
 
@@ -22,4 +24,22 @@ test("ten years of per-set history stays under localStorage quota", () => {
   });
   const chars = JSON.stringify(p).length;
   assert.ok(chars < 3.5 * 1024 * 1024, "payload is " + chars + " chars; keep it under 3.5 MB");
+});
+
+/* The service worker precaches the whole app, so the bytes an offline phone
+   must download are bounded by the ASSETS list. Keep that ceiling visible. */
+test("precached assets stay under 250 KB and every listed asset exists", () => {
+  const sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
+  const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
+  assert.ok(listMatch, "sw.js must still expose the ASSETS array");
+  const assets = [...listMatch[1].matchAll(/"([^"]+)"/g)]
+    .map((m) => m[1].replace(/^\.\//, ""))
+    .filter((a) => a !== "");
+  assert.ok(assets.length >= 10, "ASSETS list looks truncated: " + assets.length);
+  let bytes = 0;
+  for (const a of assets) {
+    assert.ok(fs.existsSync(path.join(__dirname, "..", a)), "ASSETS lists a missing file: " + a);
+    bytes += fs.statSync(path.join(__dirname, "..", a)).size;
+  }
+  assert.ok(bytes < 250 * 1024, "precached assets total " + bytes + " bytes; keep under 250 KB");
 });
