@@ -8,10 +8,15 @@
 
   var RIR_PENALTY = 30; // extra rest after a 0–1 RIR set
 
+  /** @param {number} baseRest @param {number} rir @returns {number} seconds */
   function restDuration(baseRest, rir) { return baseRest + (rir <= 1 ? RIR_PENALTY : 0); }
+  /** @param {number} endMs @param {number} nowMs @returns {number} whole seconds left */
   function remainingSeconds(endMs, nowMs) { return Math.max(0, Math.ceil((endMs - nowMs) / 1000)); }
+  /** @param {number} nowMs @param {number} remainingSec @returns {number} */
   function resumeEndMs(nowMs, remainingSec) { return nowMs + remainingSec * 1000; }
+  /** @param {number} endMs @param {number} addSec @returns {number} */
   function extendEndMs(endMs, addSec) { return endMs + addSec * 1000; }
+  /** @param {number} baseSec @param {number} startMs @param {number} nowMs @returns {number} */
   function sessionElapsed(baseSec, startMs, nowMs) { return baseSec + Math.max(0, Math.floor((nowMs - startMs) / 1000)); }
 
   return {

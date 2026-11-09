@@ -33,9 +33,15 @@ test("migrate v1 → v2 carries data forward", () => {
   assert.deepEqual(p.liftHistory, {});
 });
 
-test("migrate v2 round-trips unchanged", () => {
+test("migrate v2 round-trips unchanged (adds the optional lastBackup field)", () => {
   const o = { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} };
-  assert.deepEqual(S.migrate(JSON.stringify(o)), o);
+  const out = S.migrate(JSON.stringify(o));
+  assert.equal(out.v, 2);
+  assert.equal(out.cur, "fri");
+  assert.equal(out.idx, 0);
+  assert.deepEqual(out.state, {});
+  assert.deepEqual(out.liftHistory, {});
+  assert.equal(out.lastBackup, null);
 });
 
 test("migrate flags a future version instead of dropping it", () => {
@@ -132,4 +138,52 @@ test("load keeps a copy of an unknown future payload, never overwrites it", () =
   const p = S.load();
   assert.equal(p.v, 2); // fresh empty
   assert.equal(global.localStorage.getItem(S.STORE + "-future"), raw);
+});
+
+test("backupDue: false with no data, true when data exists and never exported", () => {
+  const p = S.emptyPayload();
+  assert.equal(S.backupDue(p), false);
+  S.pushHistory(p, "fri", 0, { date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  assert.equal(S.backupDue(p), true);
+  S.markBackup(p);
+  assert.equal(S.backupDue(p), false);
+});
+
+test("backupAgeDays counts whole days and is null when never backed up", () => {
+  const p = S.emptyPayload();
+  assert.equal(S.backupAgeDays(p, "2026-11-08"), null);
+  p.lastBackup = "2026-11-01";
+  assert.equal(S.backupAgeDays(p, "2026-11-08"), 7);
+  assert.equal(S.backupAgeDays(p, "2026-11-03"), 2);
+});
+
+test("mergePayload unions history by date and keeps the fuller state record", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 1, load: 50, reps: 6, rir: 2 };
+  S.pushHistory(base, "fri", 0, { date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 });
+  const inc = S.emptyPayload();
+  inc.state["fri:0"] = { done: 3, load: 55, reps: 6, rir: 2 };
+  S.pushHistory(inc, "fri", 0, { date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 });
+  S.pushHistory(inc, "fri", 0, { date: "2026-11-08", load: 55, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  const m = S.mergePayload(base, inc);
+  assert.equal(m.state["fri:0"].done, 3);          // fuller record wins
+  assert.equal(m.state["fri:0"].load, 55);
+  assert.equal(m.liftHistory["fri:0"].length, 2);  // 11-01 deduped, 11-08 added
+  assert.equal(m.liftHistory["fri:0"][1].date, "2026-11-08");
+});
+
+test("importMerge never discards current data", () => {
+  global.localStorage.clear();
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 3, load: 60, reps: 6, rir: 2 };
+  S.pushHistory(base, "fri", 0, { date: "2026-11-01", load: 60, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  S.save(base);
+  const incoming = JSON.stringify({
+    v: 2, cur: "sat", idx: 0, state: {},
+    liftHistory: { "sat:1": [{ date: "2026-11-02", load: 90, reps: 8, rir: 2, setsDone: 3 }] }
+  });
+  const merged = S.importMerge(S.load(), incoming);
+  assert.equal(merged.state["fri:0"].done, 3);
+  assert.ok(merged.liftHistory["sat:1"]);
+  assert.equal(merged.liftHistory["fri:0"].length, 1);
 });

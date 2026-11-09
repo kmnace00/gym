@@ -53,6 +53,7 @@ for (const size of sizes) {
       await page.reload();
       await page.locator(".liftrow").first().click();
       await expect(page.locator("#suggestLine")).toBeVisible();
+      await page.locator("#trendToggle").click();
       await expect(page.locator("#sparkWrap")).toBeVisible();
       await expect(page.locator("#rirHint")).toBeVisible();
       const fits = await page.evaluate(() => {

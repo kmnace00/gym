@@ -18,13 +18,14 @@
 
   /* open on today's training day; Mon–Thu (off days) land on Fri, the next session */
   function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
-  function emptyPayload() { return { v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {} }; }
+  function emptyPayload() { return { v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {}, lastBackup: null }; }
 
   function normalize(p) {
     if (!p.state || typeof p.state !== "object") p.state = {};
     if (!p.liftHistory || typeof p.liftHistory !== "object") p.liftHistory = {};
     if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
     if (!p.cur) p.cur = "fri";
+    if (typeof p.lastBackup !== "string") p.lastBackup = null; // additive, no version bump
     p.v = CURRENT;
     return p;
   }
@@ -83,6 +84,77 @@
     if (arr && arr.length) arr.pop();
   }
 
+  /* ── backup bookkeeping ── */
+  function parseDay(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function hasData(p) {
+    var lh = (p && p.liftHistory) || {}, st = (p && p.state) || {}, k;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k) && lh[k] && lh[k].length) return true;
+    for (k in st) if (Object.prototype.hasOwnProperty.call(st, k) && (st[k].done || 0) > 0) return true;
+    return false;
+  }
+  /** Record that a full export happened today. */
+  function markBackup(p) { p.lastBackup = dateKey(); return p.lastBackup; }
+  /** Whole days since the last export, or null when never backed up. */
+  function backupAgeDays(p, now) {
+    var last = parseDay(p && p.lastBackup);
+    if (!last) return null;
+    var today = typeof now === "string" ? parseDay(now) : parseDay(dateKey(now ? new Date(now) : new Date()));
+    if (!today) today = parseDay(dateKey(new Date()));
+    return Math.max(0, Math.round((today.getTime() - last.getTime()) / 86400000));
+  }
+  /** True when there is data and it is overdue for a backup (default 7 days). */
+  function backupDue(p, days) {
+    days = typeof days === "number" ? days : 7;
+    if (!hasData(p)) return false;
+    var age = backupAgeDays(p);
+    return age === null || age >= days;
+  }
+
+  /* ── merge-on-import: union history by date, keep the fuller state record ── */
+  function mergePayload(base, incoming) {
+    var out = JSON.parse(JSON.stringify(base || emptyPayload()));
+    out.state = out.state || {};
+    out.liftHistory = out.liftHistory || {};
+    var incState = (incoming && incoming.state) || {}, k;
+    for (k in incState) if (Object.prototype.hasOwnProperty.call(incState, k)) {
+      var mine = out.state[k], theirs = incState[k];
+      if (!mine || (typeof theirs.done === "number" && theirs.done > (mine.done || 0))) {
+        out.state[k] = JSON.parse(JSON.stringify(theirs));
+      }
+    }
+    var incHist = (incoming && incoming.liftHistory) || {}, k2;
+    for (k2 in incHist) if (Object.prototype.hasOwnProperty.call(incHist, k2)) {
+      var seen = {};
+      (out.liftHistory[k2] || []).concat(incHist[k2] || []).forEach(function (e) {
+        if (!e) return;
+        var dk = e.date || (e.load + ":" + e.reps + ":" + e.rir + ":" + e.setsDone);
+        seen[dk] = e; // incoming wins on a same-date collision
+      });
+      var arr = Object.keys(seen).map(function (dk) { return seen[dk]; });
+      arr.sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
+      while (arr.length > HISTORY_MAX) arr.shift();
+      out.liftHistory[k2] = arr;
+    }
+    out.v = CURRENT;
+    if (!out.lastBackup && incoming && incoming.lastBackup) out.lastBackup = incoming.lastBackup;
+    /* adopt the backup's location so a restore lands where the data is */
+    if (incoming && incoming.cur) out.cur = incoming.cur;
+    if (incoming && typeof incoming.idx === "number") out.idx = incoming.idx;
+    return out;
+  }
+
+  /** Merge a backup into the current payload (never discards current data). */
+  function importMerge(base, raw) {
+    var m = migrate(raw);
+    if (!m || m.__future) throw new Error("Not a valid Gym backup");
+    var merged = mergePayload(base, m);
+    save(merged);
+    return merged;
+  }
+
   /* clear one lift's finished sets, keeping the working load / reps / RIR.
      A same-day snapshot (from a redo) is dropped so redoing replaces it.    */
   function resetLift(p, d, i) {
@@ -123,6 +195,8 @@
     exportPayload: exportPayload, importRaw: importRaw,
     pushHistory: pushHistory, lastEntry: lastEntry, series: series, popHistory: popHistory,
     resetLift: resetLift, resetDay: resetDay,
+    markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue,
+    mergePayload: mergePayload, importMerge: importMerge,
     dateKey: dateKey
   };
 });

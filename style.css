@@ -339,3 +339,59 @@ h1{
   .rirhint{font-size:10.5px;margin-top:6px}
   #liftView .cue{-webkit-line-clamp:2}
 }
+
+/* ── progress button + progress view ───────────────────────────────────── */
+.app.lift-mode #progressBtn,
+.app.progress-mode #progressBtn{display:none}
+.app.progress-mode .days{display:none}
+.app.progress-mode .backbtn{display:inline-flex}
+.menubtn.needs-backup{position:relative;color:var(--accent)}
+.menubtn.needs-backup::after{
+  content:"";position:absolute;top:7px;right:7px;width:7px;height:7px;
+  border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg);
+}
+
+#progressView{gap:10px;min-height:0}
+.phead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px}
+.ptitle{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.psub{font-size:13px;color:var(--muted)}
+.pstats{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pstat{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.pstat .pv{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.pstat .pk{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.pcard{
+  flex:1 1 0;min-height:0;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;overflow:hidden;
+}
+.pcardhead{
+  flex:none;display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:.02em;color:var(--muted);
+}
+.pvol{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.pdaybars{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.pdayrow{display:grid;grid-template-columns:64px 1fr 58px;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.pdname{font-size:12px;color:var(--muted)}
+.pdbar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.pdbar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s ease}
+.pdval{font-size:12px;font-weight:700;text-align:right;color:var(--ink)}
+.psparkwrap{flex:1;min-height:0;display:flex;align-items:center}
+.pspark{width:100%;height:100%;max-height:72px;color:var(--accent);overflow:visible;display:block}
+.pnote{flex:none;font-size:11px;color:var(--faint);text-align:center}
+.pmovers{flex:1;min-height:0;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.pmover{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+.pmname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pmover.empty{color:var(--faint);justify-content:center;font-size:12px}
+.pmdelta{flex:none;font-weight:800;font-variant-numeric:tabular-nums}
+.pmdelta.up{color:var(--good)}
+.pmdelta.down{color:var(--muted)}
+
+@media (max-height:720px){
+  #progressView{gap:7px}
+  .pstat{padding:7px 6px}
+  .pstat .pv{font-size:19px}
+  .pcard{padding:8px 10px;gap:4px}
+  .pdaybars{gap:5px}
+}

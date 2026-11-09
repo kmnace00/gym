@@ -6,9 +6,10 @@ Personal one-screen workout tool for Khang — Fri–Sun 3-day hypertrophy plan.
 - One screen, no scroll, 100dvh, free.
 - Dark-first theme with a light toggle (first load follows the system preference when no theme is saved yet).
 - Lift view has a **per-set log** — one row per set with load × reps @ RIR, completed sets checked, and the next set highlighted — plus always-visible load / reps / RIR adjusters, Undo / Restart, and Set Done.
-- **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions.
-- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek. Pausing freezes the countdown and turns the Pause pill into an accented Resume.
-- **Backup:** the `⋯` menu exports/imports the full state as JSON (copy or download), so the log survives Safari data cleanup.
+- **Progression:** after a lift you hit top reps on, the next session shows `Last Fri: 60 × 6 @2 RIR → try 62.5` with a one-tap **Apply**, plus a small e1RM sparkline of recent sessions (folded behind a **Trend** pill so it doesn't crowd short phones).
+- **Progress view:** `▤` in the header opens a one-screen dashboard — sessions, sets, training days, tonnage per day, a recent-session tonnage trend, and your biggest movers.
+- Set Done starts a rest (+30 s after a 0–1 RIR set). Rest takes over the whole screen with a big countdown, +15 / Pause / End rest, Undo, and a "Show workout" peek. Pausing freezes the countdown and turns the Pause pill into an accented Resume. At GO it beeps and vibrates; with **Rest notifications** enabled it also posts a notification while the tab is backgrounded.
+- **Backup:** the `⋯` menu exports/imports the full state as JSON (copy or download), so the log survives Safari data cleanup. The menu dot turns accent-coloured when a backup is overdue (7 days), and **import merges history by date** instead of overwriting, so two devices can be reconciled.
 - **Undo / Reset:** next to the sets, **`↺ Undo`** removes your last set (the count visibly goes from e.g. "Set 3 of 3" back to "Set 2 of 3"), and **`↺ Restart`** clears the whole lift (keeps your working weight). The `⋯` menu has **Reset day** and **Clear all data** (both two-tap confirm).
 - **Navigation:** `‹ Back` returns to the day list and the lift header shows the day + lift number (`Sun · Lift 1 of 8`); the `‹ ›` arrows step between lifts.
 - The `⋯` menu also holds the theme toggle, so the header stays down to Back/Menu/Session.
@@ -21,10 +22,13 @@ Personal one-screen workout tool for Khang — Fri–Sun 3-day hypertrophy plan.
 
 - `index.html` — markup only.
 - `style.css` — all styling.
-- `program.js` — program data (`DAYS`) + pure math (`fmt`, `dayMins`, `suggestLoad`, …). No DOM.
-- `store.js` — persistence, schema migration, export/import, per-lift history. No DOM.
+- `program.js` — program data (`DAYS`) + pure math (`fmt`, `dayMins`, `suggestLoad`, `firstOpenLift`, …). No DOM.
+- `store.js` — persistence, schema migration, export/import + merge, per-lift history, backup age. No DOM.
 - `timer.js` — pure timer math (rest duration, pause/resume, +15, session elapsed). No DOM.
+- `machine.js` — pure rest state machine (`idle → active ⇄ paused → go`); re-derives the clock from a timestamp so it survives sleep. No DOM.
+- `stats.js` — pure progress analytics (sessions, sets, volume, day rollups) for the Progress view. No DOM.
 - `app.js` — DOM wiring, render, and event handlers (the controller).
+- `globals.d.ts`, `jsconfig.json` — JSDoc type-checking layer (`npm run typecheck`); no build step.
 - `manifest.webmanifest`, `sw.js`, `icon-192.png`, `icon-512.png` — PWA install + offline.
 - `tools/make-icons.js` — regenerates the icons (`npm run icons`).
 - `test/` — `node:test` unit tests. `e2e/` — Playwright viewport + functional tests.
@@ -33,9 +37,10 @@ Open it on iPhone from the Pages URL, add to Home Screen.
 
 ## Develop / verify
 
-- `npm test` — 27 unit tests (`node --test test/`), no dependencies needed.
+- `npm test` — 50 unit tests (`node --test test/`), no dependencies needed.
 - `npm run e2e` — Playwright tests at 390×667 and 390×844; uses system Chrome (`channel: "chrome"`). Run `npm install` first.
 - `npm run check` — syntax check + unit tests.
+- `npm run typecheck` — `tsc --checkJs` over the JSDoc-annotated modules (needs `npm install`).
 - `npm run icons` — regenerate the PNG icons.
 
 ## How Muse + OpenCode work here

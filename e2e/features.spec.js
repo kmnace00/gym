@@ -131,7 +131,7 @@ test("reset day clears all lifts via the menu (two taps)", async ({ page }) => {
 test("clear all data wipes history", async ({ page }) => {
   await page.goto(url);
   await page.locator("#menuBtn").click();
-  await expect(page.locator("#modalFoot")).toContainText("0 sessions saved");
+  await expect(page.locator("#modalFoot")).toContainText("0 sessions");
   await page.locator("#clearAll").click();
   await page.locator("#clearAll").click();
   await expect(page.locator("#modalMsg")).toContainText("cleared");

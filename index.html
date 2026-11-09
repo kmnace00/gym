@@ -24,13 +24,14 @@
       <button class="day" type="button" data-day="sun">Sun</button>
     </div>
     <button class="backbtn" id="backBtn" type="button" aria-label="Back to lift list">‹ Back</button>
+    <button class="menubtn" id="progressBtn" type="button" aria-label="Progress">▤</button>
     <button class="menubtn" id="menuBtn" type="button" aria-label="Menu">⋯</button>
     <button class="pill" id="sessBtn" type="button" aria-label="Start or pause session timer">▶ <span class="startlbl">Start</span><span id="elapsed">0:00</span></button>
   </header>
 
   <div class="timer" id="timerBar">
     <div class="clock" id="restTime">Rest</div>
-    <div class="tlabel" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
+    <div class="tlabel" id="restLive" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
     <div class="rnext" id="restNext"></div>
     <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <div class="tbtns">
@@ -70,6 +71,7 @@
     <div class="sethead">
       <span class="seth" id="setCount">Set 1 of 3</span>
       <div class="setacts">
+        <button class="resetlift" id="trendToggle" type="button" aria-label="Show trend chart" hidden>Trend</button>
         <button class="resetlift undoset" id="undoSetBtn" type="button" aria-label="Undo last set">↺ Undo</button>
         <button class="resetlift" id="resetLiftBtn" type="button" aria-label="Restart this lift">↺ Restart</button>
       </div>
@@ -102,6 +104,31 @@
     <button class="donebtn" id="doneBtn" type="button">Set Done</button>
   </section>
 
+  <section class="view" id="progressView" aria-label="Progress">
+    <div class="phead">
+      <div class="ptitle">Progress</div>
+      <div class="psub" id="pSub">—</div>
+    </div>
+    <div class="pstats">
+      <div class="pstat"><span class="pv" id="pSessions">0</span><span class="pk">Sessions</span></div>
+      <div class="pstat"><span class="pv" id="pSets">0</span><span class="pk">Sets</span></div>
+      <div class="pstat"><span class="pv" id="pDays">0</span><span class="pk">Days</span></div>
+    </div>
+    <div class="pcard">
+      <div class="pcardhead"><span>Volume by day</span><span class="pvol" id="pVolume">0 kg</span></div>
+      <div class="pdaybars" id="pDayBars"></div>
+    </div>
+    <div class="pcard">
+      <div class="pcardhead"><span>Recent sessions</span></div>
+      <div class="psparkwrap"><svg class="pspark" id="pSpark" viewBox="0 0 280 64" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      <div class="pnote" id="pNote"></div>
+    </div>
+    <div class="pcard">
+      <div class="pcardhead"><span>Biggest movers</span></div>
+      <ul class="pmovers" id="pMovers"></ul>
+    </div>
+  </section>
+
 </div>
 
 <div class="modal" id="modal" hidden>
@@ -112,6 +139,7 @@
     <label class="modalbtn" id="importLabel">Import backup<input type="file" id="importFile" accept="application/json,text/plain" hidden></label>
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
+    <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>
     <button class="modalbtn" id="resetDay" type="button">Reset day</button>
     <button class="modalbtn modalbtn-danger" id="clearAll" type="button">Clear all data</button>
     <div class="modalmsg" id="modalMsg"></div>
@@ -122,6 +150,8 @@
 <script src="program.js"></script>
 <script src="store.js"></script>
 <script src="timer.js"></script>
+<script src="machine.js"></script>
+<script src="stats.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -68,6 +68,24 @@
     return Math.round(t / 60);
   }
 
+  /**
+   * Index of the first lift at or after `from` that still has sets left,
+   * or -1 when the rest of the day is complete. Pure: reads `state` only.
+   * @param {"fri"|"sat"|"sun"} d
+   * @param {Record<string, {done?:number}>} state
+   * @param {number} from
+   * @returns {number}
+   */
+  function firstOpenLift(d, state, from) {
+    var list = DAYS[d].ex, i, rec, done;
+    for (i = Math.max(0, from); i < list.length; i++) {
+      rec = state && state[d + ":" + i];
+      done = rec && typeof rec.done === "number" ? rec.done : 0;
+      if (done < list[i].s) return i;
+    }
+    return -1;
+  }
+
   /* lazy default-injection (was `st()`); mutates state like the original */
   function getLift(state, d, i, e) {
     var k = d + ":" + i, s = state[k];
@@ -101,7 +119,7 @@
   return {
     DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS,
     fmt: fmt, esc: esc, round2: round2,
-    dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift,
+    dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad
   };
 });
