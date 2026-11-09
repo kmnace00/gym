@@ -96,6 +96,14 @@ only, with the time-budget math (75–90 min/day target).
 Anything not in the current scope (e.g. new views, new tracking).
 Khang decides; the loop does not add fluff.
 
+### P4 — Count caps in `store.js` (set Nov 9, Phase 5)
+`DONE_MAX` / `SETS_MAX` = 12, `ACC_SEC_MAX` = 8 h, `BODYWEIGHT_MAX` = 300 kg,
+and `getLift` now backfills legacy placeholder rows only up to the lift's
+scheduled `e.s`. These are code constants, not program data, but they decide
+what an imported backup is allowed to contain. If a lift ever goes above 12
+scheduled sets, or a session is legitimately longer than 8 h, the cap has to
+be raised — that is a Khang call, not a loop change.
+
 ## Deferred / non-goals (do not re-propose without new evidence)
 
 - Cloud backend / accounts, Apple Watch / Health, full ESM migration,
