@@ -99,7 +99,9 @@
    * Tonnage for one history entry: sum of load × reps across its sets.
    * Bodyweight work (explicit `bw`, or legacy load 0) is valued at
    * `bodyweight + added load` per rep, so adding a plate never lowers tonnage.
-   * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean}} e
+   * An entry's own `bwKg` (the weight in force when it was banked) wins over
+   * the `bwKg` argument, so editing the scalar never rewrites past tonnage.
+   * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean,bwKg?:number}} e
    * @param {number} [bwKg] bodyweight in kg (default 75)
    * @returns {number}
    */

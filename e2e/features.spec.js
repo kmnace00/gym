@@ -204,7 +204,7 @@ test("a lift without the partial flag never shows the partials cue", async ({ pa
   }
 });
 
-test("bodyweight changes the bodyweight-lift tonnage", async ({ page }) => {
+test("bodyweight history is frozen at the weight in force", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
@@ -232,15 +232,8 @@ test("bodyweight changes the bodyweight-lift tonnage", async ({ page }) => {
   // lift-mode hides the progress button; back to the day list first
   await page.locator("#backBtn").click();
   await page.locator("#progressBtn").click();
-  await expect(page.locator("#pSub")).toContainText("1.8k kg");
-
-  await page.locator("#backBtn").click();
-  await page.locator("#menuBtn").click();
-  await page.locator("#bwInput").fill("80");
-  await page.locator("#bwInput").press("Tab");
-  await page.locator("#modalClose").click();
-
-  await page.locator("#progressBtn").click();
+  // the sets were banked at 75 kg, so editing the scalar to 100 does not
+  // rewrite the tonnage that was logged ("1.8k kg" under the old behaviour)
   await expect(page.locator("#pSub")).toContainText("1.4k kg");
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
