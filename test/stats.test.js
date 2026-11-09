@@ -327,3 +327,23 @@ test("progressSnapshot assembles the dashboard from one payload", () => {
   // (2026-10-27 … 2026-11-02) when nowKey is 2026-11-09.
   assert.equal(snap.wow.hasPrev, true);
 });
+
+test("progressSnapshot equals the individual stats", () => {
+  const p = { bodyweight: 165, liftHistory: { "fri:0": [
+    { date: "2026-11-01", load: 100, reps: 6, rir: 2, setsDone: 3 },
+    { date: "2026-11-08", load: 110, reps: 6, rir: 2, setsDone: 3 }
+  ] } };
+  const snap = S.progressSnapshot(p, P.DAYS, P.progressMetric, "2026-11-09", { fri: 8, sat: 8, sun: 8 });
+  assert.equal(snap.workouts, S.sessionCount(p));
+  assert.equal(snap.volume, S.totalVolume(p));
+  assert.deepEqual(snap.recent, S.recentVolume(p, 12));
+  assert.deepEqual(snap.wow, S.weekOverWeek(p, "2026-11-09"));
+  assert.deepEqual(snap.byDay, S.volumeByDay(p, P.DAYS));
+
+  // the threaded `volumes` argument must give exactly the same answers
+  const vols = S.sessionVolumes(p);
+  assert.deepEqual(S.workoutDates(p, vols), S.workoutDates(p));
+  assert.equal(S.totalVolume(p, vols), S.totalVolume(p));
+  assert.deepEqual(S.recentVolume(p, 5, vols), S.recentVolume(p, 5));
+  assert.deepEqual(S.weekOverWeek(p, "2026-11-09", vols), S.weekOverWeek(p, "2026-11-09"));
+});

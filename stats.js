@@ -22,10 +22,11 @@
    * Distinct calendar dates with a completed lift or a logged session.
    * This is the "workouts" metric: one Friday is one workout, not eight.
    * @param {any} payload
+   * @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
    * @returns {string[]}
    */
-  function workoutDates(payload) {
-    var seen = {}, s = sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
+  function workoutDates(payload, volumes) {
+    var seen = {}, s = volumes || sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
     for (i = 0; i < s.length; i++) if (s[i].date) seen[s[i].date] = 1;
     for (i = 0; i < log.length; i++) if (log[i] && log[i].date) seen[log[i].date] = 1;
     return Object.keys(seen).sort();
@@ -34,10 +35,11 @@
   /**
    * Number of workouts recorded (distinct dates).
    * @param {any} payload
+   * @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
    * @returns {number}
    */
-  function sessionCount(payload) {
-    return workoutDates(payload).length;
+  function sessionCount(payload, volumes) {
+    return workoutDates(payload, volumes).length;
   }
 
   /**
@@ -123,9 +125,15 @@
   /**
    * Total tonnage across all recorded sessions.
    * @param {any} payload
+   * @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
    * @returns {number}
    */
-  function totalVolume(payload) {
+  function totalVolume(payload, volumes) {
+    if (Array.isArray(volumes)) {
+      var tv = 0, vi;
+      for (vi = 0; vi < volumes.length; vi++) tv += volumes[vi].volume;
+      return tv;
+    }
     var total = 0, lh = (payload && payload.liftHistory) || {}, k, arr, i, bw = payload && payload.bodyweight;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
@@ -155,10 +163,11 @@
    * The last `n` session volumes (all when `n` is falsy).
    * @param {any} payload
    * @param {number} [n]
+   * @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
    * @returns {{date:string, volume:number}[]}
    */
-  function recentVolume(payload, n) {
-    var s = sessionVolumes(payload);
+  function recentVolume(payload, n, volumes) {
+    var s = volumes || sessionVolumes(payload);
     return n ? s.slice(Math.max(0, s.length - n)) : s;
   }
 
@@ -206,21 +215,28 @@
     d.setDate(d.getDate() + days);
     return keyOf(d);
   }
-  /** Sum session volumes whose date falls inside [fromKey, toKey]. */
-  function volumeInRange(payload, fromKey, toKey) {
-    var s = sessionVolumes(payload), t = 0, i;
+  /** Sum session volumes whose date falls inside [fromKey, toKey].
+   *  @param {any} payload
+   *  @param {string} fromKey
+   *  @param {string} toKey
+   *  @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
+   */
+  function volumeInRange(payload, fromKey, toKey, volumes) {
+    var s = volumes || sessionVolumes(payload), t = 0, i;
     for (i = 0; i < s.length; i++) if (s[i].date >= fromKey && s[i].date <= toKey) t += s[i].volume;
     return t;
   }
   /**
    * Rolling 7-day tonnage vs the previous 7 days, anchored on `nowKey`.
-   * @param {any} payload @param {string} nowKey @returns {{thisWeek:number,lastWeek:number,deltaPct:number,hasPrev:boolean}}
+   * @param {any} payload @param {string} nowKey
+   * @param {{date:string,volume:number}[]} [volumes] the sessionVolumes result, to avoid recomputing
+   * @returns {{thisWeek:number,lastWeek:number,deltaPct:number,hasPrev:boolean}}
    */
-  function weekOverWeek(payload, nowKey) {
+  function weekOverWeek(payload, nowKey, volumes) {
     var thisStart = shiftKey(nowKey, -6), lastStart = shiftKey(nowKey, -13), lastEnd = shiftKey(nowKey, -7);
     if (!thisStart) return { thisWeek: 0, lastWeek: 0, deltaPct: 0, hasPrev: false };
-    var tw = volumeInRange(payload, thisStart, nowKey);
-    var lw = volumeInRange(payload, lastStart, lastEnd);
+    var tw = volumeInRange(payload, thisStart, nowKey, volumes);
+    var lw = volumeInRange(payload, lastStart, lastEnd, volumes);
     var pct = lw > 0 ? Math.round(((tw - lw) / lw) * 100) : (tw > 0 ? 100 : 0);
     return { thisWeek: tw, lastWeek: lw, deltaPct: pct, hasPrev: lw > 0 };
   }
@@ -423,18 +439,19 @@
       w = weeks[i];
       for (j = 0; j < days.length; j++) if (w[days[j]]) heatCount++;
     }
+    var vols = sessionVolumes(payload);
     return {
-      workouts: sessionCount(payload),
+      workouts: workoutDates(payload, vols).length,
       sets: setsRecorded(payload),
       weekDone: weekDone,
       weekTotal: wk.length,
-      volume: totalVolume(payload),
+      volume: totalVolume(payload, vols),
       byDay: volumeByDay(payload, DAYS),
       weeks: weeks,
       heatCount: heatCount,
       heatTotal: weeks.length * days.length,
-      recent: recentVolume(payload, 12),
-      wow: weekOverWeek(payload, nowKey),
+      recent: recentVolume(payload, 12, vols),
+      wow: weekOverWeek(payload, nowKey, vols),
       pr: personalRecords(payload, DAYS, metric)[0] || null,
       movers: topMovers(payload, DAYS, metric)
     };
