@@ -218,3 +218,40 @@ test("status messages are announced to screen readers", async ({ page }) => {
   }
   expect(live.hint, "#hint aria-live must be polite").toBe("polite");
 });
+
+test("day pills and rest steppers meet the 44px target and Plan today is distinct", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.setViewportSize({ width: 390, height: 667 });
+  await seed(page, {
+    v: 3,
+    cur: "fri",
+    idx: 0,
+    state: { "fri:0": { done: 1, load: 50, reps: 6, rir: 2, sets: [{ load: 50, reps: 6, rir: 2 }] } },
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, setsDone: 3 }] },
+    sessionLog: [],
+    bodyweight: 75
+  });
+
+  await expect(page.locator("#continueBtn")).toBeVisible();
+  await expect(page.locator("#planBtn")).toBeVisible();
+  await noOverflow(page);
+  await boxAtLeast(page.locator("#continueBtn"), 44, 44);
+  await boxAtLeast(page.locator("#planBtn"), 44, 44);
+
+  const bgOf = (sel) => page.evaluate((s) => getComputedStyle(document.querySelector(s)).backgroundColor, sel);
+  const contBg = await bgOf("#continueBtn");
+  const planBg = await bgOf("#planBtn");
+  expect(planBg, "Plan today must read as secondary, not accent").not.toBe(contBg);
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await boxAtLeast(page.locator("#restLoadUp"), 44, 44);
+  await boxAtLeast(page.locator("#restLoadDown"), 44, 44);
+
+  await noOverflow(page);
+  expect(errors, "no console errors").toEqual([]);
+});
