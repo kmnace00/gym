@@ -2,25 +2,29 @@
 
 ## WIP
 
-WIP: OpenCode editing store.js, test/store.test.js, sw.js since 2026-11-09 11:42 CT
+WIP: OpenCode editing app.js, e2e/pass4.spec.js, sw.js since 2026-11-09 11:45 CT
 
-Status: ACTIVE — Batch 3, B3-05 (phantom empty sessions). B3-04 is done and
-pushed as `5181d7e`. Batch: `QUEUE.md` B3-05–B3-35, in order. When B3-05 is
-done, copy B3-06 from `QUEUE.md` into this file and start it. Base HEAD:
-`5181d7e`.
+Status: ACTIVE — Batch 3, B3-06 (stale history after undoing an extra set).
+B3-05 is done and pushed as `fa383cf`. Batch: `QUEUE.md` B3-06–B3-35, in order.
+When B3-06 is done, copy B3-07 from `QUEUE.md` into this file and start it.
+Base HEAD: `fa383cf`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-05: `finalizeSession` logs phantom empty sessions [T1]
+## Active task — B3-06: Undo of an extra set leaves a stale history entry [T1]
 
-Why: the no-data guard requires `!a.startedAt`, so a session whose clock was started but in which nothing was ever logged still gets a `sessionLog` entry with empty `lifts`. Reachable via `rollSession`: tap Start on the session pill, do nothing, open the app the next day. Consequences: the Progress "Workouts" count inflates, and a phantom entry with `durationSec > 0` pollutes `sessionDrift`'s median (L3's audit), since that function only filters on `status === "complete"` and `durationSec > 0`.
+Why: `undoSet` pops today's history entry only when the lift drops *below* its scheduled sets. Undoing an extra set (4→3 on a 3-set lift) truncates the in-memory set array but leaves the banked entry showing 4 sets — so Prev, tonnage, PRs and CSV overstate by one set until the next bank.
 
 Do:
-- In `store.js`, drop the `!a.startedAt` condition — return null whenever there is no data and no existing entry for the id. Keep the existing-entry update path (a session that already has a `sessionLog` entry still updates it).
+- In `app.js` `undoSet`, when the lift is still complete after the undo, call `bankLift(cur, idx)` to re-bank the current set array (same function the set-done path uses at `app.js:785`).
 
-Files: `store.js`, `test/store.test.js`.
-Verify: unit test — start clock, finalize/roll with no lifts → no `sessionLog` entry, `sessionCount` unchanged; existing-entry update still works. Full gate green.
+Files: `app.js`.
+Verify: e2e — complete a lift, add an extra set, undo once, read `localStorage` history entry → 3 sets, not 4. Full gate green.
+
+## Completed — B3-05: `finalizeSession` logs phantom empty sessions [T1]
+
+`finalizeSession`'s no-data guard no longer exempts a clock-started session (`!a.startedAt` removed), so Start on the session pill → log nothing → next-day roll banks no `sessionLog` entry with empty `lifts`; the Progress "Workouts" count and `sessionDrift`'s median stay honest. A session with an existing entry still takes the update path. 1 new unit test (clock-started finalize, next-day roll, existing-entry update). SW `gym-v41`. Verified 155/155 unit, typecheck clean, 69/69 e2e. Commit: `fa383cf` (auto-sync, on origin/main).
 
 ## Completed — B3-04: SW caches error pages as the shell and serves errors instead of cached assets [T1]
 
