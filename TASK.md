@@ -2,18 +2,20 @@
 
 ## WIP
 
-Status: ACTIVE — L9 rest-controller extraction approved by Khang Nov 9, 05:45 CT. Contract pinned in `DESIGN.md` ("L9 build contract"). T2: builder → reviewer (pro) + tester.
+Status: DONE — L9 built and gated Nov 9, 06:12 CT (145/145 unit, typecheck clean, 48/48 e2e at 390×667/844, SW `gym-v20`). No WIP; nothing claimed.
 
-WIP: OpenCode editing restctl.js, app.js, index.html, sw.js, package.json, test/restctl.test.js, e2e/rest.spec.js since 2026-11-09 05:50 CT
+## Completed — L9: Full rest-controller extraction [T2, approved]
 
-## Active — L9: Full rest-controller extraction [T2, approved]
-
-Move the rest orchestration out of `app.js` into a new `restctl.js` controller
-that owns `rest` + `restCtx` + the two-tap arm timer and returns
-`{state, view, effects}`; `app.js` becomes the DOM shell (renders the view,
-applies the effects), the 200 ms interval stays in the shell, and the pure
-`machine.js` / `rest.js` layers are untouched. Exact API, view fields, effect
-vocabulary and the byte-identical-string rules are pinned in `DESIGN.md`.
+New `restctl.js` (`createRestController(deps)`) owns the rest orchestration —
+the `Machine` state, the 10-field context and the two-tap arm window — and
+returns `{state, view, effects}` from every transition; `app.js` is the DOM
+shell (`apply()` runs the effect list, `renderRestView()` paints the view, the
+200 ms interval follows `view.ticking`). `machine.js` / `rest.js` untouched.
+Parity kept byte for byte; two drifts found in review and fixed ("End rest"
+mid-rest on the last lift freezes the clock and shows "Tap again to finish";
+`notifyRestDone()` keeps the raw "Up next —" body). 15 new unit tests +
+1 `page.clock` sleep e2e. SW `gym-v20`. Verified 145/145 unit, typecheck
+clean, 48/48 e2e; reviewer PASS, independent tester 7/7.
 Files: `restctl.js` (new), `app.js` (rest block only), `index.html` (script
 tag), `sw.js` (ASSETS + `CACHE` `gym-v20`), `package.json` (`node --check
 restctl.js`), `test/restctl.test.js` (new), `e2e/rest.spec.js` (new: simulated

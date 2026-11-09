@@ -213,13 +213,17 @@ test("End rest on the last lift arms and freezes the visible clock", () => {
   const b = s.ctl.skip(false);
   assert.equal(b.view.phase, "active");
   assert.equal(b.view.ticking, false);
-  assert.equal(b.view.skipLabel, "End rest"); // arm label is a GO-phase concern
+  assert.equal(b.view.skipLabel, "Tap again to finish"); // parity with the old arm branch
   assert.deepEqual(b.effects, [{ type: "scheduleFinishReset", ms: 2600 }]);
 
   const c = s.ctl.finishReset();
   assert.equal(c.view.phase, "active");
-  assert.equal(c.view.skipLabel, "End rest");
   assert.equal(c.view.ticking, false);
+  // finishReset only clears the arm at GO, so the arm is still live here. The
+  // shell never paints this view mid-rest (its 2,600 ms timeout repaints only
+  // when the bar has the "go" class), so the on-screen label stays
+  // "Tap again to finish" exactly as the old code did.
+  assert.equal(c.view.skipLabel, "Tap again to finish");
 
   const d = s.ctl.start(120, "Bench — set 3 done", true, "", "Up next — nothing");
   assert.equal(d.view.ticking, true);

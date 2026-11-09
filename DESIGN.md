@@ -194,9 +194,9 @@ volume/metric, corruption quarantine, and no-scroll.
 
 ## L9 design (2026-11-08, Muse) — Full rest-controller extraction [T2]
 
-Status: APPROVED by Khang Nov 9, 05:45 CT — building now (after the 5-phase
-pipeline). The build contract below pins the exact API, view model and effect
-list so the move is mechanical and reviewable. L6/L7/L8 remain proposals.
+Status: BUILT Nov 9, 06:12 CT (Khang approved at 05:45). The build contract
+below is what shipped; the two parity drifts found in review are recorded in
+`BUILD_LOG.md`. L6/L7/L8 remain proposals.
 
 ### Why now, why this seam
 
