@@ -24,9 +24,15 @@
   var THEME_KEY = "gym-theme";
   var HISTORY_MAX = 520;       // ~10 years of weekly sessions per lift
   var SESSION_MAX = 520;       // completed-session log cap (same horizon)
+  var SETS_MAX = 12;           // sets kept per lift record / history entry
+  var DONE_MAX = 12;           // the program schedules at most 3 sets per lift,
+                               // so a huge imported count is hostile, not data
+  var ACC_SEC_MAX = 8 * 3600;  // 8 h ceiling for one workout clock
+  var BODYWEIGHT_MAX = 300;    // kg
 
   var loadError = null;
 
+  /** Random-ish id: crypto.randomUUID when present, Date+random otherwise. */
   function uid(prefix) {
     try {
       if (typeof crypto !== "undefined" && crypto.randomUUID) return prefix + "_" + crypto.randomUUID();
@@ -34,7 +40,9 @@
     return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
   }
 
+  /** Read a raw string from localStorage; null when it is absent or throws. */
   function read(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  /** Write a string to localStorage; false when the write is refused. */
   function write(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
 
   /* open on today's training day; Mon–Thu (off days) land on Fri, the next session */
@@ -47,9 +55,12 @@
     if (target == null) return null;
     return (target - new Date().getDay() + 7) % 7;
   }
+  /** True only for the three training days. */
   function validDay(d) { return d === "fri" || d === "sat" || d === "sun"; }
+  /** True for a strict "YYYY-MM-DD" string. */
   function validDate(s) { return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s); }
 
+  /** A fresh, unclocked session for `day` on `date` (defaults to today). */
   function emptySession(day, date) {
     return {
       id: uid("ses"), date: validDate(date) ? date : dateKey(),
@@ -57,6 +68,7 @@
       startedAt: null, endedAt: null, accSec: 0, runningSince: null, status: "active"
     };
   }
+  /** A payload with no data: current version, today's day, empty state. */
   function emptyPayload() {
     return {
       v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {},
@@ -76,6 +88,14 @@
     var n = typeof v === "number" ? v : Number(v);
     return isFinite(n) ? n : dflt;
   }
+  /* count fields are clamped before anything iterates them: `done: 1e9` would
+     make getLift() backfill a billion placeholder rows, and `setsDone` the
+     same in Stats.entrySets. Never negative, never above the cap.            */
+  function clampCount(v, max) {
+    var n = num(v, 0);
+    return n < 0 ? 0 : (n > max ? max : n);
+  }
+  /** True for the prototype-poisoning key names. */
   function unsafeKey(k) {
     return k === "__proto__" || k === "constructor" || k === "prototype";
   }
@@ -90,18 +110,22 @@
     if (!isObj(r)) return -1;
     return (r.done || 0) * 1000 + (Array.isArray(r.sets) ? r.sets.length : 0) * 10 + (r.topHits || 0);
   }
+  /** Delete `__proto__` / `constructor` / `prototype` keys from an object. */
   function stripUnsafeKeys(obj) {
     if (!obj || typeof obj !== "object") return obj;
     var keys = Object.keys(obj), i;
     for (i = 0; i < keys.length; i++) if (unsafeKey(keys[i])) delete obj[keys[i]];
     return obj;
   }
+  /** True when `key` is a direct own property of `obj`, never inherited. */
   function own(obj, key) {
     return obj && Object.prototype.hasOwnProperty.call(obj, key);
   }
+  /** Coerce an existing key to a finite number, falling back to `dflt`. */
   function coerceNum(obj, key) {
     if (obj && Object.prototype.hasOwnProperty.call(obj, key)) obj[key] = num(obj[key], 0);
   }
+  /** Coerce load/reps/rir on every set object in place; skip non-objects. */
   function sanitizeSets(arr) {
     if (!Array.isArray(arr)) return;
     for (var i = 0; i < arr.length; i++) {
@@ -113,35 +137,44 @@
       }
     }
   }
+  /** Normalise the `sets` field: sanitize array items, cap at SETS_MAX,
+      replace a non-array with an empty one.                                    */
   function sanitizeSetsField(obj) {
     if (!obj || typeof obj !== "object") return;
     if (Object.prototype.hasOwnProperty.call(obj, "sets")) {
-      if (Array.isArray(obj.sets)) sanitizeSets(obj.sets);
-      else obj.sets = [];
+      if (Array.isArray(obj.sets)) {
+        if (obj.sets.length > SETS_MAX) obj.sets = obj.sets.slice(0, SETS_MAX);
+        sanitizeSets(obj.sets);
+      } else obj.sets = [];
     }
   }
+  /** Coerce a state record's numbers, cap done/topHits at DONE_MAX. */
   function sanitizeRecord(r) {
     if (!isObj(r)) return r;
     stripUnsafeKeys(r);               // nested `__proto__` must not survive the boundary
     coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
-    coerceNum(r, "done"); coerceNum(r, "topHits");
+    if (own(r, "done")) r.done = clampCount(r.done, DONE_MAX);
+    if (own(r, "topHits")) r.topHits = clampCount(r.topHits, DONE_MAX);
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
     if (Object.prototype.hasOwnProperty.call(r, "exId")) r.exId = typeof r.exId === "string" ? r.exId : String(r.exId);
     if (Object.prototype.hasOwnProperty.call(r, "bw")) r.bw = !!r.bw;
     sanitizeSetsField(r);
     return r;
   }
+  /** Coerce a history entry's numbers, cap setsDone at SETS_MAX. */
   function sanitizeEntry(e) {
     if (!isObj(e)) return e;
     stripUnsafeKeys(e);
     if (Object.prototype.hasOwnProperty.call(e, "date")) e.date = typeof e.date === "string" ? e.date : String(e.date);
-    coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir"); coerceNum(e, "setsDone");
+    coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir");
+    if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;
     if (Object.prototype.hasOwnProperty.call(e, "exId")) e.exId = typeof e.exId === "string" ? e.exId : String(e.exId);
     sanitizeSetsField(e);
     return e;
   }
+  /** Coerce a session, clamping accSec/durationSec to ACC_SEC_MAX. */
   function sanitizeSession(s) {
     if (!isObj(s)) return s;
     stripUnsafeKeys(s);
@@ -151,9 +184,9 @@
     s.status = s.status === "complete" ? "complete" : "active";
     s.startedAt = typeof s.startedAt === "number" && isFinite(s.startedAt) ? s.startedAt : null;
     s.endedAt = typeof s.endedAt === "number" && isFinite(s.endedAt) ? s.endedAt : null;
-    s.accSec = typeof s.accSec === "number" && isFinite(s.accSec) && s.accSec > 0 ? s.accSec : 0;
+    s.accSec = typeof s.accSec === "number" && isFinite(s.accSec) && s.accSec > 0 ? Math.min(s.accSec, ACC_SEC_MAX) : 0;
     s.runningSince = typeof s.runningSince === "number" && isFinite(s.runningSince) ? s.runningSince : null;
-    coerceNum(s, "durationSec");
+    if (own(s, "durationSec")) s.durationSec = clampCount(s.durationSec, ACC_SEC_MAX);
     if (!isObj(s.lifts)) s.lifts = {};
     stripUnsafeKeys(s.lifts);
     for (var k in s.lifts) if (own(s.lifts, k)) {
@@ -162,6 +195,8 @@
     }
     return s;
   }
+  /** Sanitize state records, history entries and sessions in place; drop
+      non-object values so consumers never dereference junk.                  */
   function sanitizePayload(p) {
     var k, i;
     stripUnsafeKeys(p.state);
@@ -191,6 +226,7 @@
     return p;
   }
 
+  /** Fill missing/invalid fields, cap the session log, then sanitize. */
   function normalize(p) {
     if (!isObj(p.state)) p.state = {};
     if (!isObj(p.liftHistory)) p.liftHistory = {};
@@ -199,7 +235,7 @@
     if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
-    p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 ? p.bodyweight : 75;
+    p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 75;
     if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];
@@ -255,6 +291,8 @@
     return null;
   }
 
+  /** Load from localStorage, migrating v1/v2; unparseable bytes are
+      quarantined and an empty payload is returned.                            */
   function load() {
     loadError = null;
     var raw = read(STORE) || read(LEGACY);
@@ -273,8 +311,10 @@
     }
     return m;
   }
+  /** The last load() failure ({kind:"corrupt"|"future"}), or null. */
   function lastLoadError() { return loadError; }
 
+  /** Stamp the version and persist the payload as JSON. */
   function save(p) {
     if (!p) return false;
     p.v = CURRENT;
@@ -286,13 +326,17 @@
   function snapshot(p, label) {
     return write(SNAPSHOT, JSON.stringify({ at: Date.now(), label: label || "pre-destructive", payload: p }));
   }
+  /** Parse the snapshot written by snapshot(); null when absent or corrupt. */
   function readSnapshot() {
     try { return JSON.parse(read(SNAPSHOT)); } catch (e) { return null; }
   }
+  /** The raw bytes quarantined by the last failed load, or null. */
   function quarantineRaw() { return read(QUARANTINE); }
 
+  /** Serialize a payload for export. */
   function exportPayload(p) { return JSON.stringify(p); }
 
+  /** Parse a backup raw string and save it; throws when it is not valid. */
   function importRaw(raw) {
     var m = migrate(raw);
     if (!m || m.__future) throw new Error("Not a valid Gym backup");
@@ -318,22 +362,27 @@
     while (arr.length > HISTORY_MAX) arr.shift();
     return arr;
   }
+  /** True when the lift's newest history entry is dated today. */
   function hasTodayEntry(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
     return !!(arr && arr.length && arr[arr.length - 1].date === dateKey());
   }
+  /** Drop the lift's history entry when it is dated today. */
   function removeTodayEntry(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
     if (arr && arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
   }
+  /** Newest history entry for a lift, or null. */
   function lastEntry(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
     return arr && arr.length ? arr[arr.length - 1] : null;
   }
+  /** Copy of the lift's history, or its last `n` entries. */
   function series(p, d, i, n) {
     var arr = (p.liftHistory && p.liftHistory[d + ":" + i]) || [];
     return n ? arr.slice(Math.max(0, arr.length - n)) : arr.slice();
   }
+  /** Remove the newest history entry for a lift; no-op when empty. */
   function popHistory(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
     if (arr && arr.length) arr.pop();
@@ -351,6 +400,7 @@
     }
     return false;
   }
+  /** Stamp the session's start/pause clock if it has not started yet. */
   function startSessionClock(p, now) {
     if (!p.active) p.active = emptySession(p.cur || todayDay());
     var ts = now || Date.now();
@@ -369,6 +419,7 @@
     a.runningSince = null;
     return a;
   }
+  /** Whole seconds the active session has accrued, running time included. */
   function sessionElapsedSec(p, now) {
     var a = p && p.active;
     if (!a) return 0;
@@ -435,6 +486,7 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
     return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
   }
+  /** True when history or state carries any recorded progress. */
   function hasData(p) {
     var lh = (p && p.liftHistory) || {}, st = (p && p.state) || {}, k;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k) && lh[k] && lh[k].length) return true;
@@ -509,7 +561,7 @@
       .sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
     while (out.sessionLog.length > SESSION_MAX) out.sessionLog.shift();
 
-    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && out.bodyweight === 75) {
+    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && incoming.bodyweight <= BODYWEIGHT_MAX && out.bodyweight === 75) {
       out.bodyweight = incoming.bodyweight;
     }
     out.v = CURRENT;
@@ -621,6 +673,7 @@
     reopenSession(p);
   }
 
+  /** "YYYY-MM-DD" for a Date, defaulting to now. */
   function dateKey(dt) {
     dt = dt || new Date();
     return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
@@ -629,6 +682,7 @@
   return {
     CURRENT: CURRENT, STORE: STORE, LEGACY: LEGACY, THEME_KEY: THEME_KEY,
     HISTORY_MAX: HISTORY_MAX, SESSION_MAX: SESSION_MAX,
+    SETS_MAX: SETS_MAX, DONE_MAX: DONE_MAX, ACC_SEC_MAX: ACC_SEC_MAX,
     QUARANTINE: QUARANTINE, SNAPSHOT: SNAPSHOT,
     emptyPayload: emptyPayload, emptySession: emptySession, migrate: migrate, load: load, save: save,
     lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, snapshot: snapshot, readSnapshot: readSnapshot,

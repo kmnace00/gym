@@ -59,10 +59,14 @@
      per rep so pull-ups / dips / calf raises are not invisible in tonnage.  */
   var BODYWEIGHT_KG = 75;
 
+  /** Format seconds as m:ss, never negative. */
   function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+  /** Escape HTML metacharacters for innerHTML templates. */
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  /** Round to two decimals. */
   function round2(n) { return Math.round(n * 100) / 100; }
 
+  /** Scheduled minutes for a whole day: sets × (set + rest) + transitions. */
   function dayMins(d) {
     var t = 0, list = DAYS[d].ex;
     for (var i = 0; i < list.length; i++) { var e = list[i]; t += e.s * SET_SECS + e.s * e.rest; }
@@ -115,8 +119,11 @@
     }
     if (!Array.isArray(s.sets)) s.sets = [];
     if (e && e.id && s.exId !== e.id) s.exId = e.id;
-    /* legacy records only stored a done count — backfill placeholder rows */
-    while (s.sets.length < s.done) s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
+    /* legacy records only stored a done count — backfill placeholder rows,
+       bounded by the sets the program actually schedules, so an imported
+       `done: 1e9` can never spin the loop.                                   */
+    var cap = e && typeof e.s === "number" ? e.s : 0;
+    while (s.sets.length < s.done && s.sets.length < cap) s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
     return s;
   }
 

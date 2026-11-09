@@ -191,15 +191,18 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
     return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
   }
+  /** Format a Date as the "YYYY-MM-DD" payload key. */
   function keyOf(dt) {
     return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
   }
+  /** Move a "YYYY-MM-DD" key `days` forward (negative back); null if invalid. */
   function shiftKey(nowKey, days) {
     var d = parseKey(nowKey);
     if (!d) return null;
     d.setDate(d.getDate() + days);
     return keyOf(d);
   }
+  /** Sum session volumes whose date falls inside [fromKey, toKey]. */
   function volumeInRange(payload, fromKey, toKey) {
     var s = sessionVolumes(payload), t = 0, i;
     for (i = 0; i < s.length; i++) if (s[i].date >= fromKey && s[i].date <= toKey) t += s[i].volume;
