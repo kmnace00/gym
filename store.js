@@ -365,12 +365,12 @@
   /** True when the lift's newest history entry is dated today. */
   function hasTodayEntry(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
-    return !!(arr && arr.length && arr[arr.length - 1].date === dateKey());
+    return !!(arr && arr.length && arr[arr.length - 1].date === sessionDate(p));
   }
   /** Drop the lift's history entry when it is dated today. */
   function removeTodayEntry(p, d, i) {
     var arr = p.liftHistory && p.liftHistory[d + ":" + i];
-    if (arr && arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
+    if (arr && arr.length && arr[arr.length - 1].date === sessionDate(p)) arr.pop();
   }
   /** Newest history entry for a lift, or null. */
   function lastEntry(p, d, i) {
@@ -668,7 +668,7 @@
         if (p.liftHistory.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
           var arr = p.liftHistory[k];
           if (!Array.isArray(arr)) continue;
-          while (arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
+          while (arr.length && arr[arr.length - 1].date === sessionDate(p)) arr.pop();
         }
       }
     }
@@ -679,6 +679,13 @@
   function dateKey(dt) {
     dt = dt || new Date();
     return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+  }
+
+  /* the date the live workout belongs to: a session that crosses midnight
+     keeps banking into the day it started, so its lifts never split across
+     two dates (the week strip, CSV, PR dates and undo all key off this).    */
+  function sessionDate(p) {
+    return p && isObj(p.active) && validDate(p.active.date) ? p.active.date : dateKey();
   }
 
   return {
@@ -698,6 +705,6 @@
     markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue,
     mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
     todayDay: todayDay, actualDay: actualDay, daysUntil: daysUntil, validDay: validDay, validDate: validDate,
-    dateKey: dateKey
+    dateKey: dateKey, sessionDate: sessionDate
   };
 });

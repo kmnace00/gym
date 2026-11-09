@@ -37,7 +37,7 @@
       if (s.sets[j].reps >= e.top && s.sets[j].rir >= e.rir) hit = true;
     }
     Gym.upsertHistory(payload, d, i, {
-      date: Gym.dateKey(), load: top.load, reps: top.reps, rir: top.rir,
+      date: Gym.sessionDate(payload), load: top.load, reps: top.reps, rir: top.rir,
       hitTop: hit, setsDone: s.sets.length,
       sets: s.sets.map(function (x) { return { load: x.load, reps: x.reps, rir: x.rir }; }),
       bw: !!e.bw, exId: e.id
@@ -660,7 +660,7 @@
     if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
     if (wasComplete && s.done < ex().s) {
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
-      if (arr && arr.length && arr[arr.length - 1].date === Gym.dateKey()) arr.pop();
+      if (arr && arr.length && arr[arr.length - 1].date === Gym.sessionDate(payload)) arr.pop();
     }
     stopInterval();
     hintText = ""; hintGood = false;
@@ -1203,14 +1203,14 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        Gym.snapshot(payload, "pre-restore");
+        var snapOk = Gym.snapshot(payload, "pre-restore");
         payload = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg("Backup restored — current data replaced ✓");
+        setMsg("Backup restored — current data replaced ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
       } catch (e) { setMsg("Restore failed — not a Gym backup"); }
     };
     reader.readAsText(f);
@@ -1274,13 +1274,15 @@
     }, 2600);
   }
   function doResetDay() {
-    Gym.snapshot(payload, "pre-reset-day");
-    Gym.resetDay(payload, cur); commit(); render(); updateFoot(); setMsg("Day reset — sets cleared.");
+    var snap = Gym.snapshot(payload, "pre-reset-day");
+    Gym.resetDay(payload, cur); commit(); render(); updateFoot();
+    setMsg(snap ? "Day reset — sets cleared." : "Day reset — no undo copy (storage full).");
   }
   function doClearAll() {
-    Gym.snapshot(payload, "pre-clear");
+    var snap = Gym.snapshot(payload, "pre-clear");
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
-    clearUndo(); resetEdit(); commit(); render(); updateFoot(); setMsg("All training data cleared.");
+    clearUndo(); resetEdit(); commit(); render(); updateFoot();
+    setMsg(snap ? "All training data cleared." : "All training data cleared — no undo copy (storage full).");
   }
   document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
@@ -1304,14 +1306,14 @@
     if (!snap || !snap.payload) { setMsg("No snapshot saved yet."); return; }
     var restored = Gym.migrate(JSON.stringify(snap.payload));
     if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
-    Gym.snapshot(payload, "pre-snapshot-restore");
+    var snapOk = Gym.snapshot(payload, "pre-snapshot-restore");
     payload = Gym.reconcile(restored, DAYS);
     cur = payload.cur; idx = payload.idx;
     if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
     clearUndo(); resetEdit(); view = "day";
     commit(); render(); updateFoot();
-    setMsg("Snapshot restored ✓");
+    setMsg(snapOk ? "Snapshot restored ✓" : "Snapshot restored ✓ — no undo copy (storage full)");
   };
 
   /* corrupt payload → offer the quarantined bytes; failed save → export now */

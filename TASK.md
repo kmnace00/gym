@@ -4,7 +4,7 @@
 
 Status: ACTIVE — continuous loop. Six T1s shipped since L9 (weekStatus, set-edit clobber + undo sibling, derived counts/This-week, rest Finish finalizes the session, extra-set cap + 3 e2e gaps). Next: awaiting planning pass 4 from Pro.
 
-WIP: none claimed
+WIP: OpenCode editing store.js, app.js, test/store.test.js, e2e/pass3.spec.js since 2026-11-09 07:12 CT
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
