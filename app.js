@@ -521,7 +521,7 @@
       else if (e.type === "vibrate") { if (navigator.vibrate) navigator.vibrate(e.ms); }
       else if (e.type === "notify") notifyRestDone();
       else if (e.type === "advanceTo") { idx = e.idx; hintText = ""; hintGood = false; }
-      else if (e.type === "finishWorkout") { clearUndo(); if (sInt) { pauseSession(); sAutoStopped = true; } }
+      else if (e.type === "finishWorkout") { clearUndo(); finishWorkout(); }
       else if (e.type === "commit") commit();
       else if (e.type === "render") render();
       else if (e.type === "scheduleFinishReset") {
@@ -671,7 +671,7 @@
   undoSetBtn.onclick = undoSet;
 
   /* ── session timer — derived from the persisted active session clock ───── */
-  var sInt = null, sAutoStopped = false;
+  var sInt = null;
   function sessionSecs() { return Gym.sessionElapsedSec(payload); }
   function tickSession() {
     var secs = sessionSecs();
@@ -693,7 +693,6 @@
   }
   function startSessionTimer() {
     if (sInt) return;
-    sAutoStopped = false;
     Gym.startSessionClock(payload);
     sInt = setInterval(tickSession, 500);
     renderSessionPill();
@@ -709,7 +708,7 @@
     commit();
   }
   sessBtn.onclick = function () {
-    if (sInt) { pauseSession(); sAutoStopped = false; return; }
+    if (sInt) { pauseSession(); return; }
     startSessionTimer();
   };
 
@@ -1088,7 +1087,7 @@
     b.onclick = function () {
       cur = b.getAttribute("data-day");
       idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
-      resetEdit(); clearUndo(); sAutoStopped = false;
+      resetEdit(); clearUndo();
       var open = firstOpenLift(cur, payload.state, 0);
       idx = open >= 0 ? open : 0;
       commit(); render();

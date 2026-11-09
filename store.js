@@ -616,10 +616,12 @@
       newHist[target] = (newHist[target] || []).concat(arr);
     }
     for (k in newHist) if (Object.prototype.hasOwnProperty.call(newHist, k)) {
-      var seen = {};
+      var seen = Object.create(null);
       newHist[k].forEach(function (en) {
         if (!en) return;
-        seen[en.date || (en.load + ":" + en.reps + ":" + en.rir + ":" + en.setsDone)] = en;
+        var dk = en.date || (en.load + ":" + en.reps + ":" + en.rir + ":" + en.setsDone);
+        if (unsafeKey(dk)) return;
+        seen[dk] = en;
       });
       var merged = Object.keys(seen).map(function (dk) { return seen[dk]; });
       merged.sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
