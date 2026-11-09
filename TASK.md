@@ -8,7 +8,7 @@ WIP: none claimed
 
 ## Completed — set log sizing (Nov 9, Khang: "Not quite fixed") [T1]
 
-`.setrow` is a fixed 44 px (the L4 tap-target floor) at both viewports instead of 56/64, gap 6 px, and `.setlog` hugs its rows (`flex:0 1 auto`) so the section no longer keeps the leftover height as dead space — 144 px for 3 sets, down from 180 px at 390×667 and 208 px at 390×844. Short-phone `max-height:56px` + negative-margin override removed. 1 new e2e (rows 44–46 px, log ≤ 3×46 + gaps) at both viewports. SW `gym-v36`. Verified 154/154 unit, typecheck clean, 65/65 e2e.
+`.setrow` is a fixed 44 px (the L4 tap-target floor) at both viewports instead of 56/64, gap 6 px, and `.setlog` hugs its rows (`flex:0 1 auto`) so the section no longer keeps the leftover height as dead space — 144 px for 3 sets, down from 180 px at 390×667 and 208 px at 390×844. Short-phone `max-height:56px` + negative-margin override removed. The 44 px Undo/Restart pills (`margin:-7px 0`) were 1 px inside the first row; `.sethead` bottom margin 8→16 px (6→14 px short) gives 9/7 px clearance. 1 new e2e (rows 44–46 px, log ≤ 3×46 + gaps, `rowTop - pillBottom ≥ 4`) at both viewports. SW `gym-v37`. Verified 154/154 unit, typecheck clean, 65/65 e2e.
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 

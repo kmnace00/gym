@@ -113,7 +113,7 @@ h1{
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
 .tempo{flex:none;font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:4px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
-.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px}
+.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 16px}
 .seth{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .setacts{display:flex;gap:6px}
 .resetlift{flex:none;height:44px;margin:-7px 0;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
@@ -284,7 +284,7 @@ h1{
   .pres .small{font-size:12.5px;margin-top:2px}
   .cue{font-size:13.5px;line-height:1.4;margin-top:6px}
   .tempo{margin-top:3px}
-  .sethead{margin-top:8px;margin-bottom:6px}
+  .sethead{margin-top:8px;margin-bottom:14px}
   .adjust{padding-top:8px}
   .stepbtn{width:44px;height:44px;margin:-2px 0;font-size:20px}
   .rir{height:40px}

@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: SET-LOG SIZING FIX (OpenCode, Nov 9 11:26 CT) — Khang flagged the set section as still oversized after `gym-v31`; rows are now a fixed 44 px (tap-target floor, no 56/64 px growth), gap 6 px, and `.setlog` hugs its rows (144 px for 3 sets vs 180/208). 154/154 unit, typecheck clean, 65/65 e2e at 390×667/844, SW `gym-v36`.
+Status: SET-LOG SIZING FIX (OpenCode, Nov 9 11:34 CT) — Khang flagged the set section as still oversized after `gym-v31`; rows are now a fixed 44 px (tap-target floor, no 56/64 px growth), gap 6 px, `.setlog` hugs its rows (144 px for 3 sets vs 180/208), and the 44 px Undo/Restart pills clear the first row by 9/7 px (they were 1 px into it). 154/154 unit, typecheck clean, 65/65 e2e at 390×667/844, SW `gym-v37`.
 
 Previous: PIPELINE PASS 2 DONE (OpenCode, Nov 9 09:12 CT) — 154/154 unit, typecheck clean, 63/63 e2e at 390×667/844, SW `gym-v35`, CI green. P1 units on the lift screen (`a15af57`) + menu/summary reachability on short phones (`1b66b46`); P2 `Stats.progressSnapshot` (`976615d`); P3 shared session aggregate 4.6 → 3.4 ms (`4cf6e7a`); P4 midnight / off-day / summary journeys (`3815cbe`); P5 corrupt-date drop + dead-code cleanup (`4c8a977`). Batch 3 still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 alternate list).
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
