@@ -2,7 +2,7 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, index.html, sw.js since 2026-11-09 13:48 CT — B3-15 (no focus placement when moving day ↔ lift ↔ progress).
+WIP: OpenCode editing restctl.js, app.js, index.html, style.css, sw.js, e2e/journeys.spec.js since 2026-11-09 13:48 CT — B3-16 (elapsed time on the rest screen).
 
 ## Completed — B3-14: RIR buttons expose no selected state to a screen reader [T1]
 
