@@ -98,6 +98,8 @@ test("the This-week counter uses the Fri–Sun block, not a rolling 7 days", asy
   page.on("pageerror", (e) => errors.push(String(e)));
 
   await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  // Fri is a *complete* block (all 8 lifts logged on 2026-11-06) so weekStatus
+  // marks it "done"; Sat/Sun activity is dated outside the Fri–Sun block.
   await seed(page, {
     v: 3, cur: "fri", idx: 0, state: {}, bodyweight: 75, sessionLog: [],
     liftHistory: {
@@ -105,6 +107,13 @@ test("the This-week counter uses the Fri–Sun block, not a rolling 7 days", asy
         { date: "2026-10-31", load: 50, reps: 6, rir: 2, setsDone: 3 },
         { date: "2026-11-06", load: 50, reps: 6, rir: 2, setsDone: 3 }
       ],
+      "fri:1": [{ date: "2026-11-06", load: 45, reps: 6, rir: 2, setsDone: 3 }],
+      "fri:2": [{ date: "2026-11-06", load: 40, reps: 8, rir: 2, setsDone: 3 }],
+      "fri:3": [{ date: "2026-11-06", load: 35, reps: 10, rir: 2, setsDone: 3 }],
+      "fri:4": [{ date: "2026-11-06", load: 30, reps: 10, rir: 2, setsDone: 3 }],
+      "fri:5": [{ date: "2026-11-06", load: 25, reps: 12, rir: 2, setsDone: 3 }],
+      "fri:6": [{ date: "2026-11-06", load: 20, reps: 12, rir: 2, setsDone: 3 }],
+      "fri:7": [{ date: "2026-11-06", load: 15, reps: 12, rir: 2, setsDone: 3 }],
       "sat:0": [{ date: "2026-11-01", load: 60, reps: 6, rir: 2, setsDone: 3 }],
       "sun:0": [{ date: "2026-10-31", load: 40, reps: 8, rir: 2, setsDone: 3 }]
     }
