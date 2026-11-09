@@ -36,6 +36,7 @@ test("the plan line clears as soon as the first set is logged (B3-25)", async ({
 
   await page.locator(".liftrow").first().click();
   await page.locator("#doneBtn").click();
+  await page.locator("#detailsBtn").click(); // rest screen → show the workout
   await page.locator("#backBtn").click();
   await expect(page.locator("#daySummary")).not.toContainText("Planned");
   await expect(page.locator("#daySummary")).toContainText("left");

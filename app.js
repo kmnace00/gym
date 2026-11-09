@@ -394,7 +394,7 @@
       "<span class='big'><b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig + "</span>"
       + "<span class='small'>" + rirTxt + " · Rest " + fmt(effRest) + "</span>";
     document.getElementById("exCue").textContent = e.cue;
-    document.getElementById("tempoLine").style.display = idx === 0 ? "" : "none";
+    document.getElementById("tempoLine").style.display = ""; // the cue is the same for every lift
 
     var complete = s.done >= e.s;
     renderSetLog(e, s);

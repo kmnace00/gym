@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: RUNNING (OpenCode, Nov 9 15:40 CT) — Batch 3 B3-01…B3-24 are built and gated (B3-24 docs pending the next sync tick); **B3-25 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING (OpenCode, Nov 9 15:55 CT) — Batch 3 B3-01…B3-25 are built and gated (B3-25 docs pending the next sync tick); **B3-26 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
@@ -18,6 +18,7 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B3-22 `replaceBtn` uses the shared `twoTap()` arm (ad-hoc timer deleted) — 160/160 unit, 81/81 e2e, SW `gym-v58`.
 - B3-23 SW update check on visibilitychange (throttled 10 min) — 160/160 unit, 82/82 e2e, SW `gym-v59`.
 - B3-24 week strip cells and the heat card now name their states for screen readers — 160/160 unit, 83/83 e2e, SW `gym-v60`.
+- B3-25 the "Planned …" line clears on the first logged set — 160/160 unit, 84/84 e2e, SW `gym-v61`.
 
 Note: gym-sync batches whatever is dirty at its ~3-minute tick, so two items can share one commit; every item was gated before the next started.
 

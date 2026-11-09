@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, docs since 2026-11-09 15:40 CT — B3-25 ("Planned +2" clears when the workout starts).
+WIP: OpenCode editing app.js, docs since 2026-11-09 15:55 CT — B3-26 (tempo line on every lift).
+
+## Completed — B3-25: "Planned +2" stays in the day summary after the workout starts [T1]
+- Built Nov 9 (OpenCode). `renderDay` only appends `planMsg` while no sets are logged. SW `gym-v61`. 160/160 unit, typecheck clean, 84/84 e2e.
 
 ## Completed — B3-24: Week strip and heatmap states are invisible to screen readers [T1]
 - Built Nov 9 (OpenCode). Each `.wk` cell got an `aria-label` naming its state and its mark is `aria-hidden`; the heat card gained a `.sr-only` summary ("N of 24 training days in the last 8 weeks"). SW `gym-v60`. 160/160 unit, typecheck clean, 83/83 e2e.
