@@ -115,3 +115,63 @@ test("toCsv escapes formula-leading cells", () => {
   const csv = S.toCsv({ liftHistory: { "fri:0": [{ date: "2026-11-08", sets: [{ load: 0, reps: 1, rir: 0 }] }] } }, { fri: { ex: [{ n: "=cmd" }] } });
   assert.ok(csv.indexOf("'=cmd") !== -1);
 });
+
+test("sessionDrift needs three completed sessions before it reports", () => {
+  assert.deepEqual(S.sessionDrift({}, "fri", 60), { n: 0, insufficient: true });
+  assert.deepEqual(S.sessionDrift({ sessionLog: [{ day: "fri", status: "complete", durationSec: 3600 }] }, "fri", 60), { n: 1, insufficient: true });
+  assert.deepEqual(S.sessionDrift({ sessionLog: [
+    { day: "fri", status: "complete", durationSec: 3600 },
+    { day: "fri", status: "complete", durationSec: 4200 }
+  ] }, "fri", 60), { n: 2, insufficient: true });
+});
+
+test("sessionDrift compares the median actual session to the day estimate", () => {
+  const r = S.sessionDrift({ sessionLog: [
+    { day: "fri", status: "complete", durationSec: 3600 },
+    { day: "fri", status: "complete", durationSec: 4200 },
+    { day: "fri", status: "complete", durationSec: 4800 }
+  ] }, "fri", 60);
+  assert.equal(r.n, 3);
+  assert.equal(r.estimateMin, 60);
+  assert.equal(r.medianActualMin, 70);
+  assert.equal(r.driftPct, 16.7);
+});
+
+test("sessionDrift takes the middle two for an even count", () => {
+  const r = S.sessionDrift({ sessionLog: [
+    { day: "fri", status: "complete", durationSec: 4800 },
+    { day: "fri", status: "complete", durationSec: 3000 },
+    { day: "fri", status: "complete", durationSec: 4200 },
+    { day: "fri", status: "complete", durationSec: 3600 }
+  ] }, "fri", 60);
+  assert.equal(r.n, 4);
+  assert.equal(r.medianActualMin, 65);
+  assert.equal(r.driftPct, 8.3);
+});
+
+test("sessionDrift ignores incomplete, zero-length and other-day sessions", () => {
+  const r = S.sessionDrift({ sessionLog: [
+    { day: "fri", status: "complete", durationSec: 3600 },
+    { day: "fri", status: "active", durationSec: 5000 },
+    { day: "fri", status: "complete", durationSec: 0 },
+    { day: "fri", status: "complete" },
+    { day: "sat", status: "complete", durationSec: 4000 },
+    { day: "fri", status: "complete", durationSec: 4200 },
+    { day: "fri", status: "complete", durationSec: 3900 }
+  ] }, "fri", 65);
+  assert.equal(r.n, 3);
+  assert.equal(r.medianActualMin, 65);
+  assert.equal(r.driftPct, 0);
+});
+
+test("sessionDrift works with the real program estimate", () => {
+  const r = S.sessionDrift({ sessionLog: [
+    { day: "fri", status: "complete", durationSec: 4000 },
+    { day: "fri", status: "complete", durationSec: 4400 },
+    { day: "fri", status: "complete", durationSec: 4800 }
+  ] }, "fri", P.dayMins);
+  assert.equal(r.n, 3);
+  assert.equal(r.estimateMin, 74);        // 74-min model for Friday
+  assert.equal(r.medianActualMin, 73.3);
+  assert.equal(r.driftPct, -0.9);
+});

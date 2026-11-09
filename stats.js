@@ -351,6 +351,42 @@
     return out;
   }
 
+  /**
+   * Estimate vs actual session length for one day, from the finished-session
+   * log. The estimate comes from the program model (`Gym.dayMins(day)`) and is
+   * passed in so this module stays free of program data — the same pattern as
+   * `personalRecords(payload, DAYS, metric)`. Deterministic: no clock, no DOM.
+   * @param {any} payload
+   * @param {string} day
+   * @param {number|((d:string)=>number)} estimate day-length model in minutes
+   * @returns {{n:number, insufficient:true} | {n:number, estimateMin:number, medianActualMin:number, driftPct:number}}
+   */
+  function sessionDrift(payload, day, estimate) {
+    var log = (payload && payload.sessionLog) || [];
+    var durs = [], i, s, est, mid, medianSec, medianMin;
+    for (i = 0; i < log.length; i++) {
+      s = log[i];
+      if (!s || s.day !== day || s.status !== "complete") continue;
+      if (typeof s.durationSec !== "number" || !isFinite(s.durationSec) || s.durationSec <= 0) continue;
+      durs.push(s.durationSec);
+    }
+    if (durs.length < 3) return { n: durs.length, insufficient: true };
+
+    est = typeof estimate === "function" ? estimate(day) : estimate;
+    if (typeof est !== "number" || !isFinite(est) || est <= 0) est = 0;
+
+    durs.sort(function (a, b) { return a - b; });
+    mid = Math.floor(durs.length / 2);
+    medianSec = durs.length % 2 ? durs[mid] : (durs[mid - 1] + durs[mid]) / 2;
+    medianMin = Math.round((medianSec / 60) * 10) / 10;
+    return {
+      n: durs.length,
+      estimateMin: est,
+      medianActualMin: medianMin,
+      driftPct: est > 0 ? Math.round(((medianMin - est) / est) * 1000) / 10 : 0
+    };
+  }
+
   return {
     historyKeys: historyKeys, sessionCount: sessionCount, setsLogged: setsLogged,
     setsRecorded: setsRecorded, entrySets: entrySets,
@@ -358,6 +394,6 @@
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
-    trainingDays: trainingDays, toCsv: toCsv
+    trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift
   };
 });
