@@ -79,6 +79,10 @@
   function unsafeKey(k) {
     return k === "__proto__" || k === "constructor" || k === "prototype";
   }
+  /* a record / entry / session must be a real object: null, arrays, strings
+     and numbers are not data the app can read, so they are dropped at the
+     boundary instead of reaching a consumer that dereferences them.          */
+  function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
   function stripUnsafeKeys(obj) {
     if (!obj || typeof obj !== "object") return obj;
     var keys = Object.keys(obj), i;
@@ -139,35 +143,53 @@
     s.accSec = typeof s.accSec === "number" && isFinite(s.accSec) && s.accSec > 0 ? s.accSec : 0;
     s.runningSince = typeof s.runningSince === "number" && isFinite(s.runningSince) ? s.runningSince : null;
     coerceNum(s, "durationSec");
-    if (!s.lifts || typeof s.lifts !== "object") s.lifts = {};
+    if (!isObj(s.lifts)) s.lifts = {};
     stripUnsafeKeys(s.lifts);
-    for (var k in s.lifts) if (own(s.lifts, k)) sanitizeRecord(s.lifts[k]);
+    for (var k in s.lifts) if (own(s.lifts, k)) {
+      if (!isObj(s.lifts[k])) delete s.lifts[k];
+      else sanitizeRecord(s.lifts[k]);
+    }
     return s;
   }
   function sanitizePayload(p) {
     var k, i;
     stripUnsafeKeys(p.state);
     stripUnsafeKeys(p.liftHistory);
-    for (k in p.state) if (own(p.state, k)) sanitizeRecord(p.state[k]);
+    for (k in p.state) if (own(p.state, k)) {
+      /* a null / non-object record is dropped, so getLift() injects defaults
+         on the next read exactly as it would for a lift never touched.       */
+      if (!isObj(p.state[k])) delete p.state[k];
+      else sanitizeRecord(p.state[k]);
+    }
     for (k in p.liftHistory) if (own(p.liftHistory, k)) {
       if (!Array.isArray(p.liftHistory[k])) p.liftHistory[k] = [];
-      for (i = 0; i < p.liftHistory[k].length; i++) sanitizeEntry(p.liftHistory[k][i]);
+      for (i = 0; i < p.liftHistory[k].length; i++) {
+        if (!isObj(p.liftHistory[k][i])) p.liftHistory[k][i] = null;
+        else sanitizeEntry(p.liftHistory[k][i]);
+      }
+      p.liftHistory[k] = p.liftHistory[k].filter(function (e) { return e !== null; });
     }
-    if (Array.isArray(p.sessionLog)) for (i = 0; i < p.sessionLog.length; i++) sanitizeSession(p.sessionLog[i]);
-    sanitizeSession(p.active);
+    if (Array.isArray(p.sessionLog)) {
+      for (i = 0; i < p.sessionLog.length; i++) {
+        if (!isObj(p.sessionLog[i])) p.sessionLog[i] = null;
+        else sanitizeSession(p.sessionLog[i]);
+      }
+      p.sessionLog = p.sessionLog.filter(function (s) { return s !== null; });
+    }
+    if (isObj(p.active)) sanitizeSession(p.active);
     return p;
   }
 
   function normalize(p) {
-    if (!p.state || typeof p.state !== "object") p.state = {};
-    if (!p.liftHistory || typeof p.liftHistory !== "object") p.liftHistory = {};
+    if (!isObj(p.state)) p.state = {};
+    if (!isObj(p.liftHistory)) p.liftHistory = {};
     stripUnsafeKeys(p.state);
     stripUnsafeKeys(p.liftHistory);
     if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
     p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 ? p.bodyweight : 75;
-    if (!p.active || typeof p.active !== "object") p.active = emptySession(p.cur);
+    if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];
     while (p.sessionLog.length > SESSION_MAX) p.sessionLog.shift();
@@ -197,13 +219,13 @@
     var out = {
       v: CURRENT,
       cur: p.cur || "fri", idx: typeof p.idx === "number" ? p.idx : 0,
-      state: p.state && typeof p.state === "object" ? p.state : {},
-      liftHistory: p.liftHistory && typeof p.liftHistory === "object" ? p.liftHistory : {},
+      state: isObj(p.state) ? p.state : {},
+      liftHistory: isObj(p.liftHistory) ? p.liftHistory : {},
       lastBackup: typeof p.lastBackup === "string" ? p.lastBackup : null,
       sessionLog: [], bodyweight: 75
     };
     var anyDone = false, k;
-    for (k in out.state) if (Object.prototype.hasOwnProperty.call(out.state, k) && (out.state[k].done || 0) > 0) anyDone = true;
+    for (k in out.state) if (Object.prototype.hasOwnProperty.call(out.state, k) && isObj(out.state[k]) && (out.state[k].done || 0) > 0) anyDone = true;
     var latest = latestHistory(out);
     var date = anyDone && latest ? latest.date : dateKey();
     var day = anyDone && latest && validDay(latest.day) ? latest.day : (out.cur || "fri");
@@ -405,7 +427,7 @@
   function hasData(p) {
     var lh = (p && p.liftHistory) || {}, st = (p && p.state) || {}, k;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k) && lh[k] && lh[k].length) return true;
-    for (k in st) if (Object.prototype.hasOwnProperty.call(st, k) && (st[k].done || 0) > 0) return true;
+    for (k in st) if (Object.prototype.hasOwnProperty.call(st, k) && isObj(st[k]) && (st[k].done || 0) > 0) return true;
     return false;
   }
   /** Record that a full export happened today. */
@@ -429,21 +451,22 @@
   /* ── merge-on-import: union history by date, keep the fuller state record ── */
   function mergePayload(base, incoming) {
     var out = JSON.parse(JSON.stringify(base || emptyPayload()));
-    out.state = out.state && typeof out.state === "object" ? out.state : {};
-    out.liftHistory = out.liftHistory && typeof out.liftHistory === "object" ? out.liftHistory : {};
+    out.state = isObj(out.state) ? out.state : {};
+    out.liftHistory = isObj(out.liftHistory) ? out.liftHistory : {};
     out.sessionLog = Array.isArray(out.sessionLog) ? out.sessionLog : [];
     stripUnsafeKeys(out.state);
     stripUnsafeKeys(out.liftHistory);
 
-    var incState = (incoming && incoming.state) || {}, k;
+    var incState = isObj(incoming && incoming.state) ? incoming.state : {}, k;
     for (k in incState) if (own(incState, k) && !unsafeKey(k)) {
       var mine = own(out.state, k) ? out.state[k] : null, theirs = incState[k];
+      if (!isObj(theirs)) continue;            // a null record carries nothing
       if (!mine || (typeof theirs.done === "number" && theirs.done > (mine.done || 0))) {
         out.state[k] = JSON.parse(JSON.stringify(theirs));
       }
     }
 
-    var incHist = (incoming && incoming.liftHistory) || {}, k2;
+    var incHist = isObj(incoming && incoming.liftHistory) ? incoming.liftHistory : {}, k2;
     for (k2 in incHist) if (own(incHist, k2) && !unsafeKey(k2)) {
       var seen = Object.create(null);
       var existing = own(out.liftHistory, k2) && Array.isArray(out.liftHistory[k2]) ? out.liftHistory[k2] : [];
@@ -465,7 +488,7 @@
     /* session log: union by id, keep the longer duration */
     var byId = Object.create(null);
     out.sessionLog.concat(Array.isArray(incoming && incoming.sessionLog) ? incoming.sessionLog : []).forEach(function (s) {
-      if (!s || typeof s !== "object") return;
+      if (!isObj(s)) return;
       var id = s.id || (s.date + ":" + s.day);
       if (unsafeKey(id)) return;
       if (!byId[id] || (s.durationSec || 0) > (byId[id].durationSec || 0)) byId[id] = s;
@@ -505,8 +528,8 @@
       list = DAYS[d].ex;
       for (i = 0; i < list.length; i++) { e = list[i]; if (e && e.id) idKey[e.id] = d + ":" + i; }
     }
-    p.state = p.state && typeof p.state === "object" ? p.state : {};
-    p.liftHistory = p.liftHistory && typeof p.liftHistory === "object" ? p.liftHistory : {};
+    p.state = isObj(p.state) ? p.state : {};
+    p.liftHistory = isObj(p.liftHistory) ? p.liftHistory : {};
 
     var newState = {};
     for (k in p.state) if (Object.prototype.hasOwnProperty.call(p.state, k)) {
@@ -568,7 +591,9 @@
     if (p.state) {
       for (k in p.state) {
         if (p.state.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
-          p.state[k].done = 0; p.state[k].topHits = 0; p.state[k].lastRir = null; p.state[k].sets = [];
+          var rec = p.state[k];
+          if (!rec) continue;                   // null record: nothing to clear
+          rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = [];
         }
       }
     }
@@ -576,6 +601,7 @@
       for (k in p.liftHistory) {
         if (p.liftHistory.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
           var arr = p.liftHistory[k];
+          if (!Array.isArray(arr)) continue;
           while (arr.length && arr[arr.length - 1].date === dateKey()) arr.pop();
         }
       }

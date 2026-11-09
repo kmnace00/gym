@@ -4,6 +4,8 @@
 
 Status: ACTIVE — Batch 2, B1 (null / non-object records). Base HEAD: `b7d61f0`.
 
+WIP: OpenCode editing store.js, test/store.test.js, sw.js since 2026-11-08 21:02 CT
+
 ## Active — B1: Null / non-object records: sanitize at the boundary, guard every consumer [T1]
 
 Why: a corrupt or hostile backup with a null record must never crash the
