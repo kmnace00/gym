@@ -2,7 +2,9 @@
 
 ## WIP
 
-Status: DONE — L9 built and gated Nov 9, 06:12 CT (145/145 unit, typecheck clean, 48/48 e2e at 390×667/844, SW `gym-v20`). No WIP; nothing claimed.
+Status: ACTIVE — continuous loop, L9 done. Taking T1 items from BACKLOG/QUEUE while Batch 3's T2s wait on research/Khang. Next: `weekStatus` coupling.
+
+WIP: OpenCode editing stats.js, app.js, test/stats.test.js since 2026-11-09 06:15 CT
 
 ## Completed — L9: Full rest-controller extraction [T2, approved]
 
