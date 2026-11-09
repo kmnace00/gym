@@ -36,6 +36,7 @@ test("a session that crosses midnight banks its sets on the start date", async (
 
   // B3-11: the finish summary must count PRs against the session date, not the
   // wall clock. Finish the rest of Friday after midnight and check the PRs.
+  await page.locator("#skipRest").click(); // end the rest after lift 1 completes
   for (let lift = 1; lift < 8; lift++) {
     for (let set = 0; set < 3; set++) {
       await page.locator("#doneBtn").click();
