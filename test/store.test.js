@@ -405,3 +405,58 @@ test("null records never make backupDue or hasData crash", () => {
   assert.equal(S.backupDue(p), false);
   assert.equal(S.activeHasData(p), false);
 });
+
+/* ── B2: nested unsafe keys ──────────────────────────────────────────────────
+   L5 stripped `__proto__` / `constructor` / `prototype` from the top-level
+   maps; the keys inside a record, a history entry, a session or a set are
+   stripped here. A record left with nothing but the unsafe keys still parses
+   as a valid (empty) record — the lift is not dropped.                       */
+const NESTED_PROTO_RAW = '{"v":3,"cur":"fri","idx":0,"state":{"fri:0":{"done":3,"__proto__":{"evil":1}},"fri:1":{"__proto__":{"evil2":1}}},"liftHistory":{"fri:0":[{"date":"2026-11-08","load":50,"reps":6,"rir":2,"setsDone":3,"prototype":{"evil3":1}}]},"sessionLog":[{"id":"s1","date":"2026-11-08","day":"fri","status":"complete","durationSec":600,"constructor":{"evil4":1},"lifts":{"fri:0":{"done":2,"__proto__":{"evil5":1},"sets":[{"load":50,"reps":6,"rir":2,"__proto__":{"evil6":1}}]}}}]}';
+
+test("nested __proto__ inside a state record is stripped, the record survives", () => {
+  const p = S.importRaw(NESTED_PROTO_RAW);
+  const rec = p.state["fri:0"];
+  assert.ok(rec && typeof rec === "object");
+  assert.ok(!Object.hasOwn(rec, "__proto__"));
+  assert.equal(rec.done, 3);
+  assert.equal(Object.prototype.evil, undefined);
+  assert.ok(!Object.hasOwn(Object.prototype, "evil"));
+
+  const onlyUnsafe = p.state["fri:1"];
+  assert.ok(onlyUnsafe && typeof onlyUnsafe === "object");
+  assert.ok(!Object.hasOwn(onlyUnsafe, "__proto__"));
+  const e = P.DAYS.fri.ex[1];
+  const filled = P.getLift(p.state, "fri", 1, e);
+  assert.equal(filled.done, 0);
+  assert.equal(filled.load, e.load);
+  assert.equal(Object.prototype.evil2, undefined);
+});
+
+test("nested unsafe keys are stripped from history entries, sessions, session lifts and sets", () => {
+  const p = S.importRaw(NESTED_PROTO_RAW);
+  const entry = p.liftHistory["fri:0"][0];
+  assert.ok(!Object.hasOwn(entry, "prototype"));
+  assert.equal(Object.prototype.evil3, undefined);
+
+  const session = p.sessionLog[0];
+  assert.ok(!Object.hasOwn(session, "constructor"));
+  assert.equal(Object.prototype.evil4, undefined);
+  assert.ok(!Object.hasOwn(session.lifts["fri:0"], "__proto__"));
+  assert.equal(session.lifts["fri:0"].done, 2);
+  assert.equal(Object.prototype.evil5, undefined);
+  assert.ok(!Object.hasOwn(session.lifts["fri:0"].sets[0], "__proto__"));
+  assert.equal(Object.prototype.evil6, undefined);
+});
+
+test("importMerge strips nested unsafe keys without changing the merge winner rule", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 1, load: 50, reps: 6, rir: 2 };
+  const merged = S.importMerge(base, NESTED_PROTO_RAW);
+  assert.equal(merged.state["fri:0"].done, 3);   // fuller incoming record still wins
+  assert.ok(!Object.hasOwn(merged.state["fri:0"], "__proto__"));
+  assert.equal(Object.prototype.evil, undefined);
+  assert.equal(merged.liftHistory["fri:0"].length, 1);
+  assert.ok(!Object.hasOwn(merged.liftHistory["fri:0"][0], "prototype"));
+  assert.equal(merged.sessionLog.length, 1);
+  assert.ok(!Object.hasOwn(merged.sessionLog[0], "constructor"));
+});
