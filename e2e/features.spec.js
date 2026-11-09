@@ -220,6 +220,9 @@ test("bodyweight changes the bodyweight-lift tonnage", async ({ page }) => {
     await page.locator("#doneBtn").click();
     await page.locator("#skipRest").click();
   }
+  // the dip is the last lift of the day, so we are resting: peek the workout
+  // so the header (and therefore the menu) is reachable.
+  await page.locator("#detailsBtn").click();
 
   await page.locator("#menuBtn").click();
   await page.locator("#bwInput").fill("100");

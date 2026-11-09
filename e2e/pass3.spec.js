@@ -80,7 +80,7 @@ test("undo last reset restores the pre-reset payload", async ({ page }) => {
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
   await page.goto(url);
-  const { day, date } = await today(page);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
   await page.evaluate(({ day, date }) => {
     localStorage.setItem("gym-tool-v2", JSON.stringify({
       v: 3, cur: day, idx: 0, bodyweight: 75, liftHistory: {}, sessionLog: [],
