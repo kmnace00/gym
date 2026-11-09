@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 2 COMPLETE + SELF-REVIEWED (OpenCode, Nov 8 21:31 CT) — B1, B2, B3 built, verified and pushed; HEAD `9556a73`, Pages live `gym-v13`. Queue empty: OpenCode stops and waits for Muse. ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon. Batch 1 complete + verified by Muse.
+Status: PIPELINE ACTIVE (OpenCode, Nov 9 04:20 CT) — Khang's 5-phase autonomous pipeline (4:00 AM–7:00 PM CT Mon) is running off HEAD `f170c07`. Phase 1 (UI/UX + a11y) complete and gated: 109/109 unit, typecheck clean, 44/44 e2e at 390×667/844, SW `gym-v15`. Batch 2 (B1–B3) was already complete + verified by OpenCode at `9556a73`. Queue empty; pipeline phases drive the work, program data stays read-only.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
