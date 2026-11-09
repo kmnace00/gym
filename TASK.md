@@ -2,7 +2,9 @@
 
 ## WIP
 
-Status: IDLE — Batch 2 complete (B1, B2, B3 built and verified). Queue empty; OpenCode stops and waits for Muse. Base HEAD for the batch: `b7d61f0`.
+Status: ACTIVE — autonomous 5-phase pipeline (Khang directive, Mon 4:00 AM–7:00 PM CT). Queue empty; phase work comes from the pipeline directive + BACKLOG. Base HEAD: `f170c07`.
+
+WIP: OpenCode editing store.js, test/store.test.js since 2026-11-09 04:10 CT
 
 ## Completed — B2: Nested unsafe keys inside records / entries / sessions [T1]
 
