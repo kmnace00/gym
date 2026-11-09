@@ -308,7 +308,7 @@ h1{
 .menubtn{flex:none;width:44px;height:44px;border-radius:999px;display:grid;place-items:center;font-size:20px;line-height:1;color:var(--muted)}
 .modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6)}
 .modal[hidden]{display:none}
-.modal-card{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.modal-card{width:100%;max-width:340px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .modalclose{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;color:var(--muted);font-size:16px}
 .modalbtn{min-height:46px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer}
@@ -507,7 +507,8 @@ h1{
 .summary{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.66)}
 .summary[hidden]{display:none}
 .summary-card{
-  width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);
+  width:100%;max-width:360px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;
+  background:var(--surface);border:1px solid var(--line);
   border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;
   box-shadow:0 12px 44px rgba(0,0,0,.55);
 }

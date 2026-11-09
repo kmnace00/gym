@@ -291,3 +291,24 @@ test("the summary traps focus and returns it on close", async ({ page }) => {
   expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("menuBtn");
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("the menu is reachable on a short phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 667 });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+
+  const card = await page.evaluate(() => {
+    const c = document.querySelector(".modal-card");
+    const r = c.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, inner: window.innerHeight, scrollH: c.scrollHeight, clientH: c.clientHeight };
+  });
+  expect(card.top >= 0 && card.bottom <= card.inner, "the menu card must not overflow the viewport").toBe(true);
+
+  await page.evaluate(() => { const c = document.querySelector(".modal-card"); c.scrollTop = c.scrollHeight; });
+  const clear = await page.evaluate(() => {
+    const e = document.getElementById("clearAll").getBoundingClientRect();
+    return { top: e.top, bottom: e.bottom, h: e.bottom - e.top, inner: window.innerHeight };
+  });
+  expect(clear.top >= 0 && clear.bottom <= clear.inner, "Clear all is reachable after scrolling").toBe(true);
+  expect(clear.h).toBeGreaterThanOrEqual(44);
+});
