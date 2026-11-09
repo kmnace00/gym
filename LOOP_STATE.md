@@ -1,7 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 COMPLETE — L1–L5 shipped; OpenCode is done and waits
-for Muse review.
+Status: BATCH 1 COMPLETE — VERIFIED BY MUSE Nov 8, 20:50 CT — L1–L5 shipped; OpenCode stopped, waits for Khang's next-batch call.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -147,3 +146,15 @@ Pass 4 build, same phone check:
 - 2026-11-08 20:05 CT: L2 pushed (`b6645ea` e2e cases, `78f319a`
   log/state), Pages live. L3 built (`Stats.sessionDrift` + 5 tests):
   93/93 unit, typecheck clean, 38/38 e2e, SW `gym-v9`.
+- 2026-11-08 20:50 CT: Muse reviewed Batch 1 at HEAD `b7d61f0`.
+  L5 verified independently: unit 96/96 (explicit glob), typecheck
+  clean, syntax + assets clean, program.js/app.js untouched,
+  Pages live at `gym-v11`. Prototype-pollution fix verified.
+  Follow-up found by Muse probing beyond L5 spec: null state
+  record crashes mergePayload (`theirs.done` on null), and nested
+  `__proto__` inside a record survives sanitizeRecord (inert now,
+  no Object.assign/spread on records). File as Batch 2 hardening,
+  not a Batch 1 reopen. Also: `npm run check` still fails on
+  Node 24 (`node --test test/` quirk) — CI uses Node 20, so CI
+  should pass; fix test script to `node --test test/*.test.js`.
+  Next batch is all T2 (L6–L9) — needs Muse design + Khang call.
