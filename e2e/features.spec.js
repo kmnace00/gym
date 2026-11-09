@@ -209,9 +209,11 @@ test("bodyweight history is frozen at the weight in force", async ({ page }) => 
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 
   await page.goto(url);
-  const idx = await page.evaluate(() => Gym.DAYS[Gym.todayDay()].ex.findIndex((e) => e.bw));
+  // deterministic day: the bodyweight lift is on Friday (not necessarily today)
+  await page.locator('.day[data-day="fri"]').click();
+  const idx = await page.evaluate(() => Gym.DAYS.fri.ex.findIndex((e) => e.bw));
   if (idx === -1) {
-    console.log("no bodyweight lift in today's program — test skipped");
+    console.log("no bodyweight lift in Friday's program — test skipped");
     return;
   }
 

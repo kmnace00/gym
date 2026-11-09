@@ -293,4 +293,12 @@ test("bodyweight history is valued at the weight in force", () => {
   const mv = S.topMovers(p, P.DAYS, P.progressMetric);
   assert.equal(mv.length, 1);
   assert.equal(mv[0].pct, 33.3); // 90 -> 120
+
+  /* the PR must come from the heavier session even when today is lighter:
+     both entries at the payload's 75 kg would tie at 90 */
+  const q = { bodyweight: 75, liftHistory: { [key]: [
+    { date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 100 },
+    { date: "2026-11-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 75 }
+  ] } };
+  assert.equal(S.personalRecords(q, P.DAYS, P.progressMetric)[0].metric, 120);
 });
