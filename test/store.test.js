@@ -14,6 +14,7 @@ function mockLS() {
 
 global.localStorage = mockLS();
 const S = require("../store.js");
+const P = require("../program.js");
 
 test.beforeEach(() => { global.localStorage.clear(); });
 
@@ -328,4 +329,79 @@ test("oversized imported history and session log are capped", () => {
   const merged = S.mergePayload(base, incoming);
   assert.ok(merged.liftHistory["fri:0"].length <= S.HISTORY_MAX);
   assert.ok(merged.sessionLog.length <= S.SESSION_MAX);
+});
+
+/* ── B1: null / non-object records ───────────────────────────────────────────
+   A corrupt backup can carry `null` where a record should be. Nothing that
+   dereferences a record may crash, and a dropped record must fall back to the
+   normal getLift() defaults rather than a made-up one.                       */
+const NULL_STATE_RAW = '{"v":3,"cur":"fri","idx":0,"state":{"fri:0":null,"fri:1":[],"fri:2":"nope"},"liftHistory":{"fri:0":[null,{"date":"2026-11-08","load":50,"reps":6,"rir":2,"setsDone":3}]},"sessionLog":[null],"active":null}';
+
+test("importRaw drops null / non-object state records instead of keeping them", () => {
+  const p = S.importRaw(NULL_STATE_RAW);
+  assert.ok(!Object.hasOwn(p.state, "fri:0"));
+  assert.ok(!Object.hasOwn(p.state, "fri:1"));
+  assert.ok(!Object.hasOwn(p.state, "fri:2"));
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(p.liftHistory["fri:0"][0].load, 50);
+  assert.equal(p.sessionLog.length, 0);
+  assert.ok(p.active && p.active.status === "active");
+  assert.equal(Object.prototype.evil, undefined);
+});
+
+test("a dropped state record reads back through getLift defaults, not a crash", () => {
+  const p = S.importRaw(NULL_STATE_RAW);
+  const e = P.DAYS.fri.ex[0];
+  const rec = P.getLift(p.state, "fri", 0, e);
+  assert.equal(rec.done, 0);
+  assert.equal(rec.load, e.load);
+  assert.equal(rec.reps, e.r);
+  assert.equal(rec.rir, e.rir);
+  assert.deepEqual(rec.sets, []);
+  assert.equal(p.state["fri:0"], rec); // the same default record the fresh app would create
+});
+
+test("importMerge with a null incoming record keeps the base record", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 1, load: 50, reps: 6, rir: 2 };
+  const merged = S.importMerge(base, '{"v":3,"cur":"fri","idx":0,"state":{"fri:0":null},"liftHistory":{},"sessionLog":[]}');
+  assert.equal(merged.state["fri:0"].done, 1);
+  assert.equal(merged.state["fri:0"].load, 50);
+  assert.equal(Object.prototype.done, undefined);
+});
+
+test("migrate v2 with a null state record does not crash", () => {
+  const p = S.migrate('{"v":2,"cur":"fri","idx":0,"state":{"fri:0":null,"sat:0":{"done":2}},"liftHistory":{}}');
+  assert.equal(p.v, 3);
+  assert.ok(!Object.hasOwn(p.state, "fri:0"));
+  assert.equal(p.state["sat:0"].done, 2);
+  assert.ok(p.active && p.active.status === "active");
+});
+
+test("resetDay with a null state record clears the rest without crashing", () => {
+  const p = S.emptyPayload();
+  p.state["fri:0"] = null;
+  p.state["fri:1"] = { done: 2, load: 40, reps: 6, rir: 2, sets: [{ load: 40, reps: 6, rir: 2 }] };
+  p.liftHistory["fri:0"] = null;
+  S.resetDay(p, "fri");
+  assert.ok(!p.state["fri:0"]);
+  assert.equal(p.state["fri:1"].done, 0);
+  assert.deepEqual(p.state["fri:1"].sets, []);
+  assert.equal(p.state["fri:1"].load, 40);
+});
+
+test("mergePayload drops null history entries and null session log entries", () => {
+  const base = S.emptyPayload();
+  const incoming = JSON.parse('{"v":3,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[null,{"date":"2026-11-08","load":50,"reps":6,"rir":2,"setsDone":3}]},"sessionLog":[null,{"id":"s1","date":"2026-11-08","day":"fri","status":"complete","durationSec":600,"lifts":{"fri:0":null}}]}');
+  const merged = S.mergePayload(base, incoming);
+  assert.equal(merged.liftHistory["fri:0"].length, 1);
+  assert.equal(merged.liftHistory["fri:0"][0].load, 50);
+  assert.equal(merged.sessionLog.length, 1);
+  assert.ok(!Object.hasOwn(merged.sessionLog[0].lifts, "fri:0"));
+});
+
+test("null records never make backupDue or hasData crash", () => {
+  const p = S.importRaw('{"v":3,"cur":"fri","idx":0,"state":{"fri:0":null},"liftHistory":{"fri:0":[null]},"sessionLog":[null]}');
+  assert.equal(S.backupDue(p), false);
+  assert.equal(S.activeHasData(p), false);
 });
