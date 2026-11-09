@@ -400,7 +400,7 @@
     document.getElementById("pDays").textContent = week + "/" + weekTotal;
     document.getElementById("pSub").textContent = workouts
       ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " kg · "
-        + week + "/3 this week"
+        + week + "/" + weekTotal + " this week"
       : "No workouts yet — open a lift to begin";
 
     var byDay = Stats.volumeByDay(payload, DAYS);
