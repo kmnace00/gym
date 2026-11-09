@@ -487,3 +487,108 @@ test("the richer record wins when both have the same done count", () => {
   assert.equal(merged.state["fri:0"].load, 85);
   assert.equal(merged.state["fri:0"].sets.length, 2);
 });
+
+test("validDay and validDate reject junk", () => {
+  assert.equal(S.validDay("fri"), true);
+  assert.equal(S.validDay("mon"), false);
+  assert.equal(S.validDay(null), false);
+  assert.equal(S.validDay(""), false);
+  assert.equal(S.validDate("2026-11-09"), true);
+  assert.equal(S.validDate("2026-11-9"), false);
+  assert.equal(S.validDate(20261109), false);
+  assert.equal(S.validDate(null), false);
+});
+
+test("daysUntil counts whole days to a training day and returns null for the rest", () => {
+  const g = new Date().getDay();
+  const target = { sun: 0, fri: 5, sat: 6 };
+  for (const d of ["sun", "fri", "sat"]) {
+    assert.equal(S.daysUntil(d), (target[d] - g + 7) % 7, `daysUntil(${d})`);
+  }
+  assert.equal(S.daysUntil("mon"), null);
+  assert.equal(S.daysUntil(undefined), null);
+});
+
+test("actualDay names a training day only on Fri/Sat/Sun", () => {
+  const g = new Date().getDay();
+  const expected = g === 5 ? "fri" : g === 6 ? "sat" : g === 0 ? "sun" : null;
+  assert.equal(S.actualDay(), expected);
+  assert.equal(S.validDay(S.todayDay()), true);
+});
+
+test("emptySession is a clean, valid active session", () => {
+  const s = S.emptySession("fri", "2026-11-09");
+  assert.ok(s.id.startsWith("ses"));
+  assert.equal(S.validDay(s.day), true);
+  assert.equal(S.validDate(s.date), true);
+  assert.equal(s.status, "active");
+  assert.equal(s.startedAt, null);
+  assert.equal(s.accSec, 0);
+  assert.equal(s.runningSince, null);
+});
+
+test("startSession resets set progress but keeps the working load", () => {
+  const payload = S.emptyPayload();
+  payload.state["fri:0"] = { done: 3, load: 62.5, reps: 6, rir: 2, topHits: 1, lastRir: 1,
+    sets: [{ load: 62.5, reps: 6, rir: 2 }] };
+  const a = S.startSession(payload, "sat", 1000);
+  assert.equal(a.day, "sat");
+  assert.equal(payload.cur, "sat");
+  assert.equal(payload.idx, 0);
+  assert.equal(payload.state["fri:0"].done, 0);
+  assert.equal(payload.state["fri:0"].load, 62.5);
+  assert.equal(payload.state["fri:0"].topHits, 0);
+  assert.equal(payload.state["fri:0"].lastRir, null);
+  assert.equal(payload.state["fri:0"].sets.length, 0);
+});
+
+test("the session clock accrues only while running", () => {
+  const p = S.emptyPayload();
+  S.startSessionClock(p, 1000);
+  assert.equal(S.sessionElapsedSec(p, 3000), 2);
+  S.pauseSessionClock(p, 5000);
+  assert.equal(S.sessionElapsedSec(p, 9000), 4);
+  S.startSessionClock(p, 10000);
+  assert.equal(p.active.runningSince, 10000);
+  assert.equal(S.sessionElapsedSec(p, 12000), 6);
+});
+
+test("finalizeSession logs the session and reopenSession re-arms the same id", () => {
+  const p = S.emptyPayload();
+  S.startSessionClock(p, 1000);
+  p.state["fri:0"] = { done: 3, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: 2,
+    sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 1 }] };
+  const entry = S.finalizeSession(p, 5000);
+  assert.equal(entry.durationSec, 4);
+  assert.equal(entry.status, "complete");
+  assert.equal(entry.lifts["fri:0"].done, 3);
+  assert.equal(entry.lifts["fri:0"].sets.length, 2);
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(p.active.status, "complete");
+  assert.equal(S.finalizeSession(S.emptyPayload(), 5000), null);
+  S.reopenSession(p);
+  assert.equal(p.active.status, "active");
+  assert.equal(p.active.endedAt, null);
+  assert.equal(p.sessionLog.length, 0);
+  S.startSessionClock(p, 6000);
+  const again = S.finalizeSession(p, 8000);
+  assert.equal(again.id, entry.id);
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(again.durationSec, 6);
+});
+
+test("hasTodayEntry and removeTodayEntry act only on a same-day entry", () => {
+  const p = S.emptyPayload();
+  const today = S.dateKey();
+  p.liftHistory["fri:0"] = [
+    { date: "2026-10-01", load: 50, reps: 6, setsDone: 3 },
+    { date: today, load: 55, reps: 6, setsDone: 3 }
+  ];
+  assert.equal(S.hasTodayEntry(p, "fri", 0), true);
+  S.removeTodayEntry(p, "fri", 0);
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(S.hasTodayEntry(p, "fri", 0), false);
+  S.removeTodayEntry(p, "fri", 0);
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(S.hasTodayEntry(p, "sat", 0), false);
+});

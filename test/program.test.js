@@ -95,3 +95,25 @@ test("epley1rm and progressMetric", () => {
   assert.equal(P.progressMetric(0, 12), 12);             // bodyweight → reps
   assert.equal(P.progressMetric(100, 10), Math.round(100 * (1 + 10 / 30) * 10) / 10);
 });
+
+test("esc escapes HTML metacharacters", () => {
+  assert.equal(P.esc('a <b> & "c"'), 'a &lt;b&gt; &amp; "c"');
+  assert.equal(P.esc(12), "12");
+  assert.equal(P.esc(null), "null");
+});
+
+test("round2 rounds to two decimals", () => {
+  assert.equal(P.round2(62.546), 62.55);
+  assert.equal(P.round2(7), 7);
+  assert.equal(P.round2(1 / 3), 0.33);
+});
+
+test("firstOpenLift finds the first lift with sets left", () => {
+  const state = { "fri:0": { done: 3 }, "fri:1": { done: 1 } };
+  assert.equal(P.firstOpenLift("fri", state, 0), 1);
+  assert.equal(P.firstOpenLift("fri", state, 2), 2);
+  assert.equal(P.firstOpenLift("fri", {}, 0), 0);
+  const all = {};
+  for (let i = 0; i < P.DAYS.fri.ex.length; i++) all["fri:" + i] = { done: P.DAYS.fri.ex[i].s };
+  assert.equal(P.firstOpenLift("fri", all, 0), -1);
+});

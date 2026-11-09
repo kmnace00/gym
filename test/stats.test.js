@@ -229,3 +229,41 @@ test("topMovers caps at three lifts, sorted by pct descending", () => {
   assert.equal(m[2].name, P.DAYS.fri.ex[0].n); // +10 %
   assert.ok(m[0].pct >= m[1].pct && m[1].pct >= m[2].pct);
 });
+
+test("workoutDates unions history dates with the session log", () => {
+  const p = {
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, setsDone: 3 }] },
+    sessionLog: [{ date: "2026-11-01", day: "fri", durationSec: 60, status: "complete" }]
+  };
+  assert.deepEqual(S.workoutDates(p), ["2026-10-01", "2026-11-01"]);
+  assert.deepEqual(S.workoutDates({}), []);
+  assert.deepEqual(S.workoutDates({ sessionLog: [null] }), []);
+});
+
+test("topMovers forwards bodyweight options to the metric", () => {
+  const i = P.DAYS.fri.ex.findIndex((e) => e.bw);
+  const key = "fri:" + i;
+  const p = {
+    bodyweight: 90,
+    liftHistory: {
+      [key]: [
+        { date: "2026-10-01", load: 0, reps: 6, setsDone: 3 },
+        { date: "2026-11-01", load: 10, reps: 6, setsDone: 3 }
+      ]
+    }
+  };
+  const m = S.topMovers(p, P.DAYS, P.progressMetric);
+  assert.equal(m.length, 1);
+  assert.equal(m[0].name, P.DAYS.fri.ex[i].n);
+  assert.equal(m[0].delta, 12);   // 90 -> 100 bodyweight-adjusted
+  assert.equal(m[0].pct, 11.1);   // 90 x 1.2 = 108 -> 100 x 1.2 = 120
+  // the opts ride through as the metric's third argument
+  const bw = S.topMovers(p, P.DAYS, (l, r, o) => l + (o && o.bw ? (o.bodyweight || 0) : 0));
+  assert.equal(bw.length, 1);
+  assert.equal(bw[0].delta, 10);
+  assert.equal(bw[0].pct, 11.1);
+  // a load-only metric scores the first entry 0, and topMovers skips a lift
+  // whose first metric is falsy, so the bodyweight lift drops out entirely.
+  assert.deepEqual(S.topMovers(p, P.DAYS, (l, r) => l * (1 + r / 30)), []);
+  assert.deepEqual(S.topMovers(p, P.DAYS, P.epley1rm), []);
+});

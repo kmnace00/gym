@@ -181,3 +181,39 @@ test("Escape closes the menu, and the menu close control is 44px", async ({ page
   await page.keyboard.press("Escape");
   await expect(page.locator("#modal")).toBeHidden();
 });
+
+test("the session pill announces Start, then Pause", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url);
+  const pill = page.locator("#sessBtn");
+  expect(await pill.getAttribute("aria-label"), "initial pill label").toBe("Start workout timer");
+  await pill.click();
+  await page.waitForFunction(() => document.getElementById("sessBtn").getAttribute("aria-label") === "Pause workout timer");
+  expect(await pill.getAttribute("aria-label"), "running pill label").toBe("Pause workout timer");
+  await pill.click();
+  await page.waitForFunction(() => document.getElementById("sessBtn").getAttribute("aria-label") === "Start workout timer");
+  expect(await pill.getAttribute("aria-label"), "paused pill label").toBe("Start workout timer");
+  expect(errors, "no console errors").toEqual([]);
+});
+
+test("status messages are announced to screen readers", async ({ page }) => {
+  await page.goto(url);
+  const live = await page.evaluate(() => {
+    const out = {};
+    for (const id of ["saveBar", "backupBar", "modalMsg"]) {
+      const el = document.getElementById(id);
+      out[id] = el ? { role: el.getAttribute("role"), live: el.getAttribute("aria-live") } : null;
+    }
+    out.hint = document.getElementById("hint") ? document.getElementById("hint").getAttribute("aria-live") : null;
+    return out;
+  });
+  for (const id of ["saveBar", "backupBar", "modalMsg"]) {
+    expect(live[id], `#${id} must exist`).not.toBeNull();
+    expect(live[id].role, `#${id} role must be status`).toBe("status");
+    expect(live[id].live, `#${id} aria-live must be polite`).toBe("polite");
+  }
+  expect(live.hint, "#hint aria-live must be polite").toBe("polite");
+});
