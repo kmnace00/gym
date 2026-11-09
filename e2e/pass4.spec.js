@@ -148,3 +148,50 @@ test("the day header shows a three-cell week strip", async ({ page }) => {
   await page.goto(url);
   await expect(page.locator("#weekStrip .wk")).toHaveCount(3);
 });
+
+test("undoing the edited set restores the working load", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day } = await today(page);
+
+  await page.locator(".liftrow").first().click();
+  const base = parseFloat(await page.locator("#loadVal").textContent());
+
+  await page.locator("#loadUp").click();
+  const set1 = parseFloat(await page.locator("#loadVal").textContent());
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+
+  await page.locator("#loadUp").click();
+  const set2 = parseFloat(await page.locator("#loadVal").textContent());
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+
+  await page.locator("#loadUp").click();
+  const work = parseFloat(await page.locator("#loadVal").textContent());
+  expect(work).not.toBe(set2);
+
+  await page.locator("#setLog .setrow").nth(1).click();
+  await expect(page.locator("#loadVal")).toHaveText(String(set2));
+  await expect(page.locator("#setCount")).toContainText("Editing set 2");
+
+  await page.locator("#undoSetBtn").click();
+  await expect(page.locator("#setLog .setrow.done")).toHaveCount(1);
+
+  await page.locator("#repUp").click();
+  await expect(page.locator("#loadVal")).toHaveText(String(work));
+
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#loadVal")).toHaveText(String(work));
+
+  const saved = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return p.state[d + ":0"].load;
+  }, day);
+  expect(saved).toBe(work);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
