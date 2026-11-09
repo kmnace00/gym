@@ -709,11 +709,13 @@
       sessBtn.classList.add("on");
       sessBtn.innerHTML = "⏸ <span id='elapsed'>" + t + "</span>";
     } else {
+      /* "Start" only when nothing has elapsed yet — a paused clock is being
+         resumed, not restarted, and the pill must not imply otherwise.      */
       sessBtn.classList.remove("on");
-      sessBtn.innerHTML = "▶ <span class='startlbl'>Start</span><span id='elapsed'>" + t + "</span>";
+      sessBtn.innerHTML = "▶ <span class='startlbl'>" + (secs > 0 ? "Resume" : "Start") + "</span><span id='elapsed'>" + t + "</span>";
     }
     sessBtn.classList.toggle("has-time", secs > 0);
-    sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : "Start workout timer");
+    sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : (secs > 0 ? "Resume workout timer" : "Start workout timer"));
   }
   function startSessionTimer() {
     if (sInt) return;

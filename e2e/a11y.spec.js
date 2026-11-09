@@ -202,11 +202,12 @@ test("Escape closes the menu, and the menu close control is 44px", async ({ page
   await expect(page.locator("#modal")).toBeHidden();
 });
 
-test("the session pill announces Start, then Pause", async ({ page }) => {
+test("the session pill announces Start, then Resume", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
 
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
   await page.goto(url);
   const pill = page.locator("#sessBtn");
   expect(await pill.getAttribute("aria-label"), "idle pill label").toBe("Start workout timer");
@@ -215,8 +216,10 @@ test("the session pill announces Start, then Pause", async ({ page }) => {
   // on the same click that starts the clock — no reload needed.
   await pill.click();
   expect(await pill.getAttribute("aria-label"), "running pill label").toBe("Pause workout timer");
+  await page.clock.runFor(60000); // a minute of the session is on the clock
   await pill.click();
-  expect(await pill.getAttribute("aria-label"), "paused pill label").toBe("Start workout timer");
+  expect(await pill.getAttribute("aria-label"), "paused pill label").toBe("Resume workout timer");
+  expect(await pill.textContent(), "a paused clock reads Resume, not Start").toContain("Resume");
   expect(errors, "no console errors").toEqual([]);
 });
 

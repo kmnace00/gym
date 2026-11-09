@@ -2,7 +2,11 @@
 
 ## WIP
 
-WIP: OpenCode editing restctl.js, test/restctl.test.js, sw.js since 2026-11-09 13:30 CT — B3-12 (+15 at GO blanks the rest label).
+WIP: OpenCode editing app.js, e2e/a11y.spec.js, sw.js since 2026-11-09 13:36 CT — B3-13 (after pausing, the session pill says "Start", not "Resume").
+
+## Completed — B3-12: +15 at GO blanks the rest label [T1]
+
+`restctl.js` `extend15()` restarted the 15 s rest at GO with `ctx.label`, a field the controller never writes (always `""`), so the lift line under the countdown went blank for the whole 15 s. The dead `label` field is removed from the context and the restart uses `ctx.startLabel` — the label the rest started with. The unit test that enshrined the blank label now asserts the lift label, phase `active` and 15 s. SW `gym-v48`. Verified 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors.
 
 ## Completed — B3-11: Summary PR count uses the wall-clock date, not the session date [T1]
 
