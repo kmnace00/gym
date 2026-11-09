@@ -180,7 +180,7 @@
       var isGo = rest.phase === "go";
       var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, deps.done() >= deps.sets());
       if (adv) {
-        var nx = Rest.nextLift(deps.idx(), deps.dayLen(), deps.firstOpen(deps.idx() + 1));
+        var nx = Rest.nextLift(deps.idx(), deps.dayLen(), deps.firstOpen(deps.idx() + 1), deps.firstOpen(0));
         if (nx >= 0) {
           ctx.pending = false;
           toIdle("", "Next lift — go.");

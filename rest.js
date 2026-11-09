@@ -35,16 +35,19 @@
   }
 
   /**
-   * Index of the lift GO should open after the current one. Prefers the next
-   * still-open lift (`firstOpen`), else the literal next index; -1 at the end.
+   * Index of the lift GO should open after the current one: the first open lift
+   * after `idx`, else the earliest open lift anywhere (wrap), else -1 when the
+   * whole day is done. `firstAny` is the same search from index 0.
    * @param {number} idx
    * @param {number} len
    * @param {number} firstOpen
+   * @param {number} [firstAny]
    * @returns {number}
    */
-  function nextLift(idx, len, firstOpen) {
-    if (idx >= len - 1) return -1;
-    return firstOpen >= 0 ? firstOpen : idx + 1;
+  function nextLift(idx, len, firstOpen, firstAny) {
+    if (firstOpen >= 0) return firstOpen;
+    if (typeof firstAny === "number" && firstAny >= 0 && firstAny < len) return firstAny;
+    return -1;
   }
 
   /**

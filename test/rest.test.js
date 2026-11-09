@@ -10,11 +10,15 @@ test("canAdvance only when the completed lift is still the visible one", () => {
   assert.equal(R.canAdvance(true, "fri", "fri", 0, 0, false), false); // lift not complete
 });
 
-test("nextLift prefers the first open lift, else the next index, -1 at the end", () => {
-  assert.equal(R.nextLift(0, 8, 3), 3);
-  assert.equal(R.nextLift(0, 8, -1), 1);
-  assert.equal(R.nextLift(6, 8, 7), 7);
-  assert.equal(R.nextLift(7, 8, -1), -1);
+test("nextLift goes forward, wraps to the earliest open lift, and -1 only when the day is done", () => {
+  assert.equal(R.nextLift(0, 8, 3, 3), 3);     // an open lift ahead wins
+  assert.equal(R.nextLift(6, 8, 7, 7), 7);
+  assert.equal(R.nextLift(0, 8, -1, 5), 5);    // nothing open after 0 → wrap
+  assert.equal(R.nextLift(7, 8, -1, 2), 2);    // last lift done, lift 3 still open
+  assert.equal(R.nextLift(3, 8, -1, 3), 3);    // only the current lift is open → stay on it
+  assert.equal(R.nextLift(7, 8, -1, -1), -1);  // whole day done → two-tap Finish
+  assert.equal(R.nextLift(0, 8, -1), -1,      // no wrap info means "nothing open", not "index 1"
+    "the old idx+1 fallback is gone");
 });
 
 test("finish guard arms a window and expires", () => {
