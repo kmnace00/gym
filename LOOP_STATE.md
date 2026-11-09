@@ -1,8 +1,8 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-02 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
+Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-03 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
 
-Previous: B3-02 BUILT (OpenCode, Nov 9 11:31 CT) — newer-version payload is visible/recoverable at boot: `store.js` exports `futureRaw()` (the preserved `gym-tool-v2-future` bytes), `app.js` shows a "newer version — showing an empty log" save bar with a "Download copy" action that saves `gym-future-<date>.json`, and boot no longer calls `commit()` while a load warning is active, so the original store bytes stay intact. Nothing auto-restores or deletes the copy. Unit test extended + 1 e2e (bar copy, boot bytes intact, download === original JSON). 154/154 unit, typecheck clean, 67/67 e2e at 390×667/844, no overflow, no console errors, SW `gym-v39`. Commit: auto-sync (pending hash).
+Previous: B3-03 BUILT (OpenCode, Nov 9 11:35 CT) — SW e2e harness: `e2e/sw.spec.js` starts a `node:http` server (ephemeral port, repo root) and covers registration, the offline shell, a 500 on `app.js` after boot, and a 500 navigation not poisoning the shell. The 500 cases are `test.fail()` (expected failure) because they genuinely fail at HEAD — verified with the marker removed (`.liftrow` 0); B3-04 fixes `sw.js` and removes the marker. 154/154 unit, typecheck clean, 69/69 e2e (68 pass + 1 expected failure), no console errors. No asset change → SW stays `gym-v39`. Commit: auto-sync (pending hash).
 
 Previous: B3-01 BUILT (OpenCode, Nov 9 11:27 CT) — mid-rest finish-arm freeze fixed: `restctl.js` `finishReset()` clears `finishUntil` + `ctx.frozen` in every phase (it used to return early unless phase was `go`), and `app.js` repaints the rest view unconditionally when the 2,600 ms arm timer fires. After "End rest" on the final lift, a >2.6 s hesitation no longer strands a frozen clock / "Tap again to finish": the countdown resumes and the button reads "End rest" (second tap inside the window still finishes). Unit test updated to the new contract + 1 `page.clock` e2e. 154/154 unit, typecheck clean, 66/66 e2e at 390×667/844, no overflow, no console errors, SW `gym-v38`. Commit: `b3476d7` (auto-sync, on origin/main).
 
@@ -132,8 +132,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: B3-02 built and gated (154/154 unit, typecheck clean, 67/67 e2e, SW `gym-v39`); waiting for auto-sync to publish it, then B3-03 starts.
-- Next in queue: B3-03–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
+- Current item: B3-03 built and gated (154/154 unit, typecheck clean, 69/69 e2e incl. 1 expected failure, SW `gym-v39`); waiting for auto-sync to publish it, then B3-04 starts.
+- Next in queue: B3-04–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
@@ -263,3 +263,10 @@ Pass 4 build, same phone check:
   original JSON. 154/154 unit, typecheck clean, 67/67 e2e at 390×667/844,
   no overflow, no console errors, SW `gym-v39`. Waiting for auto-sync to
   publish before starting B3-03.
+- 2026-11-09 11:35 CT: B3-03 built (OpenCode). New HTTP e2e harness
+  (`e2e/sw.spec.js`) with its own static server: registration + offline
+  shell green; the 500-on-`app.js` and 500-navigation assertions are
+  `test.fail()` expected failures (verified red with the marker removed)
+  until B3-04. 154/154 unit, typecheck clean, 69/69 e2e (68 pass + 1
+  expected failure), no console errors. No asset change, SW `gym-v39`.
+  Waiting for auto-sync to publish before starting B3-04.

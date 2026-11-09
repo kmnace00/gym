@@ -2,27 +2,28 @@
 
 ## WIP
 
-WIP: OpenCode editing store.js, app.js, test/store.test.js, e2e/pass4.spec.js since 2026-11-09 11:33 CT
+WIP: OpenCode editing e2e/sw.spec.js since 2026-11-09 11:36 CT
 
-Status: ACTIVE — Batch 3, B3-02 (future-version payload). B3-01 is done and
-pushed as `b3476d7`. Batch: `QUEUE.md` B3-02–B3-35, in order. When B3-02 is
-done, copy B3-03 from `QUEUE.md` into this file and start it. Base HEAD:
-`b3476d7`.
+Status: ACTIVE — Batch 3, B3-03 (SW e2e harness). B3-02 is done and pushed as
+`db1a18e`. Batch: `QUEUE.md` B3-03–B3-35, in order. When B3-03 is done, copy
+B3-04 from `QUEUE.md` into this file and start it. Base HEAD: `db1a18e`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-02: Future-version payload is silently wiped at boot [T1]
+## Active task — B3-03: SW e2e harness (HTTP, not `file://`) [T1]
 
-Why: `load()` detects a newer-version payload, saves a copy to `gym-tool-v2-future`, and returns an empty payload — but the boot path never tells the user and immediately overwrites the store with the empty payload. The copy survives but there is no accessor and no UI to retrieve it, so the data is effectively lost. Reachable in practice: a stale cached SW serving an old `app.js` after a newer build wrote a newer schema.
+Why: every e2e spec uses `file://…/index.html`, where service workers can't register. All SW behaviour (install, offline shell, SWR, B3-04's bugs) is unexercised, and CI can't catch an SW regression. This item gates B3-04's verification.
 
 Do:
-- In `store.js`, add a `futureRaw()` export (same shape as `quarantineRaw()`, reading `STORE + "-future"`).
-- In `app.js`, add a `"future"` branch to `syncSaveBar` / `saveBarAction` offering download of the future copy, mirroring the corrupt branch (bar text must say the saved data is from a newer version and the log on screen is empty; do not auto-restore it, do not delete the `-future` copy).
-- Do not change the load behaviour itself (empty payload + preserved copy stays).
+- Add `e2e/sw.spec.js` that starts a tiny `node:http` static server in `beforeAll` (self-contained, no `playwright.config.js` change), serves the repo root, and asserts: first load registers the SW; offline reload serves the shell; a 500 on `app.js` still loads from cache (this last assertion must FAIL before B3-04's fix and pass after it — write it now, leave it failing, and note that in `BUILD_LOG.md`; do not weaken it to pass early).
 
-Files: `store.js`, `app.js`, `test/store.test.js`, `e2e/pass4.spec.js`.
-Verify: unit test seeding `v: 99` → `load()` returns empty and preserves the bytes; e2e seeding a `v: 99` payload → bar visible, STORE bytes intact after boot, download returns the original JSON. Full gate green.
+Files: `e2e/sw.spec.js` (new).
+Verify: run the new spec; the first two assertions green, the 500 assertion failing as expected pre-B3-04. Full gate green otherwise.
+
+## Completed — B3-02: Future-version payload is silently wiped at boot [T1]
+
+`store.js` exports `futureRaw()` (the bytes `load()` preserves in `gym-tool-v2-future`); `app.js` treats `kind: "future"` like `corrupt` in `syncSaveBar` — "Saved data is from a newer version — showing an empty log; original copy kept" — and the bar's "Download copy" saves `gym-future-<date>.json`. Boot no longer calls `commit()` while a load warning is active, so the original store bytes and the `-future` copy stay intact until the user acts; nothing auto-restores or deletes the copy. Unit test extended (load-error kind, `futureRaw()`, store bytes) + 1 e2e (bar + empty-log wording, boot bytes intact, download === original JSON). SW `gym-v39`. Verified 154/154 unit, typecheck clean, 67/67 e2e at 390×667/844. Commit: `db1a18e` (auto-sync, on origin/main).
 
 ## Completed — B3-01: Mid-rest finish-arm freeze [T1]
 
