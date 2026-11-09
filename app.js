@@ -23,12 +23,7 @@
     return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: payload && payload.bodyweight });
   }
   function topSetOf(e, sets) {
-    var best = null, bestM = -Infinity, i, m;
-    for (i = 0; i < (sets || []).length; i++) {
-      m = metricFor(e, sets[i].load || 0, sets[i].reps || 0);
-      if (m > bestM) { bestM = m; best = sets[i]; }
-    }
-    return best;
+    return Stats.topSet(sets, function (l, r) { return metricFor(e, l, r); });
   }
   /* Bank the *whole* set array for a lift: this is the single source of truth
      for tonnage, PRs, CSV and the progression nudge (extra sets included). */
@@ -390,27 +385,6 @@
     renderSpark();
   }
   /* ── progress view ─────────────────────────────────────────────────────── */
-  function compactVol(v) { v = Math.round(v); return v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v); }
-  function topMovers() {
-    var out = [];
-    Object.keys(payload.liftHistory || {}).forEach(function (k) {
-      var arr = payload.liftHistory[k];
-      if (!arr || arr.length < 2) return;
-      var p = k.split(":"), d = p[0], i = parseInt(p[1], 10);
-      var e = DAYS[d] && DAYS[d].ex[i] ? DAYS[d].ex[i] : null;
-      if (!e) return;
-      function best(entry) {
-        var top = topSetOf(e, Stats.entrySets(entry)) || entry;
-        return metricFor(e, top.load || 0, top.reps || 0);
-      }
-      var first = best(arr[0]), last = best(arr[arr.length - 1]);
-      if (!first) return;
-      var delta = last - first, pct = Math.round((delta / first) * 1000) / 10;
-      out.push({ name: e.n, delta: Math.round(delta * 10) / 10, pct: pct });
-    });
-    out.sort(function (a, b) { return b.pct - a.pct; });
-    return out.slice(0, 3);
-  }
   function renderProgress() {
     var workouts = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload), week = Stats.sessionsLast7(payload, Gym.dateKey());
     document.getElementById("pSessions").textContent = workouts;
@@ -418,7 +392,7 @@
     document.getElementById("pDays").textContent = week + "/3";
     var todayKey = Gym.dateKey();
     document.getElementById("pSub").textContent = workouts
-      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + compactVol(Stats.totalVolume(payload)) + " kg · "
+      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " kg · "
         + week + "/3 this week"
       : "No workouts yet — open a lift to begin";
 
@@ -430,7 +404,7 @@
       var v = byDay[d], pct = Math.round((v / max) * 100);
       bars += '<div class="pdayrow"><span class="pdname">' + labels[d] + '</span>'
         + '<span class="pdbar"><i style="width:' + pct + '%"></i></span>'
-        + '<span class="pdval">' + (v ? compactVol(v) + " kg" : "—") + '</span></div>';
+        + '<span class="pdval">' + (v ? Stats.compactVol(v) + " kg" : "—") + '</span></div>';
     });
     document.getElementById("pDayBars").innerHTML = bars;
 
@@ -472,7 +446,7 @@
     var pr = Stats.personalRecords(payload, DAYS, progressMetric)[0];
     document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " kg" : "";
 
-    var movers = topMovers();
+    var movers = Stats.topMovers(payload, DAYS, progressMetric);
     document.getElementById("pMovers").innerHTML = movers.length
       ? movers.map(function (m) {
           var sign = m.pct > 0 ? "+" : "";
@@ -1069,7 +1043,7 @@
     document.getElementById("sumTitle").textContent = (DAY_LABEL[cur] || "") + " workout complete";
     document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";
     document.getElementById("sumSets").textContent = String(sets);
-    document.getElementById("sumVol").textContent = compactVol(vol) + " kg";
+    document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " kg";
     document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
     var nx = nextTrainingGap();
     var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");

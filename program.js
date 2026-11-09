@@ -174,21 +174,11 @@
     return { load: su.last.load, action: "keep" };
   }
 
-  /** id → "day:index" for the current program (used by store.reconcile). */
-  function idMap() {
-    var out = {}, d, i, list;
-    for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
-      list = DAYS[d].ex;
-      for (i = 0; i < list.length; i++) if (list[i].id) out[list[i].id] = d + ":" + i;
-    }
-    return out;
-  }
-
   return {
     DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_KG: BODYWEIGHT_KG,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
-    stallLoad: stallLoad, planFor: planFor, idMap: idMap
+    stallLoad: stallLoad, planFor: planFor
   };
 });
