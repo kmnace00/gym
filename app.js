@@ -758,7 +758,13 @@
   function applySetEdit() {
     var s = curSt(), e = ex();
     if (editSet < 0) return;
-    if (!s.sets || !s.sets[editSet]) { editSet = -1; return; }
+    if (!s.sets || !s.sets[editSet]) {
+      /* the edited set vanished (undo shrank the log): put the working values
+         back so the next set does not inherit the stale set's numbers. */
+      if (editBackup) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
+      editSet = -1; editBackup = null;
+      return;
+    }
     s.sets[editSet] = { load: s.load, reps: s.reps, rir: s.rir };
     if (s.done >= e.s) bankLift(cur, idx);
   }
@@ -1047,9 +1053,7 @@
      reps/RIR back — the next set must not inherit the edited set's numbers. */
   function resetEdit() {
     var s = curSt();
-    if (editSet >= 0 && editBackup && s) {
-      s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir;
-    }
+    if (editBackup && s) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null;
   }
   function showDay() { resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render(); }
