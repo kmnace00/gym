@@ -114,6 +114,17 @@ test("an extra set is banked into history", async ({ page }) => {
     return arr[arr.length - 1].sets.length;
   }, day);
   expect(sets).toBe(plan.s + 1);
+
+  // undoing that extra set re-banks the shorter array (it used to leave 4 sets)
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").first().click();
+  await page.locator("#undoSetBtn").click();
+  const afterUndo = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    const arr = p.liftHistory[d + ":0"];
+    return arr[arr.length - 1].sets.length;
+  }, day);
+  expect(afterUndo).toBe(plan.s);
 });
 
 test("tapping a logged set edits it in place", async ({ page }) => {

@@ -681,6 +681,10 @@
     if (wasComplete && s.done < ex().s) {
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
       if (arr && arr.length && arr[arr.length - 1].date === Gym.sessionDate(payload)) arr.pop();
+    } else if (s.done >= ex().s) {
+      /* undoing an extra set leaves the lift complete: re-bank the shorter
+         array so Prev/tonnage/PRs/CSV don't keep the removed set */
+      bankLift(cur, idx);
     }
     stopInterval();
     hintText = ""; hintGood = false;
