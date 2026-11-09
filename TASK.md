@@ -2,7 +2,7 @@
 
 ## WIP
 
-Status: DONE — pipeline pass 2 (5 phases) complete at `gym-v34`: 154/154 unit, 62/62 e2e, CI green. P1 units on the lift screen (v32) · P2 progressSnapshot extraction · P3 shared session aggregate, 4.6→3.4 ms (v33) · P4 midnight/off-day/summary journeys · P5 corrupt-date drop + cleanup (v34). Remaining work is Khang's (Batch 3 research, reconcile schema, caps sign-off).
+Status: DONE — pipeline pass 2 (5 phases) + a menu reachability fix complete at `gym-v35`: 154/154 unit, 63/63 e2e, CI green. Phase gates: P1 `a15af57` (units on the lift screen), P2 `976615d` (`progressSnapshot`), P3 `4cf6e7a` (shared aggregate, 4.6→3.4 ms), P4 `3815cbe` (midnight/off-day/summary journeys), P5 `4c8a977` (corrupt-date drop + cleanup). Remaining work is Khang's (Batch 3 research, reconcile schema, caps sign-off).
 
 WIP: none claimed
 
