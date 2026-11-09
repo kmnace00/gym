@@ -722,7 +722,7 @@
     sessBtn.classList.toggle("has-time", secs > 0);
   }
   function renderSessionPill() {
-    var t = fmt(sessionSecs());
+    var secs = sessionSecs(), t = fmt(secs);
     if (sInt) {
       sessBtn.classList.add("on");
       sessBtn.innerHTML = "⏸ <span id='elapsed'>" + t + "</span>";
@@ -730,15 +730,15 @@
       sessBtn.classList.remove("on");
       sessBtn.innerHTML = "▶ <span class='startlbl'>Start</span><span id='elapsed'>" + t + "</span>";
     }
-    sessBtn.classList.toggle("has-time", sessionSecs() > 0);
+    sessBtn.classList.toggle("has-time", secs > 0);
     sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : "Start workout timer");
   }
   function startSessionTimer() {
     if (sInt) return;
     sAutoStopped = false;
     Gym.startSessionClock(payload);
-    renderSessionPill();
     sInt = setInterval(tickSession, 500);
+    renderSessionPill();
     keepAwake();
     commit();
   }
