@@ -2,12 +2,8 @@
    from file://, where service workers cannot register — so install, the
    offline shell and stale-while-revalidate were never exercised. This spec
    starts its own tiny static server (no playwright.config.js change) and
-   covers the offline promise the app makes.
-
-   The last test is marked `test.fail()` on purpose: at HEAD the SW serves a
-   non-ok revalidation response instead of the cached copy and caches a 500
-   navigation as the shell. B3-04 fixes `sw.js`; this marker is removed then
-   (an expected failure that starts passing is itself a test failure).       */
+   covers the offline promise the app makes: registration, the offline shell,
+   a failed asset revalidation, and a failed navigation never poisoning it. */
 const { test, expect } = require("@playwright/test");
 const http = require("http");
 const fs = require("fs");
@@ -88,8 +84,6 @@ test("the service worker registers and serves the offline shell from cache", asy
 });
 
 test("a 500 on app.js or a navigation still serves the cached app", async ({ page, context }) => {
-  test.fail(true, "B3-04: sw.js returns non-ok revalidations and caches a 500 navigation");
-
   await bootWithSw(page);
 
   // (a) asset revalidation fails after boot → the cached app.js must still run

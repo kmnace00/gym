@@ -2,24 +2,28 @@
 
 ## WIP
 
-WIP: OpenCode editing e2e/sw.spec.js since 2026-11-09 11:36 CT
+WIP: OpenCode editing sw.js, e2e/sw.spec.js since 2026-11-09 11:39 CT
 
-Status: ACTIVE — Batch 3, B3-03 (SW e2e harness). B3-02 is done and pushed as
-`db1a18e`. Batch: `QUEUE.md` B3-03–B3-35, in order. When B3-03 is done, copy
-B3-04 from `QUEUE.md` into this file and start it. Base HEAD: `db1a18e`.
+Status: ACTIVE — Batch 3, B3-04 (SW error handling). B3-03 is done and pushed as
+`120f5ae`. Batch: `QUEUE.md` B3-04–B3-35, in order. When B3-04 is done, copy
+B3-05 from `QUEUE.md` into this file and start it. Base HEAD: `120f5ae`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-03: SW e2e harness (HTTP, not `file://`) [T1]
+## Active task — B3-04: SW caches error pages as the shell and serves errors instead of cached assets [T1]
 
-Why: every e2e spec uses `file://…/index.html`, where service workers can't register. All SW behaviour (install, offline shell, SWR, B3-04's bugs) is unexercised, and CI can't catch an SW regression. This item gates B3-04's verification.
+Why: two `res.ok` gaps in the offline path — the app's core promise is "works in the gym basement". (a) The navigation handler caches *any* response as `./index.html`, so one transient 500/404 from Pages permanently poisons the offline shell until the next successful online load. (b) The asset SWR handler returns a non-ok revalidation response to the page instead of the good cached copy, so a transient 500 on `app.js` breaks the app even though a valid copy is cached. Verified by Muse in `sw.js:30-41` (no `res.ok` check on the navigation `put`) and `:62-64` (a 404/500 falls through to `return res`).
 
 Do:
-- Add `e2e/sw.spec.js` that starts a tiny `node:http` static server in `beforeAll` (self-contained, no `playwright.config.js` change), serves the repo root, and asserts: first load registers the SW; offline reload serves the shell; a 500 on `app.js` still loads from cache (this last assertion must FAIL before B3-04's fix and pass after it — write it now, leave it failing, and note that in `BUILD_LOG.md`; do not weaken it to pass early).
+- Guard both `put`s with `res.ok`; when revalidation is not ok, return the cached `hit` instead of the error response. Do not change the 304 path, the conditional-revalidation headers, or the cache-first/offline behaviour otherwise.
 
-Files: `e2e/sw.spec.js` (new).
-Verify: run the new spec; the first two assertions green, the 500 assertion failing as expected pre-B3-04. Full gate green otherwise.
+Files: `sw.js`; also remove the temporary `test.fail()` marker from `e2e/sw.spec.js` (the fixed spec must run as a normal test, or the expected failure becomes a failure when it passes).
+Verify: B3-03's spec now fully green (in-test server returns 500 for `app.js` after first load → app still loads from cache; navigation 500 → offline shell still serves). SW `CACHE` bump. Full gate green.
+
+## Completed — B3-03: SW e2e harness (HTTP, not `file://`) [T1]
+
+`e2e/sw.spec.js` starts its own `node:http` static server on an ephemeral port (repo root; no `playwright.config.js` change) and covers SW install, the offline shell, a 500 on `app.js` after boot, and a 500 navigation not poisoning the shell. The 500 cases were `test.fail()` expected failures at HEAD (verified red with the marker removed: `.liftrow` = 0); B3-04 removes the marker. No asset change. Verified 154/154 unit, typecheck clean, 69/69 e2e (68 pass + 1 expected failure). Commits: `5921025` + `120f5ae` (auto-sync, on origin/main).
 
 ## Completed — B3-02: Future-version payload is silently wiped at boot [T1]
 

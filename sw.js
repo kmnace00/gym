@@ -3,7 +3,7 @@
    - static assets: stale-while-revalidate (instant from cache, refreshed behind)
    A failed script request must never return index.html — that surfaced as a
    parse error in the gym basement. Only navigations get the shell.          */
-const CACHE = "gym-v39";
+const CACHE = "gym-v40";
 const ASSETS = [
   "./", "./index.html", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./restctl.js", "./app.js",
@@ -30,8 +30,11 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put("./index.html", copy));
+          /* a transient 500/404 must never replace the offline shell */
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put("./index.html", copy));
+          }
           return res;
         })
         .catch(() => caches.match("./index.html"))
@@ -60,8 +63,13 @@ self.addEventListener("fetch", (e) => {
         return fetch(req, { headers: cond })
           .then((res) => {
             if (res.status === 304) return hit;
-            if (res.ok) cache.put(req, res.clone());
-            return res;
+            /* a non-ok revalidation must not replace or be served over the
+               good cached copy — the gym basement still gets the app */
+            if (res.ok) {
+              cache.put(req, res.clone());
+              return res;
+            }
+            return hit;
           })
           .catch(() => hit);
       })
