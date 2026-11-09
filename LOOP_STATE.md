@@ -1,6 +1,8 @@
 # LOOP_STATE — checkpoint
 
-Status: CHECKPOINT (OpenCode, Nov 9 11:57 CT) — Batch 3 B3-01…B3-10 are built, gated and pushed; **B3-11 is next**. Session stopped for length per the loop rule; a fresh session with the same loop prompt reads `QUEUE.md`, copies B3-11 into `TASK.md` and resumes. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING (OpenCode, Nov 9 13:25 CT) — Batch 3 B3-01…B3-11 are built, gated and pushed; **B3-12 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+
+B3-11 BUILT (OpenCode, Nov 9 13:24 CT) — the finish summary counts PRs against the session date, not the wall clock: `showSummary` now uses `Gym.sessionDate(payload)` for the PR filter. The midnight journey in `e2e/journeys.spec.js` finishes the whole Friday session after 00:04 and asserts `#sumPrs` reads "8 new" (it read "—" at HEAD — confirmed red with the fix temporarily reverted). 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors, SW `gym-v47`. Commits: `68c78b8` + `58d710a` (auto-sync, on origin/main).
 
 Muse review (Nov 9, ~13:10 CT) — B3-01…B3-10 VERIFIED, all PASS. Independent re-run from a fresh clone at HEAD `b4d5e8f`: `npm run check` 157/157 unit, typecheck clean, `npm run e2e` 73/73 (Chrome 157), `program.js` diff 0 lines, all 13 commits by Khang (auto-sync), Pages live `gym-v46`. Diffs checked per item against `QUEUE.md`: `finishReset` clears `finishUntil` + `frozen` in every phase and the arm timer repaints unconditionally; `futureRaw()` exported and boot skips `commit()` while any load warning is active; SW caches the shell only on `res.ok` and returns the cached hit on non-ok revalidation; `finalizeSession` guard, undo re-bank, restart snapshot, merge cursor, import button and rest hint all as specified; no `test.fail()` remnants. No new defects found — no Batch 4 items seeded by this review; B3-11…B3-35 (25 items) remain queued and are the plan. Next: Khang pastes the loop prompt into a fresh OpenCode session to resume at B3-11.
 
@@ -134,8 +136,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: none — checkpoint after B3-10 (157/157 unit, typecheck clean, 73/73 e2e, SW `gym-v46`).
-- Next in queue: B3-11–B3-35 in order (`QUEUE.md`). A fresh loop session copies B3-11 into `TASK.md` and starts it; do not invent items or skip B3-11.
+- Current item: none — B3-11 done (157/157 unit, typecheck clean, 73/73 e2e, SW `gym-v47`).
+- Next in queue: B3-12–B3-35 in order (`QUEUE.md`). B3-12 is "+15 at GO blanks the rest label" (`restctl.js`, `test/restctl.test.js`). Do not invent items or skip B3-12.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified

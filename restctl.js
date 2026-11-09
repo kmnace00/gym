@@ -45,10 +45,10 @@
     var rest = Machine.idle();
     /* Orchestration context. Every field mirrors what the old app.js object
        held, minus the interval/arm timer handles, which are shell concerns.
-       `label` is never written: extend15-at-GO restarts a rest with it, and
-       today that value is always "" — keeping it preserves the strings.      */
+       The rest's own label lives in `startLabel`: +15 at GO restarts the rest
+       with it, so the lift line survives the 15 s instead of going blank.    */
     var ctx = {
-      label: "", pending: false, pIdx: -1, pDay: "",
+      pending: false, pIdx: -1, pDay: "",
       note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, frozen: false,
       startLabel: "", idleLabel: "", idleMsg: "", hint: ""
     };
@@ -164,7 +164,7 @@
 
     function extend15() {
       if (rest.phase === "idle") return out([]);
-      if (rest.phase === "go") return start(15, ctx.label, ctx.pending, ctx.note, ctx.nextText, ctx.hint);
+      if (rest.phase === "go") return start(15, ctx.startLabel, ctx.pending, ctx.note, ctx.nextText, ctx.hint);
       ctx.frozen = false;
       rest = Machine.extend(rest, 15);
       return out([]);

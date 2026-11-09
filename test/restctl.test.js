@@ -181,7 +181,7 @@ test("extend15 adds time while resting and restarts a 15 s rest at GO", () => {
   const out = g.ctl.extend15();
   assert.equal(out.view.phase, "active");
   assert.equal(out.view.secs, 15);
-  assert.equal(out.view.label, ""); // ctx.label is never written, as before
+  assert.equal(out.view.label, "Fri — set 1 done"); // +15 at GO keeps the lift label
   assert.deepEqual(out.effects, [{ type: "closeDetails" }, { type: "blurIfOutside" }]);
   const idle = mk();
   assert.deepEqual(idle.ctl.extend15().effects, []);

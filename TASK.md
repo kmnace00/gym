@@ -2,20 +2,18 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/journeys.spec.js, sw.js since 2026-11-09 ~13:30 CT — B3-11 (Summary PR count uses the wall-clock date, not the session date).
+WIP: OpenCode editing restctl.js, test/restctl.test.js, sw.js since 2026-11-09 13:30 CT — B3-12 (+15 at GO blanks the rest label).
 
-## Active — B3-11: Summary PR count uses the wall-clock date, not the session date [T1]
+## Completed — B3-11: Summary PR count uses the wall-clock date, not the session date [T1]
 
-Do: in `app.js` `showSummary`, use `Gym.sessionDate(payload)` for the PR filter instead of `Gym.dateKey()`. Extend the midnight journey in `e2e/journeys.spec.js` to finish after midnight and assert `#sumPrs` counts the PRs. Full gate green.
+`app.js` `showSummary` now filters PRs with `Gym.sessionDate(payload)` instead of `Gym.dateKey()`, so a workout that starts before midnight and is finished after it still reports the PRs it just set (history, week strip and CSV already key off the session date). The midnight journey in `e2e/journeys.spec.js` now finishes the whole Friday session after 00:04 and asserts `#sumPrs` reads "8 new" (it read "—" at HEAD — verified red with the fix reverted). No new test count; the existing 73 e2e cases cover it. SW `gym-v47`. Verified 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors. Commits: `68c78b8` + `58d710a` (auto-sync, on origin/main).
 
-Status: CHECKPOINT (OpenCode, Nov 9 11:57 CT) — Batch 3 items B3-01…B3-10 are
-built, gated and pushed; B3-11 is next. This session stopped for length per
-the loop rule ("finish the current item, checkpoint, stop"). A new session
-with the same loop prompt reads `QUEUE.md`, copies B3-11 into this file and
-starts it. Base HEAD: `b3aba7b` (B3-10 auto-sync).
-Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
-answered by this batch — the Batch 3 research (L7/L8) is done and in
-`RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
+Status: RUNNING (OpenCode, Nov 9 13:25 CT) — Batch 3 items B3-01…B3-11 are
+built, gated and pushed; B3-12 is next. A new session with the same loop prompt
+reads `QUEUE.md`, copies B3-12 into this file and starts it. Base HEAD: `58d710a`
+(B3-11 auto-sync). Note: the pipeline's "Remaining work is Khang's" line from
+Nov 9 is now answered by this batch — the Batch 3 research (L7/L8) is done and
+in `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
 ## Completed — B3-10: The PR / top-reps hint is set on the final set — and wiped before the lifter ever sees it [T1]
 
