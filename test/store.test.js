@@ -592,3 +592,37 @@ test("hasTodayEntry and removeTodayEntry act only on a same-day entry", () => {
   assert.equal(p.liftHistory["fri:0"].length, 1);
   assert.equal(S.hasTodayEntry(p, "sat", 0), false);
 });
+
+/* the count fields are clamped at the boundary, before any consumer can
+   iterate them into a billion placeholder rows.                              */
+test("hostile counts are clamped before anything iterates them", () => {
+  const payload = S.migrate(JSON.stringify({
+    v: 3,
+    state: { "fri:0": { done: 1e9, topHits: 1e9, load: 50, reps: 6, rir: 2,
+      sets: new Array(5000).fill({ load: 50, reps: 6, rir: 2 }) } },
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, rir: 2, setsDone: 1e9 }] },
+    sessionLog: [{ id: "ses_x", date: "2026-11-01", day: "fri", status: "complete",
+      accSec: 1e9, durationSec: 1e9, lifts: { "fri:0": { done: 1e9, sets: [] } } }],
+    bodyweight: 1e9,
+    active: null
+  }));
+  assert.equal(payload.state["fri:0"].done, S.DONE_MAX);
+  assert.equal(payload.state["fri:0"].topHits, S.DONE_MAX);
+  assert.equal(payload.state["fri:0"].sets.length, S.SETS_MAX);
+  assert.equal(payload.liftHistory["fri:0"][0].setsDone, S.SETS_MAX);
+  assert.equal(payload.sessionLog[0].accSec, S.ACC_SEC_MAX);
+  assert.equal(payload.sessionLog[0].durationSec, S.ACC_SEC_MAX);
+  assert.equal(payload.sessionLog[0].lifts["fri:0"].done, S.DONE_MAX);
+  assert.equal(payload.bodyweight, 75);          /* out of range → default */
+});
+
+test("a zero or negative count stays zero", () => {
+  const payload = S.migrate(JSON.stringify({
+    v: 3,
+    state: { "fri:0": { done: -5, sets: [{ load: 50, reps: 6, rir: 2 }] } },
+    liftHistory: { "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, setsDone: -3 }] }
+  }));
+  assert.equal(payload.state["fri:0"].done, 0);
+  assert.equal(payload.liftHistory["fri:0"][0].setsDone, 0);
+  assert.equal(payload.state["fri:0"].sets.length, 1);  /* a valid array is not truncated */
+});

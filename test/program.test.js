@@ -117,3 +117,11 @@ test("firstOpenLift finds the first lift with sets left", () => {
   for (let i = 0; i < P.DAYS.fri.ex.length; i++) all["fri:" + i] = { done: P.DAYS.fri.ex[i].s };
   assert.equal(P.firstOpenLift("fri", all, 0), -1);
 });
+
+test("getLift bounds the legacy backfill to the scheduled sets", () => {
+  const ex = P.DAYS.fri.ex[0];
+  const s = P.getLift({ "fri:0": { done: 1e9, load: 50, reps: 6, rir: 2 } }, "fri", 0, ex);
+  assert.equal(s.sets.length, ex.s);
+  assert.equal(s.done, 1e9);   /* the count is preserved, only the rows are bounded */
+  assert.equal(P.getLift({}, "fri", 0, ex).sets.length, 0);
+});
