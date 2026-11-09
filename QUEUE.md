@@ -1,7 +1,7 @@
-# QUEUE — Batch 1 (verified against Pass 4, Nov 8)
+# QUEUE — Batch 1 (verified against Pass 4, Nov 8) + Batch 2 (Nov 8)
 
-Base HEAD: `a18272b` (framework push, on Pass 4 `cbbf6a8`).
-Status: QUEUED — approved by Khang Nov 8, 19:41 CT.
+Base HEAD: `b7d61f0` (Batch 1 complete, verified by Muse Nov 8, 20:50 CT).
+Status: BATCH 2 QUEUED — approved by Khang Nov 8, 20:53 CT ("Do all recommended"). Batch 1 (L1–L5) is complete and verified; its specs below are history, do not re-run them.
 Batch rules: one item at a time, in order. Finish an item (all
 verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update),
 then copy the next item's spec into `TASK.md` and start it. When the
@@ -181,3 +181,132 @@ Files: `store.js` (only if a probe fails), `test/store.test.js`,
 `test/size.test.js`, `PLAN.md`.
 Verify: new hostile-payload tests green, `npm run check` +
 typecheck + e2e green, no behaviour change.
+
+---
+
+# BATCH 2 — Hardening follow-ups from Muse's Batch 1 review (Nov 8, 20:50 CT)
+
+Base HEAD: `b7d61f0`. Status: QUEUED — approved by Khang Nov 8, 20:53 CT.
+Batch rules (same as Batch 1): one item at a time, in order. Finish an item
+(all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update),
+then copy the next item's spec into `TASK.md` and start it. When the queue
+is empty, stop and wait for Muse — do not invent the next item. Every item:
+`npm run check`, `npm run typecheck`, `npm run e2e` at 390x667 and 390x844,
+no overflow, no console errors. Program data (`program.js` numbers) is
+read-only in every item. If verification fails, log it and STOP — do not
+move on.
+
+Review findings that seeded this batch (Muse, independent clone at `b7d61f0`,
+unit 96/96 + typecheck clean verified):
+- A null state record crashes `mergePayload` — reproduced: base with
+  `state["fri:0"]` done 1, incoming `state["fri:0"]: null` via JSON →
+  `Cannot read properties of null (reading 'done')` at `store.js:440-442`
+  (`theirs.done`). Same class of crash at `migrateV2` (`store.js:206`,
+  `out.state[k].done`) and `resetDay` (`store.js:571`, `p.state[k].done = 0`
+  with no null guard, unlike `startSession` which has `if (!rec) continue`).
+  Root cause: `sanitizeRecord` returns null/non-object records as-is, so
+  null survives `normalize()` and reaches every consumer.
+- Nested `__proto__` inside a single record survives `sanitizeRecord` —
+  reproduced via JSON: `state["fri:0"].__proto__` is an own property after
+  `importRaw`, `Object.prototype.evil` stays undefined (inert today: no
+  `Object.assign` / spread on records in `app.js` / `store.js`), but it
+  must not survive the store boundary.
+- `npm run check` fails on Node 24 (`node --test test/` →
+  `Cannot find module '/tmp/.../test'`), while `node --test test/*.test.js`
+  and plain `node --test` both give 96/96 on Node 24. CI uses Node 20, so
+  CI should pass — but the script is fragile. Fix the script, do not
+  change the tests.
+
+## B1 — Null / non-object records: sanitize at the boundary, guard every consumer [T1] — ACTIVE
+
+Why: a corrupt or hostile backup with a null record must never crash the
+app. Today it crashes merge, and can crash migrate/resetDay the same way.
+
+Do:
+- In `store.js`, make `sanitizePayload` / `normalize` drop or replace
+  null / non-object values in `state`, `liftHistory` entries, `sessionLog`
+  entries, and session `lifts` values, before any consumer reads them.
+  A dropped state record must be re-created by `getLift()` defaults on
+  next read (verify that path in a test — do not invent a new default).
+  Prefer: drop the null record in sanitize, keep the key absent, so
+  existing `getLift` / `curSt` defaults apply exactly as for a fresh lift.
+- Guard the known crash sites even if sanitize drops nulls (defence in
+  depth, cheap): `mergePayload` (`theirs` null/non-object → skip that key),
+  `migrateV2` (`out.state[k]` null → treat as not-done), `resetDay`
+  (`p.state[k]` null → skip, same guard as `startSession`).
+- Do not change the merge winner rule, history union, session log, schema,
+  or any program data. No UI change.
+
+Tests (in `test/store.test.js`, follow the L5 HOSTILE_RAW pattern — build
+the hostile payloads as JSON strings, not JS object literals, so
+`__proto__` is an own key):
+- `importMerge` with incoming `state["fri:0"]: null` over a base with
+  `fri:0` done 1 → no crash, base record kept, `Object.prototype` clean.
+- `importRaw` with `state["fri:0"]: null` → no crash, record absent or
+  defaulted, app can read it via `getLift` / `curSt` without crashing.
+- `migrateV2` path (v2 payload with a null state record) → no crash.
+- `resetDay` with a null state record for that day → no crash.
+- `mergePayload` with incoming `liftHistory["fri:0"]: [null, {...}]` and
+  `sessionLog: [null]` → no crash, nulls dropped (already verified by
+  Muse on `b7d61f0` — lock it in as a test, do not regress it).
+
+Files: `store.js`, `test/store.test.js`.
+Verify: `npm run check`, typecheck, e2e at both viewports, no-scroll
+intact, `BUILD_LOG.md` one line. SW bump only if an asset changed
+(`store.js` changed → bump `CACHE`, as in L1/L3/L5).
+
+## B2 — Nested unsafe keys inside records / entries / sessions [T1]
+
+Why: L5 stripped unsafe keys from the top-level maps (`state`,
+`liftHistory`, session `lifts`), but not inside the record itself.
+`state["fri:0"].__proto__` survives `importRaw` today.
+
+Do:
+- In `store.js`, call `stripUnsafeKeys` at the start of `sanitizeRecord`,
+  `sanitizeEntry`, and `sanitizeSession` (and on session `lifts` values
+  after `sanitizeRecord` — verify the lifts values are covered, do not
+  assume). Reuse the existing `unsafeKey` / `stripUnsafeKeys` helpers;
+  do not invent a new list — `__proto__`, `constructor`, `prototype` only.
+- A record that is only unsafe keys after stripping must still be a valid
+  record (numbers coerced to 0 / defaults by the existing coerce logic) —
+  do not drop the whole lift.
+
+Tests (in `test/store.test.js`, JSON-string payloads):
+- `importRaw` with `state["fri:0"] = {"done":3, "__proto__":{"evil":1}}`
+  → no own `__proto__` on the record, `Object.prototype.evil` undefined,
+  `done` still 3.
+- Same for a history entry (`liftHistory["fri:0"][0]`) and a session
+  (`sessionLog[0].lifts["fri:0"]` and the session object itself).
+- `importMerge` with a nested-`__proto__` record → same assertions, merge
+  winner rule unchanged.
+
+Files: `store.js`, `test/store.test.js`.
+Verify: `npm run check`, typecheck, e2e at both viewports. SW bump only
+if an asset changed.
+
+## B3 — Fix the Node test script (`node --test test/` fails on Node 24) [T1]
+
+Why: `npm run check` fails on Node 24 in Muse's VM because
+`node --test test/` does not resolve the folder there. Both
+`node --test test/*.test.js` and plain `node --test` give 96/96 on
+Node 24 at `b7d61f0`. CI uses Node 20, so this is fragility, not a
+CI failure — fix it before it bites the Mac or a Node upgrade.
+
+Do:
+- In `package.json`, change `"test": "node --test test/"` to
+  `"test": "node --test test/*.test.js"` (explicit glob, the form Muse
+  verified at 96/96). Do not use plain `node --test` — the glob is
+  explicit about which files are unit tests and cannot pick up future
+  non-test files by discovery.
+- Verify the new script in `npm run check` (which runs the test script)
+  on the Mac's Node, and confirm CI still uses Node 20 in
+  `.github/workflows/ci.yml` (no change needed there unless the glob
+  needs quoting on that shell — check, do not assume).
+- If the glob does not expand on any shell in the loop (Mac sh / CI),
+  stop and report it as a finding instead of trying a second form
+  without Muse — the script is the gate for every future item.
+
+Files: `package.json` only (plus `BUILD_LOG.md` line).
+Verify: `npm run check` green end-to-end (not just the unit step),
+typecheck, e2e at both viewports. No code change, no SW bump needed
+(no asset changed — confirm the asset-drift guard agrees). 

@@ -2,8 +2,34 @@
 
 ## WIP
 
-Status: DONE — Batch 1 complete. L1–L5 shipped; OpenCode stops and
-waits for Muse. Base HEAD: `a18272b`.
+Status: ACTIVE — Batch 2, B1 (null / non-object records). Base HEAD: `b7d61f0`.
+
+## Active — B1: Null / non-object records: sanitize at the boundary, guard every consumer [T1]
+
+Why: a corrupt or hostile backup with a null record must never crash the
+app. Reproduced by Muse on `b7d61f0`: base with `state["fri:0"]` done 1,
+incoming `state["fri:0"]: null` via JSON → `Cannot read properties of null
+(reading 'done')` in `mergePayload` (`store.js:440-442`). Same class at
+`migrateV2` (`store.js:206`) and `resetDay` (`store.js:571`, no null guard
+unlike `startSession`). Root cause: `sanitizeRecord` returns null records
+as-is, so null survives `normalize()`.
+
+Do (full spec in `QUEUE.md`, Batch 2, B1):
+- In `store.js`, make `sanitizePayload` / `normalize` drop or replace null /
+  non-object values in `state`, `liftHistory` entries, `sessionLog` entries,
+  and session `lifts` values, before any consumer reads them. Prefer drop
+  the null state record so `getLift()` defaults apply on next read.
+- Guard `mergePayload` (`theirs` null → skip), `migrateV2` (null → not-done),
+  `resetDay` (null → skip, as in `startSession`).
+- Tests in `test/store.test.js` (JSON-string payloads, L5 pattern):
+  `importMerge` null state over a done base; `importRaw` null state →
+  readable via `getLift`; v2 migrate with null record; `resetDay` with null
+  record; merge with null history/session entries (lock in Muse's verified
+  case). No schema change, no program-data change, no UI change.
+
+Files: `store.js`, `test/store.test.js`.
+Verify: `npm run check`, typecheck, e2e at 390x667 and 390x844, no overflow,
+no console errors. `BUILD_LOG.md` one line. SW bump if `store.js` changed.
 
 ## Completed — L5: security audit: import + service worker [T1]
 
