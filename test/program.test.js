@@ -125,3 +125,16 @@ test("getLift bounds the legacy backfill to the scheduled sets", () => {
   assert.equal(s.done, 1e9);   /* the count is preserved, only the rows are bounded */
   assert.equal(P.getLift({}, "fri", 0, ex).sets.length, 0);
 });
+
+test("every lift has a unique exId", () => {
+  const ids = new Set();
+  for (const d of ["fri", "sat", "sun"]) {
+    for (const ex of P.DAYS[d].ex) {
+      assert.ok(typeof ex.id === "string" && ex.id.length > 0, `${d} lift ${ex.name} has no id`);
+      ids.add(ex.id);
+    }
+  }
+  /* reconcile() resolves state keys through exId: a duplicate would silently
+     merge two lifts into one record, so uniqueness is worth asserting. */
+  assert.equal(ids.size, 24, "duplicate exId in program.js");
+});

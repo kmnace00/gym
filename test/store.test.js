@@ -796,3 +796,98 @@ test("history entries with a corrupt date are dropped at the boundary", () => {
   assert.equal(p.liftHistory["fri:0"][1].date, undefined);
   assert.equal({}.date, undefined, "no prototype pollution");
 });
+
+test("reconcile resolves two state keys that share an exId to the higher-done record", () => {
+  const exId = P.DAYS.fri.ex[0].id;
+  const p = {
+    state: {
+      "fri:0": { load: 60, done: 2, reps: 6, rir: 2 },
+      "stale:key": { load: 55, done: 5, reps: 6, rir: 2, exId: exId }
+    },
+    liftHistory: {}
+  };
+  S.reconcile(p, P.DAYS);
+  assert.equal(Object.keys(p.state).length, 1, "the collision collapses to one target");
+  assert.equal(p.state["fri:0"].done, 5, "the higher-done record wins");
+  assert.equal(p.state["fri:0"].load, 55);
+  assert.ok(!("stale:key" in p.state), "the losing record is dropped");
+});
+
+test("reconcile keeps the higher-done record whichever order the two collide in", () => {
+  const exId = P.DAYS.fri.ex[0].id;
+  const p = {
+    state: {
+      "ghost:key": { load: 70, done: 9, exId: exId },
+      "fri:0": { load: 60, done: 3, exId: exId }
+    },
+    liftHistory: {}
+  };
+  S.reconcile(p, P.DAYS);
+  assert.equal(p.state["fri:0"].done, 9);
+  assert.equal(Object.keys(p.state).length, 1);
+});
+
+test("reconcile merges history lists that share an exId into one target", () => {
+  const exId = P.DAYS.fri.ex[0].id;
+  const p = {
+    state: {},
+    liftHistory: {
+      "fri:0": [{ date: "2026-11-01", load: 60, reps: 6, rir: 2, setsDone: 3 }],
+      "orphan:9": [{ date: "2026-11-02", load: 65, reps: 5, rir: 1, setsDone: 4, exId: exId }]
+    }
+  };
+  S.reconcile(p, P.DAYS);
+  assert.equal(Object.keys(p.liftHistory).length, 1);
+  assert.equal(p.liftHistory["fri:0"].length, 2);
+  assert.equal(p.liftHistory["fri:0"][1].load, 65, "rows stay in date order");
+});
+
+test("rollSession re-finalizes a complete active session that still has data", () => {
+  const p = S.emptyPayload();
+  const fri = new Date(2026, 10, 6, 10).getTime();
+  const sun = new Date(2026, 10, 8, 10).getTime();
+  S.startSessionClock(p, fri);
+  p.active.date = "2026-11-06";
+  p.active.day = "fri";
+  p.state["fri:0"] = { done: 2, load: 60, sets: [{ load: 60, reps: 6, rir: 2 }] };
+  S.finalizeSession(p, fri + 1200000); // 20 minutes, banked once
+  assert.equal(p.active.status, "complete");
+  assert.equal(p.sessionLog.length, 1);
+  const id = p.sessionLog[0].id;
+  S.rollSession(p, "sun", sun);        // same session, already complete
+  assert.equal(p.sessionLog.length, 1, "re-finalize updates the entry, never appends a second");
+  assert.equal(p.sessionLog[0].id, id);
+  assert.equal(p.sessionLog[0].endedAt, sun);
+  assert.equal(p.sessionLog[0].durationSec, 1200);
+  assert.equal(p.sessionLog[0].lifts["fri:0"].done, 2);
+  assert.equal(p.active.day, "sun");
+  assert.equal(p.active.date, "2026-11-08");
+  assert.equal(p.active.status, "active");
+});
+
+test("rollSession banks nothing for a complete, empty active session", () => {
+  const p = S.emptyPayload();
+  const fri = new Date(2026, 10, 6, 10).getTime();
+  const sun = new Date(2026, 10, 8, 10).getTime();
+  S.startSessionClock(p, fri);
+  p.active.date = "2026-11-06";
+  p.active.day = "fri";
+  S.finalizeSession(p, fri + 60000);
+  assert.equal(p.sessionLog.length, 0, "nothing logged without progress");
+  S.rollSession(p, "sun", sun);
+  assert.equal(p.sessionLog.length, 0);
+  assert.equal(p.active.day, "sun");
+});
+
+test("mergePayload adopts an incoming bodyweight only when the local one is the default", () => {
+  const adopted = S.mergePayload(S.emptyPayload(), { v: 4, bodyweight: 172 });
+  assert.equal(adopted.bodyweight, 172, "165 is the unset default, so the backup wins");
+
+  const p2 = S.emptyPayload();
+  p2.bodyweight = 180;
+  assert.equal(S.mergePayload(p2, { v: 4, bodyweight: 172 }).bodyweight, 180, "a real local value is kept");
+
+  for (const bad of [0, -5, 900, NaN, "172", null]) {
+    assert.equal(S.mergePayload(S.emptyPayload(), { v: 4, bodyweight: bad }).bodyweight, 165, `${bad} is rejected`);
+  }
+});
