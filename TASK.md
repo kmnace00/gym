@@ -2,7 +2,22 @@
 
 ## WIP
 
-Status: DONE — autonomous 5-phase pipeline (Khang directive, Mon 4:00 AM–7:00 PM CT) finished at 05:40 CT. All five phases gated; queue empty. Nothing further queued — L9 awaits Khang's approval.
+Status: ACTIVE — L9 rest-controller extraction approved by Khang Nov 9, 05:45 CT. Contract pinned in `DESIGN.md` ("L9 build contract"). T2: builder → reviewer (pro) + tester.
+
+WIP: OpenCode editing restctl.js, app.js, index.html, sw.js, package.json, test/restctl.test.js, e2e/rest.spec.js since 2026-11-09 05:50 CT
+
+## Active — L9: Full rest-controller extraction [T2, approved]
+
+Move the rest orchestration out of `app.js` into a new `restctl.js` controller
+that owns `rest` + `restCtx` + the two-tap arm timer and returns
+`{state, view, effects}`; `app.js` becomes the DOM shell (renders the view,
+applies the effects), the 200 ms interval stays in the shell, and the pure
+`machine.js` / `rest.js` layers are untouched. Exact API, view fields, effect
+vocabulary and the byte-identical-string rules are pinned in `DESIGN.md`.
+Files: `restctl.js` (new), `app.js` (rest block only), `index.html` (script
+tag), `sw.js` (ASSETS + `CACHE` `gym-v20`), `package.json` (`node --check
+restctl.js`), `test/restctl.test.js` (new), `e2e/rest.spec.js` (new: simulated
+phone sleep).
 
 ## Completed — Phase 5: hardening & cleanup (input bounds, JSDoc, dead-code audit) [T1]
 
