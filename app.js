@@ -1058,11 +1058,14 @@
   /* the summary is a modal dialog like the menu: put focus back where it was
      when it closes, so a keyboard user does not land in the page body. */
   function closeSummary() {
-    summary.hidden = true;
+    /* move focus before hiding: hiding the dialog first makes the browser
+       bounce the focused node to <body>, which would clobber the restore.   */
     var back = sumFocus;
     sumFocus = null;
     if (back && document.contains(back) && back.getClientRects().length && typeof back.focus === "function") back.focus();
-    else if (menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
+    /* some openers (or <body>) cannot take focus; fall back to the header */
+    if (document.activeElement !== back && menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
+    summary.hidden = true;
   }
   document.getElementById("sumDone").onclick = function () {
     closeSummary();
