@@ -2,23 +2,28 @@
 
 Goal: personal one-screen gym tool, free, no scroll, rest-focused. Abandoned clothes picker to focus here only.
 
-## Current state (Nov 8, 19:35 CT — HEAD cbbf6a8, Pass 4 shipped)
+## Current state (Nov 9, 08:05 CT — HEAD 0446523, continuous loop)
 
 - One screen, 100dvh, Fri/Sat/Sun, 8 lifts/day, 24 lifts total.
 - Modular: `program.js` (data + pure math), `store.js`
   (persistence/history/sessions, schema v3, key still `gym-tool-v2`),
   `timer.js`, `machine.js` (rest state machine), `stats.js`
-  (analytics), `rest.js` (pure advance/finish helpers), `app.js`
-  (controller).
-- Sessions are first-class (start/stop clock, session log, Finish
-  summary); per-set arrays are the single truth for volume/PR/CSV;
-  top set drives progression; tap a logged set to edit it. Bodyweight
-  lifts valued at total system weight (default 75 kg). Week strip,
-  Continue, rest-screen next-set prep, corrupt quarantine +
-  snapshots, Undo last reset/restore. PWA (manifest + SW `gym-v11`,
-  navigations network-first, assets stale-while-revalidate), CI on push.
-- Verified: 85 unit / 35 e2e green, typecheck clean, no-scroll at
-  390×667/844. Program data unchanged (24 lifts).
+  (analytics), `rest.js` (pure advance/finish helpers), `restctl.js`
+  (rest orchestration controller: `{state, view, effects}`), `app.js`
+  (DOM shell + wiring). Loaded check modules are syntax-checked, and
+  two gate tools guard drift: `tools/check-assets.js` (index.html ↔
+  SW ASSETS) and `tools/check-ids.js` (every literal `getElementById`
+  exists in index.html or is created at runtime).
+- Since Pass 4: the 5-phase pipeline (a11y, architecture, conditional
+  SW revalidation, coverage, input bounds), the L9 rest-controller
+  extraction, and a continuous T1 loop — set-edit navigation/undo
+  restore the working load, history anchors to the live session date
+  across midnight, bodyweight history is valued at the weight in force
+  (`bwKg`), the rest-screen Finish finalizes the session + summary,
+  extra sets cap at `SETS_MAX`, "This week" counts the Fri–Sun block,
+  failed snapshots are reported, day pills/rest steppers meet 44 px.
+  SW `gym-v29`. Verified: 149 unit / 57 e2e green, typecheck clean,
+  no-scroll at 390×667/844. Program data unchanged (24 lifts).
 - Earlier: Loops 15–35 (Nov 8, stopped at 79% free weekly limit),
   Loop 14 Adjust-leak fix, dark-first Day → Lift revamp, file split,
   Pass 3 (stable ids, per-set history, Plan today, heatmap, CSV).
@@ -64,6 +69,10 @@ Public means anyone can READ, fork, or clone. Nobody else can push to `main`.
   any other commit author, or the service-worker cache contents. The
   boundary is localStorage only: imported payloads are sanitized before
   use, unsafe prototype keys (`__proto__`, `constructor`, `prototype`)
-  are dropped, numeric fields are coerced to finite numbers, history and
-  session logs are capped, and the app has no network path for
-  exfiltration beyond GitHub Pages serving static files.
+  are dropped, numeric fields are coerced to finite numbers, count
+  fields are clamped (`DONE_MAX`/`SETS_MAX` 12, `ACC_SEC_MAX` 8 h,
+  bodyweight and per-entry `bwKg` 0–300 kg) so a hostile `done: 1e9`
+  cannot spin the legacy backfill loop or allocate huge arrays, the
+  reconcile/merge dedupe maps are null-prototype, history and session
+  logs are capped, and the app has no network path for exfiltration
+  beyond GitHub Pages serving static files.

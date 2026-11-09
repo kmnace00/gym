@@ -2,9 +2,9 @@
 
 ## WIP
 
-Status: ACTIVE — continuous loop. Ten T1/T2 fixes since L9 (gate 149/149 unit, 56/56 e2e, SW `gym-v27`, CI green). Next: interaction-loop polish from Pro pass 5 — day pills/rest steppers/undo visibility (a11y), then Plan-today load preservation.
+Status: ACTIVE — continuous loop, checkpoint at `0446523` (SW `gym-v29`): 149/149 unit, 57/57 e2e, CI green. Docs refreshed (PLAN.md current state + threat model, HANDOFF.md). Next: no approved item left — Batch 3 is Khang's (research/alternate list), program numbers are read-only, new features are T3.
 
-WIP: OpenCode editing style.css, app.js, e2e/a11y.spec.js since 2026-11-09 07:50 CT
+WIP: none claimed
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 

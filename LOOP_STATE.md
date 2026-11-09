@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: CONTINUOUS LOOP ACTIVE (OpenCode, Nov 9 06:40 CT) — L9 shipped at 06:12 (`6ae2432`), then three T1s: `weekStatus` per-day lift counts, the set-edit navigation clobber fix, and derived count strings + the Fri–Sun "This week" counter. Gate: 146/146 unit, typecheck clean, 50/50 e2e at 390×667/844, SW `gym-v22`. Batch 3 in `QUEUE.md` still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 needs his alternate list; B4 delivered).
+Status: CONTINUOUS LOOP ACTIVE (OpenCode, Nov 9 08:05 CT) — 149/149 unit, typecheck clean, 57/57 e2e at 390×667/844, SW `gym-v29`, CI green. Shipped since L9 (`6ae2432`): `weekStatus` per-day counts; set-edit navigation/undo restore the working load; derived count strings + the Fri–Sun "This week" counter; rest-screen Finish finalizes the session; extra-set cap; per-entry `bwKg`; midnight session anchoring; snapshot-failure reporting; 44 px day pills/rest steppers + visible Undo; `tools/check-ids.js` gate. Batch 3 in `QUEUE.md` still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 needs his alternate list; B4 delivered). Full state and the deliberately-unbuilt list are in `HANDOFF.md`.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live

@@ -1,51 +1,60 @@
-# HANDOFF — paused Nov 9, 05:38 CT (OpenCode)
+# HANDOFF — continuous loop, Nov 9, 08:05 CT (OpenCode)
 
-## Where it stopped
-Khang's 5-phase pipeline (Mon 4:00 AM–7:00 PM CT) is **complete**. All five
-phases gated and pushed. Repo is clean: `main` == `origin/main` at `c37b649`,
-nothing uncommitted, no local server or test process running, the local model
-slot is free.
+## Where it stands
+All shipped work is gated and pushed; `main` == `origin/main` at `0446523`
+(SW `gym-v29`). Nothing is uncommitted, no subagent is running, the local
+model slot is free.
 
-Gate at HEAD: `npm run check` **130/130** unit · `npm run typecheck` clean ·
-`npm run e2e` **47/47** (390×667 + 390×844, no overflow, no console errors).
-SW cache `gym-v19`.
+Gate at HEAD: `npm run check` **149/149** unit (plus `check-assets` and
+`check-ids`) · `npm run typecheck` clean · `npm run e2e` **57/57** at
+390×667 + 390×844, no overflow, no console errors. GitHub CI and Pages are
+green on every pushed HEAD.
 
-| Phase | Gate commit |
-|---|---|
-| 1 UI/UX + a11y | `a0afe70` |
-| 2 architecture | `2e4bcb0` |
-| 3 performance | `44d65a5` |
-| 4 test coverage | `f9a1891` |
-| 5 hardening | `c37b649` |
-
-Both pipeline schedules (`sch_1be50f41e001RvUpNlwsHZuBO1` cron tick,
-`sch_1be50f422001U9LIfGmzpMv2eD` 6:30 PM reminder) are deleted — nothing will
-fire again.
+## What landed today
+- 4:00–5:40 AM: the 5-phase pipeline — Phase 1 `a0afe70`, 2 `2e4bcb0`,
+  3 `44d65a5`, 4 `f9a1891`, 5 `c37b649` (`gym-v15`→`v19`).
+- L9 rest-controller extraction (approved T2): `6ae2432`, `restctl.js`
+  owns the rest orchestration, `app.js` is the DOM shell. Reviewer PASS,
+  independent tester 7/7.
+- Continuous T1/T2 loop since: `weekStatus` per-day lift counts; set-edit
+  navigation + undo restore the working load; "This week" counts the
+  Fri–Sun block; count strings derived from data; the rest-screen Finish
+  finalizes the session + summary; extra sets cap at `SETS_MAX`;
+  bodyweight history valued at the weight in force (`bwKg`); midnight
+  sessions anchor to their start date; failed snapshots are reported;
+  44 px day pills / rest steppers + a visible Undo; `tools/check-ids.js`
+  gate (found and removed a dead `bwNote` lookup). Every item carries a
+  BUILD_LOG line and a test; two review findings were fixed before push
+  (non-discriminating PR assertion, a self-skipping Saturday e2e).
 
 ## Not built, on purpose
-- **L9** rest-controller extraction — design is in `DESIGN.md`, needs Khang's
-  approval before it is queued.
-- **P4** in `BACKLOG.md` — the new count caps (`DONE_MAX`/`SETS_MAX` 12,
-  `ACC_SEC_MAX` 8 h, `BODYWEIGHT_MAX` 300 kg) plus the `getLift` backfill bound
-  at `e.s`. Constants chosen by the loop; raising them is a Khang call.
-- `SET_SECS`, `TRANSITION_SECS`, `RIR_PENALTY`, `QUARANTINE`, `SNAPSHOT` are
-  exported but unread. Left in place as model constants — deleting them is a
-  judgment call, not a cleanup the loop should make unasked.
+- **Batch 3 in `QUEUE.md`**: L8 / L7 are NEEDS_RESEARCH (no verifiable
+  citations in `RESEARCH.md`), L6 needs Khang's curated alternate list;
+  B4 delivered inside L9. Nothing there is approved.
+- **Reconcile for a removed lift** (unknown `exId` currently re-binds to
+  the same day:index): a real latent risk on the next program edit, but
+  the fix needs a schema decision (quarantine bucket) — Khang's call.
+- **SW update flow**: atomic `addAll` install is deliberate (a partial
+  precache could serve a broken app); no `controllerchange` auto-reload
+  (reloading mid-set is worse than stale code).
+- **"End rest" on the last lift freezes the clock** (parity with the old
+  app): pause/resume or +15 recovers; the 2.6 s arm can expire while the
+  label still says "Tap again to finish". Low-frequency UX nuance, not a
+  data issue — flagged for Khang, not changed unilaterally.
+- **P4 caps** (`DONE_MAX`/`SETS_MAX`/`ACC_SEC_MAX`/`BODYWEIGHT_MAX`) are
+  a Khang sign-off in `BACKLOG.md`. Program numbers stay read-only.
 
 ## If a new lead resumes
-1. `git fetch origin && git status -sb` (sync-first rule), confirm authors are
-   only Khang/Muse.
-2. `QUEUE.md` is empty — do not invent an item. Anything new needs a
-   `TASK.md`/`BACKLOG.md` entry first.
-3. Run the gate before any commit: `npm run check && npm run typecheck &&
-   npm run e2e`.
-4. `program.js` numbers stay read-only.
-
-## Notes for the next session (model switch)
-- `/models` applies to this session on the **next turn**; a request already in
-  flight keeps the model it started with. Config is not rewritten by the pick.
-- Reused subagent sessions keep their old pin — pass `<provider>/<model>`
-  explicitly on a new dispatch, no `#variant`.
-- Playwright here needs `channel: "chrome"` (the bundled headless shell is not
-  installed). `file://` URLs can't register a service worker, so `sw.js` logic
-  was validated by a mocked `self`/`caches`/`fetch` eval, not in a browser.
+1. `git fetch origin && git status -sb`; confirm authors are only
+   Khang/Muse (the auto-sync watcher commits as Khang).
+2. Read `TASK.md` (WIP + completed), then `QUEUE.md` Batch 3 and
+   `BACKLOG.md` tail (the Pro findings table + dispositions).
+3. Pick the next T1 from BACKLOG/QUEUE — do not invent features (T3) and
+   do not touch `program.js` numbers. Gate every item: `npm run check &&
+   npm run typecheck && npm run e2e`, one BUILD_LOG line, SW `CACHE` bump
+   when an asset changed.
+4. Note: the auto-sync watcher commits and pushes mid-edit, so an
+   intermediate commit can be CI-red for a minute. Always verify CI on
+   the *final* HEAD, not on the auto-sync in between.
+5. Playwright needs `channel: "chrome"`; `file://` cannot register a SW,
+   so SW logic is validated with a mocked `self`/`caches`/`fetch` eval.
