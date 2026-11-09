@@ -18,13 +18,6 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  /** @param {any} payload @returns {string[]} every "day:index" key with history */
-  function historyKeys(payload) {
-    var out = [], lh = (payload && payload.liftHistory) || {}, k;
-    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k) && lh[k] && lh[k].length) out.push(k);
-    return out;
-  }
-
   /**
    * Distinct calendar dates with a completed lift or a logged session.
    * This is the "workouts" metric: one Friday is one workout, not eight.
@@ -84,6 +77,22 @@
     var n = Math.max(0, Math.round(e.setsDone || 0)), out = [], i;
     for (i = 0; i < n; i++) out.push({ load: e.load || 0, reps: e.reps || 0, rir: e.rir || 0 });
     return out;
+  }
+
+  /**
+   * The highest-value set in a list, by the caller's metric.
+   * @param {Array<{load:number,reps:number}>} sets
+   * @param {function(number,number,object):number} metric
+   * @param {object} [opts] forwarded to metric as its third argument
+   * @returns {object|null} the best set, or null when there are none
+   */
+  function topSet(sets, metric, opts) {
+    var best = null, bestM = -Infinity, i, m;
+    for (i = 0; i < (sets || []).length; i++) {
+      m = metric((sets[i] && sets[i].load) || 0, (sets[i] && sets[i].reps) || 0, opts);
+      if (m > bestM) { bestM = m; best = sets[i]; }
+    }
+    return best;
   }
 
   /**
@@ -351,6 +360,39 @@
     return out;
   }
 
+  /** Compact tonnage label for the Progress view: 1234 → "1.2k", 999 → "999". */
+  function compactVol(v) { v = Math.round(v || 0); return v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v); }
+
+  /**
+   * The three lifts with the largest first→last change in top-set metric.
+   * Lifts with fewer than two history entries are skipped.
+   * @param {any} payload
+   * @param {object} DAYS
+   * @param {function(number,number,object):number} metric
+   * @returns {Array<{name:string,delta:number,pct:number}>} sorted by pct descending
+   */
+  function topMovers(payload, DAYS, metric) {
+    var lh = (payload && payload.liftHistory) || {}, bwKg = payload && payload.bodyweight;
+    var out = [], k, arr, p, d, i, e, first, last, delta, pct;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
+      arr = lh[k] || [];
+      if (arr.length < 2) continue;
+      p = k.split(":"); d = p[0]; i = parseInt(p[1], 10);
+      e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
+      if (!e) continue;
+      var opts = { bw: !!e.bw, bodyweight: bwKg };
+      first = topSet(entrySets(arr[0]), metric, opts) || arr[0];
+      last = topSet(entrySets(arr[arr.length - 1]), metric, opts) || arr[arr.length - 1];
+      var fm = metric(first.load || 0, first.reps || 0, opts);
+      var lm = metric(last.load || 0, last.reps || 0, opts);
+      if (!fm) continue;
+      delta = lm - fm; pct = Math.round((delta / fm) * 1000) / 10;
+      out.push({ name: e.n, delta: Math.round(delta * 10) / 10, pct: pct });
+    }
+    out.sort(function (a, b) { return b.pct - a.pct; });
+    return out.slice(0, 3);
+  }
+
   /**
    * Estimate vs actual session length for one day, from the finished-session
    * log. The estimate comes from the program model (`Gym.dayMins(day)`) and is
@@ -388,12 +430,13 @@
   }
 
   return {
-    historyKeys: historyKeys, sessionCount: sessionCount, setsLogged: setsLogged,
-    setsRecorded: setsRecorded, entrySets: entrySets,
+    sessionCount: sessionCount, setsLogged: setsLogged,
+    setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
+    compactVol: compactVol, topMovers: topMovers,
     trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift
   };
 });
