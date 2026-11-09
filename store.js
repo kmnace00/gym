@@ -27,6 +27,14 @@
 
   /* open on today's training day; Mon–Thu (off days) land on Fri, the next session */
   function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
+  /* the actual weekday when it is a training day, else null (Mon–Thu) */
+  function actualDay() { var d = new Date().getDay(); return d === 5 ? "fri" : d === 6 ? "sat" : d === 0 ? "sun" : null; }
+  /* whole days until the next occurrence of a training day (0 = today) */
+  function daysUntil(day) {
+    var order = { sun: 0, fri: 5, sat: 6 }, target = order[day];
+    if (target == null) return null;
+    return (target - new Date().getDay() + 7) % 7;
+  }
   function emptyPayload() { return { v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {}, lastBackup: null }; }
 
   /* ── sanitize on the way in ───────────────────────────────────────────────
@@ -49,6 +57,7 @@
     coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
     coerceNum(r, "done"); coerceNum(r, "topHits");
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
+    if (Object.prototype.hasOwnProperty.call(r, "exId")) r.exId = typeof r.exId === "string" ? r.exId : String(r.exId);
     if (Array.isArray(r.sets)) {
       for (i = 0; i < r.sets.length; i++) {
         set = r.sets[i];
@@ -62,6 +71,13 @@
     if (Object.prototype.hasOwnProperty.call(e, "date")) e.date = typeof e.date === "string" ? e.date : String(e.date);
     coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir"); coerceNum(e, "setsDone");
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
+    if (Object.prototype.hasOwnProperty.call(e, "exId")) e.exId = typeof e.exId === "string" ? e.exId : String(e.exId);
+    if (Array.isArray(e.sets)) {
+      for (var i = 0; i < e.sets.length; i++) {
+        var set = e.sets[i];
+        if (set && typeof set === "object") { coerceNum(set, "load"); coerceNum(set, "reps"); coerceNum(set, "rir"); }
+      }
+    }
     return e;
   }
   function sanitizePayload(p) {
@@ -208,6 +224,56 @@
     return merged;
   }
 
+  /* ── stable identity: re-home day:index records after a program reorder ────
+     Records and history entries stamp `exId`. If a future program edit moves
+     a lift to a different index, the data follows its id instead of silently
+     binding to whatever now sits at the old index. No-op for the current
+     program (and for legacy records that never stored an exId).             */
+  function reconcile(p, DAYS) {
+    if (!p || !DAYS) return p;
+    var idKey = {}, d, i, list, e, k, hk, arr, j, target;
+    for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
+      list = DAYS[d].ex;
+      for (i = 0; i < list.length; i++) { e = list[i]; if (e && e.id) idKey[e.id] = d + ":" + i; }
+    }
+    p.state = p.state && typeof p.state === "object" ? p.state : {};
+    p.liftHistory = p.liftHistory && typeof p.liftHistory === "object" ? p.liftHistory : {};
+
+    var newState = {};
+    for (k in p.state) if (Object.prototype.hasOwnProperty.call(p.state, k)) {
+      var rec = p.state[k];
+      target = rec && rec.exId && idKey[rec.exId] ? idKey[rec.exId] : k;
+      if (newState[target]) {
+        var a = newState[target], b = rec;
+        newState[target] = (b && (b.done || 0) > (a.done || 0)) ? b : a;
+      } else newState[target] = rec;
+    }
+    p.state = newState;
+
+    var newHist = {};
+    for (hk in p.liftHistory) if (Object.prototype.hasOwnProperty.call(p.liftHistory, hk)) {
+      arr = p.liftHistory[hk] || [];
+      target = hk;
+      for (j = 0; j < arr.length; j++) {
+        if (arr[j] && arr[j].exId && idKey[arr[j].exId]) { target = idKey[arr[j].exId]; break; }
+      }
+      newHist[target] = (newHist[target] || []).concat(arr);
+    }
+    for (k in newHist) if (Object.prototype.hasOwnProperty.call(newHist, k)) {
+      var seen = {};
+      newHist[k].forEach(function (en) {
+        if (!en) return;
+        seen[en.date || (en.load + ":" + en.reps + ":" + en.rir + ":" + en.setsDone)] = en;
+      });
+      var merged = Object.keys(seen).map(function (dk) { return seen[dk]; });
+      merged.sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
+      while (merged.length > HISTORY_MAX) merged.shift();
+      newHist[k] = merged;
+    }
+    p.liftHistory = newHist;
+    return p;
+  }
+
   /* clear one lift's finished sets, keeping the working load / reps / RIR.
      A same-day snapshot (from a redo) is dropped so redoing replaces it.    */
   function resetLift(p, d, i) {
@@ -249,7 +315,8 @@
     pushHistory: pushHistory, lastEntry: lastEntry, series: series, popHistory: popHistory,
     resetLift: resetLift, resetDay: resetDay,
     markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue,
-    mergePayload: mergePayload, importMerge: importMerge,
+    mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
+    todayDay: todayDay, actualDay: actualDay, daysUntil: daysUntil,
     dateKey: dateKey
   };
 });

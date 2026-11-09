@@ -4,15 +4,15 @@
 
   var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc, dayMins = Gym.dayMins, dayMinsLeft = Gym.dayMinsLeft,
       getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
-      progressMetric = Gym.progressMetric,
+      planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
-      sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym;
+      sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym, Rest = Gym;
 
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
   var RIR_KEY = "gym-rir-seen";
 
   /* ── state ─────────────────────────────────────────────────────────────── */
-  var payload, cur, idx, view = "day", hintText = "", hintGood = false;
+  var payload, cur, idx, view = "day", hintText = "", hintGood = false, planMsg = "";
 
   function st(d, i) { return getLift(payload.state, d, i, DAYS[d].ex[i]); }
   function ex() { return DAYS[cur].ex[idx]; }
@@ -114,12 +114,22 @@
     rNextBtn.disabled = last;
   }
   function renderDay() {
-    var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i;
-    for (i = 0; i < list.length; i++) { totalDone += Math.min(st(cur, i).done, list[i].s); totalSets += list[i].s; }
+    var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i, hasHist = false;
+    for (i = 0; i < list.length; i++) {
+      totalDone += Math.min(st(cur, i).done, list[i].s); totalSets += list[i].s;
+      if (!hasHist && Gym.series(payload, cur, i).length) hasHist = true;
+    }
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
-    document.getElementById("daySummary").textContent = (totalSets > 0 && totalDone >= totalSets)
+    var summary = (totalSets > 0 && totalDone >= totalSets)
       ? "Workout complete — nice work"
       : "8 lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
+    if (!Gym.actualDay()) {
+      var gap = Gym.daysUntil(Gym.todayDay());
+      summary = "Off day · next " + (DAY_LABEL[Gym.todayDay()] || "session") + (gap > 0 ? " in " + gap + "d" : "") + " · " + summary;
+    }
+    if (planMsg) summary += " · " + planMsg;
+    document.getElementById("daySummary").textContent = summary;
+    document.getElementById("planBtn").hidden = !hasHist;
 
     var rows = "";
     list.forEach(function (e, i) {
@@ -162,14 +172,34 @@
     var skip = (s.done >= ex().s && entries.length > 0) ? 1 : 0;
     return skip ? entries.slice(0, entries.length - 1) : entries;
   }
+  function fmtDate(key) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ""));
+    if (!m) return "";
+    return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+m[2] - 1] + " " + (+m[3]);
+  }
+  /* per-set history: what the last session actually did, one compact line */
+  function renderPrev(su) {
+    var el = document.getElementById("prevLine");
+    if (!su || !su.last) { el.hidden = true; return; }
+    var e = ex(), txt;
+    if (su.last.sets && su.last.sets.length) {
+      txt = su.last.sets.map(function (st) { return loadLabel(st.load, e) + "×" + st.reps; }).join(" · ");
+    } else {
+      txt = loadLabel(su.last.load, e) + "×" + su.last.reps + " × " + (su.last.setsDone || 1) + " sets";
+    }
+    el.textContent = "Prev: " + txt;
+    el.hidden = false;
+  }
   function renderSuggest() {
     var line = document.getElementById("suggestLine"), txt = document.getElementById("suggestText"), applyBtn = document.getElementById("applyLoad");
     var pri = priorEntries();
     var last = pri.length ? pri[pri.length - 1] : null;
     var stall = stallLoad(ex(), pri);
     var su = suggestLoad(ex(), last);
+    renderPrev(su);
     if (!su.last) { line.hidden = true; applyBtn.hidden = true; return; }
-    var base = "Last " + (DAY_LABEL[cur] || "") + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
+    var when = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
+    var base = "Last " + when + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
     if (stall) {
       /* a plateau — double progression can't help, so recommend the deload */
       txt.innerHTML = base + " · 3 sessions stalled → deload to <b>" + esc(stall.load) + "</b>";
@@ -311,6 +341,15 @@
     });
     document.getElementById("pDayBars").innerHTML = bars;
 
+    var weeks = Stats.trainingDays(payload, 8, todayKey), heatCount = 0;
+    document.getElementById("heatmap").innerHTML = weeks.map(function (w) {
+      return '<span class="hweek">' + ["fri", "sat", "sun"].map(function (d) {
+        if (w[d]) heatCount++;
+        return '<i class="hday' + (w[d] ? " on" : "") + '"></i>';
+      }).join("") + "</span>";
+    }).join("");
+    document.getElementById("pHeatCount").textContent = heatCount + "/24";
+
     var recent = Stats.recentVolume(payload, 12), svg = document.getElementById("pSpark");
     if (recent.length < 2) { svg.innerHTML = ""; }
     else {
@@ -336,6 +375,9 @@
     document.getElementById("pNote").textContent = recent.length
       ? "Last " + recent.length + " session" + (recent.length === 1 ? "" : "s") + wowTxt
       : "Log a full lift to see the trend";
+
+    var pr = Stats.personalRecords(payload, DAYS, progressMetric)[0];
+    document.getElementById("pPr").textContent = pr ? "PR " + (pr.load > 0 ? pr.metric + " kg" : pr.metric + " reps") : "";
 
     var movers = topMovers();
     document.getElementById("pMovers").innerHTML = movers.length
@@ -459,8 +501,8 @@
     var rn = document.getElementById("restNext");
     rn.textContent = rn.textContent.replace("Up next —", "Up now —");
     restCtx.finishUntil = 0;
-    var adv = restCtx.pending && cur === restCtx.pDay && idx === restCtx.pIdx;
-    skipBtn.textContent = adv ? (idx < DAYS[cur].ex.length - 1 ? "Next lift" : "Finish") : "Start next set";
+    var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, true);
+    skipBtn.textContent = Rest.advanceLabel(adv, idx >= DAYS[cur].ex.length - 1);
     setRestLabel("GO", adv ? (idx < DAYS[cur].ex.length - 1 ? "Lift done — next up." : "Workout complete — nice work.") : "Next set — go.");
     renderRest();
     if (navigator.vibrate) navigator.vibrate(200);
@@ -537,22 +579,22 @@
   skipBtn.onclick = function () {
     var wasGo = rest.phase === Machine.GO;
     stopInterval();
-    var adv = restCtx.pending && cur === restCtx.pDay && idx === restCtx.pIdx && curSt().done >= ex().s;
+    var adv = Rest.canAdvance(restCtx.pending, cur, restCtx.pDay, idx, restCtx.pIdx, curSt().done >= ex().s);
     if (adv) {
-      if (idx < DAYS[cur].ex.length - 1) {
+      var nx = Rest.nextLift(idx, DAYS[cur].ex.length, firstOpenLift(cur, payload.state, idx + 1));
+      if (nx >= 0) {
         restCtx.pending = false;
-        var next = firstOpenLift(cur, payload.state, idx + 1);
-        idx = next >= 0 ? next : idx + 1;
+        idx = nx;
         hintText = ""; hintGood = false; commit();
         timerIdle("", "Next lift — go."); render();
       } else {
         /* last lift done — require a second tap so a stray tap can't end the session */
-        if (Date.now() > restCtx.finishUntil) {
-          restCtx.finishUntil = Date.now() + 2500;
+        if (!Rest.finishArmed(Date.now(), restCtx.finishUntil)) {
+          restCtx.finishUntil = Rest.armFinish(Date.now());
           skipBtn.textContent = "Tap again to finish";
           clearTimeout(restCtx.skipTimer);
           restCtx.skipTimer = setTimeout(function () {
-            if (timerBar.classList.contains("go") && Date.now() >= restCtx.finishUntil) skipBtn.textContent = "Finish";
+            if (timerBar.classList.contains("go") && !Rest.finishArmed(Date.now(), restCtx.finishUntil)) skipBtn.textContent = "Finish";
           }, 2600);
           return;
         }
@@ -767,7 +809,9 @@
         date: Gym.dateKey(),
         load: s.load, reps: s.reps, rir: s.lastRir,
         hitTop: (s.reps >= e.top && s.lastRir >= e.rir),
-        setsDone: s.done
+        setsDone: s.done,
+        sets: s.sets.slice(),
+        exId: e.id
       });
     }
 
@@ -808,6 +852,25 @@
     commit(); render();
   };
 
+  /* plan the whole day: pre-fill each not-yet-started lift from its history */
+  document.getElementById("planBtn").onclick = function () {
+    var list = DAYS[cur].ex, up = 0, down = 0, keep = 0;
+    list.forEach(function (e, i) {
+      var s = st(cur, i);
+      if (s.done > 0) return; // never overwrite an in-progress lift
+      var p = planFor(e, Gym.series(payload, cur, i));
+      if (p.action === "none") return;
+      if (p.action === "up") up++;
+      else if (p.action === "deload") down++;
+      else keep++;
+      if (p.load != null) s.load = p.load;
+    });
+    planMsg = (up || down)
+      ? "Planned +" + up + (down ? " · deload " + down : "")
+      : "Planned · all keep";
+    commit(); render();
+  };
+
   /* ── navigation ────────────────────────────────────────────────────────── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
@@ -843,7 +906,7 @@
   document.querySelectorAll(".day").forEach(function (b) {
     b.onclick = function () {
       cur = b.getAttribute("data-day");
-      idx = 0; hintText = ""; hintGood = false; view = "day";
+      idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
       clearUndo(); sAutoStopped = false;
       var open = firstOpenLift(cur, payload.state, 0);
       idx = open >= 0 ? open : 0;
@@ -866,7 +929,7 @@
   }
   modal.addEventListener("keydown", function (ev) {
     if (ev.key !== "Tab") return;
-    var items = modal.querySelectorAll("button, label.modalbtn, input");
+    var items = modal.querySelectorAll("button, label.modalbtn, input:not([hidden])");
     if (!items.length) return;
     var first = items[0], last = items[items.length - 1];
     if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
@@ -899,25 +962,76 @@
       navigator.clipboard.writeText(json).then(function () { noteBackup(); setMsg("Backup copied to clipboard ✓"); }, function () { setMsg("Copy blocked — use Download JSON"); });
     } else { downloadBackup(); }
   };
-  function downloadBackup() {
-    var json = Gym.exportPayload(payload);
-    var blob = new Blob([json], { type: "application/json" });
+  function downloadText(text, name, type) {
+    var blob = new Blob([text], { type: type || "text/plain" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "gym-backup-" + Gym.dateKey() + ".json";
+    a.download = name;
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+  function downloadBackup() {
+    downloadText(Gym.exportPayload(payload), "gym-backup-" + Gym.dateKey() + ".json", "application/json");
     noteBackup();
     setMsg("Backup downloaded ✓");
   }
   document.getElementById("exportDownload").onclick = downloadBackup;
+  document.getElementById("exportCsv").onclick = function () {
+    downloadText(Stats.toCsv(payload, DAYS), "gym-" + Gym.dateKey() + ".csv", "text/csv");
+    setMsg("CSV exported ✓");
+  };
+  function summaryText() {
+    var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
+    var days = Stats.uniqueDays(payload), vol = Math.round(Stats.totalVolume(payload));
+    return "Gym — " + sessions + " sessions · " + sets + " sets · " + days + " training days · " + vol + " kg tonnage";
+  }
+  document.getElementById("shareSummary").onclick = function () {
+    var text = summaryText();
+    if (navigator.share) {
+      navigator.share({ title: "Gym", text: text }).then(function () { setMsg("Shared ✓"); }, function () {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { setMsg("Summary copied ✓"); }, function () { setMsg("Share not available"); });
+    } else { setMsg("Share not available"); }
+  };
+  /* Restore (replace) is destructive: arm it with a second tap before the picker. */
+  var replaceArmedUntil = 0, replaceBtn = document.getElementById("replaceBtn"), replaceFile = document.getElementById("replaceFile");
+  replaceBtn.onclick = function () {
+    if (Date.now() >= replaceArmedUntil) {
+      replaceArmedUntil = Date.now() + 2500;
+      replaceBtn.textContent = "Tap again to replace";
+      setTimeout(function () {
+        if (Date.now() >= replaceArmedUntil) replaceBtn.textContent = "Restore (replace)";
+      }, 2600);
+      return;
+    }
+    replaceArmedUntil = 0;
+    replaceBtn.textContent = "Restore (replace)";
+    replaceFile.click();
+  };
+  replaceFile.addEventListener("change", function (ev) {
+    var f = ev.target.files && ev.target.files[0]; if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        payload = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        cur = payload.cur; idx = payload.idx;
+        if (!DAYS[cur]) cur = "fri";
+        if (idx >= DAYS[cur].ex.length) idx = 0;
+        clearUndo(); view = "day";
+        render(); commit(); updateFoot();
+        setMsg("Backup restored — current data replaced ✓");
+      } catch (e) { setMsg("Restore failed — not a Gym backup"); }
+    };
+    reader.readAsText(f);
+    ev.target.value = "";
+  });
   document.getElementById("importFile").addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
     var reader = new FileReader();
     reader.onload = function () {
       try {
         var merged = Gym.importMerge(payload, String(reader.result));
-        payload = merged; cur = payload.cur; idx = payload.idx;
+        payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
@@ -977,10 +1091,11 @@
 
   /* ── boot ──────────────────────────────────────────────────────────────── */
   initTheme();
-  payload = Gym.load();
+  payload = Gym.reconcile(Gym.load(), DAYS);
   cur = payload.cur; idx = payload.idx;
   if (!DAYS[cur]) cur = "fri";
   if (idx >= DAYS[cur].ex.length) idx = 0;
+  sessBtn.title = "Workout timer — starts automatically on your first set";
   showRirHintIfNew();
   initNotify();
   updateFoot();

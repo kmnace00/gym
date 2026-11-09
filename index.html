@@ -56,7 +56,10 @@
       <button class="bbdismiss" id="backupBarDismiss" type="button" aria-label="Dismiss backup reminder">✕</button>
     </div>
     <div class="dayhead">
-      <div class="daytitle" id="dayTitle">—</div>
+      <div class="daytop">
+        <div class="daytitle" id="dayTitle">—</div>
+        <button class="planbtn" id="planBtn" type="button" hidden>Plan today</button>
+      </div>
       <div class="daysub" id="daySummary">—</div>
     </div>
     <ul class="liftlist" id="liftList"></ul>
@@ -84,6 +87,7 @@
     <div class="setlog" id="setLog" aria-label="Set log"></div>
 
     <div class="suggest" id="suggestLine" hidden><span id="suggestText"></span><button class="applybtn" id="applyLoad" type="button" hidden>Apply</button></div>
+    <div class="prevline" id="prevLine" hidden></div>
     <div class="sparkwrap" id="sparkWrap" hidden><svg class="spark" id="sparkline" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"></svg></div>
 
     <div class="adjust">
@@ -123,13 +127,17 @@
       <div class="pcardhead"><span>Volume by day</span></div>
       <div class="pdaybars" id="pDayBars"></div>
     </div>
+    <div class="pcard pheat">
+      <div class="pcardhead"><span>Training days · 8 weeks</span><span class="pvol" id="pHeatCount"></span></div>
+      <div class="heat" id="heatmap" aria-hidden="true"></div>
+    </div>
     <div class="pcard">
       <div class="pcardhead"><span>Recent sessions</span></div>
       <div class="psparkwrap"><svg class="pspark" id="pSpark" viewBox="0 0 280 64" preserveAspectRatio="none" aria-hidden="true"></svg></div>
       <div class="pnote" id="pNote"></div>
     </div>
     <div class="pcard">
-      <div class="pcardhead"><span>Biggest movers</span></div>
+      <div class="pcardhead"><span>Biggest movers</span><span class="pvol" id="pPr"></span></div>
       <ul class="pmovers" id="pMovers"></ul>
     </div>
   </section>
@@ -141,7 +149,11 @@
     <div class="modal-head"><strong>Menu</strong><button class="modalclose" id="modalClose" type="button" aria-label="Close">✕</button></div>
     <button class="modalbtn" id="exportCopy" type="button">Copy backup</button>
     <button class="modalbtn" id="exportDownload" type="button">Download JSON</button>
+    <button class="modalbtn" id="exportCsv" type="button">Export CSV</button>
+    <button class="modalbtn" id="shareSummary" type="button">Share summary</button>
     <label class="modalbtn" id="importLabel">Import backup<input type="file" id="importFile" accept="application/json,text/plain" hidden></label>
+    <button class="modalbtn modalbtn-danger" id="replaceBtn" type="button">Restore (replace)</button>
+    <input type="file" id="replaceFile" accept="application/json,text/plain" hidden>
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
     <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>
@@ -157,6 +169,7 @@
 <script src="timer.js"></script>
 <script src="machine.js"></script>
 <script src="stats.js"></script>
+<script src="rest.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 /* Gym service worker — network-first so updates always land, cache fallback offline. */
-const CACHE = "gym-v5";
+const CACHE = "gym-v6";
 const ASSETS = [
   "./", "./index.html", "./style.css",
-  "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./app.js",
+  "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"
 ];
 

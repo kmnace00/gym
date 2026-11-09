@@ -19,18 +19,13 @@
 
   /** @param {number} baseRest @param {number} rir @returns {number} seconds */
   function restDuration(baseRest, rir) { return baseRest + (rir <= 1 ? RIR_PENALTY : 0); }
-  /** @param {number} endMs @param {number} nowMs @returns {number} whole seconds left */
-  function remainingSeconds(endMs, nowMs) { return Math.max(0, Math.ceil((endMs - nowMs) / 1000)); }
-  /** @param {number} nowMs @param {number} remainingSec @returns {number} */
-  function resumeEndMs(nowMs, remainingSec) { return nowMs + remainingSec * 1000; }
-  /** @param {number} endMs @param {number} addSec @returns {number} */
-  function extendEndMs(endMs, addSec) { return endMs + addSec * 1000; }
   /** @param {number} baseSec @param {number} startMs @param {number} nowMs @returns {number} */
   function sessionElapsed(baseSec, startMs, nowMs) { return baseSec + Math.max(0, Math.floor((nowMs - startMs) / 1000)); }
 
+  /* The countdown / pause / extend math now lives in machine.js; keeping a
+     second copy here was a trap for a future caller. */
   return {
     RIR_PENALTY: RIR_PENALTY,
-    restDuration: restDuration, remainingSeconds: remainingSeconds,
-    resumeEndMs: resumeEndMs, extendEndMs: extendEndMs, sessionElapsed: sessionElapsed
+    restDuration: restDuration, sessionElapsed: sessionElapsed
   };
 });

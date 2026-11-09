@@ -105,3 +105,45 @@ Second T2 pass. Decisions:
 - **Full ESM / module namespacing** — `file://` e2e CORS + CJS harness, as in
   pass 1. Mitigated here with a duplicate-export warning in the UMD wrapper.
 
+## Pass 3 (2026-11-08) — "Build all": UX, product, tech-debt pass
+
+Third T2 pass, Khang's explicit "Build all now". Scope is the ranked list from
+the PM/architect review. Constraint: every change stays **additive on schema v2**
+(no version bump, no storage-key change) so existing v2 payloads and the e2e
+seeds keep loading; new fields (`exId`, history `sets`) are optional and
+normalized in, exactly like `lastBackup` was.
+
+Decisions:
+
+1. **Stable exercise identity without re-keying the store.** Add an `id` to
+   every exercise in `program.js`, stamp `exId` on each state record and history
+   entry, and add `store.reconcile(p, DAYS)` on load/import that re-homes a
+   record to its current `day:index` when the program order changed. Keeps the
+   proven `day:index` keys (and 60 tests) intact while removing the "reorder
+   corrupts history" risk.
+2. **Per-set history is additive.** History entries gain `sets: [{load,reps,rir}]`
+   when a lift completes. Legacy entries fall back to `load×reps×setsDone`.
+   Surfaced as a compact "Prev" line on the lift view (not a new screen).
+3. **Bodyweight tonnage uses a named constant.** `entryVolume` now values a
+   `load: 0` (bodyweight) set at `BODYWEIGHT_KG` (75) per rep, so pull-ups /
+   dips / calf raises stop reading as zero volume. One knob, documented.
+4. **Rest orchestration gets pure helpers, not a rewrite.** The DOM controller
+   stays in `app.js`; the advance / finish / arm decisions move into `rest.js`
+   (mirroring `machine.js`) with unit tests. This is the low-risk slice of the
+   deferred "dedicated rest controller" that actually adds correctness tests.
+5. **Heatmap = 8 Fri/Sat/Sun columns, not 84 cells.** The training week is a
+   Fri–Sun block, so the consistency card renders 8 weeks × 3 days — compact
+   enough to keep the progress view inside `100dvh`.
+6. **Portability = CSV + Web Share, not Apple Health.** Apple Health needs
+   native packaging (non-goal); CSV download and a `navigator.share` summary
+   give the same "data leaves the silo" value inside a static PWA.
+7. **Restore (replace) is exposed.** `importRaw` already existed but was
+   unreachable; it becomes a two-tap "Restore (replace)" beside the merge import.
+
+Work items (files): `program.js`, `store.js`, `stats.js`, `rest.js` (new),
+`index.html`, `style.css`, `app.js`, `sw.js`, `globals.d.ts`, `jsconfig.json`,
+`test/*`, `e2e/*`, `README.md`, `BUILD_LOG.md`, `TASK.md` (WIP only).
+
+Verification: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and
+390×844, keeping the no-scroll invariant and the 24-lift program numbers intact.
+

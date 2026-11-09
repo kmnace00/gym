@@ -16,42 +16,48 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  /* ── program data — unchanged from the original tool ─────────────────── */
+  /* ── program data — loads / sets / reps / rests / cues unchanged ────────
+     Each lift now carries a stable `id`. The store keys are still day:index
+     (proven, tested), but records also stamp `exId`, so store.reconcile()
+     can re-home them if a future program edit reorders the list.            */
   var DAYS = {
     fri: { label: "Friday — Push + Quads", ex: [
-      { n: "Smith squat", s: 3, r: 6, top: 6, load: 60, step: 2.5, rest: 180, rir: 2, cue: "Bar over mid-foot, heels flat." },
-      { n: "Smith incline press", s: 3, r: 6, top: 6, load: 50, step: 2.5, rest: 120, rir: 2, cue: "Bench ~30°. Bar to upper chest." },
-      { n: "Bulgarian split squat", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 120, rir: 2, cue: "Per leg. Upright = more quad." },
-      { n: "Incline DB press", s: 3, r: 7, top: 8, load: 52.5, step: 2.5, rest: 120, rir: 2, cue: "Lower to a stretch, don't drift wide." },
-      { n: "Pec deck fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
-      { n: "Leg extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },
-      { n: "Cable lateral raise", s: 3, r: 10, top: 12, load: 10, step: 1, rest: 90, rir: 1, partial: 1, cue: "Per side. Arm across body, lead with elbow." },
-      { n: "Weighted dip", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Lean forward, comfortable depth." }
+      { id: "fri-smith-squat", n: "Smith squat", s: 3, r: 6, top: 6, load: 60, step: 2.5, rest: 180, rir: 2, cue: "Bar over mid-foot, heels flat." },
+      { id: "fri-smith-incline", n: "Smith incline press", s: 3, r: 6, top: 6, load: 50, step: 2.5, rest: 120, rir: 2, cue: "Bench ~30°. Bar to upper chest." },
+      { id: "fri-bulgarian", n: "Bulgarian split squat", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 120, rir: 2, cue: "Per leg. Upright = more quad." },
+      { id: "fri-incline-db", n: "Incline DB press", s: 3, r: 7, top: 8, load: 52.5, step: 2.5, rest: 120, rir: 2, cue: "Lower to a stretch, don't drift wide." },
+      { id: "fri-pec-deck", n: "Pec deck fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
+      { id: "fri-leg-ext", n: "Leg extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },
+      { id: "fri-cable-lat", n: "Cable lateral raise", s: 3, r: 10, top: 12, load: 10, step: 1, rest: 90, rir: 1, partial: 1, cue: "Per side. Arm across body, lead with elbow." },
+      { id: "fri-weighted-dip", n: "Weighted dip", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Lean forward, comfortable depth." }
     ] },
     sat: { label: "Saturday — Pull + Hinge", ex: [
-      { n: "MTS front pulldown", s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
-      { n: "Cable RDL", s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
-      { n: "T-bar row", s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "25+25+25. Chest-supported if you can." },
-      { n: "Seated leg curl", s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
-      { n: "Bayesian curl", s: 3, r: 8, top: 10, load: 13, step: 1, rest: 90, rir: 1, partial: 1, cue: "Arm behind body, elbow fixed." },
-      { n: "Preacher curl", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
-      { n: "Rear delt crossover", s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
-      { n: "Standing calf raise", s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
+      { id: "sat-front-pulldown", n: "MTS front pulldown", s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
+      { id: "sat-cable-rdl", n: "Cable RDL", s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
+      { id: "sat-tbar-row", n: "T-bar row", s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "25+25+25. Chest-supported if you can." },
+      { id: "sat-leg-curl", n: "Seated leg curl", s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
+      { id: "sat-bayesian-curl", n: "Bayesian curl", s: 3, r: 8, top: 10, load: 13, step: 1, rest: 90, rir: 1, partial: 1, cue: "Arm behind body, elbow fixed." },
+      { id: "sat-preacher-curl", n: "Preacher curl", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
+      { id: "sat-rear-delt", n: "Rear delt crossover", s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
+      { id: "sat-calf-raise", n: "Standing calf raise", s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
     ] },
     sun: { label: "Sunday — Light / Machines", ex: [
-      { n: "Leg press / Hack squat", s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
-      { n: "Pull-ups", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Bodyweight. Under 5 reps? Use pulldown." },
-      { n: "Machine overhead press", s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
-      { n: "Cable fly", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
-      { n: "Machine seated row", s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
-      { n: "Lateral raise ↔ Reverse pec deck", s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
-      { n: "Overhead cable extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
-      { n: "Standing calf raise", s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
+      { id: "sun-leg-press", n: "Leg press / Hack squat", s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
+      { id: "sun-pullups", n: "Pull-ups", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, cue: "Bodyweight. Under 5 reps? Use pulldown." },
+      { id: "sun-machine-ohp", n: "Machine overhead press", s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
+      { id: "sun-cable-fly", n: "Cable fly", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
+      { id: "sun-seated-row", n: "Machine seated row", s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
+      { id: "sun-lat-pec", n: "Lateral raise ↔ Reverse pec deck", s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
+      { id: "sun-oh-ext", n: "Overhead cable extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
+      { id: "sun-calf-raise", n: "Standing calf raise", s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
     ] }
   };
 
   /* named model constants (were magic numbers 50 / 60 in dayMins) */
   var SET_SECS = 50, TRANSITION_SECS = 60;
+  /* bodyweight work has no external load; value a load:0 set at this many kg
+     per rep so pull-ups / dips / calf raises are not invisible in tonnage.  */
+  var BODYWEIGHT_KG = 75;
 
   function fmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -108,6 +114,7 @@
       if (!("lastRir" in s)) s.lastRir = null;
     }
     if (!Array.isArray(s.sets)) s.sets = [];
+    if (e && e.id && s.exId !== e.id) s.exId = e.id;
     /* legacy records only stored a done count — backfill placeholder rows */
     while (s.sets.length < s.done) s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
     return s;
@@ -142,11 +149,38 @@
     return { load: snapped, last: last3[2], sessions: 3 };
   }
 
+  /**
+   * The load to pre-fill for one lift from its history, and why.
+   * action: "none" (no history) | "up" (double progression) |
+   *         "deload" (3-session stall) | "keep" (repeat last load).
+   * @param {any} e exercise
+   * @param {any[]} entries oldest → newest
+   * @returns {{load: number|null, action: string}}
+   */
+  function planFor(e, entries) {
+    if (!entries || !entries.length) return { load: null, action: "none" };
+    var stall = stallLoad(e, entries);
+    if (stall) return { load: stall.load, action: "deload" };
+    var su = suggestLoad(e, entries[entries.length - 1]);
+    if (su.hitTop && su.suggest !== su.last.load) return { load: su.suggest, action: "up" };
+    return { load: su.last.load, action: "keep" };
+  }
+
+  /** id → "day:index" for the current program (used by store.reconcile). */
+  function idMap() {
+    var out = {}, d, i, list;
+    for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
+      list = DAYS[d].ex;
+      for (i = 0; i < list.length; i++) if (list[i].id) out[list[i].id] = d + ":" + i;
+    }
+    return out;
+  }
+
   return {
-    DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS,
+    DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_KG: BODYWEIGHT_KG,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
-    stallLoad: stallLoad
+    stallLoad: stallLoad, planFor: planFor, idMap: idMap
   };
 });

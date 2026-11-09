@@ -63,10 +63,18 @@
 
   /**
    * Tonnage for one history entry: load × reps × sets.
+   * Bodyweight work (load === 0) is valued at `bwKg` per rep so pull-ups /
+   * dips / calf raises do not read as zero volume on the dashboard.
    * @param {{load?:number,reps?:number,setsDone?:number}} e
+   * @param {number} [bwKg] bodyweight in kg (default 75)
    * @returns {number}
    */
-  function entryVolume(e) { return (e.load || 0) * (e.reps || 0) * (e.setsDone || 0); }
+  function entryVolume(e, bwKg) {
+    if (!e) return 0;
+    var load = typeof e.load === "number" && isFinite(e.load) ? e.load : 0;
+    var eff = load > 0 ? load : (load === 0 ? (typeof bwKg === "number" ? bwKg : 75) : 0);
+    return eff * (e.reps || 0) * (e.setsDone || 0);
+  }
 
   /**
    * Total tonnage across all recorded sessions.
@@ -182,6 +190,64 @@
     for (i = 0; i < s.length; i++) if (s[i].date >= start && s[i].date <= nowKey) n++;
     return n;
   }
+  /* ── consistency heatmap: the last `weeks` Fri/Sat/Sun blocks ──────────── */
+  function mostRecentFriday(today) {
+    var dow = today.getDay();                 // 0 Sun … 5 Fri, 6 Sat
+    var offset = dow === 5 ? 0 : dow === 6 ? 1 : dow === 0 ? 2 : dow + 2;
+    var d = new Date(today);
+    d.setDate(d.getDate() - offset);
+    return d;
+  }
+  /**
+   * One row per training week (Fri/Sat/Sun), oldest → newest. `fri/sat/sun`
+   * are true when that calendar day has at least one recorded session.
+   * @param {any} payload
+   * @param {number} weeks
+   * @param {string} nowKey YYYY-MM-DD
+   * @returns {{fri:boolean,sat:boolean,sun:boolean,label:string}[]}
+   */
+  function trainingDays(payload, weeks, nowKey) {
+    var today = parseKey(nowKey);
+    if (!today) return [];
+    var have = {}, s = sessionVolumes(payload), i;
+    for (i = 0; i < s.length; i++) if (s[i].date) have[s[i].date] = 1;
+    var fri0 = mostRecentFriday(today), out = [], w;
+    for (w = (weeks || 8) - 1; w >= 0; w--) {
+      var fri = new Date(fri0); fri.setDate(fri0.getDate() - w * 7);
+      var sat = new Date(fri); sat.setDate(fri.getDate() + 1);
+      var sun = new Date(fri); sun.setDate(fri.getDate() + 2);
+      out.push({ fri: !!have[keyOf(fri)], sat: !!have[keyOf(sat)], sun: !!have[keyOf(sun)], label: keyOf(fri) });
+    }
+    return out;
+  }
+
+  /* ── CSV export (portability) ──────────────────────────────────────────── */
+  function csvCell(v) {
+    var s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  /**
+   * Every recorded set as CSV rows: date, day, lift, set, load, reps, rir.
+   * @param {any} payload
+   * @param {Record<string, {ex: any[]}>} DAYS
+   * @returns {string}
+   */
+  function toCsv(payload, DAYS) {
+    var rows = [["date", "day", "lift", "set", "load", "reps", "rir"]];
+    var lh = (payload && payload.liftHistory) || {}, k, arr, i, j, e, p, d, idx, name, sets;
+    for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
+      arr = lh[k] || [];
+      p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
+      name = DAYS && DAYS[d] && DAYS[d].ex[idx] ? DAYS[d].ex[idx].n : k;
+      for (i = 0; i < arr.length; i++) {
+        e = arr[i]; if (!e) continue;
+        sets = Array.isArray(e.sets) && e.sets.length ? e.sets : [{ load: e.load, reps: e.reps, rir: e.rir }];
+        for (j = 0; j < sets.length; j++) rows.push([e.date || "", d, name, j + 1, sets[j].load, sets[j].reps, sets[j].rir]);
+      }
+    }
+    return rows.map(function (r) { return r.map(csvCell).join(","); }).join("\n");
+  }
+
   /**
    * Best estimated 1RM (or reps for bodyweight) per lift, ranked desc.
    * @param {any} payload
@@ -212,6 +278,7 @@
     setsRecorded: setsRecorded,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
-    weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords
+    weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
+    trainingDays: trainingDays, toCsv: toCsv
   };
 });
