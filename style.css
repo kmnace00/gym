@@ -1,7 +1,7 @@
 /* ── design tokens — dark-first, light is an explicit opt-in ───────────── */
 :root{
   --bg:#0b0e12; --surface:#151a21; --surface-2:#1d242d; --line:#28313b;
-  --ink:#eef2f5; --muted:#9aa6b3; --faint:#68727e;
+  --ink:#eef2f5; --muted:#9aa6b3; --faint:#7c8692;
   --accent:#35d0b8; --accent-ink:#04231e; --accent-soft:rgba(53,208,184,.15);
   --good:#4ade80; --warn-bg:#3a2c0c; --warn:#fbbf24;
   --radius:16px; --radius-sm:12px;
@@ -9,7 +9,7 @@
 }
 html[data-theme="light"]{
   --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f4; --line:#e0e5ea;
-  --ink:#0d1318; --muted:#5a6572; --faint:#8a95a1;
+  --ink:#0d1318; --muted:#5a6572; --faint:#636e7a;
   --accent:#0d9488; --accent-ink:#ffffff; --accent-soft:rgba(13,148,136,.12);
   --good:#16a34a; --warn-bg:#fef3c7; --warn:#92400e;
   --shadow-sm:0 1px 3px rgba(0,0,0,.1);
@@ -94,7 +94,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-r
 
 /* ── lift view ─────────────────────────────────────────────────────────── */
 .liftnav{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.mini{width:44px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--ink)}
+.mini{width:44px;height:44px;margin:-4px 0;border-radius:10px;display:grid;place-items:center;font-size:22px;font-weight:700;color:var(--ink)}
 .mini:active{background:var(--surface-2)}
 .mini:disabled{opacity:.25}
 .liftstat{flex:1;text-align:center;font-size:12px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -116,7 +116,7 @@ h1{
 .sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px}
 .seth{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .setacts{display:flex;gap:6px}
-.resetlift{flex:none;height:30px;padding:0 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
+.resetlift{flex:none;height:44px;margin:-7px 0;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
 .resetlift:disabled{opacity:.4}
 .resetlift:not(:disabled):active{filter:brightness(1.15)}
 .resetlift.undoset{color:var(--accent)}
@@ -185,7 +185,7 @@ h1{
 .timer .tbtns{display:none;gap:8px;flex:none}
 .timer.active .tbtns{display:flex}
 .timer .tbtns button{
-  height:42px;padding:0 14px;border-radius:999px;
+  height:44px;margin:-2px 0;padding:0 14px;border-radius:999px;
   border:1px solid var(--line);background:transparent;font-weight:700;font-size:13px;
 }
 .timer .rbar{display:none}
@@ -265,9 +265,9 @@ h1{
 .app.resting.show-details .timer .rnav,
 .app.resting.show-details .timer .undobtn{display:none}
 .app.resting.show-details .timer .restfooter{order:3;flex:0 0 auto;align-self:center;gap:0}
-.app.resting.show-details .timer .detailsbtn{flex:0 0 auto;width:auto;height:42px;padding:0 10px;justify-content:center;align-self:center}
+.app.resting.show-details .timer .detailsbtn{flex:0 0 auto;width:auto;height:44px;margin:-1px 0;padding:0 10px;justify-content:center;align-self:center}
 .app.resting.show-details .timer .tbtns{order:4;flex:1 1 100%;display:flex}
-.app.resting.show-details .timer .tbtns button{flex:1;height:40px;padding:0 8px;font-size:12.5px}
+.app.resting.show-details .timer .tbtns button{flex:1;height:44px;margin:-2px 0;padding:0 8px;font-size:12.5px}
 
 /* ── responsive: short phones keep everything on one screen ────────────── */
 @media (max-height:720px){
@@ -281,9 +281,9 @@ h1{
   .tempo{margin-top:3px}
   .sethead{margin-top:8px;margin-bottom:6px}
   .setlog{gap:6px}
-  .setrow{min-height:38px}
+  .setrow{min-height:44px;margin:-3px 0}
   .adjust{padding-top:8px}
-  .stepbtn{width:40px;height:40px;font-size:20px}
+  .stepbtn{width:44px;height:44px;margin:-2px 0;font-size:20px}
   .rir{height:40px}
   .donebtn{height:52px;margin-top:8px;font-size:17px}
   .app.resting .timer .clock{font-size:72px}
@@ -411,7 +411,7 @@ h1{
   flex:none;height:28px;padding:0 10px;border-radius:999px;
   background:var(--warn);color:var(--bg);font-weight:800;font-size:12px;
 }
-.bbdismiss{flex:none;width:26px;height:26px;border-radius:999px;display:grid;place-items:center;font-size:13px;opacity:.7}
+.bbdismiss{flex:none;width:44px;height:44px;margin:-9px 0;border-radius:999px;display:grid;place-items:center;font-size:13px;opacity:.7}
 
 /* ── plan today + previous-session line ─────────────────────────────────── */
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px}

@@ -38,7 +38,7 @@
     <div class="clock" id="restTime">Rest</div>
     <div class="tlabel" id="restLive" aria-live="polite"><strong id="restLabel"></strong><span id="restMsg">Starts after Set Done</span></div>
     <div class="rnext" id="restNext"></div>
-    <div class="rprep" id="restPrep" hidden>
+    <div class="rprep" id="restPrep" hidden aria-label="Next set adjustments">
       <span class="rpname" id="restPrepName">Set 1 of 3</span>
       <div class="rpctl">
         <button type="button" id="restLoadDown" aria-label="Decrease next-set load">−</button>
@@ -53,9 +53,9 @@
     </div>
     <div class="rbar" aria-hidden="true"><i id="rbarFill"></i></div>
     <div class="tbtns">
-      <button id="plus15" type="button">+15</button>
-      <button id="pauseRest" type="button">Pause</button>
-      <button id="skipRest" type="button">End rest</button>
+      <button id="plus15" type="button" aria-label="Add 15 seconds to rest">+15</button>
+      <button id="pauseRest" type="button" aria-label="Pause rest">Pause</button>
+      <button id="skipRest" type="button" aria-label="End rest">End rest</button>
     </div>
     <div class="rnav">
       <button id="rPrevBtn" type="button" aria-label="Previous lift">‹</button>
