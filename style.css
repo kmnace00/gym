@@ -190,6 +190,7 @@ h1{
 }
 .timer .rbar{display:none}
 .timer .rnav{display:none}
+.timer .restfooter{display:none}
 .timer .detailsbtn,.timer .undobtn{display:none}
 .timer.paused #pauseRest{border-color:var(--accent);color:var(--accent)}
 
@@ -228,8 +229,8 @@ h1{
   font-size:13.5px;font-weight:600;color:inherit;opacity:.7;
   text-decoration:underline;text-underline-offset:3px;
 }
-.app.resting .timer .detailsbtn{order:7}
-.app.resting .timer .undobtn{order:8;display:none}
+.app.resting .timer .restfooter{display:flex;order:7;align-items:center;justify-content:center;gap:18px}
+.app.resting .timer .undobtn{display:none}
 .app.resting.can-undo .timer .undobtn{display:inline-flex}
 .app.resting .timer.paused .rbar i{background:var(--muted)}
 
@@ -262,7 +263,8 @@ h1{
 .app.resting.show-details .timer .rbar,
 .app.resting.show-details .timer .rnav,
 .app.resting.show-details .timer .undobtn{display:none}
-.app.resting.show-details .timer .detailsbtn{order:3;flex:0 0 auto;width:auto;height:42px;padding:0 10px;justify-content:center;align-self:center}
+.app.resting.show-details .timer .restfooter{order:3;flex:0 0 auto;align-self:center;gap:0}
+.app.resting.show-details .timer .detailsbtn{flex:0 0 auto;width:auto;height:42px;padding:0 10px;justify-content:center;align-self:center}
 .app.resting.show-details .timer .tbtns{order:4;flex:1 1 100%;display:flex}
 .app.resting.show-details .timer .tbtns button{flex:1;height:40px;padding:0 8px;font-size:12.5px}
 

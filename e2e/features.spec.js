@@ -38,6 +38,16 @@ test("pausing the rest freezes the clock and shows a consistent paused state", a
   await expect(page.locator("#restMsg")).toContainText("Stretch");
 });
 
+test("rest footer links sit on one even row", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  const d = await page.locator("#detailsBtn").boundingBox();
+  const u = await page.locator("#undoBtn").boundingBox();
+  expect(Math.abs(d.y - u.y)).toBeLessThan(2);
+  expect(u.x).toBeGreaterThan(d.x);
+});
+
 test("set log shows a row per set and records the values", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
