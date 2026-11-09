@@ -150,7 +150,10 @@ test("keyboard focus is visible on role=button rows and on buttons", async ({ pa
   }, sel);
   expect(await outlineShown(".liftrow")).toBe(true);
   await page.locator(".liftrow").first().click();
-  expect(await outlineShown("#setLog .setrow")).toBe(true);
+  // only logged set rows are role="button" tabindex="0" — log one, skip the rest, then focus it
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  expect(await outlineShown('#setLog .setrow[role="button"]')).toBe(true);
   expect(await outlineShown("#loadUp")).toBe(true);
   expect(await outlineShown("#doneBtn")).toBe(true);
 });
