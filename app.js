@@ -831,15 +831,20 @@
     hintText = ""; hintGood = false;
     commit(); render();
   }
+  /* Upper bounds for direct input (B3-18): absurd typed/held values would
+     otherwise poison 1RM, tonnage, suggestions and the CSV export. */
+  var MAX_LOAD = 2000, MAX_REPS = 999;
+  function clampLoad(v) { return Math.min(MAX_LOAD, Math.max(0, v)); }
+  function clampReps(v) { return Math.min(MAX_REPS, Math.max(1, v)); }
   function stepLoad(d) {
     var s = curSt();
-    s.load = d < 0 ? Math.max(0, Math.round((s.load - ex().step) * 100) / 100) : Math.round((s.load + ex().step) * 100) / 100;
+    s.load = clampLoad(d < 0 ? Math.max(0, Math.round((s.load - ex().step) * 100) / 100) : Math.round((s.load + ex().step) * 100) / 100);
     if (editSet >= 0) applySetEdit();
     scheduleSave(); render(); renderRestPrep(restCtl.view());
   }
   function stepReps(d) {
     var s = curSt();
-    s.reps = Math.max(1, s.reps + d);
+    s.reps = clampReps(s.reps + d);
     if (editSet >= 0) applySetEdit();
     scheduleSave(); render(); renderRestPrep(restCtl.view());
   }
@@ -898,12 +903,12 @@
   }
   function editLoad() {
     editValue(document.getElementById("loadVal"), curSt().load, ex().step, function (v) {
-      curSt().load = Math.max(0, Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+      curSt().load = clampLoad(Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   function editReps() {
     editValue(document.getElementById("repVal"), curSt().reps, 1, function (v) {
-      curSt().reps = Math.max(1, Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+      curSt().reps = clampReps(Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   document.getElementById("loadVal").parentNode.addEventListener("click", editLoad);

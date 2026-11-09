@@ -43,6 +43,35 @@ test("tap the load value to type a precise number (and it persists)", async ({ p
   await expect(page.locator("#loadVal")).toHaveText("67.5");
 });
 
+test("typed and held load/reps stop at sane caps (B3-18)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+
+  // typing an absurd weight clamps to 2000 lb
+  await page.locator("#loadVal").click();
+  await page.locator(".vin").fill("99999");
+  await page.locator(".vin").press("Enter");
+  await expect(page.locator("#loadVal")).toHaveText("2000");
+
+  // the stepper cannot walk past the cap either
+  for (let i = 0; i < 30; i++) await page.locator("#loadUp").click();
+  await expect(page.locator("#loadVal")).toHaveText("2000");
+
+  // reps cap at 999
+  await page.locator("#repVal").click();
+  await page.locator(".vin").fill("9999");
+  await page.locator(".vin").press("Enter");
+  await expect(page.locator("#repVal")).toHaveText("999");
+  for (let i = 0; i < 10; i++) await page.locator("#repUp").click();
+  await expect(page.locator("#repVal")).toHaveText("999");
+
+  // the clamped value is what persists
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#loadVal")).toHaveText("2000");
+  await expect(page.locator("#repVal")).toHaveText("999");
+});
+
 test("three stalled sessions surface a deload suggestion with Apply", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,

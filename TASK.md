@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, store.js, test/store.test.js, BUILD_LOG.md, LOOP_STATE.md, TASK.md since 2026-11-09 14:02 CT — B3-17 (import file-size guard).
+WIP: OpenCode editing app.js, store.js, test/store.test.js, e2e/*.spec.js, sw.js, docs since 2026-11-09 14:20 CT — B3-18 (load/reps caps) awaiting sync; B3-19 next.
+
+## Completed — B3-18: No upper bound on user-typed / stepped load and reps [T1]
+- Built Nov 9 (OpenCode). `clampLoad` (0–2000) and `clampReps` (1–999) applied in `stepLoad`, `stepReps`, `editLoad`, `editReps`. SW `gym-v54`. 159/159 unit, 78/78 e2e.
 
 ## Completed — B3-17: Import has no file-size guard [T1]
 - Built Nov 9 (OpenCode). `app.js` rejects files > 5 MB before reading (both inputs); `store.js` `importRaw`/`importMerge` throw on strings over 5,000,000 chars. SW `gym-v53`. 159/159 unit, 77/77 e2e.
