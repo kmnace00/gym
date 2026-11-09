@@ -461,3 +461,54 @@ banked value), `test/enhancements.test.js` (only if it covers
 (a real 165 lb bodyweight being clobbered by a merge) is NOT fixed
 here — that needs a `bodyweightSet` schema flag (BACKLOG, Khang's
 call); this item only de-duplicates the rule.
+
+## Batch 4 T2: corrupt-payload salvage (Nov 9, Muse)
+
+Problem: `store.js` `load()` treats any unparseable payload as a total
+loss — `migrate()` returns null, the raw bytes are quarantined, and an
+empty payload is returned. The history (the valuable part: months of
+logged sets, the input to `suggestLoad`) is invisible until the user
+downloads the quarantine file, repairs it by hand, and re-imports it.
+B3-21 only fixed the bar copy. The deeper fix recovers what still
+parses instead of dropping everything.
+
+Contract: `load()` keeps its current behaviour when the bytes parse
+cleanly. On failure it attempts salvage before returning empty:
+- Case A (JSON.parse throws): scan the raw string for the
+  `"liftHistory"` object and the `"sessionLog"` array and pull out
+  each per-key array / each log entry whose brackets balance, then
+  JSON.parse each piece separately. A piece that parses goes through
+  the existing `sanitize` path (`normalize` / `sanitizeEntry`), so
+  hostile keys are still stripped exactly as on a clean import.
+- Case B (parses but is not a usable payload — non-object, unknown
+  version): salvage any top-level `liftHistory` / `sessionLog` /
+  `state` field that is itself an object, through the same sanitize
+  path.
+- Only `liftHistory` and `sessionLog` are salvaged. Working-load
+  `state` is not — it falls back to `getLift()` defaults, and
+  suggestions derive from history anyway, so salvaged history
+  restores them.
+- Result: `load()` returns the salvaged payload with
+  `loadError = { kind: "salvaged", recovered: N, dropped: M }`
+  (N = entries recovered, M = pieces that failed to parse). The
+  quarantine bytes stay intact. Boot must NOT call `commit()` while
+  a load warning is active (the B3-02 rule, extended to this kind),
+  so the salvaged payload lives in memory only until the user acts:
+  the bar names the recovered count, offers the quarantine download,
+  and offers "Keep recovered log", which explicitly saves.
+- A payload that salvages to zero entries behaves exactly like today
+  (empty log, corrupt bar).
+
+Files: `store.js` (salvage in/around `migrate` + `load`, export the
+salvage helper for tests), `app.js` (salvaged bar copy + "Keep
+recovered log" action, boot no-commit rule), `test/store.test.js`
+(fixtures: JSON truncated mid-array, garbage prefix, one corrupt
+entry among good ones, unknown-version object with good history;
+assert recovered counts, hostile keys stripped, quarantine bytes
+intact, no auto-commit while the warning is active),
+`e2e/pass3.spec.js` (seeded corrupt store → bar names the recovered
+count → Keep → reload shows the recovered sets).
+Invariants: quarantine bytes are never overwritten by salvage; a
+clean payload takes the exact old path (no behaviour change); hostile
+keys cannot survive salvage (same sanitize path as import); no
+program-data change. Rollback: one revert.

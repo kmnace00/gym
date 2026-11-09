@@ -1,5 +1,11 @@
 # TASK — for OpenCode (planner: Muse)
 
+Status: ACTIVE — Batch 4, B4-01 (Muse, Nov 9). Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). B4-02 follows in `QUEUE.md`.
+
+## Active — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
+
+B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged these two for a follow-up. `stats.js` `workoutDates` builds `seen = {}` keyed by `s[i].date` / `log[i].date`; `trainingDays` builds `have = {}` keyed by `s[i].date`. Both dates are user-controlled (imported history, sessionLog). Change both maps to `Object.create(null)`. Unit test: feed a `"__proto__"` date through `workoutDates` and `trainingDays` and assert `Object.prototype` stays clean and the date is counted. No number changes. Files: `stats.js`, `test/stats.test.js`. Verify: full gate green; SW bump (`stats.js` changed).
+
 ## Completed — B3-35: Bodyweight-resolution rule duplicated in four places [T2, designed]
 - Built Nov 9 (OpenCode). `Stats.resolveBodyweight(entry, fallback)` is the single rule (banked `bwKg` if finite and positive, else the fallback, else 165); `app.js bwFor`, `entryVolume`, `personalRecords` and `topMovers` now call it. 2 new unit tests pin the helper's behaviour and prove tonnage/PR numbers are unchanged. SW `gym-v66`. 169/169 unit, 91/91 e2e, reviewer PASS. `QUEUE.md` is now empty — Batch 3 done.
 

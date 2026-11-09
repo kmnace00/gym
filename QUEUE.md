@@ -676,3 +676,19 @@ Verify: new helper tests green; full gate green; no number changes anywhere (ver
 ---
 
 End of Batch 3. When the queue is empty, stop and wait for Muse. The T2 items that still need designs, and all T3 proposals for Khang, are in `BACKLOG.md` — do not build them from this queue.
+
+---
+
+## BATCH 4 — QUEUED Nov 9 (Muse review of Batch 3; 2 items: 1 T1 + 1 T2)
+
+Base HEAD: `85d2cd4` (Batch 3 complete, Nov 9 15:18 CT; SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). Status: BATCH 4 QUEUED — from Muse's independent review of B3-11…B3-35, which found no new defects; these are the backlog's own follow-ups, not invented work. Same batch rules as above: one item at a time, in order; program data read-only; full gate per item (`npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors); stop on failure.
+
+## B4-01 — `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
+
+B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged these two for a follow-up. `stats.js` `workoutDates` builds `seen = {}` keyed by `s[i].date` / `log[i].date`; `trainingDays` builds `have = {}` keyed by `s[i].date`. Both dates are user-controlled (imported history, sessionLog). A `"__proto__"` date is silently dropped from the count today (assigning a non-object to `__proto__` is a no-op) — a correctness edge, not a live hole, same class as B3-29. Change both maps to `Object.create(null)`. Unit test: feed a `"__proto__"` date through `workoutDates` and `trainingDays` and assert `Object.prototype` stays clean and the date is counted. No number changes (same dates counted). Files: `stats.js`, `test/stats.test.js`. Verify: full gate green; SW bump (`stats.js` changed).
+
+## B4-02 — Corrupt-payload salvage [T2, designed]
+
+Design in `DESIGN.md` ("Batch 4 T2: corrupt-payload salvage", Muse, Nov 9). `load()` salvages what still parses instead of dropping the whole payload: per-piece recovery of `liftHistory` arrays and `sessionLog` entries through the existing sanitize path, `loadError = { kind: "salvaged", recovered: N, dropped: M }`, quarantine bytes intact, boot never auto-commits while a load warning is active, bar names the recovered count and offers "Keep recovered log". Files: `store.js`, `app.js`, `test/store.test.js`, `e2e/pass3.spec.js`. Verify: full gate green; SW bump.
+
+End of Batch 4. When the queue is empty, stop and wait for Muse.
