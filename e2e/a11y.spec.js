@@ -141,21 +141,36 @@ test("day tabs announce which day is active", async ({ page }) => {
 
 test("keyboard focus is visible on role=button rows and on buttons", async ({ page }) => {
   await page.goto(url);
-  const outlineShown = (sel) => page.evaluate((s) => {
-    const el = document.querySelector(s);
-    if (!el) return false;
-    el.focus();
-    const st = getComputedStyle(el);
+  // Chrome only paints :focus-visible when the focus came from the keyboard,
+  // so reach every control by Tab rather than by el.focus().
+  const focusedOutline = () => page.evaluate(() => {
+    const st = getComputedStyle(document.activeElement);
     return st.outlineStyle !== "none" && parseFloat(st.outlineWidth) > 0;
-  }, sel);
-  expect(await outlineShown(".liftrow")).toBe(true);
+  });
+  const tabTo = async (cls) => {
+    for (let i = 0; i < 25; i++) {
+      await page.keyboard.press("Tab");
+      const hit = await page.evaluate((c) => {
+        const el = document.activeElement;
+        return !!el && (el.className || "").includes(c);
+      }, cls);
+      if (hit) return true;
+    }
+    return false;
+  };
+  expect(await tabTo("liftrow")).toBe(true);
+  expect(await focusedOutline()).toBe(true);
   await page.locator(".liftrow").first().click();
-  // only logged set rows are role="button" tabindex="0" — log one, skip the rest, then focus it
+  // only logged set rows are role="button" tabindex="0": log one, skip the rest
   await page.locator("#doneBtn").click();
+  await page.waitForTimeout(200);
   await page.locator("#skipRest").click();
-  expect(await outlineShown('#setLog .setrow[role="button"]')).toBe(true);
-  expect(await outlineShown("#loadUp")).toBe(true);
-  expect(await outlineShown("#doneBtn")).toBe(true);
+  expect(await tabTo("setrow")).toBe(true);
+  expect(await focusedOutline()).toBe(true);
+  expect(await tabTo("donebtn")).toBe(true);
+  expect(await focusedOutline()).toBe(true);
+  expect(await tabTo("stepbtn")).toBe(true);
+  expect(await focusedOutline()).toBe(true);
 });
 
 test("Escape closes the menu, and the menu close control is 44px", async ({ page }) => {
