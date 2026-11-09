@@ -131,6 +131,26 @@ test("keyboard rest order is +15 / Pause / End rest / Show workout / Undo / prep
   expect(hiddenNotReachable).toBe(true);
 });
 
+test("Import backup is reachable and activatable by keyboard", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    window.__importClicked = false;
+    document.getElementById("importFile").addEventListener("click", () => { window.__importClicked = true; });
+  });
+  await page.locator("#menuBtn").click();
+  await page.locator("#modalClose").focus();
+
+  let found = false;
+  for (let i = 0; i < 8 && !found; i++) {
+    await page.keyboard.press("Tab");
+    found = await page.evaluate(() => document.activeElement && document.activeElement.id === "importBtn");
+  }
+  expect(found, "Tab reaches Import backup").toBe(true);
+
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => window.__importClicked), "Enter opens the file picker").toBe(true);
+});
+
 test("day tabs announce which day is active", async ({ page }) => {
   await page.goto(url);
   const pressed = () => page.evaluate(() => Array.from(document.querySelectorAll(".day")).map((b) => b.getAttribute("aria-pressed")));

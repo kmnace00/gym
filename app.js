@@ -1250,6 +1250,9 @@
     replaceBtn.textContent = "Restore (replace)";
     replaceFile.click();
   };
+  /* Import is a plain button so the keyboard can reach the one recovery path
+     a switch/keyboard user needs; it clicks the hidden file input. */
+  document.getElementById("importBtn").onclick = function () { document.getElementById("importFile").click(); };
   replaceFile.addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
     var reader = new FileReader();

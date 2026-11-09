@@ -2,24 +2,28 @@
 
 ## WIP
 
-WIP: OpenCode editing store.js, test/store.test.js, e2e/progress.spec.js, sw.js since 2026-11-09 11:51 CT
+WIP: OpenCode editing index.html, app.js, e2e/a11y.spec.js, sw.js since 2026-11-09 11:53 CT
 
-Status: ACTIVE — Batch 3, B3-08 (merge cursor). B3-07 is done and pushed as
-`955ee81`. Batch: `QUEUE.md` B3-08–B3-35, in order. When B3-08 is done, copy
-B3-09 from `QUEUE.md` into this file and start it. Base HEAD: `955ee81`.
+Status: ACTIVE — Batch 3, B3-09 (keyboard Import). B3-08 is done and pushed as
+`983e2a1`. Batch: `QUEUE.md` B3-09–B3-35, in order. When B3-09 is done, copy
+B3-10 from `QUEUE.md` into this file and start it. Base HEAD: `983e2a1`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-08: Import-merge silently adopts the incoming backup's day/lift cursor [T1]
+## Active task — B3-09: "Import backup" is unreachable by keyboard [T1]
 
-Why: merging a backup is for reconciling history across devices. Instead it can yank the lifter mid-workout to a different day and lift (whatever the other device was looking at), with no message saying so. Cursor position is device-local state, not history. Verified by Muse: `store.js:598-599` copies `incoming.cur` / `incoming.idx` into the merged payload; `app.js:1274` then sets `cur`/`idx` from it. (Full replace via `importRaw` correctly adopts the cursor — only the merge path is wrong.)
+Why: the one data-recovery path a keyboard/switch user needs is mouse-only. "Restore (replace)" next to it is a real button; Import is a `<label>` wrapping a hidden file input, and labels aren't focusable, so Tab never reaches it and Enter can't activate it. Evidence: `index.html:175` (label + hidden input); the modal's Tab trap lists `label.modalbtn` among focusables but it can never receive focus. Compare `index.html:176` / `app.js:1230-1241`, where Restore is a button that clicks its hidden input.
 
 Do:
-- Delete the two `cur`/`idx` lines from `mergePayload`; keep the base payload's cursor. Nothing else in the merge changes.
+- Make Import a button that clicks `#importFile`, exactly like `replaceBtn` does. Keep the same styling and the same change handler.
 
-Files: `store.js`, `test/store.test.js`.
-Verify: e2e — seed `cur: "fri", idx: 2`, import a backup with `cur: "sun", idx: 5`, assert the app is still on Fri lift 3. Full gate green.
+Files: `index.html`, `app.js`.
+Verify: e2e keyboard test — open the menu, Tab to Import, press Enter, assert the file picker opens (or the input receives a click). Full gate green.
+
+## Completed — B3-08: Import-merge silently adopts the incoming backup's day/lift cursor [T1]
+
+`mergePayload` no longer copies `incoming.cur` / `incoming.idx`; the base payload's cursor wins (full replace via `importRaw` still adopts). Unit test + e2e (seed `fri`/idx 2, import `sun`/idx 5 → saved cursor `fri`/2, "Lift 3 of 8"). SW `gym-v44`. Verified 156/156 unit, typecheck clean, 71/71 e2e. Commit: `983e2a1` (auto-sync, on origin/main).
 
 ## Completed — B3-07: Restart-lift takes no snapshot [T1]
 
