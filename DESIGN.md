@@ -385,3 +385,15 @@ with no new set logged). History entries for bodyweight lifts now carry
 its own `bwKg`, falling back to `payload.bodyweight` and then 75 for legacy
 entries. Nothing in `program.js` changes, and legacy payloads keep today's
 numbers because the fallback is the same scalar.
+
+## Imperial units (Nov 9, Khang's request)
+
+The programme's load numbers were always pounds (the leg-press cue is
+"45×4 plates" = 180 lb), but every label said kg and the one true metric
+value — bodyweight — was stored in kg (default 75). Schema **v4** converts
+that scalar and every banked `bwKg` from kg to lb exactly once
+(×2.20462), sets the default to 165 lb and the bound to 700 lb, and every
+surface that printed `kg` now prints `lb` (progress tonnage, PR, summary,
+share text, bodyweight field). Load numbers, steps and programme data are
+unchanged. Migration is one-way and idempotent: a v4 payload is never
+converted twice; v1/v2 payloads chain through v3 → v4.

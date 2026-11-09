@@ -2,9 +2,9 @@
 
 ## WIP
 
-Status: ACTIVE — continuous loop, checkpoint at `007ddb3` (SW `gym-v30`): 149/149 unit, 58/58 e2e, CI green. Docs refreshed (PLAN.md current state + threat model, HANDOFF.md). Next: no approved item left — Batch 3 is Khang's (research/alternate list), program numbers are read-only, new features are T3.
+Status: ACTIVE — Khang's unit request (imperial) + set-row sizing. T2: schema v4 kg→lb migration + labels; T1: compact set rows (done, measured 56/64 px). Gate after: check + typecheck + e2e both viewports.
 
-WIP: none claimed
+WIP: OpenCode editing store.js, program.js, stats.js, app.js, index.html, test/store.test.js, test/stats.test.js, test/size.test.js, e2e/features.spec.js, README.md since 2026-11-09 08:45 CT
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
