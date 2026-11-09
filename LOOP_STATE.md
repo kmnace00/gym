@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: RUNNING (OpenCode, Nov 9 17:35 CT) — Batch 3 B3-01…B3-34 are built and gated; **B3-35 is next (T2, design in DESIGN.md)**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING — queue empty (OpenCode, Nov 9 17:58 CT): Batch 3 B3-01…B3-35 are all built and gated; idle until Muse queues Batch 4. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
@@ -28,6 +28,7 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B3-32 first-run guidance line, cleared by the first logged set (`Gym.hasData`) — SW `gym-v63`, 167/167 unit, 88/88 e2e.
 - B3-33 deploy tag in the menu footer from a single `version.js` the SW imports — SW `gym-v64`, 167/167 unit, 90/90 e2e.
 - B3-34 `nextLift` forward-then-wrap, -1 only when the day is done — SW `gym-v65`, 167/167 unit, 91/91 e2e, reviewer PASS.
+- B3-35 `Stats.resolveBodyweight(entry, fallback)` single-sources the bodyweight rule (`bwFor`, `entryVolume`, `personalRecords`, `topMovers`) — SW `gym-v66`, 169/169 unit, 91/91 e2e, reviewer PASS.
 
 Note: gym-sync batches whatever is dirty at its ~3-minute tick, so two items can share one commit; every item was gated before the next started.
 
