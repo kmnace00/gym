@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 2 QUEUED — B1 active; OpenCode stopped, waits for Khang to paste the loop prompt again. Batch 1 complete + verified. Phone check (L4, async) is NOT blocking — loop continues; a phone fail becomes a backlog item, blocks only if rest-timer-critical.
+Status: PAUSED — review-only mode, Nov 8, 21:08 CT. Khang: Muse back-and-forth is too much overhead; use Muse once in a while to review, DeepSeek review when off-peak. OpenCode loop: finish the current item (B1) if already in progress, then STOP — do not start B2/B3. Batch 2 queue stays queued, not active. Batch 1 complete + verified.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -113,8 +113,7 @@ Pass 4 build, same phone check:
 - `NEEDS_RESEARCH`: none.
 - `NEEDS_DESIGN`: none.
 - `NEEDS_FIX`: none.
-- `PAUSED`: no. (Khang says "pause the loop" → Muse sets this to yes;
-  OpenCode finishes the current item, then stops.)
+- `PAUSED`: yes — Nov 8, 21:08 CT, review-only mode (Khang's call). OpenCode finishes the current item, then stops; do not start B2/B3.
 
 ## Log
 
