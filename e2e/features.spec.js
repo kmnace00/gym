@@ -160,3 +160,46 @@ test("undo on the rest screen after the final set restores it", async ({ page })
   await page.locator("#undoBtn").click();
   await expect(page.locator("#setCount")).toContainText("Set 3 of 3");
 });
+
+/* L2 audit — the lengthened-partials cue is a last-set, RIR ≤1 signal on
+   flagged lifts only. Leg extension is Fri index 5 (partial: 1); Smith squat
+   is Fri index 0 (not flagged). Seeded so the day does not depend on the date. */
+const PARTIALS = "bottom-half partials to failure";
+
+test("partials cue appears only after the final set of a flagged lift", async ({ page }) => {
+  await seed(page, { v: 2, cur: "fri", idx: 5, state: {}, liftHistory: {} });
+  await page.locator(".liftrow").nth(5).click();
+  for (var i = 0; i < 2; i++) {
+    await page.locator("#doneBtn").click();
+    await expect(page.locator("#restMsg")).not.toContainText(PARTIALS);
+    await page.locator("#skipRest").click();
+  }
+  await page.locator("#doneBtn").click(); // set 3 of 3, RIR 1
+  await expect(page.locator("#restMsg")).toContainText("Add bottom-half partials to failure — then rest.");
+  await expect(page.locator("#restMsg")).toContainText("+30s for 0–1 RIR");
+});
+
+test("no partials cue when the last set is RIR 2", async ({ page }) => {
+  await seed(page, { v: 2, cur: "fri", idx: 5, state: {}, liftHistory: {} });
+  await page.locator(".liftrow").nth(5).click();
+  await page.locator('.rir[data-rir="2"]').click();
+  for (var i = 0; i < 2; i++) {
+    await page.locator("#doneBtn").click();
+    await expect(page.locator("#restMsg")).not.toContainText(PARTIALS);
+    await page.locator("#skipRest").click();
+  }
+  await page.locator("#doneBtn").click(); // set 3 of 3, RIR 2 → no cue, no +30s
+  await expect(page.locator("#restMsg")).toContainText("Stretch — set up the next set.");
+  await expect(page.locator("#restMsg")).not.toContainText("+30s");
+  await page.locator("#skipRest").click();
+});
+
+test("a lift without the partial flag never shows the partials cue", async ({ page }) => {
+  await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  await page.locator(".liftrow").nth(0).click();
+  for (var i = 0; i < 3; i++) {
+    await page.locator("#doneBtn").click();
+    await expect(page.locator("#restMsg")).not.toContainText(PARTIALS);
+    await page.locator("#skipRest").click();
+  }
+});

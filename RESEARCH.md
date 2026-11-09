@@ -31,11 +31,17 @@ one-line source note as a verified citation yet.
   for calves, leg extensions, curls, laterals, flys.**
   Source note: Nov 8 research revision. App rule: `partial: 1`
   flag + partials prompt (audit pending — BACKLOG L2).
-  Status: settled as a rule; app timing unverified. Re-cite: yes.
-  Open question (Nov 8, from the Pass 4 re-check): the app also
-  flags Sun overhead cable extension (triceps) `partial: 1`, which
-  is NOT in the list above. Flag stays until Khang decides (L2
-  reports it; the loop does not change it).
+  Status: settled as a rule; **app timing verified (L2, Nov 8)** —
+  e2e proves the cue fires only when the lift just finished and the
+  last set's RIR is ≤1, never on sets 1–2, never at RIR 2, and never
+  on an unflagged lift. Re-cite: yes.
+  Open question (Nov 8, from the Pass 4 re-check; audited in L2): the
+  app flags 10 lifts `partial: 1`. Nine match the list above (pec deck
+  fly, leg extension, cable lateral, Bayesian curl, preacher curl,
+  Sat + Sun calf raise, cable fly, lateral↔pec-deck superset). The
+  outlier is Sun overhead cable extension (triceps) — NOT in the
+  research list. Flag stays until Khang decides (T3); the loop does
+  not change it.
 - **Rest: ~90 s isolations, ~2 min upper compounds, ~2–3 min lower
   compounds.**
   Source note: Nov 8 research revision. App rule: app rests are
