@@ -82,7 +82,7 @@
   /**
    * The highest-value set in a list, by the caller's metric.
    * @param {Array<{load:number,reps:number}>} sets
-   * @param {function(number,number,object):number} metric
+   * @param {(load: number, reps: number, opts?: object) => number} metric
    * @param {object} [opts] forwarded to metric as its third argument
    * @returns {object|null} the best set, or null when there are none
    */
@@ -368,8 +368,8 @@
    * Lifts with fewer than two history entries are skipped.
    * @param {any} payload
    * @param {object} DAYS
-   * @param {function(number,number,object):number} metric
-   * @returns {Array<{name:string,delta:number,pct:number}>} sorted by pct descending
+   * @param {(load: number, reps: number, opts?: object) => number} metric
+   * @returns {Array<{name: string, delta: number, pct: number}>} sorted by pct descending
    */
   function topMovers(payload, DAYS, metric) {
     var lh = (payload && payload.liftHistory) || {}, bwKg = payload && payload.bodyweight;

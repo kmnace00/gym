@@ -175,3 +175,57 @@ test("sessionDrift works with the real program estimate", () => {
   assert.equal(r.medianActualMin, 73.3);
   assert.equal(r.driftPct, -0.9);
 });
+
+test("topSet picks the set with the highest metric", () => {
+  const sets = [{ load: 60, reps: 5 }, { load: 70, reps: 3 }, { load: 50, reps: 10 }];
+  // epley-ish: 60×1.167 = 70, 70×1.1 = 77, 50×1.333 = 66.7 → the 70×3 set wins
+  assert.deepEqual(S.topSet(sets, (l, r) => l * (1 + r / 30)), { load: 70, reps: 3 });
+  // by raw tonnage the 50×10 set (500) beats 60×5 (300) and 70×3 (210)
+  assert.deepEqual(S.topSet(sets, (l, r) => l * r), { load: 50, reps: 10 });
+  assert.equal(S.topSet([], (l, r) => l), null);
+  assert.equal(S.topSet(null, (l, r) => l), null);
+});
+
+test("compactVol formats tonnage for the Progress view", () => {
+  assert.equal(S.compactVol(999), "999");
+  assert.equal(S.compactVol(1000), "1.0k");
+  assert.equal(S.compactVol(12345), "12.3k");
+  assert.equal(S.compactVol(undefined), "0");
+});
+
+test("topMovers ranks the first→last change in top-set metric", () => {
+  const p = {
+    bodyweight: 75,
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-10-01", load: 50, reps: 6, setsDone: 3 },
+        { date: "2026-11-01", load: 55, reps: 6, setsDone: 3 }
+      ],
+      "fri:1": [{ date: "2026-11-01", load: 40, reps: 8, setsDone: 3 }]
+    }
+  };
+  const m = S.topMovers(p, P.DAYS, P.epley1rm);
+  assert.equal(m.length, 1); // the single-entry lift is skipped
+  assert.equal(m[0].name, P.DAYS.fri.ex[0].n);
+  assert.equal(m[0].delta, 6); // 66 − 60
+  assert.equal(m[0].pct, 10);
+  assert.ok(m[0].pct > 0);
+  assert.deepEqual(S.topMovers({}, P.DAYS, P.epley1rm), []);
+});
+
+test("topMovers caps at three lifts, sorted by pct descending", () => {
+  const m = S.topMovers({
+    bodyweight: 75,
+    liftHistory: {
+      "fri:0": [{ date: "2026-10-01", load: 50, reps: 6, setsDone: 1 }, { date: "2026-11-01", load: 55, reps: 6, setsDone: 1 }],
+      "fri:1": [{ date: "2026-10-01", load: 60, reps: 6, setsDone: 1 }, { date: "2026-11-01", load: 72, reps: 6, setsDone: 1 }],
+      "sat:0": [{ date: "2026-10-01", load: 40, reps: 6, setsDone: 1 }, { date: "2026-11-01", load: 44, reps: 6, setsDone: 1 }],
+      "sun:0": [{ date: "2026-10-01", load: 30, reps: 6, setsDone: 1 }, { date: "2026-11-01", load: 60, reps: 6, setsDone: 1 }]
+    }
+  }, P.DAYS, P.epley1rm);
+  assert.equal(m.length, 3);
+  assert.equal(m[0].name, P.DAYS.sun.ex[0].n); // +100 %
+  assert.equal(m[1].name, P.DAYS.fri.ex[1].n); // +20 %
+  assert.equal(m[2].name, P.DAYS.fri.ex[0].n); // +10 %
+  assert.ok(m[0].pct >= m[1].pct && m[1].pct >= m[2].pct);
+});
