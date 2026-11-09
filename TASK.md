@@ -2,47 +2,47 @@
 
 ## WIP
 
-WIP: OpenCode editing e2e/features.spec.js, RESEARCH.md since 19:55
+WIP: OpenCode editing stats.js, test/stats.test.js since 20:10
 
-Status: ACTIVE — Batch 1, L2 (audit the lengthened-partials prompt).
-L1 shipped (`28b0c7b`). Batch: `QUEUE.md` L1–L5, in order. When L2 is
-done, copy L3 from `QUEUE.md` into this file and start it. Base HEAD:
-`a18272b`.
+Status: ACTIVE — Batch 1, L3 (day-time model vs real sessions).
+L1 shipped (`28b0c7b`), L2 shipped (`b6645ea` + `78f319a`). Batch:
+`QUEUE.md` L1–L5, in order. When L3 is done, copy L4 from `QUEUE.md`
+into this file and start it. Base HEAD: `a18272b`.
 
-## Completed — L1: rest decisions into rest.js (pure slice) [T1]
+## Completed — L2: audit the lengthened-partials prompt [T1]
 
-Delivered: `restMsg` / `goLabel` / `prepVisible` added to `rest.js`
-and wired into `startRest` / `finishRest` / `renderRestPrep` with no
-behaviour change; 3 unit tests in `test/rest.test.js`; SW `gym-v8`.
-Verified 88/88 unit, typecheck clean, 35/35 e2e at 390×667/844.
+Delivered: 3 new e2e cases prove the partials cue fires only on the
+final set of a flagged lift at RIR ≤1 (never sets 1–2, never RIR 2,
+never on an unflagged lift) — no `app.js` change was needed. Flag
+audit: 10 `partial: 1` lifts, 9 match `RESEARCH.md`, Sun overhead
+cable extension is the outlier (flag untouched, T3). Verified 88/88
+unit, typecheck clean, 38/38 e2e at 390×667/844.
 
-## Active task — L2: audit the lengthened-partials prompt [T1]
+## Active task — L3: day-time model vs real sessions [T1, audit]
 
-Why: research says partials only after full-ROM failure, on the last
-set, for calves, leg extensions, curls, laterals, flys. Source
-(`app.js:967`) fires the prompt only when the lift finishes
-(`finished`) with `partial: 1` and last RIR ≤1 — which looks right.
-Verify it instead of assuming it.
+Why: day length is still estimated as 50 s/set + rest + 60 s
+transition (`program.js` `dayMins`, `SET_SECS`/`TRANSITION_SECS`).
+Pass 4 `sessionLog` entries carry `day`, `durationSec`,
+`status: "complete"`, so estimate vs actual is measurable with a
+pure function — but real data lives only on Khang's phone and the
+sessions are brand new.
 
 Do:
-- e2e (extend `e2e/features.spec.js`): on a partial lift (Fri leg
-  extension) the partials message appears only after the final set
-  with last RIR ≤1; it does not appear after set 1/2; it does not
-  appear when the last set's RIR is ≥2; a non-partial lift never
-  shows it.
-- Audit the flagged set against `RESEARCH.md`: 9 of 10 flagged lifts
-  match (flys, leg ext, laterals, curls, calves). The outlier is Sun
-  overhead cable extension (triceps) — NOT in the research list.
-  Record that as an open question in `BUILD_LOG.md` and `RESEARCH.md`.
-  Do NOT change the flag — program data, Khang only.
-- If the e2e finds a timing bug, fix the timing in `app.js` only
-  (prompt timing, not the flag, not the message wording).
+- Add pure `Stats.sessionDrift(...)` in `stats.js` (no DOM, no
+  "now", deterministic): from completed `sessionLog` entries for
+  that day with `durationSec > 0`, return
+  `{ n, estimateMin, medianActualMin, driftPct }`; return
+  `{ n, insufficient: true }` when n < 3. Export it.
+- Unit tests in `test/stats.test.js` with fixtures: 0 sessions →
+  insufficient; 1–2 → insufficient; ≥3 → median + drift math;
+  non-complete / zero-duration entries ignored.
+- Report in `BUILD_LOG.md`: per-day n and drift from fixtures only,
+  plus the plain statement that the real-data verdict is pending.
+  No constants change, no UI change in this item.
 
-Files: `e2e/features.spec.js`, `app.js` (only if a timing bug is
-found), `RESEARCH.md` (open-question note).
-Verify: new e2e green at both viewports, no-scroll intact,
-`npm run check` + typecheck green. One line in `BUILD_LOG.md`,
-update `LOOP_STATE.md`.
+Files: `stats.js`, `test/stats.test.js`.
+Verify: `npm run check`, typecheck green. No behaviour change to
+the app itself. One line in `BUILD_LOG.md`, update `LOOP_STATE.md`.
 If verification fails, log it and STOP — do not move on.
 
 ## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)

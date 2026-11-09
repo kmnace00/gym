@@ -1,15 +1,22 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 IN PROGRESS — L1 shipped (`28b0c7b`), L2 built and
-green, awaiting auto-sync push; L3 next.
+Status: BATCH 1 IN PROGRESS — L1, L2 shipped; L3 built and green,
+awaiting auto-sync push; L4 next.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
-Muse re-checked each item against Pass 4 source. `TASK.md` has L2
+Muse re-checked each item against Pass 4 source. `TASK.md` has L3
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
 in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into
 OpenCode once and it works the queue.
 
 ## Last verified
 
+- L3 build (OpenCode, Nov 8 20:10 CT): pure `Stats.sessionDrift`
+  added + 5 unit tests; fixture-only audit (model 74/69/72 min for
+  Fri/Sat/Sun), real-data verdict pending — no sessions recorded
+  yet and this session cannot read the phone's localStorage. No
+  constants or UI change. SW `gym-v9` (stats.js changed).
+  `npm run check` **93/93 unit**, `npm run typecheck` clean,
+  `npm run e2e` **38/38** at 390×667/844. Commit: `pending`.
 - L2 build (OpenCode, Nov 8 19:58 CT): partials-prompt timing
   confirmed by 3 new e2e cases (last set only, RIR ≤1 only, never on
   an unflagged lift) — no `app.js` change needed. Flag audit: 10
@@ -17,7 +24,8 @@ OpenCode once and it works the queue.
   extension is the outlier (flag untouched, T3). `npm run check`
   **88/88 unit**, `npm run typecheck` clean, `npm run e2e`
   **38/38** at 390×667/844, no overflow, no console errors. SW
-  unchanged (`gym-v8`, no asset change). Commit: `pending`.
+  unchanged (`gym-v8`, no asset change). Commits: `b6645ea` +
+  `78f319a` (both on origin/main, Pages live).
 - L1 build (OpenCode, Nov 8 19:50 CT): `restMsg` / `goLabel` /
   `prepVisible` live in `rest.js`, `app.js` wired to them, no
   behaviour change. `npm run check` **88/88 unit** (3 new),
@@ -31,9 +39,9 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: L2 — built, checks green; waiting for the
-  gym-sync commit to appear on origin/main before starting L3.
-- Next in queue: L3 → L4 → L5 (`QUEUE.md`, in order).
+- Current item: L3 — built, checks green; waiting for the
+  gym-sync commit to appear on origin/main before starting L4.
+- Next in queue: L4 → L5 (`QUEUE.md`, in order).
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
@@ -108,3 +116,9 @@ Pass 4 build, same phone check:
   `rest.js`). 88/88 unit, typecheck clean, 35/35 e2e at
   390×667/844, no overflow, no console errors. SW `gym-v8`.
   Waiting for gym-sync to commit/push before starting L2.
+- 2026-11-08 19:53 CT: L1 pushed by gym-sync as `28b0c7b`, Pages
+  live. Note: `~/.gym-sync-pause` was blocking the service since
+  17:39 — Khang cleared it so the loop can push.
+- 2026-11-08 20:05 CT: L2 pushed (`b6645ea` e2e cases, `78f319a`
+  log/state), Pages live. L3 built (`Stats.sessionDrift` + 5 tests):
+  93/93 unit, typecheck clean, 38/38 e2e, SW `gym-v9`.
