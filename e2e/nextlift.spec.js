@@ -33,7 +33,7 @@ test("GO after the last lift wraps back to the earliest open lift, then Finish w
   }, { day, date });
   await page.reload();
 
-  const lift4 = await page.evaluate((d) => Gym.DAYS[d].ex[3].name, day);
+  const lift4 = await page.evaluate((d) => Gym.DAYS[d].ex[3].n, day);
 
   await page.locator(".liftrow").nth(7).click();
   await page.locator("#doneBtn").click();

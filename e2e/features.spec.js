@@ -241,17 +241,16 @@ test("bodyweight history is frozen at the weight in force", async ({ page }) => 
     await page.locator("#doneBtn").click();
     await page.locator("#skipRest").click();
   }
-  // the dip is the last lift of the day, so we are resting: peek the workout
-  // so the header (and therefore the menu) is reachable.
-  await page.locator("#detailsBtn").click();
+  // the dip is the last lift of the day: with B3-34 GO wraps to the first open
+  // lift instead of resting, so back out of lift view to reach the menu.
+  await page.locator("#backBtn").click();
 
   await page.locator("#menuBtn").click();
   await page.locator("#bwInput").fill("220");
   await page.locator("#bwInput").press("Tab");
   await page.locator("#modalClose").click();
 
-  // lift-mode hides the progress button; back to the day list first
-  await page.locator("#backBtn").click();
+  // backBtn above already left lift view, so the progress button is reachable
   await page.locator("#progressBtn").click();
   // the sets were banked at 165 lb, so editing the scalar to 220 does not
   // rewrite the tonnage that was logged ("4.0k lb" under the old behaviour)
