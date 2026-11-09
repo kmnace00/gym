@@ -24,6 +24,28 @@ The sync rule above only sees what is already pushed. It cannot see Muse's unpus
 4. **If a push is rejected because origin moved** (Muse pushed while you were working), do **not** merge or rebase on your own. `git fetch origin`, look at what changed (`git log HEAD..origin/main --oneline` and `git diff --stat HEAD origin/main`), and tell Khang which files overlap before doing anything.
 5. Muse follows the same sync-first rule on its side and writes its own `WIP: Muse editing <file>` line before editing.
 
+## Continuous loop
+
+Full framework in `LOOP.md`. The short version, binding here:
+
+1. **One item at a time.** Build only the active `TASK.md` item, or
+   the next `QUEUE.md` entry in order. When the queue is empty, stop
+   and wait for Muse. Never invent the next item.
+2. **Triage.** T1: build. T2: stop, flag `NEEDS_DESIGN` in
+   `LOOP_STATE.md`. T3 (any `program.js` number, new feature): do not
+   build — it is a proposal for Khang only. If a task needs a fact
+   not in `RESEARCH.md`, stop and flag `NEEDS_RESEARCH`.
+3. **Per item:** run `npm run check`, `npm run typecheck`,
+   `npm run e2e` (390×667 + 390×844, no overflow, no console errors).
+   If any fail, log it in `BUILD_LOG.md` and STOP — do not move on.
+4. **Per item:** one line in `BUILD_LOG.md`, update `LOOP_STATE.md`
+   (commit + test counts + status). Bump SW `CACHE` when an asset
+   changed.
+5. **If `LOOP_STATE.md` says `Status: PAUSED`,** finish the current
+   item, then stop.
+6. **Program data is read-only in the loop** unless the task
+   explicitly carries Khang's approval for that exact change.
+
 ## Sources of truth
 
 - `TASK.md` is the only instruction source for what to build. `PLAN.md` has the design and the security rules. `BUILD_LOG.md` gets one line per fix.

@@ -2,11 +2,34 @@
 
 Goal: personal one-screen gym tool, free, no scroll, rest-focused. Abandoned clothes picker to focus here only.
 
-## Current state (Nov 8, Loops 15–35 done, stopped at 79%)
+## Current state (Nov 8, 19:35 CT — HEAD cbbf6a8, Pass 4 shipped)
 
 - One screen, 100dvh, Fri/Sat/Sun, 8 lifts/day, 24 lifts total.
-- Loop 14 fix: `setAdjust(false)` in `timerIdle()` and `startRest()` — Adjust panel no longer leaks onto next lift.
-- Loops 15–35: short-phone overflow guard, rest auto-advance tied to lift/day, top spacer removed, tempo only on Lift 1, Pause demoted, jump segments display-only, card void split, session pill "▶ Start", legibility bump, Set Done clears stale advance, rest "what's next" + load + ‹ ›, Undo disarms on manual nav, wake-lock fix, press-and-hold steppers, RIR label shows adjusted RIR, focus drops, finish banks session time + releases wake lock, opens on today's training day, Adjust close blurs focus, rest timer accessible name clears.
+- Modular: `program.js` (data + pure math), `store.js`
+  (persistence/history/sessions, schema v3, key still `gym-tool-v2`),
+  `timer.js`, `machine.js` (rest state machine), `stats.js`
+  (analytics), `rest.js` (pure advance/finish helpers), `app.js`
+  (controller).
+- Sessions are first-class (start/stop clock, session log, Finish
+  summary); per-set arrays are the single truth for volume/PR/CSV;
+  top set drives progression; tap a logged set to edit it. Bodyweight
+  lifts valued at total system weight (default 75 kg). Week strip,
+  Continue, rest-screen next-set prep, corrupt quarantine +
+  snapshots, Undo last reset/restore. PWA (manifest + SW `gym-v7`,
+  navigations network-first, assets stale-while-revalidate), CI on push.
+- Verified: 85 unit / 35 e2e green, typecheck clean, no-scroll at
+  390×667/844. Program data unchanged (24 lifts).
+- Earlier: Loops 15–35 (Nov 8, stopped at 79% free weekly limit),
+  Loop 14 Adjust-leak fix, dark-first Day → Lift revamp, file split,
+  Pass 3 (stable ids, per-set history, Plan today, heatmap, CSV).
+
+## Continuous loop
+
+See `LOOP.md` (framework), `BACKLOG.md` (ranked ideas),
+`RESEARCH.md` (evidence ledger), `LOOP_STATE.md` (checkpoint).
+One item at a time; T1 via `QUEUE.md`, T2 needs a `DESIGN.md`
+section first, T3 (any `program.js` number change, new feature)
+needs Khang's explicit approval and is never auto-built.
 
 ## Non-negotiables
 
@@ -19,6 +42,11 @@ Goal: personal one-screen gym tool, free, no scroll, rest-focused. Abandoned clo
 
 - Public GitHub repo: `kmnace00/gym` (renamed from `gym-html-tool` Nov 8), branch `main`. Public for GitHub Pages simplicity — Pages is live at https://kmnace00.github.io/gym/ . Muse pushes, OpenCode pulls.
 - Muse writes TASK.md / PLAN.md. OpenCode builds, updates BUILD_LOG.md.
+- Loop rules live in `LOOP.md`: one item at a time, T1 via `QUEUE.md`,
+  T2 needs design first, T3 (program-data / new feature) needs Khang.
+  OpenCode never picks the next item itself; when the queue is empty
+  it stops and waits. If `LOOP_STATE.md` says `PAUSED`, finish the
+  current item, then stop.
 - No paste loop. No direct Muse → OpenCode server call until Tailscale + `opencode serve` is fixed on the Max (currently impaired: session contents don't load, Providers shows no connected providers).
 
 ## Security — hardening (Khang's call, Nov 8)

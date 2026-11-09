@@ -56,6 +56,12 @@ Muse is the planner agent. OpenCode is the builder on the Mac.
 Muse writes `TASK.md`. OpenCode pulls the branch, reads `TASK.md`, builds, tests, updates `BUILD_LOG.md`, pushes back.
 No paste loop — the repo is the handoff.
 
+Continuous improvement runs on the loop in `LOOP.md`: Muse plans a
+bounded batch into `QUEUE.md`, OpenCode works it one item at a time,
+`BACKLOG.md` holds ranked ideas, `RESEARCH.md` holds the science,
+`LOOP_STATE.md` is the checkpoint. Program-data changes and new
+features always need Khang's explicit approval first.
+
 ## Rules (do not break)
 
 - One screen, no scroll. Every view fits `100dvh` on a phone; keep the short-phone (`max-height:720px`) and tall-phone (`min-height:820px`) fallbacks intact. The `e2e/` smoke test asserts this.
