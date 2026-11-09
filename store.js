@@ -16,7 +16,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  var CURRENT = 3;
+  var CURRENT = 4;
   var STORE = "gym-tool-v2";   // legacy key name; payload `v` is authoritative
   var LEGACY = "gym-tool-v1";  // v1 payload read once, then migrated
   var QUARANTINE = STORE + "-corrupt";
@@ -28,7 +28,7 @@
   var DONE_MAX = 12;           // the program schedules at most 3 sets per lift,
                                // so a huge imported count is hostile, not data
   var ACC_SEC_MAX = 8 * 3600;  // 8 h ceiling for one workout clock
-  var BODYWEIGHT_MAX = 300;    // kg
+  var BODYWEIGHT_MAX = 700;    // lb
 
   var loadError = null;
 
@@ -268,7 +268,7 @@
      counted by distinct history dates, so no lossy regrouping is needed.     */
   function migrateV2(p) {
     var out = {
-      v: CURRENT,
+      v: 3,
       cur: p.cur || "fri", idx: typeof p.idx === "number" ? p.idx : 0,
       state: isObj(p.state) ? p.state : {},
       liftHistory: isObj(p.liftHistory) ? p.liftHistory : {},
@@ -284,13 +284,34 @@
     return out;
   }
 
+  /* v3 stored the bodyweight scalar (and every banked `bwKg`) in kg, while
+     the programme's loads were always pounds. Convert once, on load/migrate. */
+  function migrateV3(p) {
+    var K = 2.20462, k, arr, i;
+    if (typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0) {
+      p.bodyweight = Math.round(p.bodyweight * K * 10) / 10;
+    }
+    var lh = isObj(p.liftHistory) ? p.liftHistory : {};
+    for (k in lh) if (own(lh, k) && Array.isArray(lh[k])) {
+      arr = lh[k];
+      for (i = 0; i < arr.length; i++) {
+        if (arr[i] && typeof arr[i].bwKg === "number" && isFinite(arr[i].bwKg) && arr[i].bwKg > 0) {
+          arr[i].bwKg = Math.round(arr[i].bwKg * K * 10) / 10;
+        }
+      }
+    }
+    p.v = 4;
+    return p;
+  }
+
   /* v1 → v2 → v3; unknown/future versions are flagged, never dropped */
   function migrate(raw) {
     var p;
     try { p = JSON.parse(raw); } catch (e) { return null; }
     if (!p || typeof p !== "object") return null;
     if (p.v === CURRENT) return normalize(p);
-    if (p.v === 1 || p.v === 2) return normalize(migrateV2(p));
+    if (p.v === 1 || p.v === 2) return normalize(migrateV3(migrateV2(p)));
+    if (p.v === 3) return normalize(migrateV3(p));
     if (typeof p.v === "number" && p.v > CURRENT) return { __future: p };
     return null;
   }
