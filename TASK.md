@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/sw.spec.js, docs since 2026-11-09 15:10 CT — B3-23 (service worker update check on visibility).
+WIP: OpenCode editing app.js, index.html, style.css, e2e/a11y.spec.js, docs since 2026-11-09 15:25 CT — B3-24 (week strip + heatmap accessible names).
+
+## Completed — B3-23: The service worker never checks for updates while the app stays open [T1]
+- Built Nov 9 (OpenCode). `swReg` is kept from the register call; the existing `visibilitychange` handler calls `swReg.update()` when the page becomes visible (throttled to once per 10 min, silent on failure). SW `gym-v59`. 160/160 unit, typecheck clean, 82/82 e2e.
 
 ## Completed — B3-22: Restore (replace) re-implements the two-tap arm instead of using `twoTap()` [T1]
 - Built Nov 9 (OpenCode). `replaceBtn` now routes through the shared `twoTap()` arm (2.5 s window, 2.6 s label reset); `replaceArmedUntil` and its ad-hoc timer are gone. The action had to be hoisted to a named `openReplacePicker` — `twoTap` compares function identity, so an inline literal armed forever. 1 new e2e (single tap arms, second tap clicks the picker, timeout restores the label). SW `gym-v58`. 160/160 unit, typecheck clean, 81/81 e2e.
