@@ -108,6 +108,42 @@ test("tapping a logged set edits it in place", async ({ page }) => {
   await expect(page.locator("#setLog .setrow").nth(0)).not.toHaveText(before);
 });
 
+test("navigating away from a set edit restores the working load", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day } = await today(page);
+
+  await page.locator(".liftrow").first().click();
+  const base = await page.locator("#loadVal").textContent();
+
+  await page.locator("#doneBtn").click();  // logs set 1 at `base`
+  await page.locator("#skipRest").click();
+
+  await page.locator("#loadUp").click();   // working load bumped by the lift step
+  const bumped = await page.locator("#loadVal").textContent();
+  expect(bumped).not.toBe(base);
+
+  await page.locator("#setLog .setrow").nth(0).click();
+  await expect(page.locator("#loadVal")).toHaveText(base);
+  await expect(page.locator("#setCount")).toContainText("Editing set 1");
+
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").first().click();
+
+  await expect(page.locator("#loadVal")).toHaveText(bumped);
+  await expect(page.locator("#setCount")).not.toContainText("Editing");
+
+  const saved = await page.evaluate((d) => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return p.state[d + ":0"].load;
+  }, day);
+  expect(saved).toBe(parseFloat(bumped));
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
+
 test("the day header shows a three-cell week strip", async ({ page }) => {
   await page.goto(url);
   await expect(page.locator("#weekStrip .wk")).toHaveCount(3);
