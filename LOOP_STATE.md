@@ -9,6 +9,15 @@ OpenCode once and it works the queue.
 
 ## Last verified
 
+- B2 build (OpenCode, Nov 8 21:25 CT): nested unsafe keys. `store.js`
+  `sanitizeRecord`, `sanitizeEntry` and `sanitizeSession` now call
+  `stripUnsafeKeys` first, and `sanitizeSets` strips each set element, so
+  `__proto__` / `constructor` / `prototype` inside a record, history entry,
+  session or set cannot survive the store boundary. A record left with only
+  unsafe keys is still a valid record (`getLift` fills defaults) — the lift
+  is not dropped. 3 new unit tests (JSON-string payloads); merge winner rule
+  unchanged. SW `gym-v13`. `npm run check` **106/106 unit**,
+  `npm run typecheck` clean, `npm run e2e` **41/41** at 390×667/844.
 - B1 build (OpenCode, Nov 8 21:18 CT): null / non-object records.
   `store.js` `sanitizePayload` drops null / non-object `state` records,
   history entries, `sessionLog` entries and session `lifts` values at the
