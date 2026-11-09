@@ -33,6 +33,26 @@ test("a session that crosses midnight banks its sets on the start date", async (
   expect(last.sessionDate, "session keeps its start date").toBe("2026-11-06");
   expect(last.date, "history follows the session date, not the wall clock").toBe("2026-11-06");
   expect(last.sets).toBe(3);
+
+  // B3-11: the finish summary must count PRs against the session date, not the
+  // wall clock. Finish the rest of Friday after midnight and check the PRs.
+  for (let lift = 1; lift < 8; lift++) {
+    for (let set = 0; set < 3; set++) {
+      await page.locator("#doneBtn").click();
+      await page.locator("#skipRest").click();
+    }
+  }
+  await page.locator("#skipRest").click(); // second tap of the finish arm
+  await expect(page.locator("#summary")).toBeVisible();
+  const seen = await page.evaluate(() => ({
+    wallClock: Gym.dateKey(),
+    sessionDate: Gym.sessionDate(JSON.parse(localStorage.getItem("gym-tool-v2")))
+  }));
+  expect(seen.wallClock, "the clock is already past midnight").toBe("2026-11-07");
+  expect(seen.sessionDate, "the session still belongs to Friday").toBe("2026-11-06");
+  // 8 Friday lifts were logged, all banked on 2026-11-06: every PR is still a
+  // PR today, even though "today" is now Saturday on the wall clock.
+  await expect(page.locator("#sumPrs")).toHaveText("8 new");
 });
 
 test("the summary reports the day's tonnage and PRs", async ({ page }) => {
