@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 2 ACTIVE — B1 built + verified (103/103 unit, typecheck clean, 41/41 e2e, pushed); B2 in progress; finish B2–B3 before 4:00 AM Mon (DeepSeek pipeline start). ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse. (Khang, Nov 8, 21:10 CT): Khang will not be awake when Batch 2 finishes, so OpenCode reviews its own Batch 2 work this one time only — after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon (Khang, Nov 8, 21:10 CT). Batch 1 complete + verified by Muse.
+Status: BATCH 2 COMPLETE + SELF-REVIEWED (OpenCode, Nov 8 21:31 CT) — B1, B2, B3 built, verified and pushed; HEAD `9556a73`, Pages live `gym-v13`. Queue empty: OpenCode stops and waits for Muse. ONE-TIME SELF-REVIEW (Khang, Nov 8, 21:10 CT): after B3, check B1–B3 diffs against the QUEUE specs, re-run `npm run check` + typecheck + e2e at both viewports, confirm program.js untouched, confirm Pages live at the new HEAD, write the verdict in LOOP_STATE.md, then STOP. Do not start new work. This is a one-time exception, not a standing rule — Muse is still the reviewer normally, and will do a full independent review when Khang pings next. After the self-review, the DeepSeek autonomous pipeline takes over at 4:00 AM Mon. Batch 1 complete + verified by Muse.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -82,11 +82,55 @@ OpenCode once and it works the queue.
   SW `gym-v7`, schema v3 (key still `gym-tool-v2`), 24 lifts
   intact. Pages: https://kmnace00.github.io/gym/
 
+## Batch 2 self-review verdict (one-time, per Khang's 21:10 CT instruction)
+
+Reviewed by OpenCode against the `QUEUE.md` specs, HEAD `9556a73`:
+
+- **B1 — PASS.** Every spec point present: `sanitizePayload` drops null /
+  non-object `state` records, history entries, `sessionLog` entries and
+  session `lifts` values before any consumer reads them; dropped state
+  records are absent, so `getLift()` supplies the normal defaults (the test
+  asserts the default record, nothing invented); `mergePayload` skips a null
+  incoming record, `migrateV2` treats it as not-done, `resetDay` skips it.
+  7 tests, all JSON-string payloads. Merge winner rule, history union,
+  session log, schema and program data unchanged.
+- **B2 — PASS.** `stripUnsafeKeys` runs at the top of `sanitizeRecord`,
+  `sanitizeEntry` and `sanitizeSession`; session `lifts` values are verified
+  to be covered (they go through `sanitizeRecord`), not assumed. A record
+  that is only unsafe keys stays a valid record. No new key list — only
+  `__proto__`, `constructor`, `prototype`. Deliberate extra: sets inside
+  records/entries also get stripped (`sanitizeSets`), since a set is part of
+  the same record boundary. Merge winner rule unchanged.
+- **B3 — PASS.** `test` and the unit step of `check` now use
+  `node --test test/*.test.js`. Finding recorded: `npm run check` does not
+  call `npm test` — it runs the unit step inline — so both strings were
+  changed to keep the gate identical. Glob expands under npm's sh on macOS
+  (Node 26 here) and CI remains Node 20 with no change needed. No code
+  change, no SW bump; asset guard green.
+- **Suite re-run at HEAD:** `npm run check` 106/106 unit + asset guard OK,
+  `npm run typecheck` clean, `npm run e2e` 41/41 at 390×667 and 390×844,
+  no overflow, no console errors.
+- **Program data:** `git diff b7d61f0 HEAD -- program.js` = 0 lines.
+  `app.js`, `style.css`, `index.html`, `machine.js`, `stats.js`, `rest.js`,
+  `timer.js` also untouched (0 lines).
+- **Pages:** live at the new HEAD — `sw.js` serves `CACHE gym-v13` and the
+  deployed `store.js` contains the B1/B2 guards.
+- **Safety checks:** every commit author is Khang (auto-sync) or Muse; no
+  force-push, no merge, no rebase; only `origin/main` pulled.
+- **Open items for Muse:** (1) the null-record class is now closed at the
+  store boundary; `app.js` consumers still assume records are objects, which
+  is safe because sanitize is the only entry point; (2) L9 (rest controller,
+  `DESIGN.md`) is the next T2 build, not queued; (3) no phone check needed
+  for B1–B3 — no UI change.
+
+**Verdict: Batch 2 shipped and clean. OpenCode stops here and waits for
+Muse.**
+
 ## Current / next
 
-- Current item: B2 — nested unsafe keys inside records/entries/sessions
-  (B1 complete and pushed as `b937acb` chain).
-- Next in queue: B3 (Node test-script glob), then stop and wait for Muse.
+- Current item: none — Batch 2 (B1, B2, B3) complete and self-reviewed.
+- Next in queue: none — stop and wait for Muse (Batch 3 = L9 rest
+  controller, designed in `DESIGN.md`, not queued yet).
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
