@@ -1040,7 +1040,16 @@
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
   function cancelPendingAdvance() { restCtl.cancelPendingAdvance(); }
-  function resetEdit() { editSet = -1; editBackup = null; }
+  /* navigating away abandons an in-progress set edit: the set's own value is
+     already applied live by applySetEdit(), so just put the working load/
+     reps/RIR back — the next set must not inherit the edited set's numbers. */
+  function resetEdit() {
+    var s = curSt();
+    if (editSet >= 0 && editBackup && s) {
+      s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir;
+    }
+    editSet = -1; editBackup = null;
+  }
   function showDay() { resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render(); }
   function showProgress() { resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render(); }
   function openLift(i) {
