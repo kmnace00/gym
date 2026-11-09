@@ -229,6 +229,8 @@ test("bodyweight changes the bodyweight-lift tonnage", async ({ page }) => {
   await page.locator("#bwInput").press("Tab");
   await page.locator("#modalClose").click();
 
+  // lift-mode hides the progress button; back to the day list first
+  await page.locator("#backBtn").click();
   await page.locator("#progressBtn").click();
   await expect(page.locator("#pSub")).toContainText("1.8k kg");
 
