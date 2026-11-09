@@ -1,8 +1,8 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-07 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
+Status: BATCH 3 QUEUED (Muse, Nov 9) — 33 T1 + 2 T2 (B3-01–B3-35) from three read-only audits (code, UX, science) against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only set-log-sizing commits that touch none of the audited logic. B3-08 active in `TASK.md`. L7/L8 are now UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval. **Pushed Nov 9 ~11:24 CT** after the head check showed no new commits since 11:12 CT — the queue is live; Khang can paste the loop prompt into a fresh OpenCode session.
 
-Previous: B3-07 BUILT (OpenCode, Nov 9 11:46 CT) — restart-lift snapshots first: `doRestartLift` calls `Gym.snapshot(payload, "pre-restart-lift")` before `resetLift`, so "Undo last reset / restore" brings the restart back (and no longer exposes an older snapshot). 1 new e2e (seeded completed lift → restart → empty history → restore → done/sets back). 155/155 unit, typecheck clean, 70/70 e2e, SW `gym-v43`. Commit: auto-sync (pending hash).
+Previous: B3-08 BUILT (OpenCode, Nov 9 11:48 CT) — import-merge keeps the device cursor: `mergePayload` no longer copies `incoming.cur`/`incoming.idx` (base cursor wins; `importRaw` still adopts on full replace). Unit test + e2e (fri/idx 2 + sun/idx 5 → fri/2, "Lift 3 of 8"). 156/156 unit, typecheck clean, 71/71 e2e, SW `gym-v44`. Commit: auto-sync (pending hash).
 
 Previous: B3-01 BUILT (OpenCode, Nov 9 11:27 CT) — mid-rest finish-arm freeze fixed: `restctl.js` `finishReset()` clears `finishUntil` + `ctx.frozen` in every phase (it used to return early unless phase was `go`), and `app.js` repaints the rest view unconditionally when the 2,600 ms arm timer fires. After "End rest" on the final lift, a >2.6 s hesitation no longer strands a frozen clock / "Tap again to finish": the countdown resumes and the button reads "End rest" (second tap inside the window still finishes). Unit test updated to the new contract + 1 `page.clock` e2e. 154/154 unit, typecheck clean, 66/66 e2e at 390×667/844, no overflow, no console errors, SW `gym-v38`. Commit: `b3476d7` (auto-sync, on origin/main).
 
@@ -132,8 +132,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: B3-07 built and gated (155/155 unit, typecheck clean, 70/70 e2e, SW `gym-v43`); waiting for auto-sync to publish it, then B3-08 starts.
-- Next in queue: B3-08–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
+- Current item: B3-08 built and gated (156/156 unit, typecheck clean, 71/71 e2e, SW `gym-v44`); waiting for auto-sync to publish it, then B3-09 starts.
+- Next in queue: B3-09–B3-35 in order (`QUEUE.md`). When the queue is empty, stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
@@ -289,3 +289,7 @@ Pass 4 build, same phone check:
   `pre-restart-lift` before `resetLift`; 1 new e2e restores the lift via
   "Undo last reset / restore". 155/155 unit, typecheck clean, 70/70 e2e,
   SW `gym-v43`. Waiting for auto-sync to publish before starting B3-08.
+- 2026-11-09 11:48 CT: B3-08 built (OpenCode). `mergePayload` keeps the base
+  cursor (incoming `cur`/`idx` no longer copied); unit + e2e lock fri/idx 2
+  across an import of sun/idx 5. 156/156 unit, typecheck clean, 71/71 e2e,
+  SW `gym-v44`. Waiting for auto-sync to publish before starting B3-09.

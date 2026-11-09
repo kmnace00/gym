@@ -2,25 +2,28 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/pass3.spec.js, sw.js since 2026-11-09 11:48 CT
+WIP: OpenCode editing store.js, test/store.test.js, e2e/progress.spec.js, sw.js since 2026-11-09 11:51 CT
 
-Status: ACTIVE — Batch 3, B3-07 (restart-lift snapshot). B3-06 is done and
-pushed as `f03157c`. Batch: `QUEUE.md` B3-07–B3-35, in order. When B3-07 is
-done, copy B3-08 from `QUEUE.md` into this file and start it. Base HEAD:
-`f03157c`.
+Status: ACTIVE — Batch 3, B3-08 (merge cursor). B3-07 is done and pushed as
+`955ee81`. Batch: `QUEUE.md` B3-08–B3-35, in order. When B3-08 is done, copy
+B3-09 from `QUEUE.md` into this file and start it. Base HEAD: `955ee81`.
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
-## Active task — B3-07: Restart-lift takes no snapshot [T1]
+## Active task — B3-08: Import-merge silently adopts the incoming backup's day/lift cursor [T1]
 
-Why: every other destructive path snapshots first (reset day, clear all, restore, merge), but `doRestartLift` doesn't. `resetLift` pops today's history entry for that lift. Worse, the "Undo last reset / restore" button stays visible from an *older* snapshot, so after a lift restart a user tapping it expecting the lift back gets a snapshot that may predate hours of work, with no staleness warning.
+Why: merging a backup is for reconciling history across devices. Instead it can yank the lifter mid-workout to a different day and lift (whatever the other device was looking at), with no message saying so. Cursor position is device-local state, not history. Verified by Muse: `store.js:598-599` copies `incoming.cur` / `incoming.idx` into the merged payload; `app.js:1274` then sets `cur`/`idx` from it. (Full replace via `importRaw` correctly adopts the cursor — only the merge path is wrong.)
 
 Do:
-- In `app.js` `doRestartLift`, snapshot first with label `"pre-restart-lift"` (same `Gym.snapshot` shape the other destructive paths use), so "Undo last reset / restore" restores the pre-restart state.
+- Delete the two `cur`/`idx` lines from `mergePayload`; keep the base payload's cursor. Nothing else in the merge changes.
 
-Files: `app.js`.
-Verify: e2e — complete a lift, restart it, tap "Undo last reset / restore" → the lift's history entry is back. Full gate green.
+Files: `store.js`, `test/store.test.js`.
+Verify: e2e — seed `cur: "fri", idx: 2`, import a backup with `cur: "sun", idx: 5`, assert the app is still on Fri lift 3. Full gate green.
+
+## Completed — B3-07: Restart-lift takes no snapshot [T1]
+
+`doRestartLift` calls `Gym.snapshot(payload, "pre-restart-lift")` before `Gym.resetLift`, so "Undo last reset / restore" brings the restart back (and no longer exposes an older snapshot). 1 new e2e (seeded completed lift → restart → empty history → restore → done/sets back). SW `gym-v43`. Verified 155/155 unit, typecheck clean, 70/70 e2e. Commit: `955ee81` (auto-sync, on origin/main).
 
 ## Completed — B3-06: Undo of an extra set leaves a stale history entry [T1]
 

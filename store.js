@@ -597,8 +597,6 @@
     }
     out.v = CURRENT;
     if (!out.lastBackup && incoming && incoming.lastBackup) out.lastBackup = incoming.lastBackup;
-    if (incoming && incoming.cur) out.cur = incoming.cur;
-    if (incoming && typeof incoming.idx === "number") out.idx = incoming.idx;
     return normalize(out);
   }
 

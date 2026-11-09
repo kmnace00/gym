@@ -58,6 +58,29 @@ test("import merges history instead of replacing it", async ({ page }) => {
   await expect(page.locator("#pSessions")).toHaveText("2"); // both sessions kept
 });
 
+test("import-merge keeps the device's day/lift cursor", async ({ page }) => {
+  await seed(page, {
+    v: 4, cur: "fri", idx: 2, bodyweight: 165, state: {}, liftHistory: {}, sessionLog: []
+  });
+  const backup = JSON.stringify({
+    v: 4, cur: "sun", idx: 5, bodyweight: 165, state: {}, liftHistory: {}, sessionLog: []
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("merged");
+  await page.locator("#modalClose").click();
+
+  const saved = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { cur: p.cur, idx: p.idx };
+  });
+  expect(saved).toEqual({ cur: "fri", idx: 2 });
+
+  await expect(page.locator("#dayTitle")).toContainText("Friday");
+  await page.locator(".liftrow").nth(2).click();
+  await expect(page.locator("#liftMeta")).toContainText("Lift 3 of 8");
+});
+
 test("a payload with absurd counts renders bounded sets, not a hang", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

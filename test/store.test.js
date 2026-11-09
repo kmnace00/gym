@@ -200,6 +200,18 @@ test("mergePayload unions history by date and keeps the fuller state record", ()
   assert.equal(m.liftHistory["fri:0"][1].date, "2026-11-08");
 });
 
+test("mergePayload keeps the device cursor instead of adopting the incoming one", () => {
+  const base = S.emptyPayload();
+  base.cur = "fri";
+  base.idx = 2;
+  const inc = S.emptyPayload();
+  inc.cur = "sun";
+  inc.idx = 5;
+  const m = S.mergePayload(base, inc);
+  assert.equal(m.cur, "fri");
+  assert.equal(m.idx, 2);
+});
+
 test("importMerge never discards current data", () => {
   global.localStorage.clear();
   const base = S.emptyPayload();
