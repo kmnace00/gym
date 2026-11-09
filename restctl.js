@@ -60,7 +60,7 @@
       var now = deps.now(), phase = rest.phase;
       var label = "", msg = "", nextText = "", skipLabel = "End rest";
       if (phase === "go") {
-        var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), deps.pIdx, true);
+        var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, true);
         label = "GO";
         msg = Rest.goLabel(adv, lastLift());
         nextText = ctx.nextText.replace("Up next —", "Up now —");
@@ -166,7 +166,7 @@
          same tap that just finished the rest */
       if (fromTimerBar && deps.now() - ctx.goAtMs < 400) return out([]);
       var isGo = rest.phase === "go";
-      var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), deps.pIdx, deps.done() >= deps.sets());
+      var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, deps.done() >= deps.sets());
       if (adv) {
         var nx = Rest.nextLift(deps.idx(), deps.dayLen(), deps.firstOpen(deps.idx() + 1));
         if (nx >= 0) {

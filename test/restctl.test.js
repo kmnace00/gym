@@ -29,8 +29,8 @@ function mk(over) {
 }
 
 /** start a 90 s rest and run the frozen clock to GO */
-function toGo(s) {
-  s.ctl.start(90, "Fri — set 1 done", true, "", "Up next — Set 2 of 3");
+function toGo(s, lastSet) {
+  s.ctl.start(90, "Fri — set 1 done", lastSet !== false, "", "Up next — Set 2 of 3");
   s.clock.t = 90000;
   return s.ctl.tick(s.clock.t);
 }
@@ -71,7 +71,7 @@ test("tick re-derives the remaining time from the timestamp", () => {
 
 test("tick flips to GO with vibrate → beep → notify", () => {
   const s = mk();
-  const out = toGo(s);
+  const out = toGo(s, false);
   assert.equal(out.state.phase, "go");
   assert.equal(out.view.label, "GO");
   assert.equal(out.view.msg, "Next set — go.");
@@ -81,8 +81,8 @@ test("tick flips to GO with vibrate → beep → notify", () => {
 });
 
 test("GO rewrites nextText and the timer-surface guard ignores a tap within 400 ms", () => {
-  const s = mk({ done: 1 });
-  const go = toGo(s);
+  const s = mk();
+  const go = toGo(s, false);
   assert.equal(go.view.nextText, "Up now — Set 2 of 3");
   s.clock.t = 90399;
   const early = s.ctl.skip(true);

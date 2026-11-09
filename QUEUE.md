@@ -310,3 +310,35 @@ Files: `package.json` only (plus `BUILD_LOG.md` line).
 Verify: `npm run check` green end-to-end (not just the unit step),
 typecheck, e2e at both viewports. No code change, no SW bump needed
 (no asset changed — confirm the asset-drift guard agrees). 
+
+## Batch 3 — PROPOSED Nov 9, 05:55 CT (awaiting Khang's approval)
+
+Source: one sparse DeepSeek Pro planning review against the post-pipeline
+backlog. L9 is in flight (approved); nothing below is approved to build yet.
+Order is the Pro pick — Khang may reorder or drop items.
+
+### B4 — Check gate: syntax-check `rest.js` [T1]
+Finding from the review: `package.json` `check` runs `node --check` on
+program/store/timer/machine/stats/app/sw but **not** `rest.js`, which
+`index.html` loads and `sw.js` caches — a syntax error there passes the fast
+gate and is caught only by e2e. L9 already adds `restctl.js` to the same
+list; this adds `rest.js` beside it.
+Files: `package.json` (one clause). Verify: `npm run check` end-to-end,
+typecheck, e2e. No asset changed → no SW bump.
+
+### L8 — Rest-interval audit → T3 proposal [T2, NEEDS_RESEARCH]
+App rests are 90/120/150/180 s (`program.js`). Map every one of the 24 lifts
+against the settled rest rule and produce a per-lift change list for Khang.
+Blocked: `RESEARCH.md` states the rule but the citations are one-liners, not
+verifiable sources — flag NEEDS_RESEARCH rather than invent evidence.
+Output: `RESEARCH.md` citations + a T3 table in `BACKLOG.md`. No code.
+
+### L7 — Progression-model review → T3 proposal [T2, NEEDS_RESEARCH]
+Double progression (top reps at target RIR → +step) + 3-missed-top ~10 %
+deload, reviewed against 2-for-2 / RIR-accuracy / deload literature.
+Blocked: same research gap as L8. Output: `RESEARCH.md` + T3 proposal.
+
+### L6 — Exercise-swap: DESIGN skeleton only [T2, blocked]
+The curated alternate map needs Khang's list before any design can be
+concrete; a skeleton is the most the loop can do unasked. **Do not start**
+until Khang supplies the alternates.

@@ -110,3 +110,18 @@ be raised — that is a Khang call, not a loop change.
   IndexedDB. Reasoning in `DESIGN.md`.
 - Exercise swap was deferred in Pass 2 for exactly the reasons in L6
   — it is T2 now, not forgotten.
+
+## Pro review findings — Nov 9, 05:55 CT (one sparse run; plan in `QUEUE.md` Batch 3)
+
+| # | Sev | Finding | Disposition |
+|---|---|---|---|
+| 1 | MED | `package.json` `check` never runs `node --check rest.js` (loaded by `index.html:209`, cached in `sw.js:9`) — a syntax error there ships past the fast gate | queued as **B4** [T1] |
+| 2 | LOW | `stats.js:48` `setsLogged` is exported and unit-tested but never called by the app (`app.js:393` uses `setsRecorded`) | leave — deliberate exported surface, do not delete |
+| 3 | LOW | `app.js:9` + `timer.js:23` `sessionElapsed` alias/function unused in production (`Gym.sessionElapsedSec` is the real clock) | leave — same reason |
+| 4 | LOW | `stats.js:296` `weekStatus` hardcodes `n >= 8` lifts as "done" — latent coupling to read-only program data | T1 candidate after L9 (pass the day's lift count in, default 8) |
+| 5 | LOW | `sw.js` `CACHE` must be `gym-v20` + `restctl.js` in ASSETS or `check-assets` fails | enforced by the in-flight L9 build |
+
+**Declined for now (Khang only):** raising `DONE_MAX`/`SETS_MAX`/`ACC_SEC_MAX`/
+`BODYWEIGHT_MAX` (P4); deleting the exported-but-unread symbols above; any
+`program.js` number change (P1/P2). The reviewer's top pick is L8, with B4 as
+the only immediately buildable T1.
