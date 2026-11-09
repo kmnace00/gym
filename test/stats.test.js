@@ -302,3 +302,28 @@ test("bodyweight history is valued at the weight in force", () => {
   ] } };
   assert.equal(S.personalRecords(q, P.DAYS, P.progressMetric)[0].metric, 120);
 });
+
+test("progressSnapshot assembles the dashboard from one payload", () => {
+  const p = { bodyweight: 165, liftHistory: { "fri:0": [
+    { date: "2026-11-01", load: 100, reps: 6, rir: 2, setsDone: 3 },
+    { date: "2026-11-08", load: 110, reps: 6, rir: 2, setsDone: 3 }
+  ] } };
+  const snap = S.progressSnapshot(p, P.DAYS, P.progressMetric, "2026-11-09", { fri: 8, sat: 8, sun: 8 });
+  assert.equal(snap.workouts, 2);
+  assert.equal(snap.sets, 6);
+  assert.equal(snap.volume, 3780);
+  assert.equal(snap.weekTotal, 3);
+  assert.equal(snap.weekDone, 0); // only fri:0 logged, so that Friday is partial
+  // volumeByDay is the *most recent* session per day, not the sum of the week:
+  // fri is 1980 (the 11-08 entry), not 1800 + 1980 = 3780.
+  assert.equal(snap.byDay.fri, 1980);
+  assert.equal(snap.heatTotal, 24);
+  assert.equal(snap.heatCount, 2);
+  assert.equal(snap.recent.length, 2);
+  assert.equal(snap.pr.metric, 132);
+  assert.equal(snap.movers.length, 1);
+  assert.equal(snap.movers[0].pct, 10);
+  // hasPrev is true, not false: 11-01 lands in the prior 7-day window
+  // (2026-10-27 … 2026-11-02) when nowKey is 2026-11-09.
+  assert.equal(snap.wow.hasPrev, true);
+});

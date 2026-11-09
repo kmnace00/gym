@@ -409,19 +409,17 @@
   }
   /* ── progress view ─────────────────────────────────────────────────────── */
   function renderProgress() {
-    var workouts = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
     var todayKey = Gym.dateKey();
-    var wk = Stats.weekStatus(payload, todayKey, DAY_LIFTS), week = 0, weekTotal = wk.length, wi;
-    for (wi = 0; wi < wk.length; wi++) if (wk[wi].state === "done") week++;
-    document.getElementById("pSessions").textContent = workouts;
-    document.getElementById("pSets").textContent = sets;
-    document.getElementById("pDays").textContent = week + "/" + weekTotal;
-    document.getElementById("pSub").textContent = workouts
-      ? workouts + " workout" + (workouts === 1 ? "" : "s") + " · " + Stats.compactVol(Stats.totalVolume(payload)) + " lb · "
-        + week + "/" + weekTotal + " this week"
+    var snap = Stats.progressSnapshot(payload, DAYS, progressMetric, todayKey, DAY_LIFTS);
+    document.getElementById("pSessions").textContent = snap.workouts;
+    document.getElementById("pSets").textContent = snap.sets;
+    document.getElementById("pDays").textContent = snap.weekDone + "/" + snap.weekTotal;
+    document.getElementById("pSub").textContent = snap.workouts
+      ? snap.workouts + " workout" + (snap.workouts === 1 ? "" : "s") + " · " + Stats.compactVol(snap.volume) + " lb · "
+        + snap.weekDone + "/" + snap.weekTotal + " this week"
       : "No workouts yet — open a lift to begin";
 
-    var byDay = Stats.volumeByDay(payload, DAYS);
+    var byDay = snap.byDay;
     var max = Math.max(1, byDay.fri, byDay.sat, byDay.sun);
     var labels = { fri: "Friday", sat: "Saturday", sun: "Sunday" };
     var bars = "";
@@ -433,16 +431,14 @@
     });
     document.getElementById("pDayBars").innerHTML = bars;
 
-    var weeks = Stats.trainingDays(payload, 8, todayKey), heatCount = 0;
-    document.getElementById("heatmap").innerHTML = weeks.map(function (w) {
+    document.getElementById("heatmap").innerHTML = snap.weeks.map(function (w) {
       return '<span class="hweek">' + ["fri", "sat", "sun"].map(function (d) {
-        if (w[d]) heatCount++;
         return '<i class="hday' + (w[d] ? " on" : "") + '"></i>';
       }).join("") + "</span>";
     }).join("");
-    document.getElementById("pHeatCount").textContent = heatCount + "/" + (weeks.length * Object.keys(DAYS).length);
+    document.getElementById("pHeatCount").textContent = snap.heatCount + "/" + snap.heatTotal;
 
-    var recent = Stats.recentVolume(payload, 12), svg = document.getElementById("pSpark");
+    var recent = snap.recent, svg = document.getElementById("pSpark");
     if (recent.length < 2) { svg.innerHTML = ""; }
     else {
       var vals = recent.map(function (r) { return r.volume; });
@@ -455,7 +451,7 @@
       }
       svg.innerHTML = '<path d="' + path + '" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
     }
-    var wow = Stats.weekOverWeek(payload, todayKey);
+    var wow = snap.wow;
     var wowTxt = "";
     if (recent.length) {
       if (wow.hasPrev) {
@@ -468,10 +464,10 @@
       ? "Last " + recent.length + " session" + (recent.length === 1 ? "" : "s") + wowTxt
       : "Log a full lift to see the trend";
 
-    var pr = Stats.personalRecords(payload, DAYS, progressMetric)[0];
+    var pr = snap.pr;
     document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " lb" : "";
 
-    var movers = Stats.topMovers(payload, DAYS, progressMetric);
+    var movers = snap.movers;
     document.getElementById("pMovers").innerHTML = movers.length
       ? movers.map(function (m) {
           var sign = m.pct > 0 ? "+" : "";

@@ -407,7 +407,7 @@
   /**
    * Everything the Progress view needs, computed once.
    * @param {any} payload
-   * @param {object} DAYS
+   * @param {Record<string, { ex: any[] }>} DAYS
    * @param {(load:number, reps:number, opts?:object)=>number} metric
    * @param {string} nowKey YYYY-MM-DD
    * @param {{fri:number,sat:number,sun:number}} [dayLens]
