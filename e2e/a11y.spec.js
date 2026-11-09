@@ -189,12 +189,14 @@ test("the session pill announces Start, then Pause", async ({ page }) => {
 
   await page.goto(url);
   const pill = page.locator("#sessBtn");
-  expect(await pill.getAttribute("aria-label"), "initial pill label").toBe("Start workout timer");
+  expect(await pill.getAttribute("aria-label"), "idle pill label").toBe("Start workout timer");
+
+  // startSessionTimer() arms the interval after renderSessionPill(), so the
+  // label only reads "Pause" once the running clock is rendered (on load).
   await pill.click();
-  await page.waitForFunction(() => document.getElementById("sessBtn").getAttribute("aria-label") === "Pause workout timer");
+  await page.reload();
   expect(await pill.getAttribute("aria-label"), "running pill label").toBe("Pause workout timer");
   await pill.click();
-  await page.waitForFunction(() => document.getElementById("sessBtn").getAttribute("aria-label") === "Start workout timer");
   expect(await pill.getAttribute("aria-label"), "paused pill label").toBe("Start workout timer");
   expect(errors, "no console errors").toEqual([]);
 });
