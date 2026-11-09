@@ -1,22 +1,36 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 IN PROGRESS — L1, L2 shipped; L3 built and green,
-awaiting auto-sync push; L4 next.
+Status: BATCH 1 IN PROGRESS — L1–L3 shipped; L4 built and green,
+awaiting auto-sync push; L5 next.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
-Muse re-checked each item against Pass 4 source. `TASK.md` has L3
+Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
 in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into
 OpenCode once and it works the queue.
 
 ## Last verified
 
+- L4 build (OpenCode, Nov 8 20:21 CT): accessibility pass. Requested
+  sub-44px controls now measure ≥44 px at 390×667/844: `.mini`,
+  `.resetlift`, `.applybtn`, `.bbdismiss`, short-phone `.stepbtn`,
+  `.setrow`, peek `.tbtns button`, peek `.detailsbtn`. Negative
+  margins preserve the no-scroll layout; no requested control had to
+  be left open. Keyboard rest order verified as +15 / Pause / End
+  rest / Show workout / Undo / prep steppers; `restPrep` moved after
+  the rest footer in DOM while CSS keeps it visually above the footer.
+  Rest arrows remain unreachable. WCAG: dark ink 17.18/15.52, muted
+  7.81/7.06, faint 5.23/4.73 on bg/surface; light ink 17.25/18.69,
+  muted 5.48/5.93, faint 4.80/5.20. SW `gym-v10`. `npm run check`
+  **93/93 unit**, `npm run typecheck` clean, `npm run e2e` **41/41**
+  at 390×667/844. Commit: `pending`.
 - L3 build (OpenCode, Nov 8 20:10 CT): pure `Stats.sessionDrift`
   added + 5 unit tests; fixture-only audit (model 74/69/72 min for
   Fri/Sat/Sun), real-data verdict pending — no sessions recorded
   yet and this session cannot read the phone's localStorage. No
   constants or UI change. SW `gym-v9` (stats.js changed).
   `npm run check` **93/93 unit**, `npm run typecheck` clean,
-  `npm run e2e` **38/38** at 390×667/844. Commit: `pending`.
+  `npm run e2e` **38/38** at 390×667/844. Commits: `09798ca` +
+  `36489b3` (both on origin/main, Pages live).
 - L2 build (OpenCode, Nov 8 19:58 CT): partials-prompt timing
   confirmed by 3 new e2e cases (last set only, RIR ≤1 only, never on
   an unflagged lift) — no `app.js` change needed. Flag audit: 10
@@ -39,9 +53,9 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: L3 — built, checks green; waiting for the
-  gym-sync commit to appear on origin/main before starting L4.
-- Next in queue: L4 → L5 (`QUEUE.md`, in order).
+- Current item: L4 — built, checks green; waiting for the
+  gym-sync commit to appear on origin/main before starting L5.
+- Next in queue: L5 (`QUEUE.md`, in order).
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
