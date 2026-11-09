@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: RUNNING (OpenCode, Nov 9 16:35 CT) — Batch 3 B3-01…B3-28 are built and gated (B3-28 docs pending the next sync tick); **B3-29 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING (OpenCode, Nov 9 16:50 CT) — Batch 3 B3-01…B3-30 are built and gated; **B3-31 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
@@ -21,7 +21,9 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B3-25 the "Planned …" line clears on the first logged set — 160/160 unit, 84/84 e2e, SW `gym-v61`.
 - B3-26 the tempo cue now shows on every lift — 160/160 unit, 85/85 e2e, SW `gym-v62`.
 - B3-27 `restctl.js` typechecked + script/include cross-check in `check-ids.js` — 160/160 unit, typecheck clean, 85/85 e2e.
-- B3-28 tooling guards: tool syntax checks, single-quoted ids, `data-day` vs `DAYS`, manifest icons — all verified against broken fixtures.
+- B3-28 tooling guards: tool syntax checks, single-quoted ids, `data-day` vs `DAYS`, manifest icons — all verified against broken fixtures. 160/160 unit, typecheck clean, 85/85 e2e.
+- B3-29 `weekLiftIndex`/`sessionVolumes` are `Object.create(null)` — 161/161 unit, typecheck clean, 85/85 e2e.
+- B3-30 tests for `reconcile` collisions, `rollSession` complete+hasData, `mergePayload` bodyweight, and 24 unique `exId`s — 167/167 unit, typecheck clean, 85/85 e2e.
 
 Note: gym-sync batches whatever is dirty at its ~3-minute tick, so two items can share one commit; every item was gated before the next started.
 

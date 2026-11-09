@@ -2,7 +2,11 @@
 
 ## WIP
 
-WIP: OpenCode editing test/program.test.js, test/store.test.js since 2026-11-09 16:40 CT — B3-30 (Untested pure-store paths + program-id uniqueness).
+## Completed — B3-30: Untested pure-store paths + program-id uniqueness [T1]
+- Built Nov 9 (OpenCode). 7 new unit tests: 24 unique `exId`s in `program.js`; `reconcile` collisions (higher-done wins, either order) and history merge by `exId`; `rollSession` re-finalizes a complete session that has data (updates the log entry, never appends) and banks nothing when empty; `mergePayload` bodyweight adopts only when local is the 165 default and rejects 0/negative/>700/NaN/string/null. 167/167 unit, 85/85 e2e. No rule changed — the 165 ambiguity stays a Khang-call design note.
+
+## Completed — B3-29: Stats maps use `Object.create(null)` [T1]
+- Built Nov 9 (OpenCode). `weekLiftIndex` and `sessionVolumes` are `Object.create(null)`; a unit test feeds a `__proto__` date through `weekStatus`/`sessionVolumes` and asserts `Object.prototype` stays clean. `workoutDates`/`trainingDays` still use plain `{}` — flagged for a follow-up. 161/161 unit, 85/85 e2e.
 
 ## Completed — B3-28: Tooling-guard gaps (check script, check-ids, check-assets) [T1]
 - Built Nov 9 (OpenCode). `check` syntax-checks the two tool files; `check-ids.js` covers single-quoted refs and `data-day` vs `DAYS`; `check-assets.js` parses the manifest. Each guard verified against a broken fixture.
