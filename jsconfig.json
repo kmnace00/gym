@@ -12,5 +12,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["globals.d.ts", "program.js", "store.js", "timer.js", "machine.js", "stats.js", "rest.js", "restctl.js", "app.js"]
+  "include": ["globals.d.ts", "version.js", "program.js", "store.js", "timer.js", "machine.js", "stats.js", "rest.js", "restctl.js", "app.js"]
 }

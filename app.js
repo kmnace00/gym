@@ -1247,7 +1247,7 @@
   function updateFoot() {
     var age = Gym.backupAgeDays(payload);
     var b = age === null ? "never backed up" : (age === 0 ? "backed up today" : "backed up " + age + "d ago");
-    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + Stats.sessionCount(payload) + " workouts · " + b;
+    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + (typeof GYM_VERSION === "string" ? GYM_VERSION : "dev") + " · " + Stats.sessionCount(payload) + " workouts · " + b;
     menuBtn.classList.toggle("needs-backup", Gym.backupDue(payload));
     var snapBtn = document.getElementById("restoreSnapshot");
     if (snapBtn) {

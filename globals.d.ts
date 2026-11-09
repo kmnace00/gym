@@ -2,6 +2,7 @@
    few permissive DOM members, so `tsc --checkJs` focuses on real logic bugs in
    this vanilla-JS codebase instead of DOM narrowing noise. */
 declare var Gym: any;
+declare var GYM_VERSION: string;
 declare var module: { exports: any };
 declare var require: any;
 declare var global: any;

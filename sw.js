@@ -6,9 +6,10 @@
 /* B3-31: CACHE and CACHE-HASH move together — tools/check-sw-cache.js hashes
    the ASSETS contents and fails when the recorded hash no longer matches, so a
    changed asset can't ship without a version bump.                         */
-const CACHE = "gym-v63"; // CACHE-HASH: c37f6ff22a4983f8
+importScripts("./version.js");          // single source for the deploy tag (B3-33)
+const CACHE = GYM_VERSION; // CACHE-HASH: e1e0e8a7842aafe5
 const ASSETS = [
-  "./", "./index.html", "./style.css",
+  "./", "./index.html", "./version.js", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./restctl.js", "./app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"
 ];

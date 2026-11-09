@@ -1,7 +1,12 @@
 # TASK — for OpenCode (planner: Muse)
 
 ## WIP
-WIP: OpenCode editing index.html, style.css, app.js, store.js, sw.js, e2e/firstrun.spec.js since 2026-11-09 17:10 CT — B3-32 (first-run guidance line).
+
+## Completed — B3-33: No deploy version anywhere in the UI [T1]
+- Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
+
+## Completed — B3-32: First run has no guidance at all [T1]
+- Built Nov 9 (OpenCode). One line under the day summary — "Tap a lift, do the set, tap Set Done — rest starts itself" — shown only while `Gym.hasData(payload)` is false (no new storage key; `hasData` is now exported from store.js). SW `gym-v63`. 3 new e2e in `e2e/firstrun.spec.js` (fresh profile shows it, first logged set clears it and it stays cleared after reload, seeded history shows nothing; no viewport overflow). Verified 167/167 unit, typecheck clean, 88/88 e2e.
 
 ## Completed — B3-31: No automated check that the SW `CACHE` version bumps [T1]
 - Built Nov 9 (OpenCode). `tools/check-sw-cache.js` hashes every file in `sw.js` ASSETS and compares it with a `CACHE-HASH:` comment next to `CACHE`; wired into `npm run check` (and `npm run check:sw`). Verified red two ways — an asset edited without a bump, and the comment removed — and green on the real tree. 167/167 unit, 85/85 e2e.

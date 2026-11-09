@@ -10,7 +10,7 @@
     "typecheck": "tsc -p jsconfig.json --noEmit",
     "check:assets": "node tools/check-assets.js",
     "check:sw": "node tools/check-sw-cache.js",
-    "check": "node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check rest.js && node --check restctl.js && node --check stats.js && node --check app.js && node --check sw.js && node --check tools/bench-stats.js && node --check tools/make-icons.js && node --check tools/check-sw-cache.js && node tools/check-assets.js && node tools/check-ids.js && node tools/check-sw-cache.js && node --test test/*.test.js"
+    "check": "node --check version.js && node --check program.js && node --check store.js && node --check timer.js && node --check machine.js && node --check rest.js && node --check restctl.js && node --check stats.js && node --check app.js && node --check sw.js && node --check tools/bench-stats.js && node --check tools/make-icons.js && node --check tools/check-sw-cache.js && node tools/check-assets.js && node tools/check-ids.js && node tools/check-sw-cache.js && node --test test/*.test.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
