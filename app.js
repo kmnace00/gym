@@ -225,8 +225,6 @@
       finBtn.hidden = !complete || (payload.active && payload.active.status === "complete");
       finBtn.textContent = "Finish workout";
     }
-    var bwNote = document.getElementById("bwNote");
-    if (bwNote) bwNote.textContent = payload.bodyweight ? "BW " + payload.bodyweight + " kg" : "";
 
     var rows = "";
     list.forEach(function (e, i) {
