@@ -414,15 +414,15 @@ test("the week strip names each day's state and the heat card states the count (
 
   const cells = await page.locator(".wk").all();
   expect(cells.length).toBe(3);
-  const labels = [];
-  for (const c of cells) labels.push(await c.ariaLabel());
-  expect(labels[0], "week cell names its state").toBe("Friday, done");
-  expect(labels[1], "week cell names its state").toBe("Saturday, in progress");
-  expect(labels[2], "week cell names its state").toBe("Sunday, missed");
+  const expected = ["Friday, done", "Saturday, in progress", "Sunday, missed"];
+  for (let i = 0; i < cells.length; i++) {
+    expect(await cells[i].getAttribute("aria-label"), `week cell ${i} must name its state`).toBe(expected[i]);
+  }
   expect(await page.locator(".wk i").first().getAttribute("aria-hidden"), "the symbol is decorative").toBe("true");
 
   await page.locator("#progressBtn").click();
-  await expect(page.locator("#heatSummary")).toBeHidden();
+  const box = await page.locator("#heatSummary").boundingBox();
+  expect(box && box.width <= 1 && box.height <= 1, "the summary is for screen readers only").toBe(true);
   const count = (await page.locator("#pHeatCount").textContent()).split("/")[0];
   expect((await page.locator("#heatSummary").textContent()) || "", "heat card names the count")
     .toContain(count + " of 24 training days in the last 8 weeks");

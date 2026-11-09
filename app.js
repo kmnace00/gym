@@ -221,7 +221,7 @@
       var gap = Gym.daysUntil(Gym.todayDay());
       summary = "Off day · next " + (DAY_LABEL[Gym.todayDay()] || "session") + (gap > 0 ? " in " + gap + "d" : "") + " · " + summary;
     }
-    if (planMsg) summary += " · " + planMsg;
+    if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     document.getElementById("daySummary").textContent = summary;
     document.getElementById("planBtn").hidden = !hasHist || complete;
     renderWeekStrip();

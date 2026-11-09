@@ -2,7 +2,10 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, index.html, style.css, e2e/a11y.spec.js, docs since 2026-11-09 15:25 CT — B3-24 (week strip + heatmap accessible names).
+WIP: OpenCode editing app.js, docs since 2026-11-09 15:40 CT — B3-25 ("Planned +2" clears when the workout starts).
+
+## Completed — B3-24: Week strip and heatmap states are invisible to screen readers [T1]
+- Built Nov 9 (OpenCode). Each `.wk` cell got an `aria-label` naming its state and its mark is `aria-hidden`; the heat card gained a `.sr-only` summary ("N of 24 training days in the last 8 weeks"). SW `gym-v60`. 160/160 unit, typecheck clean, 83/83 e2e.
 
 ## Completed — B3-23: The service worker never checks for updates while the app stays open [T1]
 - Built Nov 9 (OpenCode). `swReg` is kept from the register call; the existing `visibilitychange` handler calls `swReg.update()` when the page becomes visible (throttled to once per 10 min, silent on failure). SW `gym-v59`. 160/160 unit, typecheck clean, 82/82 e2e.

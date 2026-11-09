@@ -24,6 +24,23 @@ test("Plan today pre-fills every lift from history in one tap", async ({ page })
   await expect(page.locator("#loadVal")).toHaveText("52.5");
 });
 
+test("the plan line clears as soon as the first set is logged (B3-25)", async ({ page }) => {
+  await seed(page, {
+    v: 2, cur: "fri", idx: 0, state: {},
+    liftHistory: {
+      "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }]
+    }
+  });
+  await page.locator("#planBtn").click();
+  await expect(page.locator("#daySummary")).toContainText("Planned");
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#backBtn").click();
+  await expect(page.locator("#daySummary")).not.toContainText("Planned");
+  await expect(page.locator("#daySummary")).toContainText("left");
+});
+
 test("lift view shows the previous session's per-set values and its date", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,
