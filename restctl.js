@@ -93,7 +93,9 @@
         showPrep: showPrep,
         prepName: prep ? prep.name : "",
         prepLoad: prep ? prep.load : "",
-        prepReps: prep ? prep.reps : ""
+        prepReps: prep ? prep.reps : "",
+        /* session elapsed seconds, when the host supplies the getter (B3-16) */
+        elapsedSec: typeof deps.elapsed === "function" ? Math.max(0, Math.round(deps.elapsed())) : null
       };
     }
 
