@@ -754,7 +754,7 @@
     sessionElapsedSec: sessionElapsedSec,
     finalizeSession: finalizeSession, startSession: startSession, rollSession: rollSession, reopenSession: reopenSession,
     resetLift: resetLift, resetDay: resetDay,
-    markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue,
+    markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue, hasData: hasData,
     mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
     todayDay: todayDay, actualDay: actualDay, daysUntil: daysUntil, validDay: validDay, validDate: validDate,
     dateKey: dateKey, sessionDate: sessionDate

@@ -75,6 +75,7 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 .dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
 .daytitle{font-size:16px;font-weight:800;letter-spacing:-.01em}
 .daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.firstrun{font-size:12px;color:var(--muted);line-height:1.3}
 .liftlist{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
 .liftrow{
   flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;gap:12px;

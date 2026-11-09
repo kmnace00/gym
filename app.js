@@ -223,6 +223,9 @@
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     document.getElementById("daySummary").textContent = summary;
+    // first-run guidance: one line until the very first set is ever logged
+    var firstRun = document.getElementById("firstRunHint");
+    if (firstRun) firstRun.hidden = Gym.hasData(payload);
     document.getElementById("planBtn").hidden = !hasHist || complete;
     renderWeekStrip();
 

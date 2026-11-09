@@ -1,6 +1,10 @@
 # TASK — for OpenCode (planner: Muse)
 
 ## WIP
+WIP: OpenCode editing index.html, style.css, app.js, store.js, sw.js, e2e/firstrun.spec.js since 2026-11-09 17:10 CT — B3-32 (first-run guidance line).
+
+## Completed — B3-31: No automated check that the SW `CACHE` version bumps [T1]
+- Built Nov 9 (OpenCode). `tools/check-sw-cache.js` hashes every file in `sw.js` ASSETS and compares it with a `CACHE-HASH:` comment next to `CACHE`; wired into `npm run check` (and `npm run check:sw`). Verified red two ways — an asset edited without a bump, and the comment removed — and green on the real tree. 167/167 unit, 85/85 e2e.
 
 ## Completed — B3-30: Untested pure-store paths + program-id uniqueness [T1]
 - Built Nov 9 (OpenCode). 7 new unit tests: 24 unique `exId`s in `program.js`; `reconcile` collisions (higher-done wins, either order) and history merge by `exId`; `rollSession` re-finalizes a complete session that has data (updates the log entry, never appends) and banks nothing when empty; `mergePayload` bodyweight adopts only when local is the 165 default and rejects 0/negative/>700/NaN/string/null. 167/167 unit, 85/85 e2e. No rule changed — the 165 ambiguity stays a Khang-call design note.
