@@ -397,7 +397,9 @@
     document.getElementById("loadVal").textContent = (e.load === null && s.load === 0) ? "—" : s.load;
     document.getElementById("repVal").textContent = s.reps;
     rirRow.querySelectorAll(".rir").forEach(function (b) {
-      b.classList.toggle("active", s.rir === parseInt(b.getAttribute("data-rir"), 10));
+      var on = s.rir === parseInt(b.getAttribute("data-rir"), 10);
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false"); // the fill is invisible to a screen reader
     });
 
     var btn = document.getElementById("doneBtn");

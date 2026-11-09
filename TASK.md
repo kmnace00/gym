@@ -2,7 +2,15 @@
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e/a11y.spec.js, sw.js since 2026-11-09 13:36 CT — B3-13 (after pausing, the session pill says "Start", not "Resume").
+WIP: OpenCode editing app.js, index.html, sw.js since 2026-11-09 13:48 CT — B3-15 (no focus placement when moving day ↔ lift ↔ progress).
+
+## Completed — B3-14: RIR buttons expose no selected state to a screen reader [T1]
+
+The `.active` fill was the only selected-state signal, so VoiceOver heard five identical "RIR 0…4" buttons. The loop that toggles `.active` now also sets `aria-pressed` (true for the selected value, false for the rest), matching the day tabs. 1 new e2e (open a lift, tap RIR 2 → only RIR 2 reports `aria-pressed="true"`). SW `gym-v50`. Verified 157/157 unit, typecheck clean, 74/74 e2e at 390×667/844, no overflow, no console errors.
+
+## Completed — B3-13: After pausing, the session pill says "Start", not "Resume" [T1]
+
+`renderSessionPill` rendered "▶ Start" / "Start workout timer" whenever the interval was off, even with time already on the clock. "Start" is now reserved for a session with nothing elapsed; the pill text and `aria-label` read Resume when `sessionElapsedSec(payload) > 0`. The existing a11y pill test runs the fake clock a minute before pausing and asserts both. SW `gym-v49` (batched with B3-14; published `gym-v50`). Verified 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors.
 
 ## Completed — B3-12: +15 at GO blanks the rest label [T1]
 

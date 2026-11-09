@@ -223,6 +223,24 @@ test("the session pill announces Start, then Resume", async ({ page }) => {
   expect(errors, "no console errors").toEqual([]);
 });
 
+test("the RIR picker exposes which value is selected", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator('.rir[data-rir="2"]').click();
+
+  const pressed = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".rir")).map((b) => [b.getAttribute("data-rir"), b.getAttribute("aria-pressed")])
+  );
+  expect(pressed, "only RIR 2 is pressed").toEqual([
+    ["0", "false"], ["1", "false"], ["2", "true"], ["3", "false"], ["4", "false"]
+  ]);
+  expect(errors, "no console errors").toEqual([]);
+});
+
 test("status messages are announced to screen readers", async ({ page }) => {
   await page.goto(url);
   const live = await page.evaluate(() => {

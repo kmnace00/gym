@@ -1,8 +1,10 @@
 # LOOP_STATE — checkpoint
 
-Status: RUNNING (OpenCode, Nov 9 13:42 CT) — Batch 3 B3-01…B3-13 are built, gated and pushed; **B3-14 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
+Status: RUNNING (OpenCode, Nov 9 13:47 CT) — Batch 3 B3-01…B3-14 are built, gated and pushed; **B3-15 is next**. Muse review (Nov 9, ~13:10 CT) covered B3-01…B3-10 and found no defects. L7/L8 are UNBLOCKED (research pass Nov 9, citations in `RESEARCH.md`); L6 alternate list is a T3 proposal in `BACKLOG.md` (P11) for Khang's approval.
 
-B3-13 BUILT (OpenCode, Nov 9 13:41 CT) — the paused session pill reads "Resume" (label and `aria-label`) whenever the clock already has time on it; "Start" only for a session with nothing elapsed. The a11y pill test advances the fake clock a minute before pausing and asserts both. 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors, SW `gym-v49`.
+B3-14 BUILT (OpenCode, Nov 9 13:46 CT) — the RIR buttons now carry `aria-pressed` (true for the selected value, false for the rest), set in the same loop that toggles `.active`. 1 new e2e. 157/157 unit, typecheck clean, 74/74 e2e at 390×667/844, no overflow, no console errors, SW `gym-v50`.
+
+B3-13 BUILT (OpenCode, Nov 9 13:41 CT) — the paused session pill reads "Resume" (label and `aria-label`) whenever the clock already has time on it; "Start" only for a session with nothing elapsed. The a11y pill test advances the fake clock a minute before pausing and asserts both. 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors, SW `gym-v49` (the sync batched it with B3-14; published tag `gym-v50`).
 
 B3-12 BUILT (OpenCode, Nov 9 13:34 CT) — +15 at GO keeps the rest label: `restctl.js` `extend15()` restarted the 15 s rest with the never-written `ctx.label` (always ""), blanking the lift line for the whole 15 s. The dead field is removed and the restart uses `ctx.startLabel`. The unit test that asserted the blank label now asserts the lift label. 157/157 unit, typecheck clean, 73/73 e2e at 390×667/844, no overflow, no console errors, SW `gym-v48`.
 
