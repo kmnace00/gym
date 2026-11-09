@@ -261,3 +261,71 @@ test("snapshot round-trips the current payload", () => {
   assert.equal(snap.payload.bodyweight, 82.5);
   assert.ok(snap.at);
 });
+
+const HOSTILE_RAW = '{"v":3,"state":{"__proto__":{"done":5,"evil":1},"constructor":{"done":4},"fri:0":{"done":3,"sets":"oops"}},"liftHistory":{"__proto__":[{"date":"2026-11-09","load":1,"reps":1,"rir":1}],"constructor":[{"date":"2026-11-10","load":"1e999","reps":2,"rir":2}],"fri:0":[{"date":"2026-11-08","load":"1e999","reps":"six","rir":"high","sets":"oops"}]},"sessionLog":[{"id":"__proto__","status":"complete","durationSec":1e999,"lifts":{"__proto__":{"bad":1},"fri:0":{"done":3,"sets":"oops"}}},{"id":"constructor","status":"complete","durationSec":99999999999999999999999999999999999,"lifts":null}]}';
+
+test("hostile prototype keys are dropped without polluting Object.prototype", () => {
+  const p = S.importRaw(HOSTILE_RAW);
+
+  assert.equal(Object.prototype.evil, undefined);
+  assert.equal(Object.prototype.bad, undefined);
+  assert.equal(Object.prototype.done, undefined);
+  assert.ok(!Object.hasOwn(Object.prototype, "evil"));
+  assert.ok(!Object.hasOwn(Object.prototype, "bad"));
+  assert.ok(!Object.hasOwn(p.state, "__proto__"));
+  assert.ok(!Object.hasOwn(p.state, "constructor"));
+  assert.ok(!Object.hasOwn(p.liftHistory, "__proto__"));
+  assert.ok(!Object.hasOwn(p.liftHistory, "constructor"));
+
+  assert.equal(p.state["fri:0"].done, 3);
+  assert.deepEqual(p.state["fri:0"].sets, []);
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(p.liftHistory["fri:0"][0].load, 0);
+  assert.equal(p.sessionLog.length, 2);
+  assert.ok(!p.sessionLog.some((s) => s.id === "__proto__" || s.id === "constructor"));
+  assert.equal(p.sessionLog[0].durationSec, 0);
+  assert.deepEqual(p.sessionLog[0].lifts["fri:0"].sets, []);
+  assert.ok(!Object.hasOwn(p.sessionLog[0].lifts, "__proto__"));
+});
+
+test("mergePayload survives hostile prototype keys and keeps Object.prototype clean", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 1, load: 50, reps: 6, rir: 2 };
+  const merged = S.importMerge(base, HOSTILE_RAW);
+
+  assert.equal(Object.prototype.evil, undefined);
+  assert.equal(Object.prototype.bad, undefined);
+  assert.ok(!Object.hasOwn(merged.state, "__proto__"));
+  assert.ok(!Object.hasOwn(merged.state, "constructor"));
+  assert.ok(!Object.hasOwn(merged.liftHistory, "__proto__"));
+  assert.ok(!Object.hasOwn(merged.liftHistory, "constructor"));
+  assert.equal(merged.state["fri:0"].done, 3);
+  assert.deepEqual(merged.state["fri:0"].sets, []);
+  assert.equal(merged.liftHistory["fri:0"].length, 1);
+  assert.equal(merged.sessionLog.length, 2);
+  assert.ok(!merged.sessionLog.some((s) => s.id === "__proto__" || s.id === "constructor"));
+});
+
+test("oversized imported history and session log are capped", () => {
+  const base = S.emptyPayload();
+  const incoming = S.emptyPayload();
+
+  incoming.liftHistory["fri:0"] = Array.from({ length: S.HISTORY_MAX + 10 }, (_, i) => ({
+    date: new Date(2025, 0, i + 1).toISOString().slice(0, 10),
+    load: 50 + i,
+    reps: 6,
+    rir: 2,
+    setsDone: 3
+  }));
+  incoming.sessionLog = Array.from({ length: S.SESSION_MAX + 10 }, (_, i) => ({
+    id: "s" + i,
+    date: "2025-01-01",
+    day: "fri",
+    status: "complete",
+    durationSec: i + 1
+  }));
+
+  const merged = S.mergePayload(base, incoming);
+  assert.ok(merged.liftHistory["fri:0"].length <= S.HISTORY_MAX);
+  assert.ok(merged.sessionLog.length <= S.SESSION_MAX);
+});
