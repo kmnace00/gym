@@ -111,6 +111,17 @@ test("weekStatus marks done / partial / missed in the current week", () => {
   assert.equal(w[2].state, "missed");
 });
 
+test("weekStatus honours a per-day lift count", () => {
+  const len = P.DAYS.fri.ex.length;
+  const liftHistory = {};
+  for (let i = 0; i < len; i++) {
+    liftHistory["fri:" + i] = [{ date: "2026-11-06", load: 50, reps: 6, rir: 2, setsDone: 3 }];
+  }
+  assert.equal(S.weekStatus({ liftHistory }, "2026-11-09", { fri: len, sat: 1, sun: 1 })[0].state, "done");
+  assert.equal(S.weekStatus({ liftHistory }, "2026-11-09", { fri: len + 1, sat: 1, sun: 1 })[0].state, "partial");
+  assert.equal(S.weekStatus({ liftHistory }, "2026-11-09")[0].state, "done");
+});
+
 test("toCsv escapes formula-leading cells", () => {
   const csv = S.toCsv({ liftHistory: { "fri:0": [{ date: "2026-11-08", sets: [{ load: 0, reps: 1, rir: 0 }] }] } }, { fri: { ex: [{ n: "=cmd" }] } });
   assert.ok(csv.indexOf("'=cmd") !== -1);

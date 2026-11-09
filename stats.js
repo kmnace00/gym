@@ -281,9 +281,10 @@
   /**
    * Status of the current training week (Fri/Sat/Sun), oldest → newest.
    * @param {any} payload @param {string} nowKey YYYY-MM-DD
+   * @param {{fri:number,sat:number,sun:number}} [dayLens] lifts scheduled per day (default 8)
    * @returns {{day:string,date:string,state:string,lifts:number}[]}
    */
-  function weekStatus(payload, nowKey) {
+  function weekStatus(payload, nowKey, dayLens) {
     var today = parseKey(nowKey);
     if (!today) return [];
     var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
@@ -292,8 +293,9 @@
       var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);
       var key = keyOf(dt);
       var n = lifts[key] ? Object.keys(lifts[key]).length : 0;
+      var need = dayLens && typeof dayLens[names[i]] === "number" && dayLens[names[i]] > 0 ? dayLens[names[i]] : 8;
       var state = dt > today ? "upcoming"
-        : n >= 8 ? "done"
+        : n >= need ? "done"
         : n > 0 ? "partial"
         : key === nowKey ? "today" : "missed";
       out.push({ day: names[i], date: key, state: state, lifts: n });

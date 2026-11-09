@@ -7,6 +7,7 @@
       planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
       sessionElapsed = Gym.sessionElapsed, Machine = Gym, Stats = Gym, Rest = Gym;
+  var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
   var RIR_KEY = "gym-rir-seen";
 
@@ -170,7 +171,7 @@
   }
   function renderWeekStrip() {
     if (!weekStrip) return;
-    var status = Stats.weekStatus(payload, Gym.dateKey());
+    var status = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
     weekStrip.innerHTML = status.map(function (d) {
       var lbl = DAY_LABEL[d.day] || d.day;
       var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
