@@ -4,7 +4,7 @@
 
 Status: ACTIVE — autonomous 5-phase pipeline (Khang directive, Mon 4:00 AM–7:00 PM CT). Queue empty; phase work comes from the pipeline directive + BACKLOG. Base HEAD: `f170c07`.
 
-WIP: OpenCode editing sw.js, app.js, test/size.test.js since 2026-11-09 04:52 CT
+WIP: OpenCode editing test/store.test.js, test/program.test.js, test/stats.test.js, e2e/a11y.spec.js since 2026-11-09 05:02 CT
 
 ## Completed — B2: Nested unsafe keys inside records / entries / sessions [T1]
 
