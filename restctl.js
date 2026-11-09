@@ -58,23 +58,26 @@
     /** 0 when idle, the full fraction at GO. */
     function view() {
       var now = deps.now(), phase = rest.phase;
+      var armed = Rest.finishArmed(now, ctx.finishUntil);
       var label = "", msg = "", nextText = "", skipLabel = "End rest";
       if (phase === "go") {
         var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, true);
         label = "GO";
         msg = Rest.goLabel(adv, lastLift());
         nextText = ctx.nextText.replace("Up next —", "Up now —");
-        skipLabel = Rest.finishArmed(now, ctx.finishUntil)
+        skipLabel = armed
           ? "Tap again to finish"
           : Rest.advanceLabel(adv, lastLift());
       } else if (phase === "paused") {
         label = ctx.startLabel;
         msg = "Paused — tap Resume to continue.";
         nextText = ctx.nextText;
+        skipLabel = armed ? "Tap again to finish" : "End rest";
       } else if (phase === "active") {
         label = ctx.startLabel;
         msg = ctx.msg;
         nextText = ctx.nextText;
+        skipLabel = armed ? "Tap again to finish" : "End rest";
       } else {
         label = ctx.idleLabel;
         msg = ctx.idleMsg;
