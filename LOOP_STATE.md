@@ -1,7 +1,7 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 IN PROGRESS — L1–L4 shipped; L5 built and green,
-awaiting auto-sync push; batch complete after this push.
+Status: BATCH 1 COMPLETE — L1–L5 shipped; OpenCode is done and waits
+for Muse review.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
@@ -19,7 +19,8 @@ OpenCode once and it works the queue.
   `Object.prototype` unpolluted. SW `gym-v11` because `store.js`
   changed. Threat model added to `PLAN.md`. `npm run check` **96/96
   unit**, `npm run typecheck` clean, `npm run e2e` **41/41** at
-  390×667/844. Commit: `pending`.
+  390×667/844. Commits: `4258570` + `07d0d9b` + `c5dea85` (on
+  origin/main).
 - L4 build (OpenCode, Nov 8 20:21 CT): accessibility pass. Requested
   sub-44px controls now measure ≥44 px at 390×667/844: `.mini`,
   `.resetlift`, `.applybtn`, `.bbdismiss`, short-phone `.stepbtn`,
@@ -64,9 +65,8 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: L5 — built, checks green; waiting for the
-  gym-sync commit to appear on origin/main before closing the batch.
-- Next in queue: none — stop and wait for Muse after this push.
+- Current item: none — Batch 1 complete.
+- Next in queue: none — stop and wait for Muse.
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified

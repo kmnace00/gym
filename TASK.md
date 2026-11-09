@@ -2,17 +2,19 @@
 
 ## WIP
 
-Triage: T1 — fully specified security probe; local lead, no subagents.
+Status: DONE — Batch 1 complete. L1–L5 shipped; OpenCode stops and
+waits for Muse. Base HEAD: `a18272b`.
 
-WIP: OpenCode editing test/store.test.js, PLAN.md, store.js (only if
-a probe fails), test/size.test.js (only if a size probe needs it)
-since 20:31
+## Completed — L5: security audit: import + service worker [T1]
 
-Status: ACTIVE — Batch 1, L5 (security audit: import + service worker).
-L1 shipped (`28b0c7b`), L2 shipped (`b6645ea` + `78f319a`), L3 shipped
-(`09798ca` + `36489b3`), L4 shipped (`d9cc70f` + `abcf5bd`). Batch:
-`QUEUE.md` L1–L5, in order. When L5 is done, stop and wait for Muse.
-Base HEAD: `a18272b`.
+Delivered: hostile-payload tests for `__proto__` / `constructor` keys,
+`1e999` numbers, non-array `sets`, hostile session `lifts`, and
+oversized history/session caps. `store.js` merge/sanitize now strips
+unsafe keys, uses null-prototype merge maps, rejects unsafe session
+ids, normalizes non-array `sets`, and keeps `Object.prototype` clean.
+SW bumped to `gym-v11`; asset-drift guard green. Threat-model paragraph
+added to `PLAN.md`. Verified 96/96 unit, typecheck clean, 41/41 e2e at
+390×667/844. Commits: `4258570` + `07d0d9b` + `c5dea85`.
 
 ## Completed — L4: accessibility pass [T1]
 
@@ -38,39 +40,6 @@ never on an unflagged lift) — no `app.js` change was needed. Flag
 audit: 10 `partial: 1` lifts, 9 match `RESEARCH.md`, Sun overhead
 cable extension is the outlier (flag untouched, T3). Verified 88/88
 unit, typecheck clean, 38/38 e2e at 390×667/844.
-
-## Active task — L5: security audit: import + service worker [T1]
-
-Why: Pass 4 extended sanitization to sessions
-(`sanitizeSession`), but existing hostile coverage is a single test
-(numeric strings → 0). The merge path assigns incoming keys into
-plain objects (`store.js` `mergePayload`), so prototype keys are the
-precise thing to probe — not assert.
-
-Do (probe, then fix only what fails):
-- Add tests in `test/store.test.js`: `__proto__` / `constructor` keys
-  in `state`, `liftHistory`, and `sessionLog` via `importRaw` /
-  `importMerge` — assert `Object.prototype` is unpolluted and the
-  merged result is sane; numbers `1e999` / `Infinity` via JSON;
-  non-array `sets`; hostile session `lifts` (non-object, hostile
-  numbers); huge payload (size guard still holds).
-- Fix failures in `store.js` sanitize/merge only. No schema change,
-  no program-data change.
-- Verify SW discipline: `CACHE` is now `gym-v10` (Pass 4 was `gym-v7`);
-  `npm run check` includes the asset-drift guard — confirm green and
-  note it in `BUILD_LOG.md`.
-- Write the threat-model paragraph in `PLAN.md` (one paragraph: trusts
-  = Khang's own backups + `origin main` commits by Khang/Muse; does not
-  trust = imported JSON, any other commit author, SW cache contents;
-  boundary = localStorage only, no network exfiltration).
-
-Files: `store.js` (only if a probe fails), `test/store.test.js`,
-`test/size.test.js`, `PLAN.md`.
-
-Verify: new hostile-payload tests green, `npm run check` + typecheck +
-e2e green, no behaviour change. One line in `BUILD_LOG.md`, update
-`LOOP_STATE.md`. If verification fails, log it and STOP — do not move
-on.
 
 ## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)
 
