@@ -2,7 +2,7 @@
 
 ## WIP
 
-Status: ACTIVE — continuous loop, checkpoint at `0446523` (SW `gym-v29`): 149/149 unit, 57/57 e2e, CI green. Docs refreshed (PLAN.md current state + threat model, HANDOFF.md). Next: no approved item left — Batch 3 is Khang's (research/alternate list), program numbers are read-only, new features are T3.
+Status: ACTIVE — continuous loop, checkpoint at `007ddb3` (SW `gym-v30`): 149/149 unit, 58/58 e2e, CI green. Docs refreshed (PLAN.md current state + threat model, HANDOFF.md). Next: no approved item left — Batch 3 is Khang's (research/alternate list), program numbers are read-only, new features are T3.
 
 WIP: none claimed
 
