@@ -1,14 +1,23 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 1 IN PROGRESS — L1 built, awaiting auto-sync push; L2 next.
+Status: BATCH 1 IN PROGRESS — L1 shipped (`28b0c7b`), L2 built and
+green, awaiting auto-sync push; L3 next.
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
-Muse re-checked each item against Pass 4 source. `TASK.md` has L1
+Muse re-checked each item against Pass 4 source. `TASK.md` has L2
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live
 in the repo (`OPENCODE_LOOP_PROMPT.md`) — Khang pastes it into
 OpenCode once and it works the queue.
 
 ## Last verified
 
+- L2 build (OpenCode, Nov 8 19:58 CT): partials-prompt timing
+  confirmed by 3 new e2e cases (last set only, RIR ≤1 only, never on
+  an unflagged lift) — no `app.js` change needed. Flag audit: 10
+  `partial: 1` lifts, 9 match `RESEARCH.md`, Sun overhead cable
+  extension is the outlier (flag untouched, T3). `npm run check`
+  **88/88 unit**, `npm run typecheck` clean, `npm run e2e`
+  **38/38** at 390×667/844, no overflow, no console errors. SW
+  unchanged (`gym-v8`, no asset change). Commit: `pending`.
 - L1 build (OpenCode, Nov 8 19:50 CT): `restMsg` / `goLabel` /
   `prepVisible` live in `rest.js`, `app.js` wired to them, no
   behaviour change. `npm run check` **88/88 unit** (3 new),
@@ -22,9 +31,9 @@ OpenCode once and it works the queue.
 
 ## Current / next
 
-- Current item: L1 — built, checks green; waiting for the
-  gym-sync commit to appear on origin/main before starting L2.
-- Next in queue: L2 → L3 → L4 → L5 (`QUEUE.md`, in order).
+- Current item: L2 — built, checks green; waiting for the
+  gym-sync commit to appear on origin/main before starting L3.
+- Next in queue: L3 → L4 → L5 (`QUEUE.md`, in order).
 - After the batch, Muse reviews (ping "check the loop").
 
 ## Last verified
