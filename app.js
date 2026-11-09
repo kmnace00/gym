@@ -192,14 +192,16 @@
     rPrevBtn.disabled = first;
     rNextBtn.disabled = last;
   }
+  /* the strip is symbol + colour only, so every cell needs a spoken state */
+  var WK_WORD = { done: "done", partial: "in progress", missed: "missed", today: "today", upcoming: "upcoming" };
   function renderWeekStrip() {
     if (!weekStrip) return;
     var status = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
     weekStrip.innerHTML = status.map(function (d) {
       var lbl = DAY_LABEL[d.day] || d.day;
       var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
-      return '<span class="wk ' + d.state + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
-        + '<b>' + esc(lbl) + '</b><i>' + mark + '</i></span>';
+      return '<span class="wk ' + d.state + '" aria-label="' + esc(lbl + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
+        + '<b>' + esc(lbl) + '</b><i aria-hidden="true">' + mark + '</i></span>';
     }).join("");
   }
   function renderDay() {
@@ -447,6 +449,8 @@
       }).join("") + "</span>";
     }).join("");
     document.getElementById("pHeatCount").textContent = snap.heatCount + "/" + snap.heatTotal;
+    var heatSum = document.getElementById("heatSummary");
+    if (heatSum) heatSum.textContent = snap.heatCount + " of " + snap.heatTotal + " training days in the last 8 weeks";
 
     var recent = snap.recent, svg = document.getElementById("pSpark");
     if (recent.length < 2) { svg.innerHTML = ""; }
