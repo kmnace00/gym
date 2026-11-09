@@ -670,3 +670,15 @@ test("sessionDate anchors history to the live session across midnight", () => {
   assert.equal(r.liftHistory["fri:0"][0].date, "2000-12-01");
   assert.equal(r.state["fri:0"].done, 0);
 });
+
+test("bwKg is bounded: a hostile value is dropped, a real one survives", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 3,
+    liftHistory: {
+      "fri:7": [{ date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 1e9 },
+        { date: "2026-10-08", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 82.5 }]
+    }
+  }));
+  assert.equal(p.liftHistory["fri:7"][0].bwKg, undefined);
+  assert.equal(p.liftHistory["fri:7"][1].bwKg, 82.5);
+});

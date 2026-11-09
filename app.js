@@ -33,7 +33,10 @@
   function metricForEntry(e, entry, load, reps) {
     return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: bwFor(entry) });
   }
-  function topSetOf(e, sets) {
+  function topSetOf(e, sets, entry) {
+    if (entry && typeof entry.bwKg === "number" && isFinite(entry.bwKg) && entry.bwKg > 0) {
+      return Stats.topSet(sets, function (l, r) { return metricForEntry(e, entry, l, r); });
+    }
     return Stats.topSet(sets, function (l, r) { return metricFor(e, l, r); });
   }
   /* Bank the *whole* set array for a lift: this is the single source of truth
@@ -317,9 +320,9 @@
     if (toggle) toggle.hidden = !has;
     if (!has) { wrap.hidden = true; return; }
     var vals = entries.map(function (h) {
-      var top = topSetOf(ex(), Stats.entrySets(h));
-      if (!top) return metricFor(ex(), h.load || 0, h.reps || 0);
-      return metricFor(ex(), top.load || 0, top.reps || 0);
+      var top = topSetOf(ex(), Stats.entrySets(h), h);
+      if (!top) return metricForEntry(ex(), h, h.load || 0, h.reps || 0);
+      return metricForEntry(ex(), h, top.load || 0, top.reps || 0);
     });
     var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), span = (max - min) || 1;
     var W = 120, H = 28, pad = 2, n = vals.length, d = "";
@@ -897,7 +900,7 @@
     var priorHist = priorEntries();
     var prevBest = -Infinity, hi, hj, topEntry;
     for (hi = 0; hi < priorHist.length; hi++) {
-      topEntry = topSetOf(e, Stats.entrySets(priorHist[hi]));
+      topEntry = topSetOf(e, Stats.entrySets(priorHist[hi]), priorHist[hi]);
       if (topEntry) prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], topEntry.load || 0, topEntry.reps || 0));
       else prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], priorHist[hi].load || 0, priorHist[hi].reps || 0));
     }
