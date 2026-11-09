@@ -2,15 +2,26 @@
 
 ## WIP
 
-Triage: T1 — fully specified accessibility pass; local lead, no subagents.
+Triage: T1 — fully specified security probe; local lead, no subagents.
 
-WIP: OpenCode editing style.css, index.html, e2e/a11y.spec.js since 20:21
+WIP: OpenCode editing test/store.test.js, PLAN.md, store.js (only if
+a probe fails), test/size.test.js (only if a size probe needs it)
+since 20:31
 
-Status: ACTIVE — Batch 1, L4 (accessibility pass).
+Status: ACTIVE — Batch 1, L5 (security audit: import + service worker).
 L1 shipped (`28b0c7b`), L2 shipped (`b6645ea` + `78f319a`), L3 shipped
-(`09798ca` + `36489b3`). Batch: `QUEUE.md` L1–L5, in order. When L4 is
-done, copy L5 from `QUEUE.md` into this file and start it. Base HEAD:
-`a18272b`.
+(`09798ca` + `36489b3`), L4 shipped (`d9cc70f` + `abcf5bd`). Batch:
+`QUEUE.md` L1–L5, in order. When L5 is done, stop and wait for Muse.
+Base HEAD: `a18272b`.
+
+## Completed — L4: accessibility pass [T1]
+
+Delivered: 3 e2e cases prove the requested controls are ≥44px at
+390×667/844 and the rest-screen keyboard order is +15 / Pause / End
+rest / Show workout / Undo / prep steppers; hidden rest arrows remain
+unreachable. Negative margins preserved no-scroll. `--faint` contrast
+fixed in both themes. SW `gym-v10`. Verified 93/93 unit, typecheck
+clean, 41/41 e2e.
 
 ## Completed — L3: day-time model vs real sessions [T1, audit]
 
@@ -28,36 +39,36 @@ audit: 10 `partial: 1` lifts, 9 match `RESEARCH.md`, Sun overhead
 cable extension is the outlier (flag untouched, T3). Verified 88/88
 unit, typecheck clean, 38/38 e2e at 390×667/844.
 
-## Active task — L4: accessibility pass [T1]
+## Active task — L5: security audit: import + service worker [T1]
 
-Why: focus trap + GO assertive + Set Done pressed state shipped in
-Pass 2. Measured against Pass 4 CSS, these controls are below the 44
-px target: `.mini` lift arrows 44×36, `.resetlift` (Trend / Undo /
-Restart) 30 px tall, `.applybtn` 30 px (28 px short-phone), `.bbdismiss`
-26×26, short-phone `.stepbtn` 40×40 + `.setrow` 38 px min-height,
-peek-strip `.tbtns button` 40 px, peek `.detailsbtn` 42 px. Rest arrows
-are already out of the tab order (`.rnav{display:none}` while resting)
-— verify, don't assume.
+Why: Pass 4 extended sanitization to sessions
+(`sanitizeSession`), but existing hostile coverage is a single test
+(numeric strings → 0). The merge path assigns incoming keys into
+plain objects (`store.js` `mergePayload`), so prototype keys are the
+precise thing to probe — not assert.
 
-Do:
-- e2e bounding-box assertions at 390×667/844 for each control above;
-  fix the ones that fit without breaking the no-scroll invariant (hit
-  area via padding/min-height, not layout redesign). Anything that does
-  not fit stays as an open item in `BUILD_LOG.md` + `LOOP_STATE.md`
-  phone-check list with its measured overflow cost — do not force it.
-- Compute WCAG contrast ratios for `--ink` / `--muted` / `--faint` on
-  `--bg` / `--surface` in both themes; report the numbers; fix any
-  normal-text pair under 4.5:1 if fixable without a redesign.
-- Keyboard Tab through the rest screen: verify the order is +15 /
-  Pause / End rest / Show workout / Undo / prep steppers and that
-  hidden controls (rest arrows, peek-hidden items) are not reachable;
-  fix code-only tab-order issues.
+Do (probe, then fix only what fails):
+- Add tests in `test/store.test.js`: `__proto__` / `constructor` keys
+  in `state`, `liftHistory`, and `sessionLog` via `importRaw` /
+  `importMerge` — assert `Object.prototype` is unpolluted and the
+  merged result is sane; numbers `1e999` / `Infinity` via JSON;
+  non-array `sets`; hostile session `lifts` (non-object, hostile
+  numbers); huge payload (size guard still holds).
+- Fix failures in `store.js` sanitize/merge only. No schema change,
+  no program-data change.
+- Verify SW discipline: `CACHE` is now `gym-v10` (Pass 4 was `gym-v7`);
+  `npm run check` includes the asset-drift guard — confirm green and
+  note it in `BUILD_LOG.md`.
+- Write the threat-model paragraph in `PLAN.md` (one paragraph: trusts
+  = Khang's own backups + `origin main` commits by Khang/Muse; does not
+  trust = imported JSON, any other commit author, SW cache contents;
+  boundary = localStorage only, no network exfiltration).
 
-Files: `style.css`, `index.html`, `app.js` (only if a focus fix needs
-it), `e2e/*`.
+Files: `store.js` (only if a probe fails), `test/store.test.js`,
+`test/size.test.js`, `PLAN.md`.
 
-Verify: e2e viewport checks at both sizes, no-overflow gate green,
-`npm run check` + typecheck green. One line in `BUILD_LOG.md`, update
+Verify: new hostile-payload tests green, `npm run check` + typecheck +
+e2e green, no behaviour change. One line in `BUILD_LOG.md`, update
 `LOOP_STATE.md`. If verification fails, log it and STOP — do not move
 on.
 
