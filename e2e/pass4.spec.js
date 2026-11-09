@@ -195,3 +195,52 @@ test("undoing the edited set restores the working load", async ({ page }) => {
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("finishing from the rest screen finalizes the session and shows the summary", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day, date } = await today(page);
+  await page.evaluate(({ day, date }) => {
+    const state = {};
+    const ex = Gym.DAYS[day].ex;
+    ex.forEach((e, i) => {
+      if (i === ex.length - 1) {
+        state[day + ":" + i] = {
+          done: e.s - 1,
+          load: e.load || 0,
+          reps: e.r,
+          rir: e.rir,
+          sets: Array.from({ length: e.s - 1 }, () => ({ load: e.load || 0, reps: e.r, rir: e.rir }))
+        };
+      } else {
+        state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+      }
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 3, cur: day, idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_fin2", date: date, day: day, startedAt: Date.now() - 1800000, endedAt: null, accSec: 1800, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  const rows = page.locator(".liftrow");
+  await rows.nth(await rows.count() - 1).click();
+
+  await page.locator("#doneBtn").click();   // last set logged -> rest starts
+  await page.locator("#skipRest").click();  // arms "Tap again to finish"
+  await page.locator("#skipRest").click();  // finishes
+
+  await expect(page.locator("#summary")).toBeVisible();
+  await expect(page.locator("#sumSets")).toHaveText("24");
+  await expect(page.locator("#sumDuration")).toHaveText("30:00");
+
+  const saved = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { status: p.active.status, log: p.sessionLog.length };
+  });
+  expect(saved, "session finalized in storage").toEqual({ status: "complete", log: 1 });
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
