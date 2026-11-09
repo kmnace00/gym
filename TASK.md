@@ -8,14 +8,14 @@ Status: CHECKPOINT (OpenCode, Nov 9 11:57 CT) — Batch 3 items B3-01…B3-10 ar
 built, gated and pushed; B3-11 is next. This session stopped for length per
 the loop rule ("finish the current item, checkpoint, stop"). A new session
 with the same loop prompt reads `QUEUE.md`, copies B3-11 into this file and
-starts it. Base HEAD: `TO_BE_FILLED` (B3-10 auto-sync).
+starts it. Base HEAD: `b3aba7b` (B3-10 auto-sync).
 Note: the pipeline's "Remaining work is Khang's" line from Nov 9 is now
 answered by this batch — the Batch 3 research (L7/L8) is done and in
 `RESEARCH.md`, and the T3 proposals are in `BACKLOG.md` for Khang.
 
 ## Completed — B3-10: The PR / top-reps hint is set on the final set — and wiped before the lifter ever sees it [T1]
 
-The PR/top-reps hint now surfaces on the rest screen: `restCtl.start` takes the hint, `restMsg` uses it in place of the stretch line (the in-rest partials cue still wins; the +30 s prefix still applies) and `extend15` at GO carries it. The rest message line shows "New PR — …" for the whole rest; advance still clears `hintText`. 2 unit tests + 1 e2e (seeded prior best 50×6 → log 60×6 → `#restMsg` contains "New PR", not "Stretch", no overflow). SW `gym-v46`. Verified 157/157 unit, typecheck clean, 73/73 e2e. Commit: auto-sync (pending hash at checkpoint).
+The PR/top-reps hint now surfaces on the rest screen: `restCtl.start` takes the hint, `restMsg` uses it in place of the stretch line (the in-rest partials cue still wins; the +30 s prefix still applies) and `extend15` at GO carries it. The rest message line shows "New PR — …" for the whole rest; advance still clears `hintText`. 2 unit tests + 1 e2e (seeded prior best 50×6 → log 60×6 → `#restMsg` contains "New PR", not "Stretch", no overflow). SW `gym-v46`. Verified 157/157 unit, typecheck clean, 73/73 e2e. Commit: `b3aba7b` (auto-sync, on origin/main).
 
 ## Completed — B3-09: "Import backup" is unreachable by keyboard [T1]
 
