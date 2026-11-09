@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: L9 DONE (OpenCode, Nov 9 06:12 CT) — the 5-phase pipeline finished at 05:40 (Phases 1–5 gated `a0afe70`…`c37b649`), then Khang approved **L9** and it is now built: rest orchestration moved to `restctl.js`, `app.js` is the DOM shell. Gate: 145/145 unit, typecheck clean, 48/48 e2e at 390×667/844, SW `gym-v20`; reviewer PASS, independent tester 7/7. **Batch 3 is proposed in `QUEUE.md` and awaits Khang's approval** (B4 delivered with L9; L8/L7 need research citations; L6 needs his alternate list). Next: L9 sign-off/revert decision only if Khang wants one.
+Status: CONTINUOUS LOOP ACTIVE (OpenCode, Nov 9 06:40 CT) — L9 shipped at 06:12 (`6ae2432`), then three T1s: `weekStatus` per-day lift counts, the set-edit navigation clobber fix, and derived count strings + the Fri–Sun "This week" counter. Gate: 146/146 unit, typecheck clean, 50/50 e2e at 390×667/844, SW `gym-v22`. Batch 3 in `QUEUE.md` still awaits Khang (L8/L7 NEEDS_RESEARCH, L6 needs his alternate list; B4 delivered).
 Loop: Batch 1 (L1–L5) approved by Khang Nov 8, 19:41 CT, after
 Muse re-checked each item against Pass 4 source. `TASK.md` has L4
 active; `QUEUE.md` holds the full batch. OpenCode prompt is live

@@ -2,9 +2,16 @@
 
 ## WIP
 
-Status: ACTIVE — continuous loop, L9 done. Taking T1 items from BACKLOG/QUEUE while Batch 3's T2s wait on research/Khang. Next: `weekStatus` coupling.
+Status: ACTIVE — continuous loop. Three T1s shipped since L9 (weekStatus decoupling, set-edit clobber, derived count strings). Next: set-edit robustness (`applySetEdit` bail path).
 
-WIP: OpenCode editing app.js, e2e/progress.spec.js since 2026-11-09 06:32 CT
+WIP: none claimed yet
+
+## Completed — continuous-loop T1s (Nov 9, after L9)
+
+1. `weekStatus` takes a per-day lift-count map (`DAY_LIFTS` derived from `DAYS`), no more `n >= 8` (1 unit test).
+2. `resetEdit()` restores the working load/reps/RIR when leaving an in-progress set edit (e2e proves the old one-liner leaked the set's load into the next set).
+3. Count strings derived from data: "This week" counts the Fri–Sun block (`weekStatus`) instead of a rolling 7 days, "8 lifts" is `list.length`, heatmap denominator is `weeks × days` (e2e with `page.clock` on a Friday).
+SW `gym-v22`. Verified 146/146 unit, typecheck clean, 50/50 e2e.
 
 ## Completed — L9: Full rest-controller extraction [T2, approved]
 
