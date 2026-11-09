@@ -116,7 +116,11 @@ test("coming back to the app checks for a service worker update (B3-23)", async 
     if (!reg || typeof reg.update !== "function") return false;
     const real = reg.update.bind(reg);
     window.__updateCalls = 0;
-    reg.update = function () { window.__updateCalls++; return real(); };
+    window.__fetched = false;
+    reg.update = function () {
+      window.__updateCalls++;
+      return real().then((r) => { window.__fetched = true; return r; });
+    };
     return true;
   });
   expect(wired).toBe(true);
@@ -130,13 +134,12 @@ test("coming back to the app checks for a service worker update (B3-23)", async 
   });
   expect(await page.evaluate(() => window.__updateCalls)).toBe(0);
 
-  // visible: the check runs, and the real update re-fetches sw.js from the server
+  // visible: the check runs, and the real update resolves after fetching ./sw.js
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", { get: () => "visible", configurable: true });
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await page.waitForFunction(() => window.__updateCalls > 0);
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => window.__fetched, { timeout: 10000 });
   expect(swHits, "registration.update() must actually fetch ./sw.js").toBeGreaterThan(0);
 
   // throttled: a second visibilitychange inside the window does not re-check
