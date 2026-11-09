@@ -240,3 +240,13 @@ test("bodyweight history is frozen at the weight in force", async ({ page }) => 
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("weights name pounds on the lift and rest screens", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#exPres")).toContainText("lb");
+  await expect(page.locator(".ctl .k").first()).toHaveText("Load (lb)");
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#restPrepLoad")).toContainText("lb");
+  await page.locator("#skipRest").click();
+});

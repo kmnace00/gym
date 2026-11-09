@@ -10,7 +10,7 @@ function mk(over) {
   const clock = { t: 0 };
   const data = Object.assign({
     cur: "fri", idx: 0, len: 3, done: 0, sets: 3, exRest: 90, editSet: -1, firstOpen: -1,
-    prep: { name: "Set 1 of 3", load: "60 kg", reps: "8" }
+    prep: { name: "Set 1 of 3", load: "60 lb", reps: "8" }
   }, over || {});
   const deps = {
     Machine: M, Rest: R,
@@ -55,7 +55,7 @@ test("start captures the lift for a pending advance, and prep shows while restin
   assert.equal(out.state.pending, true);
   assert.equal(out.view.showPrep, true);
   assert.equal(out.view.prepName, "Set 1 of 3");
-  assert.equal(out.view.prepLoad, "60 kg");
+  assert.equal(out.view.prepLoad, "60 lb");
   assert.equal(out.view.prepReps, "8");
 });
 

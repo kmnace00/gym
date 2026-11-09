@@ -337,6 +337,11 @@
     if (e.load === 0) return load > 0 ? "BW+" + load : "BW";
     return load > 0 ? String(load) : "—";
   }
+  /* weight-only display (header, rest prep): always names the imperial unit */
+  function loadText(load, e) {
+    var t = loadLabel(load, e);
+    return (t === "light" || t === "BW" || t === "—") ? t : t + " lb";
+  }
   /* the set log: one row per prescribed set, completed sets checked, the next
      set highlighted — rows flex to fill the vertical space (as in Hevy/Strong) */
   function renderSetLog(e, s) {
@@ -370,8 +375,8 @@
 
     var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var loadBig = e.load === null
-      ? (s.load > 0 ? "Load <b>" + s.load + "</b>" : "start light")
-      : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b>");
+      ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+      : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb");
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     document.getElementById("exPres").innerHTML =
       "<span class='big'><b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig + "</span>"
@@ -522,7 +527,7 @@
     firstOpen: function (from) { return firstOpenLift(cur, payload.state, from); },
     prep: function () {
       var e = ex(), s = curSt();
-      return { name: "Set " + (s.done + 1) + " of " + e.s, load: loadLabel(s.load, e), reps: String(s.reps) };
+      return { name: "Set " + (s.done + 1) + " of " + e.s, load: loadText(s.load, e), reps: String(s.reps) };
     }
   });
   /* apply the controller's effect list in order, then paint its view */
