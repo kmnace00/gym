@@ -74,3 +74,47 @@ test("Restore (replace) swaps the whole payload after a two-tap arm", async ({ p
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal")).toHaveText("88");
 });
+
+test("undo last reset restores the pre-reset payload", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const { day, date } = await today(page);
+  await page.evaluate(({ day, date }) => {
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 3, cur: day, idx: 0, bodyweight: 75, liftHistory: {}, sessionLog: [],
+      state: {
+        [day + ":0"]: {
+          done: 3, load: 88, reps: 6, rir: 2,
+          sets: [{ load: 88, reps: 6, rir: 2 }, { load: 88, reps: 6, rir: 2 }, { load: 88, reps: 6, rir: 2 }]
+        }
+      },
+      active: { id: "ses_snap", date: date, day: day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#resetDay")).toContainText("Tap again");
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#modalMsg")).toContainText("Day reset");
+
+  const cleared = await page.evaluate((d) => JSON.parse(localStorage.getItem("gym-tool-v2")).state[d + ":0"].done, day);
+  expect(cleared, "reset clears the sets").toBe(0);
+
+  await expect(page.locator("#restoreSnapshot")).toBeVisible();
+  await page.locator("#restoreSnapshot").click();
+  await expect(page.locator("#modalMsg")).toContainText("Snapshot restored");
+
+  await page.locator("#modalClose").click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#loadVal")).toHaveText("88");
+  await expect(page.locator("#setCount")).toContainText("All 3 sets done");
+
+  const restored = await page.evaluate((d) => JSON.parse(localStorage.getItem("gym-tool-v2")).state[d + ":0"].done, day);
+  expect(restored, "restored payload has the pre-reset sets").toBe(3);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});

@@ -203,3 +203,40 @@ test("a lift without the partial flag never shows the partials cue", async ({ pa
     await page.locator("#skipRest").click();
   }
 });
+
+test("bodyweight changes the bodyweight-lift tonnage", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+
+  await page.goto(url);
+  const idx = await page.evaluate(() => Gym.DAYS[Gym.todayDay()].ex.findIndex((e) => e.bw));
+  if (idx === -1) {
+    console.log("no bodyweight lift in today's program — test skipped");
+    return;
+  }
+
+  await page.locator(".liftrow").nth(idx).click();
+  for (var i = 0; i < 3; i++) {
+    await page.locator("#doneBtn").click();
+    await page.locator("#skipRest").click();
+  }
+
+  await page.locator("#menuBtn").click();
+  await page.locator("#bwInput").fill("100");
+  await page.locator("#bwInput").press("Tab");
+  await page.locator("#modalClose").click();
+
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pSub")).toContainText("1.8k kg");
+
+  await page.locator("#backBtn").click();
+  await page.locator("#menuBtn").click();
+  await page.locator("#bwInput").fill("80");
+  await page.locator("#bwInput").press("Tab");
+  await page.locator("#modalClose").click();
+
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pSub")).toContainText("1.4k kg");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
+});
