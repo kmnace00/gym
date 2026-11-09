@@ -367,8 +367,19 @@
   /** Serialize a payload for export. */
   function exportPayload(p) { return JSON.stringify(p); }
 
+  /* Defence in depth (B3-17): a multi-MB "backup" must never reach JSON.parse.
+     The shell rejects oversized files before reading; these guards catch any
+     caller that skips that step. */
+  var MAX_IMPORT_CHARS = 5000000;
+  function checkImportSize(raw) {
+    if (typeof raw !== "string" || raw.length > MAX_IMPORT_CHARS) {
+      throw new Error("Backup too large — maximum 5 MB");
+    }
+  }
+
   /** Parse a backup raw string and save it; throws when it is not valid. */
   function importRaw(raw) {
+    checkImportSize(raw);
     var m = migrate(raw);
     if (!m || m.__future) throw new Error("Not a valid Gym backup");
     save(m);
@@ -602,6 +613,7 @@
 
   /** Merge a backup into the current payload (never discards current data). */
   function importMerge(base, raw) {
+    checkImportSize(raw);
     var m = migrate(raw);
     if (!m || m.__future) throw new Error("Not a valid Gym backup");
     var merged = mergePayload(base, m);

@@ -531,6 +531,15 @@ test("the richer record wins when both have the same done count", () => {
   assert.equal(merged.state["fri:0"].sets.length, 2);
 });
 
+test("importRaw and importMerge reject a backup larger than 5 MB before parsing (B3-17)", () => {
+  const huge = "x".repeat(5000001);
+  assert.throws(() => S.importRaw(huge), /too large/i);
+  assert.throws(() => S.importMerge(S.load(), huge), /too large/i);
+  // a non-string is rejected too, and the 5 MB boundary itself is allowed
+  assert.throws(() => S.importRaw(12345), /too large/i);
+  assert.throws(() => S.importRaw("x".repeat(5000000)), /too large|Not a valid/i);
+});
+
 test("validDay and validDate reject junk", () => {
   assert.equal(S.validDay("fri"), true);
   assert.equal(S.validDay("mon"), false);

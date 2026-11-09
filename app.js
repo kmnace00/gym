@@ -1287,8 +1287,16 @@
   /* Import is a plain button so the keyboard can reach the one recovery path
      a switch/keyboard user needs; it clicks the hidden file input. */
   document.getElementById("importBtn").onclick = function () { document.getElementById("importFile").click(); };
+  /* Import size guard (B3-17): reject oversized files before reading them,
+     so a multi-MB "backup" can never freeze the tab in readAsText/JSON.parse. */
+  var MAX_IMPORT_SIZE = 5000000; // 5 MB
+  function rejectOversized(ev) {
+    setMsg("File too large — backups must be under 5 MB");
+    ev.target.value = "";
+  }
   replaceFile.addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
+    if (f.size > MAX_IMPORT_SIZE) { rejectOversized(ev); return; }
     var reader = new FileReader();
     reader.onload = function () {
       try {
@@ -1307,6 +1315,7 @@
   });
   document.getElementById("importFile").addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
+    if (f.size > MAX_IMPORT_SIZE) { rejectOversized(ev); return; }
     var reader = new FileReader();
     reader.onload = function () {
       try {

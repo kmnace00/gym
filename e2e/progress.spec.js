@@ -41,6 +41,28 @@ test("progress view fits the screen with no vertical scroll", async ({ page }) =
   await expect(page.locator("#pMovers")).toBeVisible();
 });
 
+test("a 6 MB backup is rejected before it is ever read (B3-17)", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+
+  const huge = Buffer.from("x".repeat(6000000));
+  await page.setInputFiles("#importFile", { name: "huge.json", mimeType: "application/json", buffer: huge });
+  await expect(page.locator("#modalMsg")).toContainText("File too large");
+
+  // the restore path guards the same way
+  await page.setInputFiles("#replaceFile", { name: "huge.json", mimeType: "application/json", buffer: huge });
+  await expect(page.locator("#modalMsg")).toContainText("File too large");
+
+  // the store still works: a normal import succeeds afterwards
+  const backup = JSON.stringify({ v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [] });
+  await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("merged");
+
+  expect(errors).toEqual([]);
+});
+
 test("import merges history instead of replacing it", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0, state: {},

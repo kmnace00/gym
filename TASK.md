@@ -2,7 +2,13 @@
 
 ## WIP
 
-WIP: OpenCode editing restctl.js, app.js, index.html, style.css, sw.js, e2e/journeys.spec.js since 2026-11-09 13:48 CT — B3-16 (elapsed time on the rest screen).
+WIP: OpenCode editing app.js, store.js, test/store.test.js, BUILD_LOG.md, LOOP_STATE.md, TASK.md since 2026-11-09 14:02 CT — B3-17 (import file-size guard).
+
+## Completed — B3-16: The rest screen hides the session elapsed time [T1]
+- Built Nov 9 (OpenCode). `restctl.js` `view()` carries `elapsedSec` (optional `elapsed` getter, null when absent); `app.js` wires `Gym.sessionElapsedSec(payload)` and paints `#restElapsed` ("Workout 42:03") during rest, hidden when idle. SW `gym-v52`. 158/158 unit, 76/76 e2e.
+
+## Completed — B3-15: Focus goes nowhere on day ↔ lift ↔ progress moves [T1]
+- Built Nov 9 (OpenCode). `openLift`/`navigateLift` focus `#exName` (`tabindex="-1"`), Back refocuses the row left, Progress focuses `#progTitle`. SW `gym-v51`. 157/157 unit, 75/75 e2e.
 
 ## Completed — B3-14: RIR buttons expose no selected state to a screen reader [T1]
 
