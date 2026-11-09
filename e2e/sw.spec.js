@@ -104,3 +104,42 @@ test("a 500 on app.js or a navigation still serves the cached app", async ({ pag
   await expect(page.locator(".liftrow")).toHaveCount(8);
   await context.setOffline(false);
 });
+
+/* B3-23 — an app that never reloads never revalidates the deploy. Coming back
+   to the tab must ask the service worker for a newer sw.js (throttled), so the
+   next navigation serves the new build. */
+test("coming back to the app checks for a service worker update (B3-23)", async ({ page }) => {
+  await bootWithSw(page);
+
+  const wired = await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg || typeof reg.update !== "function") return false;
+    const real = reg.update.bind(reg);
+    window.__updateCalls = 0;
+    reg.update = function () { window.__updateCalls++; return real(); };
+    return true;
+  });
+  expect(wired).toBe(true);
+
+  swHits = 0;
+
+  // hidden: no check while the tab is out of view
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { get: () => "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  expect(await page.evaluate(() => window.__updateCalls)).toBe(0);
+
+  // visible: the check runs, and the real update re-fetches sw.js from the server
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { get: () => "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForFunction(() => window.__updateCalls > 0);
+  await page.waitForTimeout(400);
+  expect(swHits, "registration.update() must actually fetch ./sw.js").toBeGreaterThan(0);
+
+  // throttled: a second visibilitychange inside the window does not re-check
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  expect(await page.evaluate(() => window.__updateCalls)).toBe(1);
+});
