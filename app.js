@@ -1290,7 +1290,10 @@
   /* Restore (replace) is destructive: arm it with the same two-tap guard as
      Reset day and Clear (B3-22); the second tap opens the picker. */
   var replaceBtn = document.getElementById("replaceBtn"), replaceFile = document.getElementById("replaceFile");
-  replaceBtn.onclick = function () { twoTap(this, "Tap again to replace", function () { replaceFile.click(); }); };
+  /* the arm check compares function identity, so the action must be a stable
+     reference — an inline literal would be a new function on every tap. */
+  var openReplacePicker = function () { replaceFile.click(); };
+  replaceBtn.onclick = function () { twoTap(this, "Tap again to replace", openReplacePicker); };
   /* Import is a plain button so the keyboard can reach the one recovery path
      a switch/keyboard user needs; it clicks the hidden file input. */
   document.getElementById("importBtn").onclick = function () { document.getElementById("importFile").click(); };
