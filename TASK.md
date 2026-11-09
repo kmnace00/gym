@@ -4,7 +4,7 @@
 
 Status: ACTIVE — continuous loop. Three T1s shipped since L9 (weekStatus decoupling, set-edit clobber, derived count strings). Next: set-edit robustness (`applySetEdit` bail path).
 
-WIP: OpenCode editing app.js, e2e/pass4.spec.js since 2026-11-09 06:42 CT
+WIP: OpenCode editing app.js, store.js, e2e/pass4.spec.js since 2026-11-09 06:52 CT
 
 ## Completed — continuous-loop T1s (Nov 9, after L9)
 
