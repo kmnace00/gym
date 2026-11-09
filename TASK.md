@@ -2,48 +2,47 @@
 
 ## WIP
 
-WIP: OpenCode editing rest.js, app.js, test/rest.test.js since 19:48
+WIP: OpenCode editing e2e/features.spec.js, RESEARCH.md since 19:55
 
-Status: ACTIVE — Batch 1, L1 (rest decisions into `rest.js`).
-Batch: `QUEUE.md` L1–L5, in order. When L1 is done, copy L2 from
-`QUEUE.md` into this file and start it. Base HEAD: `a18272b`.
+Status: ACTIVE — Batch 1, L2 (audit the lengthened-partials prompt).
+L1 shipped (`28b0c7b`). Batch: `QUEUE.md` L1–L5, in order. When L2 is
+done, copy L3 from `QUEUE.md` into this file and start it. Base HEAD:
+`a18272b`.
 
-## Active task — L1: rest decisions into rest.js (pure slice) [T1]
+## Completed — L1: rest decisions into rest.js (pure slice) [T1]
 
-Why: `restCtx` still lives in `app.js` (1,397 lines, ~20 touch
-points) and the pure rest decisions sit beside the DOM. `rest.js`
-already holds `canAdvance` / `nextLift` / `armFinish` /
-`finishArmed` / `advanceLabel`. Finish that slice. (The full
-rest-controller extraction is backlog item L9 [T2] — it needs a
-Muse DESIGN first, so it is NOT this item.)
+Delivered: `restMsg` / `goLabel` / `prepVisible` added to `rest.js`
+and wired into `startRest` / `finishRest` / `renderRestPrep` with no
+behaviour change; 3 unit tests in `test/rest.test.js`; SW `gym-v8`.
+Verified 88/88 unit, typecheck clean, 35/35 e2e at 390×667/844.
+
+## Active task — L2: audit the lengthened-partials prompt [T1]
+
+Why: research says partials only after full-ROM failure, on the last
+set, for calves, leg extensions, curls, laterals, flys. Source
+(`app.js:967`) fires the prompt only when the lift finishes
+(`finished`) with `partial: 1` and last RIR ≤1 — which looks right.
+Verify it instead of assuming it.
 
 Do:
-- Add to `rest.js` (pure, unit-tested, same UMD pattern):
-  `restMsg(note, sec, baseRest)` — "Add bottom-half partials to
-  failure — then rest." when `note` is `"partials"`, else
-  "Stretch — set up the next set.", prefixed with
-  "+30s for 0–1 RIR · " when `sec > baseRest`. Strings move
-  verbatim — no wording changes.
-  `goLabel(adv, isLastLift)` — "Lift done — next up." /
-  "Workout complete — nice work." / "Next set — go." (the three
-  states in `finishRest`).
-  `prepVisible(phase, editSet, done, sets)` — true only when the
-  phase is neither IDLE nor GO, `editSet < 0`, and `done < sets`
-  (the `renderRestPrep` show-condition).
-- Wire `app.js` (`startRest`, `finishRest`, `renderRestPrep`) to
-  call them. No behaviour change.
-- Unit tests in `test/rest.test.js` for all three, including edges
-  (+30s only when `sec > baseRest`; all three GO labels; prep
-  hidden at GO / IDLE / while editing / when the lift is done).
+- e2e (extend `e2e/features.spec.js`): on a partial lift (Fri leg
+  extension) the partials message appears only after the final set
+  with last RIR ≤1; it does not appear after set 1/2; it does not
+  appear when the last set's RIR is ≥2; a non-partial lift never
+  shows it.
+- Audit the flagged set against `RESEARCH.md`: 9 of 10 flagged lifts
+  match (flys, leg ext, laterals, curls, calves). The outlier is Sun
+  overhead cable extension (triceps) — NOT in the research list.
+  Record that as an open question in `BUILD_LOG.md` and `RESEARCH.md`.
+  Do NOT change the flag — program data, Khang only.
+- If the e2e finds a timing bug, fix the timing in `app.js` only
+  (prompt timing, not the flag, not the message wording).
 
-Do not: move `restCtx` itself, rewire `Machine`, change any
-user-visible string, touch `program.js`.
-Files: `rest.js`, `app.js`, `test/rest.test.js`.
-Verify: `npm run check`, `npm run typecheck`, `npm run e2e`
-(rest pause / advance / GO + prep-visibility paths) at 390×667
-and 390×844, no overflow, no console errors. One line in
-`BUILD_LOG.md`, update `LOOP_STATE.md` (commit + test counts),
-then copy L2 from `QUEUE.md` into this file and start it.
+Files: `e2e/features.spec.js`, `app.js` (only if a timing bug is
+found), `RESEARCH.md` (open-question note).
+Verify: new e2e green at both viewports, no-scroll intact,
+`npm run check` + typecheck green. One line in `BUILD_LOG.md`,
+update `LOOP_STATE.md`.
 If verification fails, log it and STOP — do not move on.
 
 ## Completed task — Pass 4 “Build all” (Nov 8, Khang's direct ask)
