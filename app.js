@@ -873,6 +873,12 @@
   document.getElementById("doneBtn").onclick = function () {
     if (editSet >= 0) { finishEdit(); return; }
     var e = ex(), s = curSt();
+    if (s.done >= Gym.SETS_MAX) {
+      hintText = "Set limit reached — " + Gym.SETS_MAX + " per lift.";
+      hintGood = false;
+      render();
+      return;
+    }
     var wasComplete = s.done >= e.s;
     /* capture the log *before* this set so the PR check compares against
        history, not against the set we are about to bank */
