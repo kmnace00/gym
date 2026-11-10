@@ -404,8 +404,8 @@
       : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb");
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     document.getElementById("exPres").innerHTML =
-      "<span class='big'><b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig + "</span>"
-      + "<span class='small'>" + rirTxt + " · Rest " + fmt(effRest) + "</span>";
+      "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
+      + " · " + rirTxt + " · Rest " + fmt(effRest);
     document.getElementById("exCue").textContent = e.cue;
     document.getElementById("tempoLine").style.display = ""; // the cue is the same for every lift
 
@@ -424,7 +424,7 @@
     btn.classList.toggle("complete", complete);
     btn.textContent = editSet >= 0 ? "Done editing" : complete ? "✓ Add extra set" : "Set Done";
     btn.removeAttribute("aria-pressed");
-    btn.setAttribute("aria-label", editSet >= 0 ? "Finish editing this set" : complete ? "All sets done. Tap to add an extra set." : "Set Done");
+    btn.setAttribute("aria-label", editSet >= 0 ? "Done editing — finish editing this set" : complete ? "All sets done. Tap to add an extra set." : "Set Done");
 
     var hint = document.getElementById("hint");
     hint.textContent = hintText;

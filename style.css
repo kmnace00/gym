@@ -107,26 +107,24 @@ h1{
   margin:2px 0 6px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-.pres{flex:none}
-.pres .big{display:block;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.pres .big b{color:var(--ink)}
-.pres .small{display:block;margin-top:4px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.cue{
-  flex:none;font-size:15px;line-height:1.5;color:var(--muted);margin:9px 0 0;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-}
-.tempo{flex:none;font-size:12px;font-weight:500;letter-spacing:.01em;color:var(--faint);margin:4px 0 0;font-variant-numeric:tabular-nums;opacity:.85}
-.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 16px}
+/* one secondary-size meta line: reps · load · RIR · rest */
+.pres{flex:none;font-size:13.5px;line-height:1.35;color:var(--muted);margin:2px 0 0;font-variant-numeric:tabular-nums}
+.pres b{color:var(--ink)}
+/* one guide block: cue text, tempo as a muted continuation, 2-line clamp */
+.guide{flex:none;margin:8px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cue{display:inline;font-size:15px;line-height:1.5;color:var(--muted)}
+.tempo{display:inline;color:var(--faint);font-size:12px}
+.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 8px}
 .seth{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .setacts{display:flex;gap:6px}
 .resetlift{flex:none;height:44px;margin:-7px 0;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
 .resetlift:disabled{opacity:.4}
 .resetlift:not(:disabled):active{filter:brightness(1.15)}
 .resetlift.undoset{color:var(--accent)}
-/* per-set log — one compact line per set at the 44px tap-target floor; the
-   log hugs its rows instead of stretching to fill the screen */
-.setlog{flex:0 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
-.setrow{flex:0 0 auto;height:44px;display:grid;grid-template-columns:32px 1fr auto 22px;align-items:center;gap:10px;padding:0 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+/* per-set log — the log fills its region and the rows grow with it, so the
+   void below the last set row is gone by construction (min 44px tap target) */
+.setlog{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.setrow{flex:1 1 auto;min-height:44px;display:grid;grid-template-columns:32px 1fr auto 22px;align-items:center;gap:10px;padding:0 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-variant-numeric:tabular-nums}
 .setrow .sn{font-weight:800;font-size:13px;color:var(--faint);text-align:center}
 .setrow .sr{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .setrow .srir{font-size:12px;color:var(--muted);white-space:nowrap}
@@ -136,7 +134,7 @@ h1{
 .setrow.now{border-color:var(--accent);background:var(--accent-soft)}
 
 /* adjust cluster — always visible on the lift view, no hidden toggle */
-.adjust{flex:none;margin-top:auto;padding-top:14px}
+.adjust{flex:none;padding-top:14px}
 .steppers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ctl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px;display:flex;align-items:center;justify-content:space-between;gap:2px}
 .stepbtn{
@@ -284,26 +282,23 @@ h1{
   .dayhead{padding-bottom:6px}
   .liftlist{gap:5px}
   h1{font-size:23px;margin:0 0 4px}
-  .pres .big{font-size:22px}
-  .pres .small{font-size:12.5px;margin-top:2px}
-  .cue{font-size:13.5px;line-height:1.4;margin-top:6px}
-  .tempo{margin-top:3px}
-  .sethead{margin-top:8px;margin-bottom:14px}
+  .guide{margin-top:6px;font-size:13.5px;line-height:1.4}
+  .sethead{margin-top:6px;margin-bottom:10px}
+  .setlog{gap:4px}
   .adjust{padding-top:8px}
   .stepbtn{width:44px;height:44px;margin:-2px 0;font-size:20px}
-  .rir{height:40px}
+  .rir{height:44px}
   .donebtn{height:52px;margin-top:8px;font-size:17px}
   .app.resting .timer .clock{font-size:72px}
   .app.resting .timer{gap:11px;padding:20px 16px}
   .app.resting.show-details .timer .clock{font-size:32px;min-width:74px}
   /* peek at short heights: trim the lift block so Set Done stays on-screen */
-  .app.resting.show-details .cue{-webkit-line-clamp:2}
+  .app.resting.show-details .guide{-webkit-line-clamp:1}
 }
 @media (min-height:820px){
   .dayhead{padding-bottom:12px}
   .liftlist{gap:8px}
   h1{font-size:32px}
-  .pres .big{font-size:29px}
   .donebtn{height:66px;font-size:19px}
 }
 

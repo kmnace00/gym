@@ -40,26 +40,32 @@ for (const size of sizes) {
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
 
-    test("the set log stays compact: one-line rows, no stretched section", async ({ page }) => {
+    test("the set log fills its region: rows grow, no void before Set Done", async ({ page }) => {
       await page.goto(url);
       await page.locator(".liftrow").first().click();
       await expect(page.locator("#setLog .setrow")).toHaveCount(3);
       const m = await page.evaluate(() => {
         const rows = [...document.querySelectorAll("#setLog .setrow")];
         const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
-        const log = document.getElementById("setLog").getBoundingClientRect().height;
+        const log = document.getElementById("setLog").getBoundingClientRect();
         const pillBottom = Math.max(
           ...[document.getElementById("undoSetBtn"), document.getElementById("resetLiftBtn")]
             .map((b) => b.getBoundingClientRect().bottom)
         );
         const rowTop = rows[0].getBoundingClientRect().top;
-        return { hs, log: Math.round(log), clear: +(rowTop - pillBottom).toFixed(1) };
+        const gap = document.querySelector(".adjust").getBoundingClientRect().top
+          - rows[rows.length - 1].getBoundingClientRect().bottom;
+        return {
+          hs, log: Math.round(log.height), gap: +gap.toFixed(1),
+          clear: +(rowTop - pillBottom).toFixed(1)
+        };
       });
       const tallest = Math.max(...m.hs);
       const shortest = Math.min(...m.hs);
       expect(shortest, "rows must keep the 44px tap target").toBeGreaterThanOrEqual(44);
-      expect(tallest, "a set row is one compact line, not a stretched card").toBeLessThanOrEqual(46);
-      expect(m.log, "the log hugs its rows").toBeLessThanOrEqual(3 * 46 + 2 * 8);
+      expect(m.gap, "the log absorbs the slack: no void above the adjust cluster").toBeLessThanOrEqual(8);
+      expect(m.log, "the log fills its region, rows grow with it").toBeGreaterThanOrEqual(m.hs.reduce((a, b) => a + b, 0) + 2 * 4);
+      expect(tallest, "a set row is still one line of content").toBeLessThanOrEqual(120);
       expect(m.clear, "Undo/Restart must clear the first set row (44px pills with -7px margins)").toBeGreaterThanOrEqual(4);
     });
 
