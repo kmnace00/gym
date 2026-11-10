@@ -320,6 +320,213 @@
     return null;
   }
 
+  /* ── corrupt-payload salvage (B4-02) ─────────────────────────────────────
+     When the bytes do not parse (or parse to something that is not a payload),
+     recover what still balances instead of discarding months of history. A
+     truncated tail is never guessed; every recovered piece goes through the
+     same sanitize path as an import, so hostile keys still die here.        */
+  function skipWs(s, i) {
+    while (i < s.length) {
+      var c = s[i];
+      if (c === " " || c === "\n" || c === "\r" || c === "\t") i++;
+      else break;
+    }
+    return i;
+  }
+  /** Index just past the JSON string starting at `i`, or -1 when unbalanced. */
+  function jsonStringEnd(s, i) {
+    var esc = false;
+    for (i = i + 1; i < s.length; i++) {
+      var c = s[i];
+      if (esc) { esc = false; continue; }
+      if (c === "\\") esc = true;
+      else if (c === '"') return i + 1;
+    }
+    return -1;
+  }
+  /** Index just past the balanced `{...}` / `[...]` value at `start`, or -1. */
+  function balancedEnd(s, start) {
+    var c0 = s[start], close = c0 === "{" ? "}" : (c0 === "[" ? "]" : null);
+    if (!close) return -1;
+    var depth = 0, inStr = false, esc = false, i, c;
+    for (i = start; i < s.length; i++) {
+      c = s[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === "\\") esc = true;
+        else if (c === '"') inStr = false;
+        continue;
+      }
+      if (c === '"') inStr = true;
+      else if (c === "{" || c === "[") depth++;
+      else if (c === "}" || c === "]") {
+        depth--;
+        if (depth === 0) return i + 1;
+        if (depth < 0) return -1;
+      }
+    }
+    return -1;
+  }
+  /** Index of the `,` / closing bracket that ends the primitive at `i`. */
+  function primitiveEnd(s, i) {
+    while (i < s.length) {
+      var c = s[i];
+      if (c === "," || c === "}" || c === "]") return i;
+      if (c === '"') {
+        var e = jsonStringEnd(s, i);
+        if (e < 0) return -1;
+        i = e; continue;
+      }
+      i++;
+    }
+    return -1;
+  }
+  /** Balanced object elements at the top level of the array at `start`.
+      A candidate cut short at a `,{` boundary is abandoned (one dropped piece)
+      and scanning restarts, so one mangled entry cannot swallow the rest. */
+  function arrayObjects(s, start) {
+    var pieces = [], dropped = 0, i = start + 1, depth = 0, cand = -1, prev = "[";
+    var inStr = false, esc = false, c;
+    while (i < s.length) {
+      c = s[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === "\\") esc = true;
+        else if (c === '"') inStr = false;
+        i++; continue;
+      }
+      if (c === '"') { inStr = true; prev = '"'; i++; continue; }
+      if (c === "{") {
+        if (depth === 0) { cand = i; depth = 1; }
+        else if (depth === 1 && prev === ",") { if (cand >= 0) dropped++; cand = i; depth = 1; }
+        else depth++;
+        prev = "{"; i++; continue;
+      }
+      if (c === "}") {
+        if (depth === 1 && cand >= 0) { pieces.push(s.slice(cand, i + 1)); cand = -1; depth = 0; }
+        else if (depth > 0) depth--;
+        prev = "}"; i++; continue;
+      }
+      if (c === "[") { depth++; prev = "["; i++; continue; }
+      if (c === "]") { if (depth === 0) break; depth--; prev = "]"; i++; continue; }
+      if (c === ",") { prev = ","; i++; continue; }
+      if (c !== " " && c !== "\n" && c !== "\r" && c !== "\t") prev = c;
+      i++;
+    }
+    if (cand >= 0) dropped++;          // truncated tail: dropped, never guessed
+    return { pieces: pieces, dropped: dropped };
+  }
+  /** Per-key object arrays from the liftHistory object at `start`. */
+  function historyGroups(s, start) {
+    var groups = [], dropped = 0, i = skipWs(s, start + 1), key, keyEnd, res, end;
+    while (i < s.length) {
+      if (s[i] === "}") break;
+      if (s[i] === ",") { i = skipWs(s, i + 1); continue; }
+      if (s[i] !== '"') { end = primitiveEnd(s, i); if (end < 0) break; i = skipWs(s, end); continue; }
+      keyEnd = jsonStringEnd(s, i);
+      if (keyEnd < 0) break;
+      try { key = JSON.parse(s.slice(i, keyEnd)); } catch (e) { key = null; }
+      i = skipWs(s, keyEnd);
+      if (s[i] !== ":") break;
+      i = skipWs(s, i + 1);
+      if (s[i] === "[") {
+        end = balancedEnd(s, i);
+        res = arrayObjects(s, i);
+        dropped += res.dropped;
+        if (typeof key === "string" && !unsafeKey(key)) groups.push({ key: key, pieces: res.pieces });
+        else dropped += res.pieces.length;
+        if (end < 0) break;
+        i = skipWs(s, end);
+      } else if (s[i] === "{" || s[i] === "[") {
+        end = balancedEnd(s, i);
+        if (end < 0) break;
+        i = skipWs(s, end);
+      } else {
+        end = primitiveEnd(s, i);
+        if (end < 0) break;
+        i = skipWs(s, end);
+      }
+    }
+    return { groups: groups, dropped: dropped };
+  }
+  /** Position of the value that follows `"key":` in `s`, or -1. */
+  function valueStart(s, key) {
+    var at = s.indexOf('"' + key + '"');
+    if (at < 0) return -1;
+    var i = skipWs(s, at + key.length + 2);
+    if (s[i] !== ":") return -1;
+    return skipWs(s, i + 1);
+  }
+  function safeParse(s) {
+    try { return JSON.parse(s); } catch (e) { return undefined; }
+  }
+  /** Case A: the bytes do not parse — recover balanced pieces from the text. */
+  function salvageText(raw) {
+    var out = { liftHistory: {}, sessionLog: [], recovered: 0, dropped: 0 };
+    var at = valueStart(raw, "liftHistory"), res, g, j, obj, arr;
+    if (at >= 0 && raw[at] === "{") {
+      res = historyGroups(raw, at);
+      out.dropped += res.dropped;
+      for (g = 0; g < res.groups.length; g++) {
+        arr = [];
+        for (j = 0; j < res.groups[g].pieces.length; j++) {
+          obj = safeParse(res.groups[g].pieces[j]);
+          if (!isObj(obj)) { out.dropped++; continue; }
+          obj = sanitizeEntry(obj);
+          if (!obj) { out.dropped++; continue; }
+          arr.push(obj); out.recovered++;
+        }
+        if (arr.length) out.liftHistory[res.groups[g].key] = arr;
+      }
+    }
+    at = valueStart(raw, "sessionLog");
+    if (at >= 0 && raw[at] === "[") {
+      res = arrayObjects(raw, at);
+      out.dropped += res.dropped;
+      for (j = 0; j < res.pieces.length; j++) {
+        obj = safeParse(res.pieces[j]);
+        if (!isObj(obj)) { out.dropped++; continue; }
+        out.sessionLog.push(sanitizeSession(obj)); out.recovered++;
+      }
+    }
+    return out;
+  }
+  /** Case B: the bytes parse but are not a usable payload — keep object fields. */
+  function salvagePayload(p) {
+    var out = { liftHistory: {}, sessionLog: [], recovered: 0, dropped: 0 }, k, i, arr, e;
+    if (isObj(p) && isObj(p.liftHistory)) {
+      stripUnsafeKeys(p.liftHistory);
+      for (k in p.liftHistory) if (own(p.liftHistory, k)) {
+        if (!Array.isArray(p.liftHistory[k])) continue;
+        arr = p.liftHistory[k];
+        for (i = 0; i < arr.length; i++) {
+          e = arr[i];
+          if (!isObj(e)) { out.dropped++; continue; }
+          e = sanitizeEntry(e);
+          if (!e) { out.dropped++; continue; }
+          if (!own(out.liftHistory, k)) out.liftHistory[k] = [];
+          out.liftHistory[k].push(e); out.recovered++;
+        }
+      }
+    }
+    if (isObj(p) && Array.isArray(p.sessionLog)) {
+      for (i = 0; i < p.sessionLog.length; i++) {
+        e = p.sessionLog[i];
+        if (!isObj(e)) { out.dropped++; continue; }
+        out.sessionLog.push(sanitizeSession(e)); out.recovered++;
+      }
+    }
+    return out;
+  }
+  /** Recover history/session entries from a corrupt payload. Pure: reads
+      neither localStorage nor the module state.                              */
+  function salvage(raw) {
+    if (typeof raw !== "string" || !raw) return { liftHistory: {}, sessionLog: [], recovered: 0, dropped: 0 };
+    var p, ok = true;
+    try { p = JSON.parse(raw); } catch (e) { ok = false; }
+    return ok ? salvagePayload(p) : salvageText(raw);
+  }
+
   /** Load from localStorage, migrating v1/v2; unparseable bytes are
       quarantined and an empty payload is returned.                            */
   function load() {
@@ -330,6 +537,15 @@
     if (!m) {
       /* never overwrite bytes we failed to parse: keep a copy for recovery */
       write(QUARANTINE, raw);
+      var s = salvage(raw);
+      if (s.recovered > 0) {
+        var saved = emptyPayload();
+        saved.liftHistory = s.liftHistory;
+        saved.sessionLog = s.sessionLog;
+        saved = normalize(saved);
+        loadError = { kind: "salvaged", recovered: s.recovered, dropped: s.dropped, key: QUARANTINE };
+        return saved;
+      }
       loadError = { kind: "corrupt", key: QUARANTINE };
       return emptyPayload();
     }
@@ -746,7 +962,7 @@
     SETS_MAX: SETS_MAX, DONE_MAX: DONE_MAX, ACC_SEC_MAX: ACC_SEC_MAX,
     QUARANTINE: QUARANTINE, SNAPSHOT: SNAPSHOT,
     emptyPayload: emptyPayload, emptySession: emptySession, migrate: migrate, load: load, save: save,
-    lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, futureRaw: futureRaw, snapshot: snapshot, readSnapshot: readSnapshot,
+    lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, futureRaw: futureRaw, salvage: salvage, snapshot: snapshot, readSnapshot: readSnapshot,
     exportPayload: exportPayload, importRaw: importRaw,
     pushHistory: pushHistory, upsertHistory: upsertHistory, hasTodayEntry: hasTodayEntry,
     removeTodayEntry: removeTodayEntry, lastEntry: lastEntry, series: series, popHistory: popHistory,

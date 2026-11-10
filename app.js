@@ -65,23 +65,34 @@
   var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null;
   function syncSaveBar() {
     if (!saveBar) return;
-    if (dataWarn === "corrupt") {
+    if (dataWarn === "salvaged") {
+      var le = Gym.lastLoadError() || {};
+      saveBar.hidden = false;
+      saveBarText.textContent = "Some saved data was damaged — " + (le.recovered || 0) + " log entries recovered, " + (le.dropped || 0) + " couldn't be read. Nothing is saved yet: keep the recovered log or download the original.";
+      saveBarAction.hidden = false;
+      saveBarAction.textContent = "Keep recovered log";
+      saveBarDownload.hidden = false;
+    } else if (dataWarn === "corrupt") {
       saveBar.hidden = false;
       saveBarText.textContent = "Saved data couldn't be read — showing an empty log. Your original file is kept; download it before doing anything else.";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Download copy";
+      saveBarDownload.hidden = true;
     } else if (dataWarn === "future") {
       saveBar.hidden = false;
       saveBarText.textContent = "Saved data is from a newer version — showing an empty log; original copy kept";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Download copy";
+      saveBarDownload.hidden = true;
     } else if (saveFailed || dataWarn === "save") {
       saveBar.hidden = false;
       saveBarText.textContent = "Couldn't save — storage may be full";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Export";
+      saveBarDownload.hidden = true;
     } else {
       saveBar.hidden = true;
+      saveBarDownload.hidden = true;
     }
   }
   function persistNow() {
@@ -139,6 +150,7 @@
   var saveBar = document.getElementById("saveBar");
   var saveBarText = document.getElementById("saveBarText");
   var saveBarAction = document.getElementById("saveBarAction");
+  var saveBarDownload = document.getElementById("saveBarDownload");
   var weekStrip = document.getElementById("weekStrip");
   var summary = document.getElementById("summary");
   var editSet = -1, editBackup = null;
@@ -1451,7 +1463,13 @@
   /* corrupt payload → offer the quarantined bytes; newer-version payload →
      offer the preserved copy; failed save → export now */
   saveBarAction.onclick = function () {
-    if (dataWarn === "corrupt") {
+    if (dataWarn === "salvaged") {
+      /* the recovered payload lives in memory only — save it explicitly */
+      persistNow();
+      dataWarn = null;
+      syncSaveBar();
+      setMsg("Recovered log kept ✓");
+    } else if (dataWarn === "corrupt") {
       downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
     } else if (dataWarn === "future") {
       downloadText(Gym.futureRaw() || "", "gym-future-" + Gym.dateKey() + ".json", "application/json");
@@ -1459,12 +1477,15 @@
       openModal();
     }
   };
+  saveBarDownload.onclick = function () {
+    downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
+  };
 
   /* ── boot ──────────────────────────────────────────────────────────────── */
   initTheme();
   payload = Gym.reconcile(Gym.load(), DAYS);
   var loadErr = Gym.lastLoadError();
-  if (loadErr && (loadErr.kind === "corrupt" || loadErr.kind === "future")) dataWarn = loadErr.kind;
+  if (loadErr && (loadErr.kind === "corrupt" || loadErr.kind === "future" || loadErr.kind === "salvaged")) dataWarn = loadErr.kind;
   /* a session from an earlier date is banked; today starts fresh but keeps loads */
   Gym.rollSession(payload, Gym.todayDay());
   cur = payload.cur; idx = payload.idx;

@@ -459,6 +459,12 @@ h1{
   font-size:12px;line-height:1.25;
 }
 .savebar[hidden]{display:none}
+/* B4-02: "Keep recovered log" + "Download copy" need the full text on its
+   own row; the bar grows only inside its own flex:none slot.               */
+@media (max-width:430px){
+  .savebar{flex-wrap:wrap}
+  .savebar .bbtext{flex:1 0 100%}
+}
 
 /* ── v3: week strip on the day header ──────────────────────────────────── */
 .weekstrip{flex:none;display:flex;gap:6px;margin-top:6px}
