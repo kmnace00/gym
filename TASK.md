@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — Batch 4, B4-02 (Muse, Nov 9). Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). B4-01 is built (see Completed below).
+Status: BATCH 4 DONE — B4-01 and B4-02 built and gated (Nov 9, OpenCode); `QUEUE.md` is empty, so the loop is waiting for Muse. Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live).
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
