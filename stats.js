@@ -26,7 +26,9 @@
    * @returns {string[]}
    */
   function workoutDates(payload, volumes) {
-    var seen = {}, s = volumes || sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
+    /* B4-01: null prototype — the date keys come from imported history and the
+       session log, so a "__proto__" date must become a key, not a prototype write. */
+    var seen = Object.create(null), s = volumes || sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
     for (i = 0; i < s.length; i++) if (s[i].date) seen[s[i].date] = 1;
     for (i = 0; i < log.length; i++) if (log[i] && log[i].date) seen[log[i].date] = 1;
     return Object.keys(seen).sort();
@@ -282,7 +284,7 @@
   function trainingDays(payload, weeks, nowKey) {
     var today = parseKey(nowKey);
     if (!today) return [];
-    var have = {}, s = sessionVolumes(payload), i;
+    var have = Object.create(null), s = sessionVolumes(payload), i;
     for (i = 0; i < s.length; i++) if (s[i].date) have[s[i].date] = 1;
     var fri0 = mostRecentFriday(today), out = [], w;
     for (w = (weeks || 8) - 1; w >= 0; w--) {

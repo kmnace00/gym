@@ -251,6 +251,23 @@ test("workoutDates unions history dates with the session log", () => {
   assert.deepEqual(S.workoutDates({ sessionLog: [null] }), []);
 });
 
+test("workoutDates / trainingDays are null-prototype maps — a __proto__ date counts, it does not touch Object.prototype", () => {
+  const p = {
+    liftHistory: {
+      "fri:0": [{ date: "2026-11-06", load: 50, reps: 6, rir: 2, setsDone: 3 }],
+      "sat:0": [{ date: "__proto__", load: 50, reps: 6, rir: 2, setsDone: 3 }]
+    },
+    sessionLog: [{ id: "s1", date: "__proto__", day: "sun", durationSec: 600, status: "complete", lifts: {} }]
+  };
+  const dates = S.workoutDates(p);
+  assert.ok(dates.includes("__proto__"), "the hostile date is a key of the map, not a prototype write");
+  assert.equal(dates.length, 2, "no double-counting, no lost day");
+  const weeks = S.trainingDays(p, 8, "2026-11-09");
+  assert.equal(weeks.filter((w) => w.fri || w.sat || w.sun).length, 1, "the real training day still counts");
+  assert.equal(Object.getPrototypeOf(Object.prototype), null, "Object.prototype is untouched");
+  assert.equal(Object.prototype.evil, undefined);
+});
+
 test("topMovers forwards bodyweight options to the metric", () => {
   const i = P.DAYS.fri.ex.findIndex((e) => e.bw);
   const key = "fri:" + i;
