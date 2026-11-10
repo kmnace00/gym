@@ -50,13 +50,14 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       expect(m.done, "Set Done stays >=44px").toBeGreaterThanOrEqual(44);
       expect(m.scrollH, "one screen, no scroll").toBeLessThanOrEqual(m.innerH + 1);
 
-      // peek mode: the timer strip must not push anything off screen
+      // peek mode (Set Done -> rest strip -> show workout): nothing overflows
+      await page.locator("#doneBtn").click();
       await page.locator("#detailsBtn").click();
       await expect(page.locator("#doneBtn")).toBeVisible();
       const peek = await page.evaluate(() => ({
         scrollH: document.documentElement.scrollHeight,
         innerH: window.innerHeight,
-        guideClamp: getComputedStyle(document.querySelector(".guide")).webkitLineClamp
+        guide: document.querySelector(".guide").getBoundingClientRect().height
       }));
       expect(peek.scrollH, "peek mode must not overflow").toBeLessThanOrEqual(peek.innerH + 1);
 

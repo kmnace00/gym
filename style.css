@@ -282,8 +282,9 @@ h1{
   .dayhead{padding-bottom:6px}
   .liftlist{gap:5px}
   h1{font-size:23px;margin:0 0 4px}
-  .guide{margin-top:6px;font-size:13.5px;line-height:1.4}
-  .sethead{margin-top:6px;margin-bottom:10px}
+  .guide{margin-top:4px;font-size:13.5px;line-height:1.4}
+  .cue{font-size:13.5px;line-height:1.4}
+  .sethead{margin-top:4px;margin-bottom:8px}
   .setlog{gap:4px}
   .adjust{padding-top:8px}
   .stepbtn{width:44px;height:44px;margin:-2px 0;font-size:20px}
