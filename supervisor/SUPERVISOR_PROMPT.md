@@ -20,9 +20,12 @@ Muse only through GitHub — there is no other channel.
    item boundary, git add -A, commit, git push origin main, and
    confirm the commit is on origin/main before starting the next
    item. Never force-push, never merge, never rebase.
-4. When the queue is empty, checkpoint in LOOP_STATE.md (status:
-   queue empty) and EXIT. Do not poll, do not wait, do not set any
-   watch or schedule — the supervisor wakes the next run.
+4. If the queue is already empty when the run starts and nothing was
+   built this run, EXIT without committing anything — no LOOP_STATE.md
+   checkpoint, no gate re-run record. A checkpoint is written only when
+   the run built at least one item or actually changed state. Do not
+   poll, do not wait, do not set any watch or schedule — the supervisor
+   wakes the next run.
 5. Stop and report in LOOP_STATE.md (do not move on) if:
    verification fails; a push is rejected or origin moved while
    you have local edits; any commit author is not Khang or Muse;

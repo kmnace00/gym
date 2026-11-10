@@ -159,6 +159,20 @@ def remote_file(head, name):
     return r.stdout if r.returncode == 0 else ""
 
 
+def queue_is_empty(loop_state):
+    """True when the CURRENT status line says the queue is empty.
+
+    LOOP_STATE.md prepends checkpoints, so the first line starting with
+    "Status:" is the live status; later ones are history and must not be
+    scanned. A first Status: line that does not contain "queue empty"
+    (an in-progress batch, PAUSED, …) returns False.
+    """
+    for line in loop_state.splitlines():
+        if line.startswith("Status:"):
+            return "queue empty" in line
+    return False
+
+
 def main():
     os.makedirs(STATE_DIR, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
@@ -225,10 +239,12 @@ def main():
     loop_state = remote_file(remote_head, "LOOP_STATE.md")
     active = "Status: ACTIVE" in task
     paused = "Status: PAUSED" in loop_state
-    if not active or paused:
+    queue_empty = queue_is_empty(loop_state)
+    if not active or paused or queue_empty:
         if remote_head != watermark:
-            log("NO_WORK head=%s active=%s paused=%s"
-                % (remote_head[:7], active, paused))
+            log("NO_WORK head=%s reason=%s active=%s paused=%s queue_empty=%s"
+                % (remote_head[:7], "queue empty" if queue_empty else "not active",
+                   active, paused, queue_empty))
         state["last_seen_head"] = remote_head
         save_json(STATE_FILE, state)
         return 0
