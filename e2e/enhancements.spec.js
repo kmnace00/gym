@@ -185,6 +185,30 @@ test("a set that beats history shows a New PR hint", async ({ page }) => {
   await expect(page.locator("#hint")).toContainText("New PR");
 });
 
+test("an extra set lighter than today's PR does not announce a new PR (B5-08)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await seed(page, {
+    v: 2, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 0, load: 70, reps: 6, rir: 2, topHits: 0, lastRir: null } },
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+  });
+
+  await page.locator(".liftrow").first().click();
+  // three 70x6 sets complete the lift and set the real PR (70 > 50)
+  await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
+  // an extra set at 67.5: lighter than today's PR, heavier than the old session
+  await page.locator("#loadDown").click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#hint"), "67.5 must not beat the 70 PR logged minutes ago").not.toContainText("New PR");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
 test("full-screen rest hides the lift nav arrows", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
