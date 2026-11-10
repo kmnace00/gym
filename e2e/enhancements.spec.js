@@ -212,6 +212,35 @@ test("an extra set lighter than today's PR does not announce a new PR (B5-08)", 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
+test("arming a second destructive button restores the first one's label (B5-10)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await seed(page, {
+    v: 2, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+  });
+
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+  await page.locator("#clearAll").click();
+  await expect(page.locator("#clearAll")).toHaveText("Tap again to erase everything");
+
+  // both windows expire: neither label may stay stuck on the confirm text
+  await page.waitForTimeout(2700);
+  await expect(page.locator("#resetDay"), "Reset day's label must not stay armed").toHaveText("Reset day");
+  await expect(page.locator("#clearAll")).toHaveText("Clear all data");
+
+  // the two-tap confirm still works for the button armed last
+  await page.locator("#resetDay").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#modalMsg")).toContainText("Day reset");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
 test("full-screen rest hides the lift nav arrows", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
