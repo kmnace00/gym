@@ -44,7 +44,10 @@ test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async 
 
   await seed(page, {
     v: 2, cur: "fri", idx: 0, bodyweight: 75,
-    state: { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, topHits: 0, lastRir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } },
+    state: {
+      "fri:0": { done: 1, load: 60, reps: 6, rir: 2, topHits: 0, lastRir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] },
+      "sat:0": { done: 1, load: 90, reps: 5, rir: 2, topHits: 0, lastRir: 2, sets: [{ load: 90, reps: 5, rir: 2 }] }
+    },
     liftHistory: {}
   });
 
