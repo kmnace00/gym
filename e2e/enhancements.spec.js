@@ -55,11 +55,13 @@ test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async 
   await expect(page.locator("#loadVal")).toHaveText("62.5");
 
   // switch to Saturday mid-edit: Sat lift 1 keeps its OWN programmed values
+  await page.locator("#backBtn").click();
   await page.locator('.day[data-day="sat"]').click();
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal"), "Saturday's lift must not inherit Friday's edit").toHaveText("90");
 
   // back to Friday: the mid-edit change was rolled back to the pre-edit values
+  await page.locator("#backBtn").click();
   await page.locator('.day[data-day="fri"]').click();
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal")).toHaveText("60");
