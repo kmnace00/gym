@@ -37,6 +37,36 @@ test("overdue backup banner backs up on tap and dismisses on ✕ (B5-04)", async
   await expect(page.locator("#backupBar")).toBeHidden();
 });
 
+test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await seed(page, {
+    v: 2, cur: "fri", idx: 0, bodyweight: 75,
+    state: { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, topHits: 0, lastRir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } },
+    liftHistory: {}
+  });
+
+  // edit a logged Friday set: the working load moves 60 -> 62.5 mid-edit
+  await page.locator(".liftrow").first().click();
+  await page.locator("[data-set='0']").click();
+  await page.locator("#loadUp").click();
+  await expect(page.locator("#loadVal")).toHaveText("62.5");
+
+  // switch to Saturday mid-edit: Sat lift 1 keeps its OWN programmed values
+  await page.locator('.day[data-day="sat"]').click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#loadVal"), "Saturday's lift must not inherit Friday's edit").toHaveText("90");
+
+  // back to Friday: the mid-edit change was rolled back to the pre-edit values
+  await page.locator('.day[data-day="fri"]').click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#loadVal")).toHaveText("60");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
 test("tap the load value to type a precise number (and it persists)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
