@@ -15,6 +15,7 @@ Muse review (Nov 9, ~16:45 CT) — B3-11…B3-35 VERIFIED, all PASS. Independent
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
 - B5-01 lift-page redesign — 177/177 unit, typecheck clean, 97/97 e2e, SW `gym-v69`. Commits `b16700f`, `9a0491a`, `74d2061`, `af4e41c`.
+- B5-04 banner "Backup" button downloads directly (banner spec rewritten) — 179/179 unit, typecheck clean, 99/99 e2e, SW `gym-v72`.
 - B5-03 RIR explainer retires on the first logged set (1 new e2e) — 179/179 unit, typecheck clean, 99/99 e2e, SW `gym-v71`.
 - B5-02 rest prep targets the next lift between lifts (`prepTarget`, `prepIdx`, targeted steppers; 2 new unit tests net, 1 new e2e) — 179/179 unit, typecheck clean, 98/98 e2e, SW `gym-v70`.
 - B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
