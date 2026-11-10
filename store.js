@@ -240,7 +240,10 @@
     }
     if (Array.isArray(p.sessionLog)) {
       for (i = 0; i < p.sessionLog.length; i++) {
-        if (!isObj(p.sessionLog[i])) p.sessionLog[i] = null;
+        /* a finished log entry with no real date is dropped, not re-dated to
+           today: a fabricated date would count a workout the user never did
+           (B5-16). Only the active session keeps the today-default.          */
+        if (!isObj(p.sessionLog[i]) || !validDate(p.sessionLog[i].date)) p.sessionLog[i] = null;
         else sanitizeSession(p.sessionLog[i]);
       }
       p.sessionLog = p.sessionLog.filter(function (s) { return s !== null; });
@@ -500,7 +503,7 @@
       out.dropped += res.dropped;
       for (j = 0; j < res.pieces.length; j++) {
         obj = safeParse(res.pieces[j]);
-        if (!isObj(obj)) { out.dropped++; continue; }
+        if (!isObj(obj) || !validDate(obj.date)) { out.dropped++; continue; }
         out.sessionLog.push(sanitizeSession(obj)); out.recovered++;
       }
     }
@@ -527,7 +530,7 @@
     if (isObj(p) && Array.isArray(p.sessionLog)) {
       for (i = 0; i < p.sessionLog.length; i++) {
         e = p.sessionLog[i];
-        if (!isObj(e)) { out.dropped++; continue; }
+        if (!isObj(e) || !validDate(e.date)) { out.dropped++; continue; }
         out.sessionLog.push(sanitizeSession(e)); out.recovered++;
       }
     }

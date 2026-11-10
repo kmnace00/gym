@@ -1111,6 +1111,41 @@ test("in-range set values pass through the clamps unchanged", () => {
   assert.deepEqual(p.state["fri:0"].sets, [{ load: 122.5, reps: 6, rir: 2 }, { load: 0, reps: 1, rir: 0 }]);
 });
 
+/* B5-16 — a bad-dated sessionLog entry is dropped, not re-dated to today */
+test("migrate drops sessionLog entries with malformed dates and keeps valid ones", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4, cur: "fri", idx: 0, state: {},
+    sessionLog: [
+      { id: "ses_bad", date: "11/09/2026", day: "fri", status: "complete", lifts: {} },
+      { id: "ses_ok", date: "2026-11-07", day: "sat", status: "complete", lifts: {} }
+    ]
+  }));
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(p.sessionLog[0].id, "ses_ok");
+  assert.equal(p.sessionLog[0].date, "2026-11-07");
+});
+
+test("salvage also drops sessionLog entries whose raw date is invalid", () => {
+  const s = S.salvage(JSON.stringify({
+    liftHistory: {},
+    sessionLog: [
+      { id: "a", date: "2026-13-01", status: "complete" },
+      { id: "b", date: "2026-11-05", status: "complete" }
+    ]
+  }));
+  assert.equal(s.sessionLog.length, 1);
+  assert.equal(s.sessionLog[0].id, "b");
+  assert.equal(s.dropped, 1);
+});
+
+test("the active session keeps the today-default when its date is invalid", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4, cur: "fri", idx: 0, state: {},
+    active: { date: "2026-02-29", day: "fri", status: "active" }
+  }));
+  assert.ok(S.validDate(p.active.date), "active date is a real date");
+});
+
 /* B5-09 — the 8 h ceiling applies on the live clock path, not just at load */
 test("sessionElapsedSec clamps an overnight-running session to ACC_SEC_MAX", () => {
   const p = S.emptyPayload();
