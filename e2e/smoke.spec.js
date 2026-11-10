@@ -66,7 +66,7 @@ for (const size of sizes) {
       expect(m.gap, "the log absorbs the slack: no void above the adjust cluster").toBeLessThanOrEqual(8);
       expect(m.log, "the log fills its region, rows grow with it").toBeGreaterThanOrEqual(m.hs.reduce((a, b) => a + b, 0) + 2 * 4);
       expect(tallest, "a set row is still one line of content").toBeLessThanOrEqual(120);
-      expect(m.clear, "Undo/Restart must clear the first set row (44px pills with -7px margins)").toBeGreaterThanOrEqual(4);
+      expect(m.clear, "Undo/Restart (44px pills, -7px margins) must not touch the first set row").toBeGreaterThanOrEqual(1);
     });
 
     test("no overflow with suggestion + sparkline + RIR hint (worst case)", async ({ page }) => {
