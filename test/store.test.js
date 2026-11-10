@@ -891,3 +891,114 @@ test("mergePayload adopts an incoming bodyweight only when the local one is the 
     assert.equal(S.mergePayload(S.emptyPayload(), { v: 4, bodyweight: bad }).bodyweight, 165, `${bad} is rejected`);
   }
 });
+
+/* ── B4-02: corrupt-payload salvage ──────────────────────────────────────── */
+
+test("salvage recovers complete history entries from JSON truncated mid-array", () => {
+  const raw = '{"v":4,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"reps":6,"rir":2,"setsDone":3},' +
+    '{"date":"2026-11-08","load":55';
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "salvaged");
+  assert.deepEqual(
+    { recovered: S.lastLoadError().recovered, dropped: S.lastLoadError().dropped },
+    { recovered: 1, dropped: 1 }
+  );
+  assert.equal(p.v, 4);
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.deepEqual(p.liftHistory["fri:0"][0], { date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 });
+  assert.equal(S.quarantineRaw(), raw, "quarantine bytes are the original string");
+  assert.equal(global.localStorage.getItem(S.STORE), raw, "boot copy is never overwritten");
+});
+
+test("salvage finds liftHistory after a garbage prefix", () => {
+  const raw = '\u0000\u0001not json at all {"v":4,"liftHistory":{"fri:0":[{"date":"2026-11-01","load":50,"reps":6}]}}';
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "salvaged");
+  assert.equal(S.lastLoadError().recovered, 1);
+  assert.equal(S.lastLoadError().dropped, 0);
+  assert.equal(p.liftHistory["fri:0"][0].load, 50);
+  assert.equal(S.quarantineRaw(), raw);
+});
+
+test("salvage drops one corrupt entry and keeps the good entries around it", () => {
+  const raw = '{"v":4,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-05","load":50,"reps":6},' +
+    '{"date":"2026-11-06","load":50,' +
+    '{"date":"2026-11-07","load":60,"reps":6}]}}';
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "salvaged");
+  assert.deepEqual(
+    { recovered: S.lastLoadError().recovered, dropped: S.lastLoadError().dropped },
+    { recovered: 2, dropped: 1 }
+  );
+  assert.deepEqual(p.liftHistory["fri:0"].map((e) => e.date), ["2026-11-05", "2026-11-07"]);
+});
+
+test("salvage Case B: an unknown-version object keeps its usable history", () => {
+  const raw = JSON.stringify({
+    v: "x",
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { date: "not-a-date", load: 60 }
+      ]
+    },
+    sessionLog: [{ id: "ses_old", date: "2026-11-01", day: "fri", status: "complete" }]
+  });
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "salvaged");
+  assert.deepEqual(
+    { recovered: S.lastLoadError().recovered, dropped: S.lastLoadError().dropped },
+    { recovered: 2, dropped: 1 }
+  );
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.equal(p.sessionLog.length, 1);
+  assert.equal(p.sessionLog[0].id, "ses_old");
+});
+
+test("salvage strips hostile keys exactly like an import", () => {
+  const raw = '{"v":"x","liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"__proto__":{"polluted":true},"constructor":{"polluted":true}}]}}';
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "salvaged");
+  assert.equal(S.lastLoadError().recovered, 1);
+  const entry = p.liftHistory["fri:0"][0];
+  assert.equal(entry.load, 50);
+  assert.equal(Object.prototype.hasOwnProperty.call(entry, "__proto__"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(entry, "constructor"), false);
+  assert.equal({}.polluted, undefined);
+  assert.equal(Object.prototype.polluted, undefined);
+});
+
+test("salvage with zero recovered entries keeps the plain corrupt behaviour", () => {
+  const raw = '{"some":"other","thing":[1,2,3]}';
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  assert.equal(S.lastLoadError().kind, "corrupt");
+  assert.deepEqual(p.liftHistory, {});
+  assert.deepEqual(p.sessionLog, []);
+  assert.equal(S.quarantineRaw(), raw);
+});
+
+test("a clean v4 payload takes the exact old path (no salvage)", () => {
+  const obj = {
+    v: 4, cur: "fri", idx: 0, state: { "fri:0": { done: 2, load: 50, reps: 6, rir: 2 } },
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 }] },
+    sessionLog: [], bodyweight: 165, lastBackup: null
+  };
+  const raw = JSON.stringify(obj);
+  global.localStorage.setItem(S.STORE, raw);
+  const p = S.load();
+  const m = S.migrate(raw);
+  assert.equal(S.lastLoadError(), null);
+  assert.ok(p.active.id && p.active.id !== m.active.id, "active session ids are freshly generated");
+  p.active.id = m.active.id;
+  assert.deepEqual(p, m);
+  assert.equal(global.localStorage.getItem(S.STORE + "-corrupt"), null, "nothing quarantined on a clean load");
+});

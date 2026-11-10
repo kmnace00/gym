@@ -246,3 +246,72 @@ test("a failed snapshot write is reported before a reset", async ({ page }) => {
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+/* B4-02: a damaged payload keeps its recoverable history in memory, is only
+   saved on "Keep recovered log", and never auto-overwrites the boot bytes. */
+const salvageSizes = [{ width: 390, height: 667 }, { width: 390, height: 844 }];
+
+for (const size of salvageSizes) {
+  test.describe(`corrupt-payload salvage viewport 390x${size.height}`, () => {
+    test.use({ viewport: size });
+
+    test("recovered history is shown, kept only on demand, and renders", async ({ page }) => {
+      const errors = [];
+      page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+      page.on("pageerror", (e) => errors.push(String(e)));
+
+      const noOverflow = async () => {
+        const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+        expect(ok, "page must not scroll").toBe(true);
+      };
+
+      await page.goto(url);
+      const seeded = await page.evaluate(() => {
+        const day = Gym.todayDay(), date = Gym.dateKey();
+        const good = {
+          date, load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3,
+          sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }]
+        };
+        const raw = '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+          '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80';
+        localStorage.setItem("gym-tool-v2", raw);
+        return { raw, day, date };
+      });
+      await page.reload();
+
+      await expect(page.locator("#saveBar")).toBeVisible();
+      await expect(page.locator("#saveBarText")).toContainText("recovered");
+      await expect(page.locator("#saveBarText")).toContainText("1 log entries recovered");
+      await expect(page.locator("#saveBarDownload")).toBeVisible();
+      await expect(page.locator("#saveBarAction")).toHaveText("Keep recovered log");
+      await noOverflow();
+
+      // the salvaged payload lives in memory: the boot bytes are untouched
+      expect(await page.evaluate(() => localStorage.getItem("gym-tool-v2"))).toBe(seeded.raw);
+      await page.waitForTimeout(400); // past the coalesced-save window
+      expect(await page.evaluate(() => localStorage.getItem("gym-tool-v2"))).toBe(seeded.raw);
+
+      await page.locator("#saveBarAction").click();
+      await expect(page.locator("#saveBar")).toBeHidden();
+      await expect(page.locator("#saveBarDownload")).toBeHidden();
+
+      const saved = await page.evaluate((day) => {
+        const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+        return { v: p.v, entries: (p.liftHistory[day + ":0"] || []).map((e) => e.date) };
+      }, seeded.day);
+      expect(saved.v).toBe(4);
+      expect(saved.entries).toEqual([seeded.date]);
+      await noOverflow();
+
+      // the recovered history feeds the day view: Plan today appears, and the
+      // lift shows the recovered entry as its last session
+      await expect(page.locator("#planBtn")).toBeVisible();
+      await page.locator(".liftrow").first().click();
+      await expect(page.locator("#suggestText")).toContainText("Last");
+      await expect(page.locator("#prevLine")).toBeVisible();
+      await noOverflow();
+
+      expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+    });
+  });
+}
