@@ -11,9 +11,12 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 ## Completed — B5-03: RIR explainer retires on the first logged set [T1]
 - Built Nov 9 (OpenCode). `doneBtn` now calls `hideRirHint()` when a set is banked (the `gym-rir-seen` flag was only set by the RIR buttons). 1 new e2e in `e2e/enhancements.spec.js`. SW `gym-v71`. 179/179 unit, typecheck clean, 99/99 e2e.
 
-## Active — B5-04: The backup banner's "Backup" button backs up [T1]
+## Completed — B5-04: The backup banner's "Backup" button backs up [T1]
+- Built Nov 9 (OpenCode). `backupBarSave` now runs `downloadBackup` directly (modal never opens; banner clears via `noteBackup`). Banner spec in `e2e/enhancements.spec.js` rewritten to the new contract. SW `gym-v72`. 179/179 unit, typecheck clean, 99/99 e2e.
 
-Spec in `QUEUE.md` (B5-04): the day-view banner's "Backup" button (`index.html:75`, wired at `app.js:1284`) currently opens the modal; make it run the existing backup download path directly plus `noteBackup()`. Menu export options untouched. Verify: e2e — seed an overdue backup → banner visible → click `#backupBarSave` → a download fires, the modal never opens, the banner clears; full gate green; SW bump.
+## Active — B5-05: Switching day tabs mid-edit writes the edit backup into the wrong lift [T1]
+
+Spec in `QUEUE.md` (B5-05): the day-tab handler (`app.js:1219-1227`) sets `cur`/`idx` before `resetEdit()`, so a mid-edit backup lands in the new day's lift. Move `resetEdit(); clearUndo();` above the `cur = …; idx = 0;` assignments, matching `openLift`. Verify: e2e — seed a Friday lift with a logged set, start editing it, tap Sat, open Sat lift 1: its load/reps/RIR are its own, and Friday's working values equal the pre-edit values (fails before); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
