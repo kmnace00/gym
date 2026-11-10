@@ -5,9 +5,12 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 ## Completed — B5-01: Lift-page redesign [T2, designed]
 - Built Nov 9 (OpenCode). Top stack de-stacked to three blocks (name / one meta line / cue+tempo guide), `.setlog` flexes and set rows grow to fill the dead band, `.rir` back to 44 px at ≤720 px, Set Done edit-state `aria-label` starts with "Done editing". New `e2e/liftgeom.spec.js` geometry contract (gap ≤8 px, stack ≥20% shorter, no-scroll at both viewports). Before/after measurements in `BUILD_LOG.md`. SW `gym-v69`. 177/177 unit, typecheck clean, 97/97 e2e. Commits `b16700f`…`af4e41c`.
 
-## Active — B5-02: Rest prep steppers target the next lift between lifts [T1]
+## Completed — B5-02: Rest prep steppers target the next lift between lifts [T1]
+- Built Nov 9 (OpenCode). `rest.js` `prepVisible` → pure `prepTarget(phase, editSet, done, sets, idx, nextIdx)`; `restctl.js` view carries `prepIdx`; `app.js` labels inter-lift prep "Next — <lift>, Set N of S" and the rest steppers edit the target lift's working record. 2 net new unit tests, 1 new e2e journey. SW `gym-v70`. 179/179 unit, typecheck clean, 98/98 e2e. Commits `c8a0969`…`077d6ac`.
 
-Spec in `QUEUE.md` (B5-02): when the current lift is complete and `nextLift` returns a next lift, the rest prep targets that lift — name "Next — <lift>, Set N", steppers edit `st(cur, nextIdx)`; same-lift prep unchanged. Pure decision in `rest.js` (`prepTarget`), target carried by `restctl.js` view, unit + e2e coverage. Full gate per `AGENTS.md`.
+## Active — B5-03: RIR explainer retires on the first logged set [T1]
+
+Spec in `QUEUE.md` (B5-03): `#rirHint` hides only via the RIR-button handler; a lifter who accepts the programmed RIR never taps it, so the "one-time" explainer persists for months. Also set the same flag (`gym-rir-seen`) in the Set Done path so the hint retires after the first logged set. Files: `app.js`, `e2e/*`. Verify: e2e — fresh profile → hint visible on lift 1 → log a set → hint hidden on the next lift and still hidden after reload; full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
@@ -25,7 +28,7 @@ Spec in `QUEUE.md` (B5-02): when the current lift is complete and `nextLift` ret
 
 ## WIP
 
-WIP: OpenCode editing rest.js, restctl.js, app.js, test/rest.test.js, test/restctl.test.js, e2e/rest.spec.js, version.js, sw.js since 20:45 CT (B5-02)
+WIP: OpenCode editing app.js, e2e (RIR hint spec), version.js, sw.js since 21:50 CT (B5-03)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
