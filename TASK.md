@@ -58,9 +58,17 @@ Done: `sanitizePayload`, `salvageText` and `salvagePayload` now drop sessionLog 
 
 Done: `role="img"` added to each `.wk` cell in `renderWeekStrip` (`app.js`); the existing week-strip e2e in `e2e/a11y.spec.js` now asserts the role on every cell. Mutation check red→green. SW `gym-v85` (`CACHE-HASH` 33318e098fbf4248). 194/194 unit, typecheck clean, 109/109 e2e.
 
-## Active — B5-18: see `QUEUE.md`
+## Completed — B5-18: Destructive-action text fails contrast in both themes [T1]
 
-Spec in `QUEUE.md` (B5-18): read the next entry when B5-17's commit is on origin.
+Done: per-theme `--danger` token in `style.css` (dark `#f87171`, light `#b91c1c`); `.modalbtn-danger` uses it. New contrast e2e in `e2e/a11y.spec.js` computes the WCAG ratio in both themes. Mutation check red→green. SW `gym-v86` (`CACHE-HASH` e465decc1d2c1833). 194/194 unit, typecheck clean, 110/110 e2e.
+
+## Completed — B5-19: The Export CSV journey has no automated test [T1, tests]
+
+Done: new e2e in `e2e/features.spec.js` seeds a two-set lift, taps Export CSV, captures the download event, asserts `gym-<date>.csv` and the header + per-set rows. Failure proof: renaming the filename locally turned the spec red, then reverted. No app change, no SW bump. 194/194 unit, typecheck clean, 111/111 e2e.
+
+## Active — B5-20: see `QUEUE.md`
+
+Spec in `QUEUE.md` (B5-20): the last Batch 5 item — read it once B5-19's commit is on origin.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.

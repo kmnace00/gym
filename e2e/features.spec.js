@@ -268,3 +268,28 @@ test("weights name pounds on the lift and rest screens", async ({ page }) => {
   await expect(page.locator("#restPrepLoad")).toContainText("lb");
   await page.locator("#skipRest").click();
 });
+
+/* B5-19 — the Export CSV journey: button → download event → filename → contents */
+test("Export CSV downloads gym-<date>.csv containing the logged sets", async ({ page }) => {
+  const history = {
+    "fri:0": [{
+      date: "2026-11-06", load: 70, reps: 6, rir: 2,
+      sets: [{ load: 70, reps: 6, rir: 2 }, { load: 72.5, reps: 6, rir: 1 }]
+    }]
+  };
+  await seed(page, { v: 4, cur: "fri", idx: 0, state: {}, liftHistory: history });
+
+  await page.locator("#menuBtn").click();
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#exportCsv").click();
+  const download = await downloadPromise;
+
+  const key = await page.evaluate(() => Gym.dateKey());
+  expect(download.suggestedFilename(), "the CSV is named after today").toBe("gym-" + key + ".csv");
+
+  const fs = require("fs");
+  const text = fs.readFileSync(await download.path(), "utf8");
+  expect(text.split("\n")[0], "the CSV has a header row").toBe("date,day,lift,set,load,reps,rir");
+  expect(text, "each logged set is a row").toContain("2026-11-06,fri,Smith squat,1,70,6,2");
+  expect(text, "multi-set entries expand per set").toContain("2026-11-06,fri,Smith squat,2,72.5,6,1");
+});
