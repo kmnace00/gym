@@ -1429,16 +1429,20 @@
   }
 
   /* two-tap confirm for destructive menu actions */
-  var armedFn = null, armedUntil = 0;
+  var armedFn = null, armedUntil = 0, armedBtn = null;
   function twoTap(btn, confirmText, fn) {
     if (armedFn === fn && Date.now() < armedUntil) {
-      armedFn = null; armedUntil = 0; fn(); btn.textContent = btn.getAttribute("data-label"); return;
+      armedFn = null; armedUntil = 0; armedBtn = null; fn(); btn.textContent = btn.getAttribute("data-label"); return;
     }
+    /* arming a different button restores the previous one's label now — its
+       own timer only fires while it is still the armed action (B5-10) */
+    if (armedBtn && armedBtn !== btn) armedBtn.textContent = armedBtn.getAttribute("data-label");
+    armedBtn = btn;
     armedFn = fn; armedUntil = Date.now() + 2500;
     if (!btn.getAttribute("data-label")) btn.setAttribute("data-label", btn.textContent);
     btn.textContent = confirmText;
     setTimeout(function () {
-      if (armedFn === fn) { armedFn = null; armedUntil = 0; btn.textContent = btn.getAttribute("data-label"); }
+      if (armedFn === fn) { armedFn = null; armedUntil = 0; armedBtn = null; btn.textContent = btn.getAttribute("data-label"); }
     }, 2600);
   }
   function doResetDay() {
