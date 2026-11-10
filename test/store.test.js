@@ -1061,3 +1061,27 @@ test("importMerge on a newer-version backup throws the newer-version error", () 
 test("a genuinely invalid file still throws the plain invalid error", () => {
   assert.throws(() => S.importRaw("garbage"), /Not a valid Gym backup/);
 });
+
+/* B5-09 — the 8 h ceiling applies on the live clock path, not just at load */
+test("sessionElapsedSec clamps an overnight-running session to ACC_SEC_MAX", () => {
+  const p = S.emptyPayload();
+  const t0 = 1000;
+  S.startSessionClock(p, t0);
+  assert.equal(S.sessionElapsedSec(p, t0 + 30 * 3600 * 1000), S.ACC_SEC_MAX);
+  assert.equal(S.sessionElapsedSec(p, t0 + 60 * 1000), 60); // short sessions unaffected
+});
+
+test("finalizeSession banks a clamped durationSec for a session left running overnight", () => {
+  const p = S.emptyPayload();
+  const t0 = 1000;
+  S.startSessionClock(p, t0);
+  p.state["fri:0"] = { done: 3, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: 2,
+    sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 1 }, { load: 50, reps: 6, rir: 2 }] };
+  const entry = S.finalizeSession(p, t0 + 30 * 3600 * 1000); // 30 h
+  assert.equal(entry.durationSec, S.ACC_SEC_MAX);
+  assert.ok(entry.durationSec <= S.ACC_SEC_MAX, "durationSec never exceeds the ceiling");
+  assert.equal(S.sessionElapsedSec(p, t0 + 30 * 3600 * 1000), S.ACC_SEC_MAX);
+  const short = S.finalizeSession((() => { const q = S.emptyPayload(); S.startSessionClock(q, t0);
+    q.state["fri:0"] = { done: 1, sets: [{ load: 50, reps: 6, rir: 2 }] }; return q; })(), t0 + 900000);
+  assert.equal(short.durationSec, 900); // 15 min stays 15 min
+});
