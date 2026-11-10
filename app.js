@@ -1372,7 +1372,7 @@
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
         setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
-      } catch (e) { setMsg("Restore failed — not a Gym backup"); }
+      } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Restore failed — not a Gym backup"); }
     };
     reader.readAsText(f);
     ev.target.value = "";
@@ -1392,7 +1392,7 @@
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
         setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
-      } catch (e) { setMsg("Import failed — not a Gym backup"); }
+      } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);
     ev.target.value = "";

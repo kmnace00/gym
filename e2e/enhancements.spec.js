@@ -100,6 +100,16 @@ test("restore and merge salvage a damaged backup instead of rejecting it (B5-06)
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
+test("restoring a newer-version backup says so (B5-07)", async ({ page }) => {
+  await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  const v99 = JSON.stringify({ v: 99, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [] });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#replaceFile", { name: "future.json", mimeType: "application/json", buffer: Buffer.from(v99) });
+  await expect(page.locator("#modalMsg"), "a future-version backup must name itself, not read as garbage").toContainText("newer version of the app — reload the app, then try again");
+  await page.setInputFiles("#importFile", { name: "future.json", mimeType: "application/json", buffer: Buffer.from(v99) });
+  await expect(page.locator("#modalMsg")).toContainText("newer version of the app");
+});
+
 test("tap the load value to type a precise number (and it persists)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

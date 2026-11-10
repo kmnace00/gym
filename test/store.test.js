@@ -1034,3 +1034,30 @@ test("importMerge salvages a truncated backup and merges the recovered entries",
   assert.equal(merged.liftHistory["fri:0"].length, 1, "recovered entries merge in");
   assert.equal(merged.liftHistory["sat:1"].length, 1, "base data is never discarded");
 });
+
+/* ── B5-07: newer-version backups are named as such ────────────────────────── */
+
+test("importRaw on a newer-version backup throws the newer-version error", () => {
+  const v99 = JSON.stringify({ v: 99, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [] });
+  try {
+    S.importRaw(v99);
+    assert.fail("expected a throw");
+  } catch (e) {
+    assert.match(e.message, /newer version/);
+    assert.ok(!/Not a valid Gym backup/.test(e.message), "distinct from the invalid-file error");
+  }
+});
+
+test("importMerge on a newer-version backup throws the newer-version error", () => {
+  const v99 = JSON.stringify({ v: 99, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [] });
+  try {
+    S.importMerge(S.emptyPayload(), v99, { added: 0, collisions: 0 });
+    assert.fail("expected a throw");
+  } catch (e) {
+    assert.match(e.message, /newer version/);
+  }
+});
+
+test("a genuinely invalid file still throws the plain invalid error", () => {
+  assert.throws(() => S.importRaw("garbage"), /Not a valid Gym backup/);
+});

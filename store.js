@@ -601,18 +601,17 @@
   function importRaw(raw) {
     checkImportSize(raw);
     var m = migrate(raw);
-    if (!m || m.__future) {
-      if (!m) {
-        var s = salvage(raw);
-        if (s.recovered > 0) {
-          var saved = emptyPayload();
-          saved.liftHistory = s.liftHistory;
-          saved.sessionLog = s.sessionLog;
-          saved = normalize(saved);
-          save(saved);
-          saved.salvaged = { recovered: s.recovered, dropped: s.dropped };
-          return saved;
-        }
+    if (m && m.__future) throw new Error("Backup is from a newer version of the app");
+    if (!m) {
+      var s = salvage(raw);
+      if (s.recovered > 0) {
+        var saved = emptyPayload();
+        saved.liftHistory = s.liftHistory;
+        saved.sessionLog = s.sessionLog;
+        saved = normalize(saved);
+        save(saved);
+        saved.salvaged = { recovered: s.recovered, dropped: s.dropped };
+        return saved;
       }
       throw new Error("Not a valid Gym backup");
     }
@@ -862,19 +861,18 @@
   function importMerge(base, raw, stats) {
     checkImportSize(raw);
     var m = migrate(raw);
-    if (!m || m.__future) {
-      if (!m) {
-        var s = salvage(raw);
-        if (s.recovered > 0) {
-          var salvaged = emptyPayload();
-          salvaged.liftHistory = s.liftHistory;
-          salvaged.sessionLog = s.sessionLog;
-          salvaged = normalize(salvaged);
-          var mergedSalv = mergePayload(base, salvaged, stats);
-          save(mergedSalv);
-          mergedSalv.salvaged = { recovered: s.recovered, dropped: s.dropped };
-          return mergedSalv;
-        }
+    if (m && m.__future) throw new Error("Backup is from a newer version of the app");
+    if (!m) {
+      var s = salvage(raw);
+      if (s.recovered > 0) {
+        var salvaged = emptyPayload();
+        salvaged.liftHistory = s.liftHistory;
+        salvaged.sessionLog = s.sessionLog;
+        salvaged = normalize(salvaged);
+        var mergedSalv = mergePayload(base, salvaged, stats);
+        save(mergedSalv);
+        mergedSalv.salvaged = { recovered: s.recovered, dropped: s.dropped };
+        return mergedSalv;
       }
       throw new Error("Not a valid Gym backup");
     }
