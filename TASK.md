@@ -34,7 +34,7 @@ Spec in `QUEUE.md` (B5-05): the day-tab handler (`app.js:1219-1227`) sets `cur`/
 
 ## WIP
 
-WIP: OpenCode editing app.js, e2e (backup banner spec), version.js, sw.js since 22:05 CT (B5-04)
+WIP: OpenCode editing app.js, e2e (day-tab edit spec), version.js, sw.js since 22:25 CT (B5-05)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
