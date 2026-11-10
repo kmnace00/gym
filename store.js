@@ -694,13 +694,15 @@
     a.runningSince = null;
     return a;
   }
-  /** Whole seconds the active session has accrued, running time included. */
+  /** Whole seconds the active session has accrued, running time included.
+      Clamped to ACC_SEC_MAX so an interrupted, never-closed session cannot
+      report a day-long workout (B5-09). */
   function sessionElapsedSec(p, now) {
     var a = p && p.active;
     if (!a) return 0;
     var total = a.accSec || 0;
     if (a.runningSince) total += Math.max(0, (now || Date.now()) - a.runningSince) / 1000;
-    return Math.max(0, Math.round(total));
+    return clampCount(Math.round(total), ACC_SEC_MAX);
   }
   /** Close the current session and append its snapshot to the log. */
   function finalizeSession(p, now) {
@@ -711,7 +713,8 @@
     for (i = 0; i < (p.sessionLog || []).length; i++) if (p.sessionLog[i].id === a.id) existing = p.sessionLog[i];
     if (!activeHasData(p) && !existing) { a.endedAt = ts; a.status = "complete"; return null; }
     var started = a.startedAt || ts;
-    var durationSec = Math.max(0, Math.round(a.accSec || 0));
+    /* the 8 h ceiling applies on the live path too, not just at load time */
+    var durationSec = clampCount(Math.round(a.accSec || 0), ACC_SEC_MAX);
     var lifts = {}, rec;
     for (k in (p.state || {})) if (Object.prototype.hasOwnProperty.call(p.state, k)) {
       rec = p.state[k];
