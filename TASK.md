@@ -8,9 +8,12 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 ## Completed — B5-02: Rest prep steppers target the next lift between lifts [T1]
 - Built Nov 9 (OpenCode). `rest.js` `prepVisible` → pure `prepTarget(phase, editSet, done, sets, idx, nextIdx)`; `restctl.js` view carries `prepIdx`; `app.js` labels inter-lift prep "Next — <lift>, Set N of S" and the rest steppers edit the target lift's working record. 2 net new unit tests, 1 new e2e journey. SW `gym-v70`. 179/179 unit, typecheck clean, 98/98 e2e. Commits `c8a0969`…`077d6ac`.
 
-## Active — B5-03: RIR explainer retires on the first logged set [T1]
+## Completed — B5-03: RIR explainer retires on the first logged set [T1]
+- Built Nov 9 (OpenCode). `doneBtn` now calls `hideRirHint()` when a set is banked (the `gym-rir-seen` flag was only set by the RIR buttons). 1 new e2e in `e2e/enhancements.spec.js`. SW `gym-v71`. 179/179 unit, typecheck clean, 99/99 e2e.
 
-Spec in `QUEUE.md` (B5-03): `#rirHint` hides only via the RIR-button handler; a lifter who accepts the programmed RIR never taps it, so the "one-time" explainer persists for months. Also set the same flag (`gym-rir-seen`) in the Set Done path so the hint retires after the first logged set. Files: `app.js`, `e2e/*`. Verify: e2e — fresh profile → hint visible on lift 1 → log a set → hint hidden on the next lift and still hidden after reload; full gate green; SW bump.
+## Active — B5-04: The backup banner's "Backup" button backs up [T1]
+
+Spec in `QUEUE.md` (B5-04): the day-view banner's "Backup" button (`index.html:75`, wired at `app.js:1284`) currently opens the modal; make it run the existing backup download path directly plus `noteBackup()`. Menu export options untouched. Verify: e2e — seed an overdue backup → banner visible → click `#backupBarSave` → a download fires, the modal never opens, the banner clears; full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
