@@ -461,3 +461,26 @@ test("the week strip names each day's state and the heat card states the count (
     .toContain(count + " of 24 training days in the last 8 weeks");
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
+
+test("destructive buttons meet 4.5:1 contrast in both themes (B5-18)", async ({ page }) => {
+  await page.goto(url);
+  const dangerRatio = () => page.evaluate(() => {
+    const nums = (s) => (s.match(/\d+/g) || []).map(Number);
+    const lum = (c) => {
+      const ch = c.slice(0, 3).map((v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+    };
+    const btn = document.getElementById("clearAll");
+    const fg = lum(nums(getComputedStyle(btn).color));
+    const bg = lum(nums(getComputedStyle(btn).backgroundColor));
+    return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+  });
+  const dark = await dangerRatio();
+  expect(dark, `dark-theme danger text contrast ${dark.toFixed(2)} must be >= 4.5`).toBeGreaterThanOrEqual(4.5);
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+  const light = await dangerRatio();
+  expect(light, `light-theme danger text contrast ${light.toFixed(2)} must be >= 4.5`).toBeGreaterThanOrEqual(4.5);
+});

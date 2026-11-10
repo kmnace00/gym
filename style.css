@@ -4,6 +4,7 @@
   --ink:#eef2f5; --muted:#9aa6b3; --faint:#7c8692;
   --accent:#35d0b8; --accent-ink:#04231e; --accent-soft:rgba(53,208,184,.15);
   --good:#4ade80; --warn-bg:#3a2c0c; --warn:#fbbf24;
+  --danger:#f87171;
   --radius:16px; --radius-sm:12px;
   --shadow-sm:0 1px 3px rgba(0,0,0,.5);
 }
@@ -12,6 +13,7 @@ html[data-theme="light"]{
   --ink:#0d1318; --muted:#5a6572; --faint:#636e7a;
   --accent:#0d9488; --accent-ink:#ffffff; --accent-soft:rgba(13,148,136,.12);
   --good:#16a34a; --warn-bg:#fef3c7; --warn:#92400e;
+  --danger:#b91c1c;
   --shadow-sm:0 1px 3px rgba(0,0,0,.1);
 }
 html{color-scheme:dark}
@@ -334,7 +336,7 @@ h1{
 
 /* ── menu extras + per-lift undo ───────────────────────────────────────── */
 .modalsep{height:1px;background:var(--line);margin:4px 0}
-.modalbtn-danger{color:#ef4444}
+.modalbtn-danger{color:var(--danger)}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){
