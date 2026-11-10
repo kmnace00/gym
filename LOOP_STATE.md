@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~22:00 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…`077d6ac`, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e); B5-03 built and gated (SW `gym-v71`, 179/179 unit, typecheck clean, 99/99 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-04.
+Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~22:20 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…`077d6ac`, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e); B5-03 built and gated (SW `gym-v71`, 179/179 unit, typecheck clean, 99/99 e2e); B5-04 built and gated (SW `gym-v72`, 179/179 unit, typecheck clean, 99/99 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-05.
 
 Muse's queue header (Nov 9 ~20:15 CT): 20 items (B5-01…B5-20) in `QUEUE.md`; B5-01 is the lift-page redesign [T2, designed in `DESIGN.md`], the rest are T1 workflow / data-safety / a11y fixes from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) re-scoped to Khang's Nov 9 direction (user workflows first). Base HEAD `0d4ed1a`, SW `gym-v68`, 177/177 unit, 93/93 e2e.
 
