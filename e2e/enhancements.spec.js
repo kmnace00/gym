@@ -201,7 +201,10 @@ test("an extra set lighter than today's PR does not announce a new PR (B5-08)", 
   await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
   await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
   await page.locator("#doneBtn").click(); await page.locator("#skipRest").click();
-  // an extra set at 67.5: lighter than today's PR, heavier than the old session
+  // back to lift 1 and add an extra set at 67.5: lighter than today's PR,
+  // heavier than the old session — the false "New PR" scenario
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").first().click();
   await page.locator("#loadDown").click();
   await page.locator("#doneBtn").click();
   await expect(page.locator("#hint"), "67.5 must not beat the 70 PR logged minutes ago").not.toContainText("New PR");
