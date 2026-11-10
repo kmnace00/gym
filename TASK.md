@@ -42,9 +42,13 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 
 Done: `.bbact{height:44px;margin:-8px 0}` in `style.css` (same pattern as `.planbtn`/`.applybtn`); new e2e in `e2e/a11y.spec.js` measures `#backupBarSave`, `#saveBarAction`, `#saveBarDownload` ≥44×44 at both viewports with no scroll. Mutation check red→green. SW `gym-v81` (`CACHE-HASH` 0bd584082ab107d7). 187/187 unit, typecheck clean, 109/109 e2e.
 
-## Active — B5-14: Impossible calendar dates pass `validDate` [T1, internal — silent data corruption]
+## Completed — B5-14: Impossible calendar dates pass `validDate` [T1, internal — silent data corruption]
 
-Spec in `QUEUE.md` (B5-14): `validDate` (`store.js:61`) is regex-only; `"2025-02-29"`-type dates survive `Gym.migrate` and `parseKey` silently rolls them to a real day. Do: make `validDate` round-trip — parse components, construct the date, require year/month/day to match. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate drops `"2025-02-29"`, `"2026-04-31"`, `"2026-13-01"`, keeps `"2024-02-29"` (fails before); full gate green; SW bump.
+Done: `validDate` in `store.js` now round-trips (parse y/m/d, construct `new Date`, require components to match). 2 new unit tests in `test/store.test.js`: probe matrix plus migrate dropping `"2025-02-29"`, `"2026-04-31"`, `"2026-13-01"` while keeping `"2024-02-29"`. Mutation check: regex-only version turns tests red. SW `gym-v82` (`CACHE-HASH` c802e73c3badbe6b). 189/189 unit, typecheck clean, 109/109 e2e.
+
+## Active — B5-15: Per-set load/reps/RIR are never clamped at the store boundary [T1, internal]
+
+Spec in `QUEUE.md` (B5-15): `sanitizeSets` (`store.js:129`) coerces set numbers but applies no bounds; a restored entry with `sets:[{load:-50, reps:1000000000, rir:99}]` passes through and poisons tonnage/PR baseline. Do: in `sanitizeSets`, clamp load to [0, 2000], reps to [0, 999], RIR to [0, 4] — the bounds the UI already enforces. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate the probe payload; the set reads `{load:0, reps:999, rir:4}` and `entryVolume ≤ 2000×999` (fails before); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
@@ -62,7 +66,7 @@ Spec in `QUEUE.md` (B5-14): `validDate` (`store.js:61`) is regex-only; `"2025-02
 
 ## WIP
 
-WIP: OpenCode editing store.js, test/store.test.js, version.js, sw.js since 23:55 CT (B5-09)
+WIP: OpenCode editing store.js, test/store.test.js, version.js, sw.js since 00:10 CT (B5-15)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
