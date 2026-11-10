@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: BATCH 5 ACTIVE — queued Nov 9 (Muse) from three audits + Khang's redesign direction; 20 items B5-01…B5-20 in `QUEUE.md`, B5-01 first. Base HEAD: `0d4ed1a` (SW `gym-v68`, 177/177 unit, 93/93 e2e, Pages live). Batch 4 VERIFIED PASS by Muse (record in `LOOP_STATE.md`).
+Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's redesign direction; 20 items B5-01…B5-20 in `QUEUE.md`, B5-01 first. Base HEAD: `0d4ed1a` (SW `gym-v68`, 177/177 unit, 93/93 e2e, Pages live). Batch 4 VERIFIED PASS by Muse (record in `LOOP_STATE.md`).
 
 ## Active — B5-01: Lift-page redesign [T2, designed]
 

@@ -572,8 +572,32 @@ Decisions:
    moves focus to the lift name.
 5. **Measure, don't eyeball.** Before changing CSS, record at
    390×844 the top-stack height (nav-row bottom → first set-row
-   top) and the setlog → adjust gap. After: top stack ≥20%
-   shorter, gap ≤8 px. Record both pairs in `BUILD_LOG.md`.
+   top) and the setlog → adjust gap, and record both pairs in
+   `BUILD_LOG.md`. Acceptance (from the prototype numbers below):
+   gap ≤8 px in the default state (suggestion / Prev / sparkline
+   bars hidden — when one is visible it occupies that space by
+   design), and the top stack ≥20% shorter than its recorded
+   baseline on a short-cue lift. The two levers in decision 1
+   alone land at −16% there, so this item also tightens the
+   `.sethead` vertical margins by ~10 px total to close the gap.
+   The meta line must show its full text on the longest
+   prescription in the program (no ellipsis) — assert it in e2e.
+
+**Prototype check (Muse, Nov 9, scratch clone at `d1e18e3`,
+nothing pushed):** the design's core bet is proven. Gap
+141.9 → 0 px at 390×844 (47.3 → 0 at 390×667); set rows grew
+44 → 103 px (844) / 65 px (667); `scrollHeight` == viewport at
+both sizes; zero console errors; the full lift-view e2e set
+stays green except the old-contract sizing spec this item
+updates. Measured stack: 217.8 → 182.6 px (−16.2%) before the
+`.sethead` trim in decision 5 — the meta line does −37 px of
+that; the guide block saves ~0 on 1-line cues and ~18–40 px on
+2–3-line cues. Two care notes: the peek-mode cue clamp
+(`.app.resting.show-details .cue`) goes inert once the cue sits
+inline in `.guide` (the guide's 2-line clamp supersedes it) —
+eyeball peek once at both viewports during the build; and the
+hidden bars named in decision 5 sit between the log and
+`.adjust`, so judge the gap in the default state.
 
 Non-goals: no `program.js` change, no schema change, no
 rest-screen layout change, no string changes (cue / tempo /
