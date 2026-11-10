@@ -395,3 +395,37 @@ test("the helper leaves tonnage and PR numbers exactly as the inlined rule did",
   const pr = S.personalRecords(payload, DAYS, P.progressMetric)[0];
   assert.equal(pr.metric, P.progressMetric(2.5, 6, { bw: true, bodyweight: 220 }));
 });
+
+/* B6-01: parseKey is internal, so the impossible-date guard is proven through
+   the public consumers that call it (weekStatus, trainingDays, weekOverWeek,
+   sessionsLast7). */
+test("parseKey rejects impossible dates instead of rolling them", () => {
+  for (const bad of ["2026-02-30", "2026-04-31", "2026-13-01", "0000-01-01"]) {
+    assert.deepEqual(S.weekStatus({}, bad), [], `${bad} must not parse into a week`);
+    assert.deepEqual(S.trainingDays({}, 2, bad), [], `${bad} must not parse into a week strip`);
+    assert.deepEqual(S.weekOverWeek({}, bad), { thisWeek: 0, lastWeek: 0, deltaPct: 0, hasPrev: false }, `${bad} must not parse into a window`);
+    assert.equal(S.sessionsLast7({}, bad), 0, `${bad} must not parse into a window`);
+  }
+  // a real leap date still round-trips: 2024-02-29 is a Thursday
+  const rows = S.weekStatus({}, "2024-02-29");
+  assert.equal(rows.length, 3);
+  assert.equal(rows[0].date, "2024-02-23");
+  assert.equal(rows[2].date, "2024-02-25");
+  // ordinary dates are unchanged by the guard
+  assert.deepEqual(S.weekStatus({}, "2026-11-09").map((r) => r.date), ["2026-11-06", "2026-11-07", "2026-11-08"]);
+});
+
+test("an impossible date in the payload is never attributed to Mar 2", () => {
+  const payload = { liftHistory: { "fri:0": [{ date: "2026-02-30", load: 100, reps: 5, rir: 2, setsDone: 3 }] } };
+  const protoBefore = Object.getOwnPropertyNames(Object.prototype).length;
+  const vols = S.sessionVolumes(payload);
+  assert.equal(vols.length, 1);
+  assert.equal(vols[0].date, "2026-02-30"); // kept verbatim, never rewritten
+  assert.equal(S.sessionsLast7(payload, "2026-02-30"), 0); // no window, no phantom session
+  assert.equal(S.trainingDays(payload, 2, "2026-02-30").length, 0);
+  const strip = S.trainingDays(payload, 2, "2026-03-02"); // the week Fri 27 – Sun 1
+  assert.equal(strip.length, 2);
+  assert.equal(strip[0].fri + strip[0].sat + strip[0].sun, 0);
+  assert.equal(S.weekStatus(payload, "2026-02-30").length, 0);
+  assert.equal(Object.getOwnPropertyNames(Object.prototype).length, protoBefore, "Object.prototype must stay unpolluted");
+});

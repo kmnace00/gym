@@ -214,9 +214,14 @@
   }
 
   /* ── time-window analytics (deterministic: the caller passes `nowKey`) ─── */
+  /* B6-01: the components must round-trip through Date, so an impossible
+     date like 2026-02-30 (which rolls to Mar 2) is rejected, not silently
+     moved to a neighbour — same rule as validDate in store.js (B5-14).     */
   function parseKey(s) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
-    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    if (!m) return null;
+    var y = +m[1], mo = +m[2], d = +m[3], dt = new Date(y, mo - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d ? dt : null;
   }
   /** Format a Date as the "YYYY-MM-DD" payload key. */
   function keyOf(dt) {

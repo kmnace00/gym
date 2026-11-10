@@ -32,6 +32,7 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B5-18 per-theme `--danger` token fixes contrast on "Restore (replace)" / "Clear all data" (1 new e2e) — 194/194 unit, typecheck clean, 110/110 e2e, SW `gym-v86`.
 - B5-19 Export CSV journey covered by e2e (download event, filename, contents) — 194/194 unit, typecheck clean, 111/111 e2e, SW unchanged (`gym-v86`).
 - B5-20 stepper holds use a light readout update path; full render only on release (1 new e2e) — 194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`.
+- B6-01 `Stats.parseKey` round-trips impossible dates (2 new unit tests) — 196/196 unit, typecheck clean, 112/112 e2e, SW `gym-v88` (`CACHE-HASH` 6d3b391c5f60a828).
 - B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
 - B4-02 corrupt-payload salvage (`store.js` `salvage()`, salvaged save-bar state + `#saveBarDownload`, 7 unit + 1 e2e) — 177/177 unit, typecheck clean, 93/93 e2e, SW `gym-v68`. Commits `e4d5550`, `e810dc9` (docs follow in the next auto-sync tick). Reviewer PASS; flagged that DESIGN.md's "state (re-normalized)" is not salvaged — QUEUE.md's B4-02 spec lists only liftHistory/sessionLog and `normalize()` re-derives state, so the implementation matches the queue item.
 
@@ -195,8 +196,8 @@ Muse.**
 
 ## Current / next
 
-- Current item: none — B3-21 done (160/160 unit, typecheck clean, 80/80 e2e, SW `gym-v57`).
-- Next in queue: B3-22–B3-35 in order (`QUEUE.md`). Do not invent items or skip B3-22.
+- Current item: none — B6-01 done (196/196 unit, typecheck clean, 112/112 e2e at 390×667/844, no overflow, no console errors, SW `gym-v88`, `program.js` untouched). Batch 6 has no remaining builder items: the rest of `QUEUE.md` Batch 6 is decision-gated (P9, `bodyweightSet`, P6, P8, P11/L6, P5, P7) and stays gated until Khang decides and Muse promotes. Queue empty for the loop — stop and wait for Muse.
+- Status: queue empty (OpenCode, Nov 10 ~11:45 CT). No WIP claimed beyond the B6-01 files, which are now pushed.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
