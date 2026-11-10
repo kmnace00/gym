@@ -313,5 +313,54 @@ for (const size of salvageSizes) {
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
+
+    test("a save failure after a salvaged boot surfaces the failure bar (B5-11)", async ({ page }) => {
+      const errors = [];
+      page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+      page.on("pageerror", (e) => errors.push(String(e)));
+
+      await page.goto(url);
+      await page.evaluate(() => {
+        const day = Gym.todayDay(), date = Gym.dateKey();
+        const good = { date, load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3,
+          sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }] };
+        localStorage.setItem("gym-tool-v2", '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+          '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
+      });
+      await page.reload();
+
+      await expect(page.locator("#saveBarText")).toContainText("1 log entries recovered");
+
+      /* the write now fails, exactly like a full storage quota */
+      await page.evaluate(() => {
+        const orig = Storage.prototype.setItem;
+        window.__origSet = orig;
+        Storage.prototype.setItem = function (k, v) {
+          if (String(k) === "gym-tool-v2") throw new Error("QuotaExceededError");
+          return orig.call(this, k, v);
+        };
+      });
+
+      await page.locator(".liftrow").first().click();
+      await page.locator("#doneBtn").click();          // commit() → save fails
+      await expect(page.locator("#saveBar"), "the failure bar must not be masked by the salvage notice").toBeVisible();
+      await expect(page.locator("#saveBarText")).toContainText("Couldn't save");
+      await expect(page.locator("#saveBarText")).toContainText("1 recovered entries are not saved yet");
+      await expect(page.locator("#saveBarAction")).toHaveText("Export");
+      await expect(page.locator("#saveBarDownload")).toBeVisible();
+      const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+      expect(ok, "page must not scroll").toBe(true);
+
+      /* the write recovers → the salvage bar (with its Keep action) comes back */
+      await page.evaluate(() => { Storage.prototype.setItem = window.__origSet; });
+      await page.locator("#skipRest").click();
+      await page.locator("#doneBtn").click();
+      await expect(page.locator("#saveBarAction")).toHaveText("Keep recovered log");
+      await expect(page.locator("#saveBarText")).toContainText("keep the recovered log");
+      await page.locator("#saveBarAction").click();
+      await expect(page.locator("#saveBar")).toBeHidden();
+
+      expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+    });
   });
 }
