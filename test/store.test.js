@@ -1002,3 +1002,35 @@ test("a clean v4 payload takes the exact old path (no salvage)", () => {
   assert.deepEqual(p, m);
   assert.equal(global.localStorage.getItem(S.STORE + "-corrupt"), null, "nothing quarantined on a clean load");
 });
+
+/* ── B5-06: import/restore salvage ─────────────────────────────────────────── */
+
+test("importRaw salvages a truncated backup instead of rejecting it", () => {
+  const raw = '{"v":4,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"reps":6,"rir":2,"setsDone":3},' +
+    '{"date":"2026-11-08","load":55';
+  const p = S.importRaw(raw);
+  assert.deepEqual(p.salvaged, { recovered: 1, dropped: 1 });
+  assert.equal(p.liftHistory["fri:0"].length, 1);
+  assert.deepEqual(p.liftHistory["fri:0"][0], { date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 });
+  const stored = JSON.parse(global.localStorage.getItem(S.STORE));
+  assert.equal(stored.liftHistory["fri:0"].length, 1, "the clean recovered payload is saved");
+  assert.equal(Object.prototype.polluted, undefined, "Object.prototype stays clean");
+});
+
+test("importRaw still throws on bytes with nothing to recover", () => {
+  assert.throws(() => S.importRaw("garbage"), /Not a valid Gym backup/);
+  assert.throws(() => S.importRaw('{"some":"other","thing":[1,2,3]}'), /Not a valid Gym backup/);
+});
+
+test("importMerge salvages a truncated backup and merges the recovered entries", () => {
+  const base = S.emptyPayload();
+  base.liftHistory = { "sat:1": [{ date: "2026-11-07", load: 40, reps: 8, rir: 1, setsDone: 2 }] };
+  const raw = '{"v":4,"liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"reps":6,"rir":2},' +
+    '{"date":"2026-11-08","load":55';
+  const merged = S.importMerge(base, raw, { added: 0, collisions: 0 });
+  assert.deepEqual(merged.salvaged, { recovered: 1, dropped: 1 });
+  assert.equal(merged.liftHistory["fri:0"].length, 1, "recovered entries merge in");
+  assert.equal(merged.liftHistory["sat:1"].length, 1, "base data is never discarded");
+});

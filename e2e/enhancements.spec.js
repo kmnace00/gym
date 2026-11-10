@@ -71,6 +71,35 @@ test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
+test("restore and merge salvage a damaged backup instead of rejecting it (B5-06)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  // Batch-4-style truncated JSON: one complete entry, a cut-off tail
+  const truncated = '{"v":4,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"reps":6,"rir":2,"setsDone":3},' +
+    '{"date":"2026-11-08","load":55';
+
+  await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  await page.locator("#menuBtn").click();
+
+  // Restore (replace): the quarantined "dead end" bytes now salvage instead of failing
+  await page.setInputFiles("#replaceFile", { name: "damaged.json", mimeType: "application/json", buffer: Buffer.from(truncated) });
+  await expect(page.locator("#modalMsg"), "a damaged backup must salvage, not fail").toContainText("Recovered 1 entries from a damaged backup");
+  await expect(page.locator("#modalMsg")).not.toContainText("Restore failed");
+
+  // Merge: the recovered entries fold into the current payload
+  await page.setInputFiles("#importFile", { name: "damaged.json", mimeType: "application/json", buffer: Buffer.from(truncated) });
+  await expect(page.locator("#modalMsg")).toContainText("Recovered 1 entries from a damaged backup — Merged:");
+
+  // Bytes with nothing to recover are still rejected
+  await page.setInputFiles("#replaceFile", { name: "junk.json", mimeType: "application/json", buffer: Buffer.from("garbage") });
+  await expect(page.locator("#modalMsg")).toContainText("Restore failed — not a Gym backup");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
 test("tap the load value to type a precise number (and it persists)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
