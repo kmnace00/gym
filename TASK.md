@@ -46,9 +46,13 @@ Done: `.bbact{height:44px;margin:-8px 0}` in `style.css` (same pattern as `.plan
 
 Done: `validDate` in `store.js` now round-trips (parse y/m/d, construct `new Date`, require components to match). 2 new unit tests in `test/store.test.js`: probe matrix plus migrate dropping `"2025-02-29"`, `"2026-04-31"`, `"2026-13-01"` while keeping `"2024-02-29"`. Mutation check: regex-only version turns tests red. SW `gym-v82` (`CACHE-HASH` c802e73c3badbe6b). 189/189 unit, typecheck clean, 109/109 e2e.
 
-## Active — B5-15: Per-set load/reps/RIR are never clamped at the store boundary [T1, internal]
+## Completed — B5-15: Per-set load/reps/RIR are never clamped at the store boundary [T1, internal]
 
-Spec in `QUEUE.md` (B5-15): `sanitizeSets` (`store.js:129`) coerces set numbers but applies no bounds; a restored entry with `sets:[{load:-50, reps:1000000000, rir:99}]` passes through and poisons tonnage/PR baseline. Do: in `sanitizeSets`, clamp load to [0, 2000], reps to [0, 999], RIR to [0, 4] — the bounds the UI already enforces. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate the probe payload; the set reads `{load:0, reps:999, rir:4}` and `entryVolume ≤ 2000×999` (fails before); full gate green; SW bump.
+Done: `sanitizeSets` now clamps load to [0, 2000], reps to [0, 999], RIR to [0, 4] via `SET_LOAD_MAX`/`SET_REPS_MAX`/`RIR_MAX` constants. 2 new unit tests (probe payload → `{load:0, reps:999, rir:4}`; in-range values unchanged). Mutation check red→green. SW `gym-v83` (`CACHE-HASH` 502193684b564d6f). 191/191 unit, typecheck clean, 109/109 e2e.
+
+## Active — B5-16: Session-log entries with a malformed date are silently re-dated to today [T1, internal]
+
+Spec in `QUEUE.md` (B5-16): `sanitizeSession` replaces any date failing `validDate` with `dateKey()` (today), including finished `sessionLog` entries and salvage paths — a bad-dated log entry gets a fabricated date and inflates heatmap/streaks. Do: in the sessionLog sanitization paths (and salvage), drop entries whose raw date fails `validDate` before calling `sanitizeSession`; keep the today-default only for `p.active`. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate a payload whose `sessionLog` holds one bad-date and one valid entry → only the valid entry remains (fails before: two entries, the bad one dated today); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
