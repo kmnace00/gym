@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~23:10 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…`077d6ac`, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e); B5-03 built and gated (SW `gym-v71`, 179/179 unit, typecheck clean, 99/99 e2e); B5-04 built and gated (SW `gym-v72`, 179/179 unit, typecheck clean, 99/99 e2e); B5-05 built and gated (SW `gym-v73`, `CACHE-HASH` d037f6992f4afac9, 179/179 unit, typecheck clean, 100/100 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-06.
+Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~23:25 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…`077d6ac`, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e); B5-03 built and gated (SW `gym-v71`, 179/179 unit, typecheck clean, 99/99 e2e); B5-04 built and gated (SW `gym-v72`, 179/179 unit, typecheck clean, 99/99 e2e); B5-05 built and gated (SW `gym-v73`, 179/179 unit, typecheck clean, 100/100 e2e); B5-06 built and gated (SW `gym-v74`, `CACHE-HASH` 5eb23a291555600b, 182/182 unit, typecheck clean, 101/101 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-07.
 
 Muse's queue header (Nov 9 ~20:15 CT): 20 items (B5-01…B5-20) in `QUEUE.md`; B5-01 is the lift-page redesign [T2, designed in `DESIGN.md`], the rest are T1 workflow / data-safety / a11y fixes from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) re-scoped to Khang's Nov 9 direction (user workflows first). Base HEAD `0d4ed1a`, SW `gym-v68`, 177/177 unit, 93/93 e2e.
 
@@ -17,6 +17,7 @@ Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm r
 - B5-01 lift-page redesign — 177/177 unit, typecheck clean, 97/97 e2e, SW `gym-v69`. Commits `b16700f`, `9a0491a`, `74d2061`, `af4e41c`.
 - B5-04 banner "Backup" button downloads directly (banner spec rewritten) — 179/179 unit, typecheck clean, 99/99 e2e, SW `gym-v72`.
 - B5-05 day-tab handler resets the edit before switching days (1 new e2e) — 179/179 unit, typecheck clean, 100/100 e2e, SW `gym-v73`.
+- B5-06 Restore/Merge salvage damaged backups (`salvage` fallback in `importRaw`/`importMerge`, `salvaged` marker, 3 unit + 1 e2e) — 182/182 unit, typecheck clean, 101/101 e2e, SW `gym-v74`.
 - B5-03 RIR explainer retires on the first logged set (1 new e2e) — 179/179 unit, typecheck clean, 99/99 e2e, SW `gym-v71`.
 - B5-02 rest prep targets the next lift between lifts (`prepTarget`, `prepIdx`, targeted steppers; 2 new unit tests net, 1 new e2e) — 179/179 unit, typecheck clean, 98/98 e2e, SW `gym-v70`.
 - B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
