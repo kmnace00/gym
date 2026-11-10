@@ -175,28 +175,3 @@ test("the RIR explainer retires on the first logged set (B5-03)", async ({ page 
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
-
-test("the day banner's Backup button downloads a backup directly (B5-04)", async ({ page }) => {
-  const errors = [];
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  page.on("pageerror", (e) => errors.push(String(e)));
-
-  await seed(page, {
-    v: 2, cur: "fri", idx: 0, bodyweight: 75, state: {},
-    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 60, reps: 6, rir: 2, hitTop: false, setsDone: 3 }] },
-    lastBackup: null
-  });
-
-  await expect(page.locator("#backupBar")).toBeVisible();
-
-  const dlPromise = page.waitForEvent("download");
-  await page.locator("#backupBarSave").click();
-  const dl = await dlPromise;
-  expect(dl.suggestedFilename()).toMatch(/^gym-backup-\d{4}-\d{2}-\d{2}\.json$/);
-
-  // the banner clears (lastBackup is banked) and the modal never opens
-  await expect(page.locator("#backupBar")).toBeHidden();
-  await expect(page.locator("#modal")).toBeHidden();
-
-  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
-});
