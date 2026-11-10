@@ -91,6 +91,38 @@ for (const size of sizes) {
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
+
+    test("backup and save-bar action buttons meet 44px (B5-13)", async ({ page }) => {
+      const errors = [];
+      page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+      page.on("pageerror", (e) => errors.push(String(e)));
+
+      // the backup banner's "Backup" button
+      await seed(page, {
+        v: 2, cur: "fri", idx: 0, state: {},
+        liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+      });
+      await expect(page.locator("#backupBarSave")).toBeVisible();
+      await boxAtLeast(page.locator("#backupBarSave"), 44, 44);
+      await noOverflow(page);
+
+      // the salvaged save bar: "Keep recovered log" + "Download copy"
+      await page.goto(url);
+      await page.evaluate(() => {
+        const day = Gym.todayDay(), date = Gym.dateKey();
+        const good = { date, load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3,
+          sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }] };
+        localStorage.setItem("gym-tool-v2", '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+          '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
+      });
+      await page.reload();
+      await expect(page.locator("#saveBar")).toBeVisible();
+      await boxAtLeast(page.locator("#saveBarAction"), 44, 44);
+      await boxAtLeast(page.locator("#saveBarDownload"), 44, 44);
+      await noOverflow(page);
+
+      expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+    });
   });
 }
 
