@@ -65,10 +65,21 @@
   var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null;
   function syncSaveBar() {
     if (!saveBar) return;
-    if (dataWarn === "salvaged") {
-      var le = Gym.lastLoadError() || {};
+    /* a live save failure outranks every load warning: the thing at risk right
+       now is the write, and the salvage counts are folded into its copy so the
+       recovered log is still named (B5-11) */
+    if (saveFailed || dataWarn === "save") {
+      var le = dataWarn === "salvaged" ? (Gym.lastLoadError() || {}) : null;
       saveBar.hidden = false;
-      saveBarText.textContent = "Some saved data was damaged — " + (le.recovered || 0) + " log entries recovered, " + (le.dropped || 0) + " couldn't be read. Nothing is saved yet: keep the recovered log or download the original.";
+      saveBarText.textContent = "Couldn't save — storage may be full" +
+        (le ? " — the " + (le.recovered || 0) + " recovered entries are not saved yet: export them now" : "");
+      saveBarAction.hidden = false;
+      saveBarAction.textContent = "Export";
+      saveBarDownload.hidden = !le;
+    } else if (dataWarn === "salvaged") {
+      var se = Gym.lastLoadError() || {};
+      saveBar.hidden = false;
+      saveBarText.textContent = "Some saved data was damaged — " + (se.recovered || 0) + " log entries recovered, " + (se.dropped || 0) + " couldn't be read. Nothing is saved yet: keep the recovered log or download the original.";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Keep recovered log";
       saveBarDownload.hidden = false;
@@ -83,12 +94,6 @@
       saveBarText.textContent = "Saved data is from a newer version — showing an empty log; original copy kept";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Download copy";
-      saveBarDownload.hidden = true;
-    } else if (saveFailed || dataWarn === "save") {
-      saveBar.hidden = false;
-      saveBarText.textContent = "Couldn't save — storage may be full";
-      saveBarAction.hidden = false;
-      saveBarAction.textContent = "Export";
       saveBarDownload.hidden = true;
     } else {
       saveBar.hidden = true;
@@ -1491,6 +1496,7 @@
   /* corrupt payload → offer the quarantined bytes; newer-version payload →
      offer the preserved copy; failed save → export now */
   saveBarAction.onclick = function () {
+    if (saveFailed) { openModal(); return; }   /* "Export" — the write is failing, not the load */
     if (dataWarn === "salvaged") {
       /* the recovered payload lives in memory only — save it explicitly */
       persistNow();
