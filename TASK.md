@@ -23,9 +23,12 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 ## Completed — B5-07: Restoring a newer-version backup says so [T1]
 - Built Nov 9 (OpenCode). `importRaw`/`importMerge` throw a distinct "Backup is from a newer version of the app" for `__future` payloads; `app.js` shows "That backup is from a newer version of the app — reload the app, then try again". 3 new unit tests, 1 new e2e. SW `gym-v75`. 185/185 unit, typecheck clean, 102/102 e2e.
 
-## Active — B5-08: Extra sets can announce a false "New PR" [T1]
+## Completed — B5-08: Extra sets can announce a false "New PR" [T1]
+- Built Nov 9 (OpenCode). `doneBtn`'s PR baseline now also maxes over the sets already banked today (`s.sets`), so an extra set lighter than today's PR set cannot announce a new PR; `priorEntries()` is untouched for suggestions. New e2e in `e2e/enhancements.spec.js` (three 70×6 sets complete the lift → extra set at 67.5×6 → no "New PR"). Mutation check: deleting the loop turns the spec red. SW `gym-v76` (`CACHE-HASH` 6199e88c4b5debae). 185/185 unit, typecheck clean, 103/103 e2e.
 
-Spec in `QUEUE.md` (B5-08): `doneBtn` computes `prevBest` from `priorEntries()`, which excludes the newest history entry once the lift is complete — so an extra set heavier than every *prior* session but lighter than today's PR set still announces "New PR". Do: in `doneBtn` only, compute the PR baseline over the un-skipped series (or max it with the best metric among today's banked sets); leave `priorEntries` untouched for suggestions. Files: `app.js`, `e2e/*`. Verify: e2e — complete a lift with a PR final set, add an extra set between the old-session best and today's PR → no "New PR" hint (fails before); full gate green; SW bump.
+## Active — B5-09: A session left running overnight finalizes with a ~24-hour duration [T1]
+
+Spec in `QUEUE.md` (B5-09): the 8-hour ceiling `ACC_SEC_MAX` (`store.js:30`) is enforced only at load time (`sanitizeSession`); the live path never clamps — `pauseSessionClock` and `finalizeSession` accumulate unbounded and `finalizeSession` writes `durationSec` straight into `sessionLog`. Do: clamp the accumulated total to `ACC_SEC_MAX` in `sessionElapsedSec` and in `finalizeSession`'s `durationSec`, matching the load-time rule. Files: `store.js`, `test/store.test.js`. Verify: unit — an active session with `runningSince` 30 h ago finalizes with `durationSec ≤ 28800` (fails before: ≈108000); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
@@ -43,7 +46,7 @@ Spec in `QUEUE.md` (B5-08): `doneBtn` computes `prevBest` from `priorEntries()`,
 
 ## WIP
 
-WIP: OpenCode editing store.js, app.js, test/store.test.js, e2e, version.js, sw.js since 23:25 CT (B5-07)
+WIP: OpenCode editing store.js, test/store.test.js, version.js, sw.js since 23:55 CT (B5-09)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
