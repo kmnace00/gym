@@ -50,9 +50,13 @@ Done: `validDate` in `store.js` now round-trips (parse y/m/d, construct `new Dat
 
 Done: `sanitizeSets` now clamps load to [0, 2000], reps to [0, 999], RIR to [0, 4] via `SET_LOAD_MAX`/`SET_REPS_MAX`/`RIR_MAX` constants. 2 new unit tests (probe payload → `{load:0, reps:999, rir:4}`; in-range values unchanged). Mutation check red→green. SW `gym-v83` (`CACHE-HASH` 502193684b564d6f). 191/191 unit, typecheck clean, 109/109 e2e.
 
-## Active — B5-16: Session-log entries with a malformed date are silently re-dated to today [T1, internal]
+## Completed — B5-16: Session-log entries with a malformed date are silently re-dated to today [T1, internal]
 
-Spec in `QUEUE.md` (B5-16): `sanitizeSession` replaces any date failing `validDate` with `dateKey()` (today), including finished `sessionLog` entries and salvage paths — a bad-dated log entry gets a fabricated date and inflates heatmap/streaks. Do: in the sessionLog sanitization paths (and salvage), drop entries whose raw date fails `validDate` before calling `sanitizeSession`; keep the today-default only for `p.active`. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate a payload whose `sessionLog` holds one bad-date and one valid entry → only the valid entry remains (fails before: two entries, the bad one dated today); full gate green; SW bump.
+Done: `sanitizePayload`, `salvageText` and `salvagePayload` now drop sessionLog entries whose `date` is present but fails `validDate` (dateless legacy entries keep the today-default; `p.active` keeps its default). 3 new unit tests. Mutation check red→green. SW `gym-v84` (`CACHE-HASH` 514730d868d1c60f). 194/194 unit, typecheck clean, 109/109 e2e.
+
+## Active — B5-17: Week-strip state never reaches a screen reader [T1]
+
+Spec in `QUEUE.md` (B5-17): `app.js:215` renders week cells as `<span class="wk" aria-label="Friday, done">` with no `role`, so the label is dropped and only "Fri/Sat/Sun" is read. Do: `role="img"` on each `.wk` (or an `.sr-only` strip summary — pick one, note it in `BUILD_LOG.md`). Files: `app.js`, `e2e/*`. Verify: e2e asserts `.wk` carries `role="img"` plus its state label (no role before); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.

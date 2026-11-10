@@ -217,7 +217,7 @@
       var lbl = DAY_LABEL[d.day] || d.day;
       var name = WK_DAY[d.day] || lbl;
       var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
-      return '<span class="wk ' + d.state + '" aria-label="' + esc(name + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
+      return '<span class="wk ' + d.state + '" role="img" aria-label="' + esc(name + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
         + '<b>' + esc(lbl) + '</b><i aria-hidden="true">' + mark + '</i></span>';
     }).join("");
   }

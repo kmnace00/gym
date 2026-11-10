@@ -448,6 +448,7 @@ test("the week strip names each day's state and the heat card states the count (
   expect(cells.length).toBe(3);
   const expected = ["Friday, done", "Saturday, in progress", "Sunday, missed"];
   for (let i = 0; i < cells.length; i++) {
+    expect(await cells[i].getAttribute("role"), `week cell ${i} must be a named image so its label is read`).toBe("img");
     expect(await cells[i].getAttribute("aria-label"), `week cell ${i} must name its state`).toBe(expected[i]);
   }
   expect(await page.locator(".wk i").first().getAttribute("aria-hidden"), "the symbol is decorative").toBe("true");
