@@ -481,9 +481,9 @@ cleanly. On failure it attempts salvage before returning empty:
   the existing `sanitize` path (`normalize` / `sanitizeEntry`), so
   hostile keys are still stripped exactly as on a clean import.
 - Case B (parses but is not a usable payload — non-object, unknown
-  version): salvage any top-level `liftHistory` / `sessionLog` /
-  `state` field that is itself an object, through the same sanitize
-  path.
+  version): salvage any top-level `liftHistory` / `sessionLog`
+  field that is itself an object, through the same sanitize
+  path. (`state` is not salvaged even here — see the next bullet.)
 - Only `liftHistory` and `sessionLog` are salvaged. Working-load
   `state` is not — it falls back to `getLift()` defaults, and
   suggestions derive from history anyway, so salvaged history
@@ -512,3 +512,82 @@ Invariants: quarantine bytes are never overwritten by salvage; a
 clean payload takes the exact old path (no behaviour change); hostile
 keys cannot survive salvage (same sanitize path as import); no
 program-data change. Rollback: one revert.
+
+
+## Batch 5 T2: lift-page redesign (Nov 9, Muse)
+
+Khang's direction (Nov 9): the lift page "can be improved,
+especially this page — empty space, lots of text together at the
+top"; Batch 5's focus is user workflows; he asked to wake up to a
+huge design change. This is that change. Scope: the lift view only.
+The rest screen's layout is untouched (B5-02 changes only what the
+rest prep steppers edit, not how the rest screen looks).
+
+Evidence (UX audit, Nov 9, at `0d4ed1a`): five text layers stack
+above the first set row — lift name; reps · load at display size
+(`app.js:412-414`); RIR · rest line; cue clamped to 3 lines; tempo
+line — and the set log hugs its rows (`style.css:128`
+`.setlog{flex:0 1 auto}`) while `.adjust{margin-top:auto}`
+(`style.css:139`) pins the controls to the bottom, leaving a
+~150–190 px void at 390×844. The capped spacers from Nov 8 lived in
+the pre-split single-file layout; the current split layout has no
+spacer elements — the void is purely this flex behaviour.
+
+Decisions:
+
+1. **Three blocks at the top, not five layers.**
+   (a) Lift name — display size, unchanged position, still the
+   focus target on open.
+   (b) ONE prescription meta line at secondary size: reps range ·
+   load · RIR · rest — the same data the two stacked lines carry
+   today. The meanings are NOT merged: this line stays the target,
+   the steppers stay the working values, set rows stay the
+   actuals. The fix is typographic — the reps · load half leaves
+   display size — not semantic.
+   (c) ONE guide block: cue and tempo in a single block — cue
+   text, then the tempo as a muted continuation; combined clamp
+   2 lines. **Tempo decision, explicit:** B3-26 deliberately made
+   the tempo line show on every lift; that decision stands —
+   tempo stays visible on every lift and simply stops costing a
+   full stacked line of its own. `#cueLine` and `#tempoLine` both
+   remain in the DOM, so B3-26's e2e keeps passing.
+2. **The set log absorbs the slack.** `.setlog` becomes
+   `flex:1 1 auto`; set rows grow to fill the log region
+   (min-height 44 px, content vertically centred); `.adjust`
+   loses `margin-top:auto`. The gap between the last set row and
+   the adjust cluster is the normal section gap at every viewport
+   height — the void is gone by construction, and set rows become
+   bigger tap targets mid-workout. Row state styling (next set /
+   done) unchanged.
+3. **Absorbed fixes (same files, same item).** `.rir` returns to
+   44 px in the `max-height:720px` block (`style.css:294` has
+   40 px; reclaim the 4 px from row spacing there). Set Done's
+   edit-state `aria-label` starts with its visible text
+   ("Done editing — …", `app.js:425-426`).
+4. **Preserved positions (muscle memory).** Set Done full-width
+   ~60 px at the bottom, always visible (lift, peek, edit states);
+   steppers directly above the RIR row; RIR row directly above
+   Set Done; set rows tap-to-edit in place; Undo / Restart pills
+   in the set-header row; header unchanged; opening a lift still
+   moves focus to the lift name.
+5. **Measure, don't eyeball.** Before changing CSS, record at
+   390×844 the top-stack height (nav-row bottom → first set-row
+   top) and the setlog → adjust gap. After: top stack ≥20%
+   shorter, gap ≤8 px. Record both pairs in `BUILD_LOG.md`.
+
+Non-goals: no `program.js` change, no schema change, no
+rest-screen layout change, no string changes (cue / tempo /
+prescription strings verbatim — only size and arrangement move),
+no new elements beyond a wrapper the guide block needs.
+
+Invariants: one screen, no scroll at 390×667 and 390×844; no
+overflow; no console errors; every interactive target ≥44 px at
+both viewports (including `.rir` at 667). The existing set-log
+sizing e2e asserts the old hug-the-rows contract — update its
+geometry assertions to the new contract (rows ≥44 px, log fills
+the region, gap ≤8 px); do not delete the spec. Full gate per
+`AGENTS.md`.
+
+Files: `style.css`, `app.js` (render / aria only), `index.html`
+(guide wrapper only if needed), `e2e/*` (new geometry spec +
+sizing-spec update), `sw.js` (bump). Rollback: one revert.

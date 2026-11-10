@@ -1,6 +1,10 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: BATCH 4 DONE — B4-01 and B4-02 built and gated (Nov 9, OpenCode); `QUEUE.md` is empty, so the loop is waiting for Muse. Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live).
+Status: BATCH 5 ACTIVE — queued Nov 9 (Muse) from three audits + Khang's redesign direction; 20 items B5-01…B5-20 in `QUEUE.md`, B5-01 first. Base HEAD: `0d4ed1a` (SW `gym-v68`, 177/177 unit, 93/93 e2e, Pages live). Batch 4 VERIFIED PASS by Muse (record in `LOOP_STATE.md`).
+
+## Active — B5-01: Lift-page redesign [T2, designed]
+
+Full spec in `QUEUE.md` (B5-01); the design contract is in `DESIGN.md` ("Batch 5 T2: lift-page redesign") — read both before building. De-stack the lift-page top (five text layers → three blocks), make the set log absorb the slack so the dead band is gone, `.rir` back to 44 px on short phones, Set Done edit-state `aria-label` starts with "Done editing". Measure before/after geometry and record it in `BUILD_LOG.md`. Full gate per `AGENTS.md`.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.

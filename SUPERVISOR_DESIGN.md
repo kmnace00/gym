@@ -343,7 +343,13 @@ New files, all on the Mac, none in the repo except this design and
   repo-sync's existing `~/.gym-sync-pause` flag around builder
   runs (§6)
 
-Load: `launchctl load` on the plist. Uninstall:
+Load: `launchctl load` on the plist. **Install note (Gate 1,
+Nov 9):** a plist copied through Muse's Mac file-write arrives
+with `com.apple.quarantine` set, and `launchctl load` fails with
+"Input/output error". Strip it first (`xattr -d
+com.apple.quarantine <plist>`), then load (or use
+`launchctl bootstrap gui/<uid>`). Verified working at Gate 1.
+Uninstall:
 `launchctl unload` + delete the plist — the loop is back to today's
 behaviour immediately; remove `~/.gym-supervisor/` at leisure.
 
