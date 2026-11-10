@@ -107,22 +107,28 @@
   }
 
   /**
-   * True when the next-set prep steppers belong on the rest screen: while a
-   * rest is running (not idle, not GO), not editing a logged set, and with
-   * sets still open on this lift.
+   * Which exercise the rest-screen prep steppers target: this lift while its
+   * sets are still open, otherwise the lift the day offers next (the B3-34
+   * nextLift contract) — so the steppers stay useful during the inter-lift
+   * rest. -1 hides the cluster: idle, at GO, or while a logged set is being
+   * edited.
    * @param {string} phase
    * @param {number} editSet
    * @param {number} done
    * @param {number} sets
-   * @returns {boolean}
+   * @param {number} idx
+   * @param {number} nextIdx
+   * @returns {number}
    */
-  function prepVisible(phase, editSet, done, sets) {
-    return phase !== "idle" && phase !== "go" && editSet < 0 && done < sets;
+  function prepTarget(phase, editSet, done, sets, idx, nextIdx) {
+    if (phase === "idle" || phase === "go" || editSet >= 0) return -1;
+    if (done < sets) return idx;
+    return (typeof nextIdx === "number" && nextIdx >= 0) ? nextIdx : -1;
   }
 
   return {
     canAdvance: canAdvance, nextLift: nextLift,
     armFinish: armFinish, finishArmed: finishArmed, advanceLabel: advanceLabel,
-    restMsg: restMsg, goLabel: goLabel, prepVisible: prepVisible
+    restMsg: restMsg, goLabel: goLabel, prepTarget: prepTarget
   };
 });
