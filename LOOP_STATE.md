@@ -197,7 +197,7 @@ Muse.**
 ## Current / next
 
 - Current item: none — B6-01 done (196/196 unit, typecheck clean, 112/112 e2e at 390×667/844, no overflow, no console errors, SW `gym-v88`, `program.js` untouched). Batch 6 has no remaining builder items: the rest of `QUEUE.md` Batch 6 is decision-gated (P9, `bodyweightSet`, P6, P8, P11/L6, P5, P7) and stays gated until Khang decides and Muse promotes. Queue empty for the loop — stop and wait for Muse.
-- Status: queue empty (OpenCode, Nov 10 ~11:45 CT). No WIP claimed beyond the B6-01 files, which are now pushed.
+- Status: queue empty (OpenCode, Nov 10 ~12:02 CT). No WIP claimed. This run found no builder item to start — B6-01 is already built and pushed (`6c0f084`, on `origin/main`) — so it only re-ran the gate at HEAD as a checkpoint: `npm run check` 196/196 unit + asset/SW guards OK, `npm run typecheck` clean (exit 0), `npm run e2e` 112/112 at 390×667 and 390×844, no overflow, no console errors; SW `gym-v88` (`CACHE-HASH` 6d3b391c5f60a828); `git diff 68f319c HEAD -- program.js` = 0 lines; working tree clean, HEAD == `origin/main`. Stopping here — Muse promotes the gated items.
 - After the batch, Muse reviews (ping "check the loop"). T3 proposals for Khang (Bulgarian rest, 2-for-2, deload week, partial finish, off-day decision, L6 alternates) are in `BACKLOG.md` P5–P11 — they do not block this queue.
 
 ## Last verified
@@ -369,3 +369,11 @@ Pass 4 build, same phone check:
   (last code commit before this docs pass; B3-10 auto-sync). Session stops
   for length; next is B3-11 (summary PR count uses the session date). No
   WIP claimed, no failing gate, program data untouched.
+- 2026-11-10 12:02 CT: CHECKPOINT (OpenCode, supervisor-spawned run). Sync-first
+  clean: `origin/main` == local HEAD `6c0f084`, nothing to pull, all recent authors
+  Khang/Muse. `QUEUE.md` has no unstarted builder item — B6-01 is the only Batch 6
+  build and it is already shipped; the remaining Batch 6 entries are decision-gated
+  (P9, `bodyweightSet`, P6, P8, P11/L6, P5, P7). Gate re-run at HEAD for the record:
+  196/196 unit, typecheck clean, 112/112 e2e at 390×667/844, no overflow, no console
+  errors. No files changed, no commit, no SW bump, `program.js` untouched. Run exits;
+  the supervisor wakes the next one.
