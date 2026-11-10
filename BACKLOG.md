@@ -1,5 +1,10 @@
 # BACKLOG — ranked improvement ideas
 
+## Batch 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap)
+
+One buildable T1 (B6-01, `Stats.parseKey` round-trip) plus the decision-gated items (P9 off-day, `bodyweightSet` flag, P6, P8, P11/L6, P5, P7) in dependency order — full text in `QUEUE.md`. Batch 5 (B5-01–B5-20) is COMPLETE + VERIFIED by Muse at `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, Pages `gym-v87`).
+
+
 Not instructions. An item becomes work only when Muse promotes it into
 `QUEUE.md` / `TASK.md`. Order is value ÷ risk, highest first.
 `[T1]` buildable now · `[T2]` needs a Muse design first ·
@@ -62,8 +67,8 @@ Status corrections Nov 9: L9 is BUILT (verified 145/145 unit, 48/48 e2e, SW `gym
 ### Off-day logging is misattributed (UX audit #5) [T2, blocked on Khang's decision]
 Logging on Mon–Thu banks sets under Friday's key with the wrong date (`store.js:49` maps Mon–Thu to `"fri"`); the sets count toward totals but are invisible in the week strip and heatmap. Needs a decision first — either block logging on off days with a one-line message, or attribute the session to the next training day. Design follows the decision; do not build either silently.
 
-### Corrupt-payload salvage [T2]
-B3-21 fixes only the bar copy. The deeper fix — salvage whatever history entries still parse instead of dropping the whole payload on a corrupt load — is new recovery logic and needs a design first.
+### Corrupt-payload salvage [T2] — BUILT (B4-02, Nov 9; extended to Restore/Merge by B5-06)
+Closed: `store.js` `salvage()` ships in B4-02 and B5-06 wires the same fallback into `importRaw`/`importMerge`. Kept here as history; not an open item.
 
 ### `bodyweightSet` flag (code audit #19) [T2, schema change]
 The merge bodyweight rule adopts the imported bodyweight only while the local one is the 165 default, so it cannot distinguish "never set" from "Khang genuinely weighs 165 lb". Fixing that needs a `bodyweightSet` flag, i.e. a schema change. Design in `DESIGN.md` first; Khang's call (see also P4).

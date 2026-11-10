@@ -783,3 +783,27 @@ Why: `grep -i csv e2e/*.spec.js` = zero hits, while the journey is wired at `app
 Why: hold-repeat fires every 70 ms (`app.js:897`) into `stepLoad`/`stepReps` (`app.js:874-886`), each calling full `render()` — set-log `innerHTML` rebuild plus suggestion and sparkline SVG redraw per step (~37 rebuilds in a 3-second hold). Load adjustment happens between nearly every set; this is where any jank is felt. Do: a light update path for steppers (the value readouts, the "now" row, the rest prep values), with the full render on release. **Re-check first:** B5-01 changed the lift view's render/geometry — if a light path already exists by the time this item starts, verify with the MutationObserver test below only and close the item with a note. Files: `app.js`, `e2e/*`. Verify: e2e MutationObserver counts `#setLog` replacements during a 1 s hold — ~14 before, ≤1 after; final value correct and persisted; full gate green; SW bump.
 
 End of Batch 5. When the queue is empty, stop and wait for Muse.
+
+---
+
+# BATCH 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap) — B6-01 IS QUEUED; the decision-gated items below stay gated
+
+Base HEAD: `68f319c` (SW `gym-v87`, 194/194 unit, typecheck clean, 112/112 e2e, Pages live; Batch 5 VERIFIED by Muse — record in `LOOP_STATE.md`). The T1 well is dry by design after five batches: this batch holds the one remaining buildable T1 Muse's Batch 5 review verified in source, plus the decision-gated items in dependency order. The gated items are NOT builder work until Khang decides and Muse promotes them — they are listed here in dependency order. This queue is live for B6-01 as of Khang's Nov 10 approval. Same batch rules as above (one item at a time, in order; full gate per item; program data read-only; stop on failure).
+
+Housekeeping Muse does in the approval push (not builder items): the Batch 5 VERIFIED record in `LOOP_STATE.md`; `BACKLOG.md` — corrupt-payload salvage marked BUILT (B4-02 + B5-06), removed from "Next (T2)".
+
+## B6-01 — `Stats.parseKey` rolls impossible dates [T1, low — defence in depth]
+
+Why: B5-14 made `validDate` round-trip at the store boundary, so no production path feeds Stats a bad date any more — but `stats.js` `parseKey` is still regex-only and `new Date(y, m-1, d)` silently rolls `"2026-02-30"` to Mar 2 for any hand-built payload (Stats is a pure module; B3-29 queued the same class for the same reason). Do: round-trip inside `parseKey` (construct, compare components, return null on mismatch) so every Stats consumer inherits the strictness. Files: `stats.js`, `test/stats.test.js`. Verify: unit — `weekStatus` / `sessionVolumes` given an entry dated `"2026-02-30"` do not attribute it to Mar 2 and `Object.prototype` stays clean; full gate green; SW bump (asset changed).
+
+## Decision-gated — in the order a decision unblocks work
+
+- **P9 — Off-day logging: block or attribute?** (Khang) → unblocks the off-day T2 design in `BACKLOG.md` ("Next"), then a build item. Until decided: nothing to build.
+- **`bodyweightSet` flag** (Khang's call — schema change, `BACKLOG.md` "Next" + P4) → Muse designs in `DESIGN.md`, then a build item.
+- **P6 — 2-for-2 progression** (Khang approves the rule) → T2 design (`suggestLoad`/`planFor` read the last two entries), then a build item.
+- **P8 — Finish a partial workout** (Khang approves the behaviour) → small build item (Finish visible with any logged data; summary titled partial).
+- **P11 / L6 — Exercise-swap alternates** (Khang approves/edits per lift) → T2 design (swap map + progression model), then build items.
+- **P5 — Bulgarian split squat rest 120 s → 150 s** (Khang — a `program.js` number) → one-line build item once approved.
+- **P7 — Planned deload week** (Khang — new feature) → T2 design, then build items. Not urgent per the record.
+
+End of prepared Batch 6. On Khang's approval Muse flips `TASK.md` to ACTIVE with B6-01 and the loop resumes; the gated items promote one by one as decisions land.
