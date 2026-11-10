@@ -1089,6 +1089,28 @@ test("migrate drops liftHistory entries dated on impossible calendar dates", () 
   assert.deepEqual(p.liftHistory["fri:0"], [{ date: "2024-02-29", load: 45, reps: 6, rir: 3 }]);
 });
 
+/* B5-15 — the store boundary clamps set values like the UI already does */
+test("migrate clamps out-of-range set load/reps/rir from an imported payload", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 1, sets: [{ load: -50, reps: 1000000000, rir: 99 }] } },
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2,
+      sets: [{ load: 2500, reps: 1000, rir: 5 }] }] }
+  }));
+  assert.deepEqual(p.state["fri:0"].sets, [{ load: 0, reps: 999, rir: 4 }]);
+  const set = p.liftHistory["fri:0"][0].sets[0];
+  assert.deepEqual(set, { load: 2000, reps: 999, rir: 4 });
+  assert.ok(set.load * set.reps <= 2000 * 999, "entryVolume can never exceed the caps");
+});
+
+test("in-range set values pass through the clamps unchanged", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 1, sets: [{ load: 122.5, reps: 6, rir: 2 }, { load: 0, reps: 1, rir: 0 }] } }
+  }));
+  assert.deepEqual(p.state["fri:0"].sets, [{ load: 122.5, reps: 6, rir: 2 }, { load: 0, reps: 1, rir: 0 }]);
+});
+
 /* B5-09 — the 8 h ceiling applies on the live clock path, not just at load */
 test("sessionElapsedSec clamps an overnight-running session to ACC_SEC_MAX", () => {
   const p = S.emptyPayload();

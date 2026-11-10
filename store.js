@@ -29,6 +29,9 @@
                                // so a huge imported count is hostile, not data
   var ACC_SEC_MAX = 8 * 3600;  // 8 h ceiling for one workout clock
   var BODYWEIGHT_MAX = 700;    // lb
+  var SET_LOAD_MAX = 2000;     // same bounds the UI clamps to (B3-18)
+  var SET_REPS_MAX = 999;
+  var RIR_MAX = 4;
 
   var loadError = null;
 
@@ -140,6 +143,11 @@
       if (set && typeof set === "object") {
         stripUnsafeKeys(set);
         coerceNum(set, "load"); coerceNum(set, "reps"); coerceNum(set, "rir");
+        /* clamp at the store boundary so a hand-edited or foreign backup can
+           never poison tonnage or the PR baseline (B5-15).                  */
+        set.load = clampCount(set.load, SET_LOAD_MAX);
+        set.reps = clampCount(set.reps, SET_REPS_MAX);
+        set.rir = clampCount(set.rir, RIR_MAX);
         if (Object.prototype.hasOwnProperty.call(set, "kind")) set.kind = String(set.kind);
       }
     }
