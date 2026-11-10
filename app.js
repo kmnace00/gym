@@ -1294,7 +1294,9 @@
     if (view === "day") renderDay(); // clear the overdue banner immediately
   }
   menuBtn.onclick = openModal;
-  document.getElementById("backupBarSave").onclick = openModal;
+  /* the banner button backs up now — the same download the menu offers —
+     instead of making the lifter take a two-trip detour through the modal (B5-04) */
+  document.getElementById("backupBarSave").onclick = downloadBackup;
   document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; renderDay(); };
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
