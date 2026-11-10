@@ -1,6 +1,8 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 5 QUEUED (Muse, Nov 9 ~20:15 CT) — 20 items (B5-01…B5-20) in `QUEUE.md`; B5-01 is the lift-page redesign [T2, designed in `DESIGN.md`], the rest are T1 workflow / data-safety / a11y fixes from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) re-scoped to Khang's Nov 9 direction (user workflows first). Base HEAD `0d4ed1a`, SW `gym-v68`, 177/177 unit, 93/93 e2e. The run starts at 22:00 CT tonight (off-peak) via Khang's paste; until then the loop is idle.
+Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~21:45 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-03.
+
+Muse's queue header (Nov 9 ~20:15 CT): 20 items (B5-01…B5-20) in `QUEUE.md`; B5-01 is the lift-page redesign [T2, designed in `DESIGN.md`], the rest are T1 workflow / data-safety / a11y fixes from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) re-scoped to Khang's Nov 9 direction (user workflows first). Base HEAD `0d4ed1a`, SW `gym-v68`, 177/177 unit, 93/93 e2e.
 
 Muse review (Nov 9, ~19:15 CT) — Batch 4 VERIFIED, PASS. Independent re-run from a fresh clone at HEAD `1267995`: 177/177 unit, typecheck clean, 93/93 e2e (Playwright's bundled chromium — the `channel: "chrome"` run stalls in Muse's VM, same as prior reviews), `program.js` diff 0 vs Batch 3 base `85d2cd4`, Pages live `gym-v68`, commit authors Khang/Muse only. Every builder number reproduced exactly. Findings: (1) the `sanitizeSession` null-guard concern is safe — no change; (3) the salvaged save bar can mask a later `saveFailed` warning — real but low impact, no data-loss path (the warning surfaces on the Keep tap; the original bytes stay quarantined) — queued as B5-11; (5) `DESIGN.md`'s salvage Case B bullet listed `state` as salvaged while the next bullet excludes it — the code follows `QUEUE.md` and the excluding bullet; the wording is fixed by Muse in the Batch 5 queue push.
 
@@ -12,6 +14,8 @@ Muse review (Nov 9, ~16:45 CT) — B3-11…B3-35 VERIFIED, all PASS. Independent
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
+- B5-01 lift-page redesign — 177/177 unit, typecheck clean, 97/97 e2e, SW `gym-v69`. Commits `b16700f`, `9a0491a`, `74d2061`, `af4e41c`.
+- B5-02 rest prep targets the next lift between lifts (`prepTarget`, `prepIdx`, targeted steppers; 2 new unit tests net, 1 new e2e) — 179/179 unit, typecheck clean, 98/98 e2e, SW `gym-v70`.
 - B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
 - B4-02 corrupt-payload salvage (`store.js` `salvage()`, salvaged save-bar state + `#saveBarDownload`, 7 unit + 1 e2e) — 177/177 unit, typecheck clean, 93/93 e2e, SW `gym-v68`. Commits `e4d5550`, `e810dc9` (docs follow in the next auto-sync tick). Reviewer PASS; flagged that DESIGN.md's "state (re-normalized)" is not salvaged — QUEUE.md's B4-02 spec lists only liftHistory/sessionLog and `normalize()` re-derives state, so the implementation matches the queue item.
 

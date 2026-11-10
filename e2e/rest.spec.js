@@ -161,5 +161,9 @@ test("rest prep targets the next lift between lifts (B5-02)", async ({ page }) =
   await expect(page.locator("#timerBar")).toHaveClass(/active/);
   await expect(page.locator("#restPrepName")).toHaveText("Set 2 of " + next.s);
 
+  // the longest prep label still fits the screen without scrolling
+  const fits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(fits).toBe(true);
+
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
