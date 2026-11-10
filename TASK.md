@@ -38,9 +38,13 @@ Status: ACTIVE — BATCH 5, queued Nov 9 (Muse) from three audits + Khang's rede
 ## Completed — B5-12: Dead "Undo last reset / restore" button shows in the menu [T1]
 - Built Nov 9 (OpenCode). `style.css` gains `.modalbtn[hidden]{display:none}` — `.modalbtn{display:flex}` was overriding the `[hidden]` default. New e2e in `e2e/enhancements.spec.js` (fresh profile → menu → `#restoreSnapshot` hidden with computed `display: none`; after Reset day it appears as "Undo Reset day (…)" and the tap restores). Mutation check: deleting the rule turns the spec red. SW `gym-v80` (`CACHE-HASH` cc6a2681cab181ed). 187/187 unit, typecheck clean, 107/107 e2e.
 
-## Active — B5-13: Save/backup bar action buttons are 28 px tall [T1]
+## Completed — B5-13: Save/backup bar action buttons are 28 px tall [T1]
 
-Spec in `QUEUE.md` (B5-13): `.bbact{height:28px}` (`style.css:416-419`) styles "Keep recovered log" / "Download copy" and the banner "Backup" button — the buttons tapped when data is at risk — while `e2e/a11y.spec.js` never measures `.bbact`. Do: `.bbact{height:44px;margin:-8px 0}` (the established `.planbtn`/`.applybtn` pattern, negative margins preserve the no-scroll fit). Files: `style.css`, `e2e/a11y.spec.js`. Verify: box-size assertions ≥44 px on all three buttons in their visible states at both viewports (28 px before); `scrollHeight` still equals the viewport with the save bar shown; full gate green; SW bump.
+Done: `.bbact{height:44px;margin:-8px 0}` in `style.css` (same pattern as `.planbtn`/`.applybtn`); new e2e in `e2e/a11y.spec.js` measures `#backupBarSave`, `#saveBarAction`, `#saveBarDownload` ≥44×44 at both viewports with no scroll. Mutation check red→green. SW `gym-v81` (`CACHE-HASH` 0bd584082ab107d7). 187/187 unit, typecheck clean, 109/109 e2e.
+
+## Active — B5-14: Impossible calendar dates pass `validDate` [T1, internal — silent data corruption]
+
+Spec in `QUEUE.md` (B5-14): `validDate` (`store.js:61`) is regex-only; `"2025-02-29"`-type dates survive `Gym.migrate` and `parseKey` silently rolls them to a real day. Do: make `validDate` round-trip — parse components, construct the date, require year/month/day to match. Files: `store.js`, `test/store.test.js`. Verify: unit — migrate drops `"2025-02-29"`, `"2026-04-31"`, `"2026-13-01"`, keeps `"2024-02-29"` (fails before); full gate green; SW bump.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
