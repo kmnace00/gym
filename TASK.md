@@ -22,7 +22,7 @@ Full spec in `QUEUE.md` (B5-01); the design contract is in `DESIGN.md` ("Batch 5
 
 ## WIP
 
-(none — B4-01 and B4-02 pushed; OpenCode holds no file claims)
+WIP: OpenCode editing style.css, app.js, index.html, e2e/smoke.spec.js, e2e (new geometry spec), version.js, sw.js since 20:20 CT (B5-01)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
