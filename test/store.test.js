@@ -1062,6 +1062,33 @@ test("a genuinely invalid file still throws the plain invalid error", () => {
   assert.throws(() => S.importRaw("garbage"), /Not a valid Gym backup/);
 });
 
+/* B5-14 — validDate round-trips: regex alone lets impossible dates through */
+test("validDate rejects impossible calendar dates and keeps real ones", () => {
+  assert.equal(S.validDate("2024-02-29"), true);   // real leap day
+  assert.equal(S.validDate("2025-02-29"), false);  // no leap year
+  assert.equal(S.validDate("2026-04-31"), false);  // April has 30 days
+  assert.equal(S.validDate("2026-13-01"), false);  // month 13
+  assert.equal(S.validDate("2026-00-15"), false);  // month 0
+  assert.equal(S.validDate("2026-01-00"), false);  // day 0
+  assert.equal(S.validDate("2026-11-09"), true);
+  assert.equal(S.validDate("2026-11-9"), false);   // still strict format
+});
+
+test("migrate drops liftHistory entries dated on impossible calendar dates", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 4, cur: "fri", idx: 0, state: {},
+    liftHistory: {
+      "fri:0": [
+        { date: "2025-02-29", load: 50, reps: 6, rir: 2 },
+        { date: "2026-04-31", load: 55, reps: 5, rir: 1 },
+        { date: "2026-13-01", load: 60, reps: 6, rir: 2 },
+        { date: "2024-02-29", load: 45, reps: 6, rir: 3 }
+      ]
+    }
+  }));
+  assert.deepEqual(p.liftHistory["fri:0"], [{ date: "2024-02-29", load: 45, reps: 6, rir: 3 }]);
+});
+
 /* B5-09 — the 8 h ceiling applies on the live clock path, not just at load */
 test("sessionElapsedSec clamps an overnight-running session to ACC_SEC_MAX", () => {
   const p = S.emptyPayload();

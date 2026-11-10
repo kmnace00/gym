@@ -57,8 +57,15 @@
   }
   /** True only for the three training days. */
   function validDay(d) { return d === "fri" || d === "sat" || d === "sun"; }
-  /** True for a strict "YYYY-MM-DD" string. */
-  function validDate(s) { return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s); }
+  /** True only for a strict "YYYY-MM-DD" string that is a real calendar
+      date: the components must round-trip through Date, so impossible dates
+      like 2025-02-29 or 2026-04-31 are rejected, not rolled to a neighbor.  */
+  function validDate(s) {
+    if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    var y = +s.slice(0, 4), m = +s.slice(5, 7), d = +s.slice(8, 10);
+    var dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  }
 
   /** A fresh, unclocked session for `day` on `date` (defaults to today). */
   function emptySession(day, date) {
