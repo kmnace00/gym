@@ -23,8 +23,8 @@
   /**
    * @typedef {{phase: string, secs: number, progress: number, label: string,
    *            msg: string, nextText: string, skipLabel: string,
-   *            showPrep: boolean, prepName: string, prepLoad: string,
-   *            prepReps: string, elapsedSec: number | null}} RestView
+   *            showPrep: boolean, prepIdx: number, prepName: string,
+   *            prepLoad: string, prepReps: string, elapsedSec: number | null}} RestView
    * @typedef {{type: string, [key: string]: any}} RestEffect
    * @typedef {{state: {phase: string, pending: boolean},
    *            view: RestView, effects: RestEffect[]}} RestOut
@@ -33,7 +33,7 @@
    *            sets: () => number, exRest: () => number, editSet: () => number,
    *            firstOpen: (from: number) => number,
     *            elapsed?: () => number,
-   *            prep: () => {name: string, load: string, reps: string}}} RestDeps
+   *            prep: (tIdx: number) => {name: string, load: string, reps: string}}} RestDeps
    */
 
   /**
@@ -83,15 +83,19 @@
         label = ctx.idleLabel;
         msg = ctx.idleMsg;
       }
-      var showPrep = Rest.prepVisible(phase, deps.editSet(), deps.done(), deps.sets());
-      var prep = showPrep ? deps.prep() : null;
+      /* B5-02: the prep target is this lift while its sets are open, the
+         next lift the day offers once this one is done, or nothing. */
+      var tIdx = deps.idx();
+      var nextIdx = Rest.nextLift(tIdx, deps.dayLen(), deps.firstOpen(tIdx + 1), deps.firstOpen(0));
+      var prepIdx = Rest.prepTarget(phase, deps.editSet(), deps.done(), deps.sets(), tIdx, nextIdx);
+      var prep = prepIdx >= 0 ? deps.prep(prepIdx) : null;
       return {
         phase: phase,
         ticking: phase === "active" && !ctx.frozen,
         secs: Machine.remaining(rest, now),
         progress: Machine.progress(rest, now),
         label: label, msg: msg, nextText: nextText, skipLabel: skipLabel,
-        showPrep: showPrep,
+        showPrep: prepIdx >= 0, prepIdx: prepIdx,
         prepName: prep ? prep.name : "",
         prepLoad: prep ? prep.load : "",
         prepReps: prep ? prep.reps : "",

@@ -527,7 +527,7 @@
   /* The rest *orchestration* lives in restctl.js; this shell applies the
      effects it returns and paints its view model. `rInt` drives the 200 ms
      ticks and `rArmT` is the 2,600 ms two-tap finish window.                 */
-  var rInt = null, rArmT = null, restNextRaw = "";
+  var rInt = null, rArmT = null, restNextRaw = "", restPrepIdx = -1;
 
   function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
@@ -551,9 +551,13 @@
     editSet: function () { return editSet; },
     firstOpen: function (from) { return firstOpenLift(cur, payload.state, from); },
     elapsed: function () { return Gym.sessionElapsedSec(payload); },
-    prep: function () {
-      var e = ex(), s = curSt();
-      return { name: "Set " + (s.done + 1) + " of " + e.s, load: loadText(s.load, e), reps: String(s.reps) };
+    prep: function (tIdx) {
+      var e = DAYS[cur].ex[tIdx], s = st(cur, tIdx);
+      return {
+        name: tIdx === idx ? "Set " + (s.done + 1) + " of " + e.s
+                           : "Next — " + e.n + ", Set " + (s.done + 1) + " of " + e.s,
+        load: loadText(s.load, e), reps: String(s.reps)
+      };
     }
   });
   /* apply the controller's effect list in order, then paint its view */
@@ -687,6 +691,7 @@
     if (!prep) return;
     prep.hidden = !v.showPrep;
     if (!v.showPrep) return;
+    restPrepIdx = v.prepIdx;
     document.getElementById("restPrepName").textContent = v.prepName;
     document.getElementById("restPrepLoad").textContent = v.prepLoad;
     document.getElementById("restPrepReps").textContent = v.prepReps;
@@ -871,14 +876,19 @@
   var MAX_LOAD = 2000, MAX_REPS = 999;
   function clampLoad(v) { return Math.min(MAX_LOAD, Math.max(0, v)); }
   function clampReps(v) { return Math.min(MAX_REPS, Math.max(1, v)); }
-  function stepLoad(d) {
-    var s = curSt();
-    s.load = clampLoad(d < 0 ? Math.max(0, Math.round((s.load - ex().step) * 100) / 100) : Math.round((s.load + ex().step) * 100) / 100);
+  /* Steppers can target any lift of the day — the lift view edits the current
+     one, the rest prep edits the lift it targets (B5-02: the next lift once
+     the current one is complete). */
+  function stepLoad(d, tIdx) {
+    if (tIdx === undefined || tIdx < 0) tIdx = idx;
+    var s = st(cur, tIdx), e = DAYS[cur].ex[tIdx];
+    s.load = clampLoad(d < 0 ? Math.max(0, Math.round((s.load - e.step) * 100) / 100) : Math.round((s.load + e.step) * 100) / 100);
     if (editSet >= 0) applySetEdit();
     scheduleSave(); render(); renderRestPrep(restCtl.view());
   }
-  function stepReps(d) {
-    var s = curSt();
+  function stepReps(d, tIdx) {
+    if (tIdx === undefined || tIdx < 0) tIdx = idx;
+    var s = st(cur, tIdx);
     s.reps = clampReps(s.reps + d);
     if (editSet >= 0) applySetEdit();
     scheduleSave(); render(); renderRestPrep(restCtl.view());
@@ -901,10 +911,10 @@
   bindStepper("loadUp", function () { stepLoad(1); });
   bindStepper("repDown", function () { stepReps(-1); });
   bindStepper("repUp", function () { stepReps(1); });
-  bindStepper("restLoadDown", function () { stepLoad(-1); });
-  bindStepper("restLoadUp", function () { stepLoad(1); });
-  bindStepper("restRepDown", function () { stepReps(-1); });
-  bindStepper("restRepUp", function () { stepReps(1); });
+  bindStepper("restLoadDown", function () { stepLoad(-1, restPrepIdx); });
+  bindStepper("restLoadUp", function () { stepLoad(1, restPrepIdx); });
+  bindStepper("restRepDown", function () { stepReps(-1, restPrepIdx); });
+  bindStepper("restRepUp", function () { stepReps(1, restPrepIdx); });
 
   /* tap the number to type it — correcting "actually 67.5" shouldn't need
      five taps or a sprint on the press-and-hold repeat. The +/- stay for

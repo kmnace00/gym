@@ -59,13 +59,14 @@ test("goLabel matches the three GO-screen states", () => {
   assert.equal(R.goLabel(true, true), "Workout complete — nice work.");
 });
 
-test("prepVisible only during a rest with sets still open and no set being edited", () => {
-  assert.equal(R.prepVisible("active", -1, 0, 3), true);
-  assert.equal(R.prepVisible("paused", -1, 2, 3), true);
-  assert.equal(R.prepVisible("idle", -1, 0, 3), false);
-  assert.equal(R.prepVisible("go", -1, 0, 3), false);
-  assert.equal(R.prepVisible("active", 0, 0, 3), false);  // editing a logged set
-  assert.equal(R.prepVisible("active", 2, 1, 3), false);
-  assert.equal(R.prepVisible("active", -1, 3, 3), false); // lift already done
-  assert.equal(R.prepVisible("active", -1, 4, 3), false);
+test("prepTarget picks this lift, then the next one, and hides otherwise", () => {
+  assert.equal(R.prepTarget("active", -1, 0, 3, 0, 1), 0);   // sets still open
+  assert.equal(R.prepTarget("paused", -1, 2, 3, 0, 1), 0);
+  assert.equal(R.prepTarget("idle", -1, 0, 3, 0, 1), -1);
+  assert.equal(R.prepTarget("go", -1, 0, 3, 0, 1), -1);
+  assert.equal(R.prepTarget("active", 0, 0, 3, 0, 1), -1);   // editing a logged set
+  assert.equal(R.prepTarget("active", 2, 1, 3, 0, 1), -1);
+  assert.equal(R.prepTarget("active", -1, 3, 3, 0, 1), 1);   // lift done -> next lift
+  assert.equal(R.prepTarget("active", -1, 4, 3, 2, 0), 0);   // extra sets, wrap to earliest open
+  assert.equal(R.prepTarget("active", -1, 3, 3, 0, -1), -1); // whole day done
 });
