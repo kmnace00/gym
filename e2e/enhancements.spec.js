@@ -10,20 +10,29 @@ async function seed(page, obj) {
   await page.reload();
 }
 
-test("overdue backup shows a day-view banner that opens the menu", async ({ page }) => {
-  await seed(page, {
+test("overdue backup banner backs up on tap and dismisses on ✕ (B5-04)", async ({ page }) => {
+  const seedOverdue = () => seed(page, {
     v: 2, cur: "fri", idx: 0, state: {},
     liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
   });
+
+  await seedOverdue();
   await expect(page.locator("#backupBar")).toBeVisible();
   await expect(page.locator("#backupBarText")).toContainText("Never backed up");
   const noScroll = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
   expect(noScroll, "banner must not cause scrolling").toBe(true);
 
+  // "Backup" downloads the file now — no two-trip detour through the modal (B5-04)
+  const dlPromise = page.waitForEvent("download");
   await page.locator("#backupBarSave").click();
-  await expect(page.locator("#modal")).toBeVisible();
-  await page.locator("#modalClose").click();
+  const dl = await dlPromise;
+  expect(dl.suggestedFilename()).toMatch(/^gym-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  await expect(page.locator("#modal"), "the modal never opens").toBeHidden();
+  await expect(page.locator("#backupBar")).toBeHidden();
 
+  // the ✕ still dismisses without a download
+  await seedOverdue();
+  await expect(page.locator("#backupBar")).toBeVisible();
   await page.locator("#backupBarDismiss").click();
   await expect(page.locator("#backupBar")).toBeHidden();
 });
