@@ -396,6 +396,29 @@
       ? "Editing set " + (editSet + 1) + " — tap Done"
       : complete ? "All " + e.s + " sets done" : "Set " + (s.done + 1) + " of " + e.s;
   }
+  /* Light path for stepper taps (B5-20): a press-and-hold fires every 70 ms,
+     and a full render() each time rebuilds the set log, suggestion and
+     sparkline ~14× per second. During the hold only the numeric readouts and
+     the row being adjusted change, so patch those in place; the full render
+     runs on release.                                          */
+  function updateLiftReadouts() {
+    var e = ex(), s = curSt();
+    document.getElementById("loadVal").textContent = (e.load === null && s.load === 0) ? "—" : s.load;
+    document.getElementById("repVal").textContent = s.reps;
+    var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
+    var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
+    var loadBig = e.load === null
+      ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+      : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb");
+    document.getElementById("exPres").innerHTML =
+      "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
+      + " · " + rirTxt + " · Rest " + fmt(effRest);
+    var row = editSet >= 0 ? document.querySelector(".setrow.editing") : document.querySelector(".setrow.now");
+    if (row) {
+      row.querySelector(".sr").textContent = loadLabel(s.load, e) + " × " + s.reps;
+      row.querySelector(".srir").textContent = "@" + s.rir + " RIR";
+    }
+  }
   function renderLift() {
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
     var anyDone = false;
@@ -889,20 +912,24 @@
     var s = st(cur, tIdx), e = DAYS[cur].ex[tIdx];
     s.load = clampLoad(d < 0 ? Math.max(0, Math.round((s.load - e.step) * 100) / 100) : Math.round((s.load + e.step) * 100) / 100);
     if (editSet >= 0) applySetEdit();
-    scheduleSave(); render(); renderRestPrep(restCtl.view());
+    scheduleSave();
+    if (view === "lift") updateLiftReadouts();
+    renderRestPrep(restCtl.view());
   }
   function stepReps(d, tIdx) {
     if (tIdx === undefined || tIdx < 0) tIdx = idx;
     var s = st(cur, tIdx);
     s.reps = clampReps(s.reps + d);
     if (editSet >= 0) applySetEdit();
-    scheduleSave(); render(); renderRestPrep(restCtl.view());
+    scheduleSave();
+    if (view === "lift") updateLiftReadouts();
+    renderRestPrep(restCtl.view());
   }
   function bindStepper(id, fn) {
     var b = document.getElementById(id), delay = null, rep = null, held = false;
     function stop() {
       if (delay) { clearTimeout(delay); delay = null; }
-      if (rep) { clearInterval(rep); rep = null; }
+      if (rep) { clearInterval(rep); rep = null; render(); } // full render on hold release (B5-20)
       flushSave();
     }
     b.addEventListener("pointerdown", function () {
