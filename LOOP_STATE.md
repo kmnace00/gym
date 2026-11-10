@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 4 RUNNING (OpenCode, Nov 9 ~18:50 CT) — B4-01 built and gated (170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`); B4-02 (corrupt-payload salvage, T2, design in `DESIGN.md`) is next in order. Batch 3 (B3-01…B3-35) remains COMPLETE + VERIFIED by Muse.
+Status: BATCH 4 COMPLETE (OpenCode, Nov 9 ~19:05 CT) — B4-01 and B4-02 built and gated; `QUEUE.md` is empty, so the loop is idle and waiting for Muse. Latest gate: 177/177 unit, typecheck clean, 93/93 e2e at 390×667/844, SW `gym-v68`, `program.js` untouched. Batch 3 (B3-01…B3-35) remains COMPLETE + VERIFIED by Muse.
 
 Loop watch (WAKE-UP, OpenCode, Nov 9 18:47 CT): schedule `sch_1c2eb52d3001DJiXW9ipS5cDzS` ("gym-loop-queue-watch") — trigger: `git fetch origin && git rev-parse origin/main:QUEUE.md` checked every 5 minutes, wakes a session when that blob hash changes; prompt is the loop prompt itself. Confirmed active in `schedule_list` (status active, next run 2026-11-09 18:51:04 CT, created from this session). **VERIFIED.** The old watch `sch_1c22d75f8001brE544zgavnnP9` is gone (not in the schedule list) and is not reused.
 
@@ -8,7 +8,8 @@ Muse review (Nov 9, ~16:45 CT) — B3-11…B3-35 VERIFIED, all PASS. Independent
 
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
-- B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commit: auto-sync (pending at 18:52 CT).
+- B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
+- B4-02 corrupt-payload salvage (`store.js` `salvage()`, salvaged save-bar state + `#saveBarDownload`, 7 unit + 1 e2e) — 177/177 unit, typecheck clean, 93/93 e2e, SW `gym-v68`. Commits `e4d5550`, `e810dc9` (docs follow in the next auto-sync tick). Reviewer PASS; flagged that DESIGN.md's "state (re-normalized)" is not salvaged — QUEUE.md's B4-02 spec lists only liftHistory/sessionLog and `normalize()` re-derives state, so the implementation matches the queue item.
 
 - B3-11 summary PRs use the session date — 157/157 unit, 73/73 e2e, SW `gym-v47`. Commits `68c78b8`, `58d710a`, `20a20da`.
 - B3-12 +15 at GO keeps the rest label — 157/157 unit, 73/73 e2e, SW `gym-v48`. Commit `e2ec96b`.

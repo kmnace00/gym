@@ -5,9 +5,10 @@ Status: BATCH 4 DONE — B4-01 and B4-02 built and gated (Nov 9, OpenCode); `QUE
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
 
-## Active — B4-02: Corrupt-payload salvage [T2, designed]
+## Completed — B4-02: Corrupt-payload salvage [T2, designed]
+- Built Nov 9 (OpenCode). `store.js` `salvage(raw)` recovers what still parses from a corrupt payload — balanced `{...}` pieces inside `liftHistory`'s arrays and the `sessionLog` array (Case A, unparseable bytes) or the valid object fields of a payload-shaped object (Case B) — every piece through the same sanitize path as an import, truncated tail dropped rather than guessed. `load()` reports `{ kind: "salvaged", recovered: N, dropped: M }`, the original bytes stay quarantined and the boot copy is never overwritten; the save bar names the counts and offers "Keep recovered log" (explicit save, never auto-committed) plus "Download copy" for the original bytes. New `#saveBarDownload` button, save bar wraps under 430px. SW `gym-v68`. 7 new unit tests, 1 new e2e at 390×667/844. 177/177 unit, typecheck clean, 93/93 e2e, reviewer PASS.
+- Docs nit for Muse: this section's body was a duplicate of B4-01's spec (stats.js / `Object.create(null)`); the real B4-02 spec is in `QUEUE.md`. The duplicate is removed here.
 
-B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged these two for a follow-up. `stats.js` `workoutDates` builds `seen = {}` keyed by `s[i].date` / `log[i].date`; `trainingDays` builds `have = {}` keyed by `s[i].date`. Both dates are user-controlled (imported history, sessionLog). Change both maps to `Object.create(null)`. Unit test: feed a `"__proto__"` date through `workoutDates` and `trainingDays` and assert `Object.prototype` stays clean and the date is counted. No number changes. Files: `stats.js`, `test/stats.test.js`. Verify: full gate green; SW bump (`stats.js` changed).
 
 ## Completed — B3-35: Bodyweight-resolution rule duplicated in four places [T2, designed]
 - Built Nov 9 (OpenCode). `Stats.resolveBodyweight(entry, fallback)` is the single rule (banked `bwKg` if finite and positive, else the fallback, else 165); `app.js bwFor`, `entryVolume`, `personalRecords` and `topMovers` now call it. 2 new unit tests pin the helper's behaviour and prove tonnage/PR numbers are unchanged. SW `gym-v66`. 169/169 unit, 91/91 e2e, reviewer PASS. `QUEUE.md` is now empty — Batch 3 done.
@@ -17,7 +18,7 @@ B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged t
 
 ## WIP
 
-WIP: OpenCode editing stats.js, test/stats.test.js, version.js, sw.js since 18:47 CT (B4-01)
+(none — B4-01 and B4-02 pushed; OpenCode holds no file claims)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
