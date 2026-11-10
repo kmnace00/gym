@@ -1,8 +1,8 @@
 # BACKLOG — ranked improvement ideas
 
-## Batch 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap)
+## Batch 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap); DECISIONS LANDED Nov 10
 
-One buildable T1 (B6-01, `Stats.parseKey` round-trip) plus the decision-gated items (P9 off-day, `bodyweightSet` flag, P6, P8, P11/L6, P5, P7) in dependency order — full text in `QUEUE.md`. Batch 5 (B5-01–B5-20) is COMPLETE + VERIFIED by Muse at `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, Pages `gym-v87`).
+B6-01 (`Stats.parseKey` round-trip) is BUILT + VERIFIED. The decision-gated items are decided: on Nov 10 Khang delegated them ("Do the gym improvement list, do whatever you think is best") and Muse decided all of them — P9 ATTRIBUTE (fix week-strip/heatmap visibility), `bodyweightSet` flag ADOPTED (schema v5), P6 2-for-2 ADOPTED, P8 APPROVED, P11 alternate list APPROVED for all 24 lifts (log under the original id with a swap marker, progression-exempt), P5 Bulgarian rest 120 → 150 APPROVED, P7 deload week APPROVED as a manual mode. Full rationale in `DECISIONS.md`; buildable specs in `QUEUE.md` as B6-02…B6-10 in dependency order. Nothing from this batch remains in the backlog sections below — the P5–P9 / P11 texts there are replaced with pointers.
 
 
 Not instructions. An item becomes work only when Muse promotes it into
@@ -64,64 +64,37 @@ Status corrections Nov 9: L9 is BUILT (verified 145/145 unit, 48/48 e2e, SW `gym
 
 ## Next (T2 — designs in `DESIGN.md`, not queued)
 
-### Off-day logging is misattributed (UX audit #5) [T2, blocked on Khang's decision]
-Logging on Mon–Thu banks sets under Friday's key with the wrong date (`store.js:49` maps Mon–Thu to `"fri"`); the sets count toward totals but are invisible in the week strip and heatmap. Needs a decision first — either block logging on off days with a one-line message, or attribute the session to the next training day. Design follows the decision; do not build either silently.
+### Off-day logging is misattributed (UX audit #5) [T2] — DECIDED Nov 10 → `QUEUE.md` B6-02
+P9 decided ATTRIBUTE: sessions keep banking under the next training day; the build fixes the week-strip/heatmap visibility and adds the one-line "Off day — this logs as Friday" note. Decision record in `DECISIONS.md`.
 
 ### Corrupt-payload salvage [T2] — BUILT (B4-02, Nov 9; extended to Restore/Merge by B5-06)
 Closed: `store.js` `salvage()` ships in B4-02 and B5-06 wires the same fallback into `importRaw`/`importMerge`. Kept here as history; not an open item.
 
-### `bodyweightSet` flag (code audit #19) [T2, schema change]
-The merge bodyweight rule adopts the imported bodyweight only while the local one is the 165 default, so it cannot distinguish "never set" from "Khang genuinely weighs 165 lb". Fixing that needs a `bodyweightSet` flag, i.e. a schema change. Design in `DESIGN.md` first; Khang's call (see also P4).
+### `bodyweightSet` flag (code audit #19) [T2, schema change] — DECIDED Nov 10 → `QUEUE.md` B6-03
+Adopted: schema v4 → v5, legacy payloads derive the flag (≠ 165 ⇒ set), an explicitly set local bodyweight always wins a merge. Decision record in `DECISIONS.md`.
 
 ## Proposals (T3 — Khang only, never auto-built)
 
-### P5 — Bulgarian split squat rest 120 s → 150 s (L8, Nov 9)
-The only per-lift rest change the audit found: Bulgarian sits exactly on the floor of the 2–3 min lower-compound range, and unilateral leg work carries high local fatigue. Medium-low confidence — no study compares 2 vs 2.5 min directly; this is the rule's own range, not a measured effect. Time cost +90 s on Friday (~73.5 → ~75 min). All other 23 lifts: keep (see `RESEARCH.md`).
+### P5 — Bulgarian split squat rest 120 s → 150 s (L8, Nov 9) — DECIDED Nov 10 → `QUEUE.md` B6-08
+Approved (the only per-lift rest change the audit found; +90 s Friday, ~75 min total). Decision record in `DECISIONS.md`.
 
-### P6 — Progression trigger: adopt the 2-for-2 rule (L7, Nov 9)
-Today one top-hit session adds a step (`suggestLoad` reads only the last entry). The NSCA standard is 2+ reps over the goal on the last set for 2 consecutive workouts before adding weight (Baechle & Earle, Ch. 18; ACSM 2009, 2–10% band — all app step sizes already inside it). Effect: slower, more conservative load increases; fewer grinds at RIR 0–1. Medium confidence (textbook/position-stand consensus, not an RCT). Needs a T2 design after approval (`suggestLoad`/`planFor` must read the last two entries).
+### P6 — Progression trigger: adopt the 2-for-2 rule (L7, Nov 9) — DECIDED Nov 10 → `QUEUE.md` B6-04
+Adopted, evaluated at read time from the banked set arrays (last set ≥ top + 2 at target RIR in each of the last two sessions); `hitTop` stamping and the stall rule unchanged. Decision record in `DECISIONS.md`.
 
-### P7 — Planned program-wide deload week every ~5–6 weeks (L7, Nov 9)
-The app has no deload concept; `stallLoad` is a per-lift reactive reset, not a deload (literature deload: planned, program-wide, ~7 days every 4–6 weeks, volume is the main lever — Bell 2023, Rogerson 2024). Adding a deload mode (fewer sets and/or lighter loads for one week) is a new feature: T3 decision + T2 design if approved. Not urgent — Coleman 2024: a week off costs a little strength but no muscle, so the cost of *not* deloading on a schedule is low while he's still progressing. Companion note: stop calling `stallLoad` a deload in docs; rename the concept to "stall reset".
+### P7 — Planned program-wide deload week every ~5–6 weeks (L7, Nov 9) — DECIDED Nov 10 → `QUEUE.md` B6-09 + B6-10
+Approved as a MANUAL mode (menu-started, 7 days, sets × 0.6, loads × 0.9, deload sessions progression-exempt) with a once-a-week nudge line after 5+ weeks — never automatic. The companion rename (stall rule → "stall reset" in user-visible copy) is in B6-10. Decision record in `DECISIONS.md`.
 
-### P8 — Finish a partial workout (UX audit #14)
-"Finish workout" only appears when all 8 lifts are done. A lifter who runs out of time at lift 6 gets no summary and no clean session close. Proposal: show Finish whenever there is any logged data, with the summary titled to say it's partial (e.g. "Friday — partial, 6 of 8 lifts"). Changes what "finish" means — Khang's call.
+### P8 — Finish a partial workout (UX audit #14) — DECIDED Nov 10 → `QUEUE.md` B6-05
+Approved: Finish shows with any logged data; the summary is titled "partial, N of 8 lifts". Decision record in `DECISIONS.md`.
 
-### P9 — Off-day logging: block or attribute? (see T2 above)
-The decision that unblocks the off-day design: block logging on Mon–Thu with a one-line message, or attribute the session to the next training day.
+### P9 — Off-day logging: block or attribute? (see T2 above) — DECIDED Nov 10 → `QUEUE.md` B6-02
+ATTRIBUTE (see the T2 entry above and `DECISIONS.md`).
 
 ### P10 — Overhead cable extension `partial: 1` flag: KEEP (recommended, Nov 9)
 The evidence for triceps lengthened partials is the strongest in the partials literature — Goto 2019 (partial-ROM triceps extensions at long muscle lengths grew CSA +48.7% vs +28.2% full ROM, trained men, 8 weeks) and Maeo 2023 (overhead cable extensions — the exact exercise — grew the long head +28.5% vs +19.6% neutral, 12 weeks). The Nov 8 list was incomplete, not the flag wrong. `RESEARCH.md` now lists triceps; the flag stays unless Khang says otherwise. Counterweight recorded: Wolf 2025 — in trained lifters, lengthened partials tie full ROM rather than beating it; the app's conservative use (only after full-ROM failure, last set only) is exactly the "extend the last set" application, so "tie" still supports keeping it.
 
-### P11 — L6 exercise-swap alternates (PROPOSAL — approve/edit per lift, Nov 9)
-One substitute per lift for "machine taken / no equipment". Same muscle, similar loading, standard coaching substitutions (medium confidence — coaching practice, not literature-derived; nothing here is decided). Progression model if approved: log the swap under the original lift's `id` (keeps `suggestLoad`/`stallLoad` working, no schema change), with a swap flag on the entry — Khang decides; the alternative (alternates get their own history) needs a design.
-
-| Lift | Proposed alternate |
-|---|---|
-| Fri Smith squat | Barbell back squat (start conservative — no Smith rail) |
-| Fri Smith incline | Barbell incline press |
-| Fri Bulgarian | DB reverse lunge |
-| Fri incline DB | Barbell incline press |
-| Fri pec deck | Incline DB fly |
-| Fri leg extension | Sissy squat (assisted, hold a rack) |
-| Fri cable lateral | DB lateral raise |
-| Fri weighted dip | Close-grip bench press |
-| Sat front pulldown | Pull-ups (band-assisted if <5 reps) |
-| Sat cable RDL | DB Romanian deadlift |
-| Sat T-bar row | One-arm DB row (chest-supported if possible) |
-| Sat leg curl | Nordic hamstring curl (eccentric-only, assisted; fallback: lying leg curl machine) |
-| Sat Bayesian curl | Incline DB curl |
-| Sat preacher curl | Spider curl (chest-supported on incline bench) |
-| Sat rear delt | Bent-over DB reverse fly |
-| Sat calf raise | Single-leg DB calf raise on a step |
-| Sun leg press | Barbell back squat (if no rack: goblet squat, heels elevated) |
-| Sun pull-ups | Lat pulldown |
-| Sun machine OHP | Seated DB overhead press |
-| Sun cable fly | Pec deck fly |
-| Sun seated row | Barbell bent-over row |
-| Sun lateral↔pec deck (superset) | DB lateral raise + bent-over DB reverse fly |
-| Sun overhead extension | Single-arm DB overhead extension |
-| Sun calf raise | Single-leg DB calf raise on a step |
+### P11 — L6 exercise-swap alternates — DECIDED Nov 10 → `QUEUE.md` B6-06 + B6-07
+Approved: the proposed alternate list for all 24 lifts, unchanged (the verbatim strings, coaching parentheticals included, live in `QUEUE.md` B6-06 — that is now the single source). Progression model decided: log the swap under the original lift's `id` with a swap marker; swapped entries count toward volume and completion but are excluded from load suggestions, stall detection, the sparkline and PRs; no partials prompt while swapped; the swap locks once a set is logged. Decision record in `DECISIONS.md`.
 
 ## Batch 2 — QUEUED Nov 8 (B1–B3, all T1, hardening from Muse's Batch 1 review)
 

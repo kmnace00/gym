@@ -786,24 +786,421 @@ End of Batch 5. When the queue is empty, stop and wait for Muse.
 
 ---
 
-# BATCH 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap) — B6-01 IS QUEUED; the decision-gated items below stay gated
 
-Base HEAD: `68f319c` (SW `gym-v87`, 194/194 unit, typecheck clean, 112/112 e2e, Pages live; Batch 5 VERIFIED by Muse — record in `LOOP_STATE.md`). The T1 well is dry by design after five batches: this batch holds the one remaining buildable T1 Muse's Batch 5 review verified in source, plus the decision-gated items in dependency order. The gated items are NOT builder work until Khang decides and Muse promotes them — they are listed here in dependency order. This queue is live for B6-01 as of Khang's Nov 10 approval. Same batch rules as above (one item at a time, in order; full gate per item; program data read-only; stop on failure).
+# QUEUE — Batch 6 (decided)
 
-Housekeeping Muse does in the approval push (not builder items): the Batch 5 VERIFIED record in `LOOP_STATE.md`; `BACKLOG.md` — corrupt-payload salvage marked BUILT (B4-02 + B5-06), removed from "Next (T2)".
+Base HEAD: current `origin/main` at promotion time. Batch 5 (B5-01…B5-20)
+is COMPLETE + VERIFIED by Muse at `68f319c`; B6-01 (below) is BUILT +
+VERIFIED. On Nov 10 Khang delegated the gated decisions ("Do the gym
+improvement list, do whatever you think is best"); Muse decided every
+gated item — rationale in `DECISIONS.md` (promoted alongside this file) —
+and promoted them here as B6-02…B6-10 in the staged dependency order:
+P9 off-day → `bodyweightSet` flag → P6 2-for-2 → P8 partial finish →
+P11/L6 alternates → P5 Bulgarian rest → P7 deload week.
 
-## B6-01 — `Stats.parseKey` rolls impossible dates [T1, low — defence in depth]
+Batch rules (same as Batches 1–5): one item at a time, in order. Finish
+an item (all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md`
+update), then copy the next item's spec into `TASK.md` and start it.
+When the queue is empty, stop and wait for Muse — do not invent the
+next item. Every item: `npm run check`, `npm run typecheck`,
+`npm run e2e` at 390×667 and 390×844, no overflow, no console errors.
+Bump the SW `CACHE` whenever an asset changes. If verification fails,
+log it and STOP — do not move on. Program data (`program.js` numbers)
+is read-only in every item EXCEPT B6-06 (`alt` strings only) and B6-08
+(the one approved rest number), which carry the approval explicitly.
 
-Why: B5-14 made `validDate` round-trip at the store boundary, so no production path feeds Stats a bad date any more — but `stats.js` `parseKey` is still regex-only and `new Date(y, m-1, d)` silently rolls `"2026-02-30"` to Mar 2 for any hand-built payload (Stats is a pure module; B3-29 queued the same class for the same reason). Do: round-trip inside `parseKey` (construct, compare components, return null on mismatch) so every Stats consumer inherits the strictness. Files: `stats.js`, `test/stats.test.js`. Verify: unit — `weekStatus` / `sessionVolumes` given an entry dated `"2026-02-30"` do not attribute it to Mar 2 and `Object.prototype` stays clean; full gate green; SW bump (asset changed).
+## B6-01 — `Stats.parseKey` rolls impossible dates [T1] — DONE
 
-## Decision-gated — in the order a decision unblocks work
+Built Nov 10 (first live supervisor spawn) and independently verified by
+Muse: full gate green at 196/196 unit, typecheck clean, 112/112 e2e.
+Round-trip inside `parseKey` (construct, compare components, null on
+mismatch); `weekStatus` / `sessionVolumes` no longer attribute
+`"2026-02-30"` to Mar 2. History — do not re-run.
 
-- **P9 — Off-day logging: block or attribute?** (Khang) → unblocks the off-day T2 design in `BACKLOG.md` ("Next"), then a build item. Until decided: nothing to build.
-- **`bodyweightSet` flag** (Khang's call — schema change, `BACKLOG.md` "Next" + P4) → Muse designs in `DESIGN.md`, then a build item.
-- **P6 — 2-for-2 progression** (Khang approves the rule) → T2 design (`suggestLoad`/`planFor` read the last two entries), then a build item.
-- **P8 — Finish a partial workout** (Khang approves the behaviour) → small build item (Finish visible with any logged data; summary titled partial).
-- **P11 / L6 — Exercise-swap alternates** (Khang approves/edits per lift) → T2 design (swap map + progression model), then build items.
-- **P5 — Bulgarian split squat rest 120 s → 150 s** (Khang — a `program.js` number) → one-line build item once approved.
-- **P7 — Planned deload week** (Khang — new feature) → T2 design, then build items. Not urgent per the record.
+## B6-02 — Off-day sessions: attribute them where Khang can see them [T1]
 
-End of prepared Batch 6. On Khang's approval Muse flips `TASK.md` to ACTIVE with B6-01 and the loop resumes; the gated items promote one by one as decisions land.
+Decision (P9, `DECISIONS.md`): ATTRIBUTE. Off-day (Mon–Thu) sessions
+already bank under the next training day (`todayDay()` → `"fri"`, sets
+under Friday's key, the true calendar date kept on every entry) — that
+behaviour does not change. The defect is visibility: the week strip and
+the heatmap derive per-day state from the literal Fri/Sat/Sun dates, so
+a Wednesday session that banked Friday's workout is invisible in both.
+
+Do:
+- In `stats.js`, wherever the week strip and the heatmap derive a
+  training day's state for a week (`weekStatus` and the heatmap's
+  date/day aggregates — find the exact functions, do not assume), add
+  the session-based rule: a `sessionLog` entry with `status:
+  "complete"` and at least one logged lift covers its recorded `day`
+  for the Mon–Sun calendar week containing its `date`, in addition to
+  the existing date-based rule. Done/partial for the covered day comes
+  from that session's `lifts` snapshot against the day's program
+  (reuse the existing partial definition: some but not all lifts at
+  their set targets = partial). If the day is also trained on its real
+  date in the same week, it still counts once — no double count in the
+  heatmap totals.
+- In `app.js`, when the day view is opened on an off day (actual
+  weekday is Mon–Thu), append one line to the day summary:
+  "Off day — this logs as Friday." (the `todayDay()` label). Training
+  days show nothing extra. No new element, no new screen — the
+  existing summary line only.
+
+Do not: change `todayDay()` / `actualDay()`, the banking keys, any
+session or history date, progression reads, or block logging on any
+day.
+Files: `stats.js`, `app.js`, `test/stats.test.js`, `e2e/*` (extend the
+existing off-day journey).
+Verify: unit — a fixture week with a Wednesday-dated complete session
+recorded as `day: "fri"` marks Fri done for that week; a real Friday
+session in the same week does not double-count. e2e — clock on a
+Wednesday, log and finish Friday's workout, the week strip shows Fri
+done and the heat count includes it; the day summary shows the
+"Off day" line on Wednesday and not on Friday. Full gate green.
+
+## B6-03 — `bodyweightSet` flag: kill the 165 lb merge ambiguity [T1, schema v4 → v5]
+
+Decision (`DECISIONS.md`): adopt the flag. Today `mergePayload` adopts
+the incoming bodyweight only while the local one is exactly the 165
+default (`store.js`, the `out.bodyweight === 165` branch), so "never
+set" and "genuinely weighs 165" are indistinguishable.
+
+Do:
+- `store.js`: `CURRENT` 4 → 5. `emptyPayload()` gains
+  `bodyweightSet: false`. `normalize()` coerces `bodyweightSet` to a
+  strict boolean (`=== true`). The v4 → v5 step in `migrate()` derives
+  it for legacy payloads: `bodyweight !== 165` ⇒ `true`; `=== 165` ⇒
+  `false` (treated as unset — today's merge behaviour is preserved
+  exactly for every existing payload).
+- Merge rule in `mergePayload`, replacing the `=== 165` condition:
+  adopt the incoming bodyweight only when the local flag is false and
+  the incoming value passes the existing validity checks; when
+  adopting, also adopt the incoming flag (derived the same way for a
+  legacy incoming payload: value ≠ 165 ⇒ set). When the local flag is
+  true, the local value always wins, whatever the incoming says.
+- `app.js`: the bodyweight input's save path (the bodyweight +
+  snapshot-recovery block) sets `payload.bodyweightSet = true`
+  whenever it writes `payload.bodyweight` from the input.
+- Note the accepted edge in `BUILD_LOG.md`: a v5 payload opened by an
+  older cached build takes the existing `__future` path (B3-02) — no
+  new handling.
+
+Do not: change the 165 default, `BODYWEIGHT_MAX`, the banked `bwKg`
+rule, or `Stats.resolveBodyweight`.
+Files: `store.js`, `app.js`, `test/store.test.js`.
+Verify: unit matrix — (a) local never-set (165, flag false) + incoming
+180 ⇒ adopts 180, flag true; (b) local genuinely 165 (flag true) +
+incoming 180 ⇒ keeps 165; (c) local set 180 + incoming set 190 ⇒
+keeps 180; (d) v4 payload with bodyweight 182 migrates to v5 with
+flag true, and with 165 to flag false; (e) the pre-existing B3-30
+merge-bodyweight test still passes (update it only if it encodes the
+old condition rather than the behaviour). Full gate green; SW bump.
+
+## B6-04 — Progression: adopt the 2-for-2 rule [T1]
+
+Decision (P6, `DECISIONS.md`): adopt. `suggestLoad` today adds a step
+after ONE top-hit session. The NSCA 2-for-2 standard: add weight only
+after exceeding the rep goal on the last set in TWO consecutive
+workouts. Evaluated at read time from the banked set arrays — no
+schema change, `hitTop` keeps its banked meaning, `stallLoad` is
+untouched and still takes precedence in `planFor`.
+
+Do:
+- In `program.js`, add a pure qualifier: an entry qualifies when its
+  LAST set (the last element of `entry.sets`; for legacy entries
+  without `sets`, the entry's own `reps`/`rir` fields) has
+  `reps >= e.top + 2` AND `rir >= e.rir`.
+- `suggestLoad(e, prev, prev2)`: suggest `prev.load + e.step` only
+  when BOTH `prev` and `prev2` qualify; otherwise suggest `prev.load`.
+  Keep the return shape (`{suggest, last, hitTop}` — `hitTop` still
+  reports `prev.hitTop` for the Prev line) and add `qualified: 0|1|2`
+  (how many of the most recent two entries qualify, counting `prev`
+  first). No entries / one entry ⇒ no increase, as today.
+- `planFor(e, entries)` passes the last two entries; its `action`
+  values are unchanged (`"up"` now means the 2-for-2 fired).
+- `app.js` `renderSuggest`: the stall branch is byte-identical. The
+  up branch copy becomes "(hit top twice) → try <b>X</b>" with the
+  Apply button as today. When exactly the latest entry qualifies:
+  base + " → keep X · one more top session to go up", no Apply
+  button. Otherwise the existing keep line. "Plan today" prefill
+  follows automatically via `planFor` — verify it, don't special-case
+  it.
+
+Do not: change `bankLift` or the `hitTop` stamp, `stallLoad`, any
+`step` size, or any program number.
+Files: `program.js`, `app.js`, `test/program.test.js`, `e2e/*` (the
+suggestion journey, if it asserts the old single-hit text).
+Verify: unit — two qualifying entries ⇒ +step; only the latest
+qualifies ⇒ keep; only the older qualifies ⇒ keep; legacy entries
+without `sets` qualify on their top-set fields; a stall still wins
+over a 2-for-2 in `planFor`. e2e — seed two qualifying sessions, the
+suggestion offers the step with an Apply button; seed one, it does
+not. Full gate green; SW bump.
+
+## B6-05 — Finish a partial workout [T1]
+
+Decision (P8, `DECISIONS.md`): approve. Today `#finishBtn` shows only
+when all 8 lifts are done (`app.js` day render: `finBtn.hidden =
+!complete || …`), so a time-boxed session that stops at lift 6 gets no
+summary and no deliberate close.
+
+Do:
+- In `app.js`'s day render, show Finish when the day has any logged
+  data and the active session is not already complete:
+  `finBtn.hidden = !(totalDone > 0) || (payload.active &&
+  payload.active.status === "complete")`, where `totalDone` is the
+  day's already-computed logged-set total in that render. Label:
+  "Finish workout" when the day is complete, "Finish partial
+  workout" when it is not.
+- In `showSummary`, title the partial case honestly: complete ⇒
+  "<Day> workout complete" (unchanged); partial ⇒ "<Day> — partial,
+  N of 8 lifts", N = lifts with `done >= e.s` and 8 = the day's lift
+  count (compute it from the list, do not hardcode). Sets / volume /
+  PR / duration lines are unchanged — they already count what was
+  actually logged.
+- `finishWorkout` / `finalizeSession` are unchanged (a partial
+  session already finalizes and logs correctly — verify with the
+  journey below rather than assuming).
+
+Do not: change the rest screen's finish-arm flow, session roll
+behaviour, or what counts as a complete day anywhere else (week strip
+partial state already exists — reuse its definition).
+Files: `app.js`, `e2e/journeys.spec.js` (or the features spec — put it
+with the other finish journeys).
+Verify: e2e — log sets on 6 of 8 lifts, Finish partial workout is
+visible, tap it, the summary title reads "partial, 6 of 8" and the
+session log gains the entry; with zero sets logged the button stays
+hidden; a complete day still reads "Finish workout" / "workout
+complete". Both Continue and Finish visible together must not
+overflow at 390×667. Full gate green; SW bump.
+
+## B6-06 — Alternates: data, swap marker, progression exclusion [T1, logic only]
+
+Decision (P11/L6, `DECISIONS.md`): the proposed alternate list is
+approved for all 24 lifts, unchanged. A swap logs under the original
+lift's id with a marker; swapped entries count toward volume and
+day/week completion but never feed the original lift's progression or
+PRs. This item is the data + store + read-path logic; the swap UI is
+B6-07. This item DOES carry approval to add the `alt` strings to
+`program.js` — and nothing else there.
+
+Do:
+- `program.js`: add an `alt` field to every exercise, exactly these
+  strings, no other change to the file:
+  Fri — Smith squat → "Barbell back squat"; Smith incline → "Barbell
+  incline press"; Bulgarian split squat → "DB reverse lunge"; incline
+  DB press → "Barbell incline press"; pec deck → "Incline DB fly";
+  leg extension → "Sissy squat (assisted, hold a rack)"; cable
+  lateral → "DB lateral raise"; weighted dip → "Close-grip bench
+  press".
+  Sat — front pulldown → "Pull-ups (band-assisted if <5 reps)";
+  cable RDL → "DB Romanian deadlift"; T-bar row → "One-arm DB row
+  (chest-supported if possible)"; leg curl → "Nordic hamstring curl
+  (eccentric-only, assisted; fallback: lying leg curl machine)";
+  Bayesian curl → "Incline DB curl"; preacher curl → "Spider curl
+  (chest-supported on incline bench)"; rear delt → "Bent-over DB
+  reverse fly"; calf raise → "Single-leg DB calf raise on a step".
+  Sun — leg press → "Barbell back squat (if no rack: goblet squat,
+  heels elevated)"; pull-ups → "Lat pulldown"; machine OHP → "Seated
+  DB overhead press"; cable fly → "Pec deck fly"; seated row →
+  "Barbell bent-over row"; lateral↔pec deck superset → "DB lateral
+  raise + bent-over DB reverse fly"; overhead cable extension →
+  "Single-arm DB overhead extension"; calf raise → "Single-leg DB
+  calf raise on a step".
+  (The strings are the proposal table verbatim, coaching
+  parentheticals included — they display on the lift screen, which
+  is where the note is needed.)
+  (Match each string to its lift by the exercise `id` in the file;
+  if an id in this list does not exist in the file, STOP and report —
+  do not guess a mapping.)
+- `store.js`: the state record gains an optional `swapAlt` (the
+  alternate's name) — `getLift` backfills it to `null` like
+  `lastRir`; `sanitizeRecord` preserves it only when it is a string
+  of ≤ 120 chars (the longest approved `alt` string is ~90), else
+  `null`. No version bump (additive field, the Pass 3 precedent).
+- `app.js` `bankLift`: when the lift's record has `swapAlt` set at
+  completion, stamp `swap: <swapAlt>` on the banked history entry.
+  All other entry fields are computed exactly as today (the entry's
+  load/reps are the alternate's actual top set).
+- Exclusion at the read paths (one shared predicate — an entry
+  counts for progression iff it has no `swap`): `priorEntries()` in
+  `app.js` (feeds `renderSuggest`), the `Gym.series(...)` call that
+  feeds `planFor` in "Plan today", and `renderSpark`'s series (the
+  sparkline is the original lift's trend). `Stats.personalRecords`
+  skips `swap` entries. Session volume / tonnage keep counting them
+  (`entryVolume` unchanged) — the work was done.
+
+Do not: build any swap UI here; change `suggestLoad` / `stallLoad` /
+`planFor` internals (the exclusion is at their inputs); change any
+existing program field.
+Files: `program.js`, `store.js`, `app.js`, `stats.js`,
+`test/program.test.js`, `test/store.test.js`, `test/stats.test.js`.
+Verify: unit — all 24 exercises carry a non-empty `alt` and ids stay
+unique; `swapAlt` survives sanitize when valid and is dropped when
+hostile (non-string / over-long); a seeded `swap` entry is invisible
+to `personalRecords` and to the suggestion inputs but still counted
+by `sessionVolumes`. Full gate green; SW bump.
+
+## B6-07 — Alternates: the swap UI [T1]
+
+Decision (P11/L6, `DECISIONS.md`): one control on the lift view, no
+new screen, no modal. Builds on B6-06 (`alt` in `program.js`,
+`swapAlt` on the record, marker on the banked entry).
+
+Do:
+- `index.html` / `app.js`: a "Swap" button (≥ 44 px) on the lift
+  view, in the lift header area. Tapping it toggles swap mode for
+  this lift today: the record's `swapAlt` is set to the lift's `alt`
+  string; tapping again (button now reads "Using <alt> — undo")
+  clears it — but only while no set has been logged today for this
+  lift; once `sets.length > 0`, the button is disabled with the
+  one-line hint "Swap locked — sets logged".
+- While swapped: the lift title shows the alternate name with a
+  sub-line "Swapped for <original name>"; the working load is a
+  separate record field `swapLoad` (default 0 ⇒ the existing
+  "start light" treatment; `getLift` backfills it, `sanitizeRecord`
+  coerces it like `load`, B6-06's `swapAlt` handling extended) and
+  the steppers / typed edits write to `swapLoad` instead of `load`
+  and back when un-swapped. Sets/reps/RIR targets, set count and the
+  rest seconds stay the original lift's. The cue line is hidden
+  (the cue describes the original movement); the tempo line stays.
+  The lengthened-partials prompt never fires while swapped (the
+  flag's evidence is exercise-specific — pass the swapped state into
+  the existing prompt condition, do not change the flag).
+- Prev line: when the most recent history entry for the lift (swap
+  entries included — this read is NOT the progression read) carries
+  `swap`, render "Prev (swap): <alt name> <load>×<reps>" instead of
+  the normal Prev text. The suggestion line already reads the last
+  non-swap entry (B6-06) and labels it with its real date — leave
+  that behaviour, verify it reads sensibly after a swap day.
+
+Do not: add a swap control anywhere but the lift view; change rest
+times, set schemes, or the day view.
+Files: `index.html`, `app.js`, `style.css`, `store.js` (only the
+`swapLoad` record plumbing), `e2e/*`.
+Verify: e2e — open a lift, swap, log the sets, finish the lift; the
+history entry carries the `swap` name and the alternate's loads; the
+next session's suggestion ignores that entry; un-swap is refused
+after a logged set; no-scroll at 390×667 and 390×844 with the swap
+button and the swapped title both rendered. Full gate green; SW
+bump.
+
+## B6-08 — Bulgarian split squat rest 120 s → 150 s [T1, approved program number]
+
+Decision (P5, `DECISIONS.md`): approve. This item carries the
+approval for exactly one `program.js` number.
+
+Do:
+- `program.js`, `fri-bulgarian` only: `rest: 120` → `rest: 150`.
+  Nothing else in the file changes (B6-06's `alt` additions aside,
+  the diff for this item is one number).
+
+Do not: touch any other lift's rest, or "round" any other value
+while in the file.
+Files: `program.js`, plus any test fixture that encodes the old
+value.
+Verify: `test/program.test.js` — update the day-time / rest
+expectations that encode 120 for this lift (Friday's estimate rises
+~90 s to ~75 min, inside the 75–90 min target — if a fixture asserts
+the old Friday total, update that number only and note it in
+`BUILD_LOG.md`); e2e — the rest screen after a Bulgarian set counts
+down from 2:30. Full gate green; SW bump.
+
+## B6-09 — Deload week: the mode [T2-designed here]
+
+Decision (P7, `DECISIONS.md`): a planned deload is a MANUAL mode —
+Khang starts it, it never starts itself. Parameters: 7 days from the
+start date or until ended early; set targets × 0.6 rounded (min 1);
+suggested loads × 0.9 snapped to the lift's step; entries banked
+during a deload are marked and progression-exempt (B6-10 wires the
+exemption). Volume is the main lever, per the literature.
+
+Do:
+- `store.js`: payload gains `deloadSince` (`"YYYY-MM-DD"` or null;
+  additive on v5, no version bump). `normalize()` keeps it only when
+  `validDate()` passes, else null. Export a pure
+  `deloadActive(p, now)`: true iff `deloadSince` is set and fewer
+  than 7 whole days separate it from today. `rollSession` clears an
+  expired `deloadSince` (≥ 7 days) when it rolls.
+- `program.js`: two pure helpers — `deloadSets(e)` =
+  `Math.max(1, Math.round(e.s * 0.6))` (3 → 2, 4 → 2, 2 → 1) and
+  `deloadLoad(e, load)` = `load * 0.9` snapped to `e.step` exactly
+  the way `stallLoad` snaps (never ≥ the input load; null / 0 pass
+  through unchanged so bodyweight and start-light lifts are
+  unaffected).
+- `app.js` + `index.html`: in the menu, beside the bodyweight
+  controls, "Start deload week" (hidden while a deload is active)
+  and "End deload week" (shown only while active). Starting sets
+  `deloadSince` to today; ending clears it. Non-destructive — no
+  snapshot, no two-tap arm.
+- While `deloadActive`: the day view shows one banner line above
+  the lift rows: "Deload week — fewer sets, ~10% lighter, stop ~2
+  reps earlier." Everywhere a lift's set target decides completion
+  — day-row ✓, lift-view "set X of N", `bankLift`'s bank threshold,
+  Continue / first-open-lift, the B6-05 Finish label's complete vs
+  partial call — the effective target is `deloadSets(e)`. Thread it
+  through one app-level helper (`effSets(e)`); `firstOpenLift`
+  (program.js) gains an optional target callback defaulting to
+  `e.s`, with the default path byte-identical when no deload is
+  active. The suggestion line and Plan-today prefill apply
+  `deloadLoad` to the `planFor` result and prefix the line
+  "Deload week → ". `bankLift` stamps `deload: true` on entries
+  banked while active.
+
+Do not: auto-start or auto-extend a deload; change any program
+number, rest time, or the non-deload completion paths; add a deload
+view or settings screen.
+Files: `store.js`, `program.js`, `app.js`, `index.html`,
+`style.css`, `test/store.test.js`, `test/program.test.js`, `e2e/*`.
+Verify: unit — `deloadActive` boundaries (day 6 active, day 7 not),
+expired flag cleared on roll, `deloadSets` / `deloadLoad` tables
+incl. bodyweight pass-through. e2e — start a deload from the menu:
+banner visible, a 3-set lift completes at 2 sets and banks,
+suggestion shows the reduced load with the deload prefix; end the
+deload and the normal targets return. No-scroll at both viewports
+with the banner up. Full gate green; SW bump.
+
+## B6-10 — Deload follow-through: progression exemption, stall rename, nudge [T1]
+
+Decision (P7 companion items, `DECISIONS.md`): deload sessions must
+not poison progression math; the stall rule stops being called a
+deload in user-visible copy; and the app points at the deload once a
+week when one is overdue — it never starts one.
+
+Do:
+- `app.js`: one shared read-path predicate for progression inputs —
+  an entry counts iff it has neither `swap` (B6-06) nor `deload`
+  (B6-09). Apply it at the same three sites B6-06 named
+  (`priorEntries()`, the Plan-today series, `renderSpark`'s series)
+  so both markers are excluded by the same code path. Volume and
+  completion reads are untouched.
+- Stall copy rename: `renderSuggest`'s stall branch —
+  "3 sessions stalled → deload to <b>X</b>" becomes "3 sessions
+  stalled → reset to <b>X</b>"; `stallLoad`'s comments in
+  `program.js` say "stall reset" instead of "deload". No behaviour
+  change; grep the user-visible strings for any other "deload" that
+  refers to the stall rule (the deload-week copy from B6-09 stays).
+- The nudge: on the day view, when no deload is active AND at least
+  35 days have passed since the last deload ended (the most recent
+  `deloadSince` + 7 days; if never deloaded, since the earliest
+  `sessionLog` date) AND no session is logged yet in the current
+  Mon–Sun week, append one line to the day summary: "5+ weeks
+  since a deload — Start deload week is in the menu." Pure date
+  math from existing fields; no new storage; it disappears the
+  moment he trains that week or starts a deload.
+
+Do not: make the nudge a modal, a banner, or a repeat within the
+same week; change the 35-day threshold into a setting.
+Files: `app.js`, `program.js` (comments only), `test/*` (unit for
+the shared predicate if it lands somewhere testable, else cover via
+the sites), `e2e/*`.
+Verify: unit/e2e — a `deload`-marked entry in the last two sessions
+does not block a 2-for-2 "up" and does not count toward a stall;
+the stall line reads "reset to"; with the clock 36 days past a
+deload and an empty week, the nudge line shows on the first
+training day and is gone after that day's first logged session.
+Full gate green; SW bump.
+
+End of Batch 6 (decided). When B6-10 lands, the queue is empty —
+stop and wait for Muse. Everything still open lives in
+`BACKLOG.md` (P4 caps, the general T3 categories, non-goals) and
+needs a fresh Khang decision, not a promotion by momentum.
