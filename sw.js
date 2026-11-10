@@ -7,7 +7,7 @@
    the ASSETS contents and fails when the recorded hash no longer matches, so a
    changed asset can't ship without a version bump.                         */
 importScripts("./version.js");          // single source for the deploy tag (B3-33)
-const CACHE = GYM_VERSION; // CACHE-HASH: 4e99afc7be24cb04
+const CACHE = GYM_VERSION; // CACHE-HASH: cc6a2681cab181ed
 const ASSETS = [
   "./", "./index.html", "./version.js", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./restctl.js", "./app.js",

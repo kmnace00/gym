@@ -212,6 +212,32 @@ test("an extra set lighter than today's PR does not announce a new PR (B5-08)", 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
+test("the undo/restore button is hidden until a snapshot exists (B5-12)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot"), "a fresh profile has no snapshot to restore").toBeHidden();
+  const visible = await page.evaluate(() => {
+    const el = document.getElementById("restoreSnapshot");
+    return getComputedStyle(el).display !== "none";
+  });
+  expect(visible, "display:flex must not override [hidden]").toBe(false);
+
+  // a reset writes a snapshot, and the named button appears
+  await page.locator("#resetDay").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#restoreSnapshot")).toBeVisible();
+  await expect(page.locator("#restoreSnapshot")).toContainText("Undo Reset day");
+  await page.locator("#restoreSnapshot").click();
+  await expect(page.locator("#modalMsg")).toContainText("Snapshot restored");
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
 test("arming a second destructive button restores the first one's label (B5-10)", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
