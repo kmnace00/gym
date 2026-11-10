@@ -57,17 +57,16 @@ test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async 
   await page.locator("#loadUp").click();
   await expect(page.locator("#loadVal")).toHaveText("62.5");
 
-  // switch to Saturday mid-edit: Sat lift 1 keeps its OWN programmed values
-  await page.locator("#backBtn").click();
-  await page.locator('.day[data-day="sat"]').click();
+  // Tap the Sat tab mid-edit. The tabs are hidden in lift view, so fire the
+  // handler the way a mid-edit tap would hit it: while the edit is live.
+  await page.evaluate(() => document.querySelector('.day[data-day="sat"]').click());
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal"), "Saturday's lift must not inherit Friday's edit").toHaveText("90");
 
-  // back to Friday: the mid-edit change was rolled back to the pre-edit values
-  await page.locator("#backBtn").click();
-  await page.locator('.day[data-day="fri"]').click();
-  await page.locator(".liftrow").first().click();
-  await expect(page.locator("#loadVal")).toHaveText("60");
+  // Friday's own working record equals the pre-edit values, not the half-made edit
+  const state = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state);
+  expect(state["fri:0"].load, "Friday must keep its pre-edit load").toBe(60);
+  expect(state["sat:0"].load, "Saturday's load must be untouched").toBe(90);
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
