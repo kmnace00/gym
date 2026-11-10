@@ -1230,9 +1230,12 @@
   rNextBtn.onclick = function () { navigateLift(1); };
   document.querySelectorAll(".day").forEach(function (b) {
     b.onclick = function () {
+      /* reset the in-progress set edit BEFORE switching days: the backup
+         restores into curSt(), so switching first writes it into the wrong
+         day's lift (B5-05, matching openLift's order) */
+      resetEdit(); clearUndo();
       cur = b.getAttribute("data-day");
       idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
-      resetEdit(); clearUndo();
       var open = firstOpenLift(cur, payload.state, 0);
       idx = open >= 0 ? open : 0;
       commit(); render();
