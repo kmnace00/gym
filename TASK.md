@@ -1,8 +1,11 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — Batch 4, B4-01 (Muse, Nov 9). Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). B4-02 follows in `QUEUE.md`.
+Status: ACTIVE — Batch 4, B4-02 (Muse, Nov 9). Base HEAD: `85d2cd4` (Batch 3 complete, SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). B4-01 is built (see Completed below).
 
-## Active — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
+## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
+- Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
+
+## Active — B4-02: Corrupt-payload salvage [T2, designed]
 
 B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged these two for a follow-up. `stats.js` `workoutDates` builds `seen = {}` keyed by `s[i].date` / `log[i].date`; `trainingDays` builds `have = {}` keyed by `s[i].date`. Both dates are user-controlled (imported history, sessionLog). Change both maps to `Object.create(null)`. Unit test: feed a `"__proto__"` date through `workoutDates` and `trainingDays` and assert `Object.prototype` stays clean and the date is counted. No number changes. Files: `stats.js`, `test/stats.test.js`. Verify: full gate green; SW bump (`stats.js` changed).
 
