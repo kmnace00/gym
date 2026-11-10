@@ -985,6 +985,11 @@
       if (topEntry) prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], topEntry.load || 0, topEntry.reps || 0));
       else prevBest = Math.max(prevBest, metricForEntry(e, priorHist[hi], priorHist[hi].load || 0, priorHist[hi].reps || 0));
     }
+    /* sets already banked today are today's PR: an extra set at a lighter
+       load must not announce a new PR (B5-08) */
+    for (hj = 0; hj < (s.sets || []).length; hj++) {
+      prevBest = Math.max(prevBest, metricFor(e, s.sets[hj].load || 0, s.sets[hj].reps || 0));
+    }
 
     s.sets = s.sets || [];
     s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
