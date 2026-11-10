@@ -113,3 +113,53 @@ test("the rest screen shows the session elapsed time advancing (B3-16)", async (
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
+
+test("rest prep targets the next lift between lifts (B5-02)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+
+  // the first lift has one set left; nothing else is logged
+  await page.evaluate(({ day, date }) => {
+    const ex = Gym.DAYS[day].ex;
+    const state = {};
+    state[day + ":0"] = { done: ex[0].s - 1, load: ex[0].load || 0, reps: ex[0].r, rir: ex[0].rir, sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_nextprep", date, day, startedAt: Date.now() - 1200000, endedAt: null, accSec: 1200, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  const next = await page.evaluate((d) => { const e = Gym.DAYS[d].ex[1]; return { n: e.n, s: e.s }; }, day);
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // last set of this lift -> inter-lift rest
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+
+  // the prep cluster names the NEXT lift, not the one just finished
+  await expect(page.locator("#restPrepName")).toHaveText("Next — " + next.n + ", Set 1 of " + next.s);
+
+  // stepping load here edits the next lift's working record, and the
+  // adjustment is there when the lift opens
+  const before = await page.locator("#restPrepLoad").textContent();
+  await page.locator("#restLoadUp").click();
+  await page.locator("#restLoadUp").click();
+  const after = await page.locator("#restPrepLoad").textContent();
+  expect(after).not.toBe(before);
+
+  await page.locator("#skipRest").click(); // advance to the next lift
+  await expect(page.locator("#exName")).toHaveText(next.n);
+  await expect(page.locator("#loadVal")).toHaveText(after.replace(" lb", ""));
+
+  // mid-lift prep is unchanged: still this lift's next set, no "Next —"
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await expect(page.locator("#restPrepName")).toHaveText("Set 2 of " + next.s);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
