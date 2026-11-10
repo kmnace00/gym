@@ -10,7 +10,9 @@ function mk(over) {
   const clock = { t: 0 };
   const data = Object.assign({
     cur: "fri", idx: 0, len: 3, done: 0, sets: 3, exRest: 90, editSet: -1, firstOpen: -1,
-    prep: { name: "Set 1 of 3", load: "60 lb", reps: "8" }
+    prep: (tIdx) => tIdx === 0
+      ? { name: "Set 1 of 3", load: "60 lb", reps: "8" }
+      : { name: "Next — Squat, Set 1 of 3", load: "100 lb", reps: "6" }
   }, over || {});
   const deps = {
     Machine: M, Rest: R,
@@ -22,8 +24,8 @@ function mk(over) {
     sets: () => data.sets,
     exRest: () => data.exRest,
     editSet: () => data.editSet,
-    firstOpen: (from) => data.firstOpen,
-    prep: () => data.prep
+    firstOpen: (from) => (typeof data.firstOpen === "function" ? data.firstOpen(from) : data.firstOpen),
+    prep: (tIdx) => data.prep(tIdx)
   };
   if (data.elapsed !== undefined) deps.elapsed = () => data.elapsed;
   return { ctl: C.createRestController(deps), clock, data };
@@ -210,6 +212,27 @@ test("prep is hidden at GO and while editing a logged set", () => {
   const e = mk({ editSet: 1 });
   e.ctl.start(90, "Fri — set 1 done", false, "", "");
   assert.equal(e.ctl.view().showPrep, false);
+});
+
+test("prep targets the next lift once the current lift is done (B5-02)", () => {
+  const s = mk({ done: 3, sets: 3, firstOpen: 1 });
+  s.ctl.start(120, "Fri — set 3 done", true, "", "Up next — Squat");
+  const v = s.ctl.view();
+  assert.equal(v.showPrep, true);
+  assert.equal(v.prepIdx, 1);
+  assert.equal(v.prepName, "Next — Squat, Set 1 of 3");
+  assert.equal(v.prepLoad, "100 lb");
+  assert.equal(v.prepReps, "6");
+});
+
+test("prep wraps to the earliest open lift, and hides when the day is done", () => {
+  const w = mk({ idx: 2, len: 3, done: 3, sets: 3, firstOpen: (from) => (from === 0 ? 0 : -1) });
+  w.ctl.start(120, "Fri — last lift done", true, "", "");
+  assert.equal(w.ctl.view().prepIdx, 0);
+  const d = mk({ idx: 2, len: 3, done: 3, sets: 3, firstOpen: () => -1 });
+  d.ctl.start(120, "Fri — last lift done", true, "", "");
+  assert.equal(d.ctl.view().showPrep, false);
+  assert.equal(d.ctl.view().prepIdx, -1);
 });
 
 test("End rest on the last lift arms the finish; the expired window thaws the clock", () => {
