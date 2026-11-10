@@ -330,3 +330,42 @@ test("the RIR explainer retires on the first logged set (B5-03)", async ({ page 
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
+
+/* B5-20 — hold-repeat steppers patch the readouts instead of rebuilding the
+   whole lift view every 70 ms; the full render happens on release.          */
+test("press-and-hold steppers do not rebuild the set log (B5-20)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+
+  const before = await page.evaluate(() => Number(document.getElementById("loadVal").textContent));
+
+  const rebuilds = await page.evaluate(async () => {
+    const btn = document.getElementById("loadUp");
+    const log = document.getElementById("setLog");
+    let count = 0;
+    const obs = new MutationObserver((records) => {
+      for (const r of records) if (r.type === "childList") count++;
+    });
+    obs.observe(log, { childList: true });
+    btn.dispatchEvent(new PointerEvent("pointerdown"));
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // hold: 400 ms delay + ~8 repeats
+    btn.dispatchEvent(new PointerEvent("pointerup"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    obs.disconnect();
+    return count;
+  });
+
+  expect(rebuilds, "a 1 s hold must not rebuild #setLog more than the single release render")
+    .toBeLessThanOrEqual(1);
+
+  const after = await page.evaluate(() => Number(document.getElementById("loadVal").textContent));
+  expect(after, "the held stepper actually raised the load").toBeGreaterThan(before);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")));
+  expect(saved.state["fri:0"].load, "the displayed value is the saved value").toBe(after);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});

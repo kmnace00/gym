@@ -66,9 +66,13 @@ Done: per-theme `--danger` token in `style.css` (dark `#f87171`, light `#b91c1c`
 
 Done: new e2e in `e2e/features.spec.js` seeds a two-set lift, taps Export CSV, captures the download event, asserts `gym-<date>.csv` and the header + per-set rows. Failure proof: renaming the filename locally turned the spec red, then reverted. No app change, no SW bump. 194/194 unit, typecheck clean, 111/111 e2e.
 
-## Active — B5-20: see `QUEUE.md`
+## Completed — B5-20: Press-and-hold steppers re-render the whole lift view every 70 ms [T1]
 
-Spec in `QUEUE.md` (B5-20): the last Batch 5 item — read it once B5-19's commit is on origin.
+Done: `updateLiftReadouts()` light path in `app.js` (stepper values, `#exPres` line, the now/editing row patched in place); `stepLoad`/`stepReps` skip `render()` during the hold; full `render()` on release in `bindStepper.stop()`. New e2e in `e2e/enhancements.spec.js` (MutationObserver on `#setLog`: ≤1 rebuild during a 1 s hold; value rises and persists). Mutation check: 14 rebuilds with the old path → red. SW `gym-v87` (`CACHE-HASH` 688daaa93b8c16cd). 194/194 unit, typecheck clean, 112/112 e2e.
+
+## Queue
+
+Batch 5 is complete (B5-01…B5-20 all built and gated). `QUEUE.md` is empty — loop idle, waiting for Muse.
 
 ## Completed — B4-01: `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 - Built Nov 9 (OpenCode). `workoutDates` (`seen`) and `trainingDays` (`have`) are `Object.create(null)`, matching `sessionVolumes`/`weekLiftIndex` from B3-29 — a `__proto__` date from imported history or the session log is now a key, not a silent prototype write. 1 new unit test in `test/stats.test.js` feeds a `"__proto__"` date through both and asserts the date is counted, the real Fri still counts in the 8-week grid, and `Object.prototype` is untouched. SW `gym-v67`. 170/170 unit, typecheck clean, 91/91 e2e at 390×667/844, no overflow, no console errors.
@@ -86,7 +90,7 @@ Spec in `QUEUE.md` (B5-20): the last Batch 5 item — read it once B5-19's commi
 
 ## WIP
 
-WIP: OpenCode editing store.js, test/store.test.js, version.js, sw.js since 00:10 CT (B5-15)
+WIP: none — Batch 5 complete, OpenCode idle awaiting Muse (Nov 10 ~00:25 CT)
 
 ## Completed — B3-33: No deploy version anywhere in the UI [T1]
 - Built Nov 9 (OpenCode). `version.js` is the single source of the deploy tag (`GYM_VERSION = "gym-v64"`); `sw.js` `importScripts()` it and sets `const CACHE = GYM_VERSION`, `index.html` loads it, and the menu footer prints "v4 · gym-v64 · N workouts · backed up …". Added to ASSETS, the `check` syntax list and the typecheck include. 2 new e2e (footer shape; sw.js has no second literal). 167/167 unit, 90/90 e2e.
