@@ -1364,13 +1364,14 @@
     reader.onload = function () {
       try {
         var snapOk = Gym.snapshot(payload, "pre-restore");
-        payload = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        payload = restored;
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg("Backup restored — current data replaced ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
+        setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
       } catch (e) { setMsg("Restore failed — not a Gym backup"); }
     };
     reader.readAsText(f);
@@ -1390,7 +1391,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg("Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
+        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
       } catch (e) { setMsg("Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);

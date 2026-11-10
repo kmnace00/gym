@@ -593,11 +593,29 @@
     }
   }
 
-  /** Parse a backup raw string and save it; throws when it is not valid. */
+  /** Parse a backup raw string and save it; throws when it is not valid.
+      B5-06: bytes that fail to migrate are salvaged exactly the way load()
+      salvages them at boot — the quarantined "dead end" file becomes a
+      partial restore instead of a rejection. Returns the payload with a
+      `salvaged: {recovered, dropped}` marker when that happened.          */
   function importRaw(raw) {
     checkImportSize(raw);
     var m = migrate(raw);
-    if (!m || m.__future) throw new Error("Not a valid Gym backup");
+    if (!m || m.__future) {
+      if (!m) {
+        var s = salvage(raw);
+        if (s.recovered > 0) {
+          var saved = emptyPayload();
+          saved.liftHistory = s.liftHistory;
+          saved.sessionLog = s.sessionLog;
+          saved = normalize(saved);
+          save(saved);
+          saved.salvaged = { recovered: s.recovered, dropped: s.dropped };
+          return saved;
+        }
+      }
+      throw new Error("Not a valid Gym backup");
+    }
     save(m);
     return m;
   }
@@ -838,11 +856,28 @@
     return normalize(out);
   }
 
-  /** Merge a backup into the current payload (never discards current data). */
+  /** Merge a backup into the current payload (never discards current data).
+      B5-06: unparseable bytes are salvaged like importRaw; the recovered
+      entries merge into the base, and the result carries a `salvaged` marker. */
   function importMerge(base, raw, stats) {
     checkImportSize(raw);
     var m = migrate(raw);
-    if (!m || m.__future) throw new Error("Not a valid Gym backup");
+    if (!m || m.__future) {
+      if (!m) {
+        var s = salvage(raw);
+        if (s.recovered > 0) {
+          var salvaged = emptyPayload();
+          salvaged.liftHistory = s.liftHistory;
+          salvaged.sessionLog = s.sessionLog;
+          salvaged = normalize(salvaged);
+          var mergedSalv = mergePayload(base, salvaged, stats);
+          save(mergedSalv);
+          mergedSalv.salvaged = { recovered: s.recovered, dropped: s.dropped };
+          return mergedSalv;
+        }
+      }
+      throw new Error("Not a valid Gym backup");
+    }
     var merged = mergePayload(base, m, stats);
     save(merged);
     return merged;
