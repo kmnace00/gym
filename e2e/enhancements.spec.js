@@ -140,3 +140,29 @@ test("every lift shows the tempo cue and lift 5 still fits 390x667 (B3-26)", asy
   const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
   expect(ok, "lift 5 at 390x667 must not scroll").toBe(true);
 });
+
+test("the RIR explainer retires on the first logged set (B5-03)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.goto(url); // fresh profile: the one-time explainer shows
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#rirHint")).toBeVisible();
+
+  // log sets without ever tapping an RIR button (the programmed RIR is kept)
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click(); // lift complete -> advance to lift 2
+
+  await expect(page.locator("#exName")).toBeVisible();
+  await expect(page.locator("#rirHint"), "the hint is gone on the next lift").toBeHidden();
+
+  await page.reload();
+  await expect(page.locator("#rirHint"), "the hint stays gone after reload").toBeHidden();
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});

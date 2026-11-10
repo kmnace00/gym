@@ -990,9 +990,9 @@
     s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
     s.done = s.sets.length;
     s.lastRir = s.rir;
+    hideRirHint();
     /* the first logged set retires the one-time RIR explainer even when the
        programmed RIR was accepted without tapping the buttons (B5-03) */
-    hideRirHint();
     if (s.reps >= e.top && s.rir >= e.rir) s.topHits++;
 
     hintText = ""; hintGood = false;

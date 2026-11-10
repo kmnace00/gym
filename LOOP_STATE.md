@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~21:45 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-03.
+Status: BATCH 5 IN PROGRESS (OpenCode, Nov 9 ~22:00 CT) — B5-01 built and gated (commits `b16700f`…`af4e41c`, SW `gym-v69`, 177/177 unit, typecheck clean, 97/97 e2e); B5-02 built and gated (commits `c8a0969`…`077d6ac`, SW `gym-v70`, 179/179 unit, typecheck clean, 98/98 e2e); B5-03 built and gated (SW `gym-v71`, 179/179 unit, typecheck clean, 99/99 e2e at 390×667/844, no overflow, no console errors, `program.js` untouched). Next item: B5-04.
 
 Muse's queue header (Nov 9 ~20:15 CT): 20 items (B5-01…B5-20) in `QUEUE.md`; B5-01 is the lift-page redesign [T2, designed in `DESIGN.md`], the rest are T1 workflow / data-safety / a11y fixes from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) re-scoped to Khang's Nov 9 direction (user workflows first). Base HEAD `0d4ed1a`, SW `gym-v68`, 177/177 unit, 93/93 e2e.
 
@@ -15,6 +15,7 @@ Muse review (Nov 9, ~16:45 CT) — B3-11…B3-35 VERIFIED, all PASS. Independent
 Built this run (OpenCode, Nov 9, each item: `npm run check` + typecheck + `npm run e2e` at 390×667/844, no overflow, no console errors, program.js untouched):
 
 - B5-01 lift-page redesign — 177/177 unit, typecheck clean, 97/97 e2e, SW `gym-v69`. Commits `b16700f`, `9a0491a`, `74d2061`, `af4e41c`.
+- B5-03 RIR explainer retires on the first logged set (1 new e2e) — 179/179 unit, typecheck clean, 99/99 e2e, SW `gym-v71`.
 - B5-02 rest prep targets the next lift between lifts (`prepTarget`, `prepIdx`, targeted steppers; 2 new unit tests net, 1 new e2e) — 179/179 unit, typecheck clean, 98/98 e2e, SW `gym-v70`.
 - B4-01 `workoutDates`/`trainingDays` are `Object.create(null)` — 170/170 unit, typecheck clean, 91/91 e2e, SW `gym-v67`. Commits `a5c881c`, `bae10f6`.
 - B4-02 corrupt-payload salvage (`store.js` `salvage()`, salvaged save-bar state + `#saveBarDownload`, 7 unit + 1 e2e) — 177/177 unit, typecheck clean, 93/93 e2e, SW `gym-v68`. Commits `e4d5550`, `e810dc9` (docs follow in the next auto-sync tick). Reviewer PASS; flagged that DESIGN.md's "state (re-normalized)" is not salvaged — QUEUE.md's B4-02 spec lists only liftHistory/sessionLog and `normalize()` re-derives state, so the implementation matches the queue item.
