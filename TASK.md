@@ -1,10 +1,12 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — BATCH 6 (decided). Batch 5 (B5-01…B5-20) is COMPLETE + VERIFIED by Muse at HEAD `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`, Pages live; review record in `LOOP_STATE.md`). B6-01 is BUILT + VERIFIED. B6-02 and B6-03 are BUILT and gated (198/198 unit, typecheck clean, 112/112 e2e, SW `gym-v91`; details in `BUILD_LOG.md`). The decision-gated items are no longer gated: on Nov 10 Khang delegated the decisions ("Do the gym improvement list, do whatever you think is best") and Muse decided all of them — rationale in `DECISIONS.md` — promoting them into `QUEUE.md` as B6-02…B6-10 in dependency order. Build them in order, one at a time, same batch rules as always.
+Status: ACTIVE — BATCH 6 (decided). Batch 5 (B5-01…B5-20) is COMPLETE + VERIFIED by Muse at HEAD `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`, Pages live; review record in `LOOP_STATE.md`). B6-01 is BUILT + VERIFIED. B6-02…B6-08 are BUILT and gated (210/210 unit, typecheck clean, 122/122 e2e, SW `gym-v97`; details in `BUILD_LOG.md`). The OpenCode loop stopped at B6-09: the free usage limit is reached (see `HANDOFF.md`). Remaining in order: B6-09, B6-10.
 
-## Next — B6-08: Bulgarian split squat rest 120 s → 150 s [T1, approved program number]
+## Active — B6-09: Deload week: the mode [T2, fully specified in `QUEUE.md`]
 
-B6-07 is BUILT and gated (209/209 unit, typecheck clean, 121/121 e2e, SW `gym-v96`, `CACHE-HASH` 05f0759e0398e6eb; details in `BUILD_LOG.md`). Full spec in `QUEUE.md`: the one approved program number — `fri-bulgarian` `rest: 120` → `150`. Then B6-09 (deload mode), B6-10 (deload follow-through).
+Triage: **T2** (payload state + a set-target threaded through every read path), but the spec is complete, so the run continues — builder then tester, pinned to the free DeepSeek Flash hop. Files: `store.js`, `program.js`, `app.js`, `index.html`, `style.css`, `test/store.test.js`, `test/program.test.js`, `e2e/features.spec.js`, `e2e/a11y.spec.js`, `version.js`, `sw.js`.
+
+B6-08 is BUILT and gated (210/210 unit, typecheck clean, 122/122 e2e, SW `gym-v97`, `CACHE-HASH` c7186c371647bbfc; details in `BUILD_LOG.md`). Then B6-10 (deload follow-through), which empties the queue.
 
 ## Queued after B6-04 (full specs in `QUEUE.md`)
 
