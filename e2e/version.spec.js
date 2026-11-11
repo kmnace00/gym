@@ -12,9 +12,9 @@ test("the backup menu footer shows the schema version and the deploy tag", async
   await page.locator("#menuBtn").click();
   await expect(page.locator("#modal")).toBeVisible();
   const foot = await page.locator("#modalFoot").textContent();
-  expect(foot).toContain("v4");
+  expect(foot).toContain("v5");
   expect(foot).toContain(GYM_VERSION);
-  expect(/v4 · gym-v\d+ · \d+ workouts · /.test(foot), "footer reads like 'v4 · gym-v64 · 0 workouts · never backed up'").toBe(true);
+  expect(/v5 · gym-v\d+ · \d+ workouts · /.test(foot), "footer reads like 'v5 · gym-v90 · 0 workouts · never backed up'").toBe(true);
 });
 
 test("the service worker takes its cache name from version.js, not a second literal", () => {

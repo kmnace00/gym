@@ -233,7 +233,7 @@
       ? "Workout complete — nice work"
       : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
     if (!Gym.actualDay()) {
-      /* B6-02: the workout banks under the next training day, so say where it lands */
+      /* B6-02: say which training day this session banks under */
       summary = "Off day — this logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + ". " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
@@ -1500,6 +1500,7 @@
     var v = parseFloat(this.value);
     if (isFinite(v) && v >= 66 && v <= 700) {
       payload.bodyweight = Math.round(v * 10) / 10;
+      payload.bodyweightSet = true;
       commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
     } else {
       renderBw(); setMsg("Bodyweight must be 66–700 lb");

@@ -16,7 +16,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  var CURRENT = 4;
+  var CURRENT = 5;
   var STORE = "gym-tool-v2";   // legacy key name; payload `v` is authoritative
   var LEGACY = "gym-tool-v1";  // v1 payload read once, then migrated
   var QUARANTINE = STORE + "-corrupt";
@@ -83,7 +83,7 @@
     return {
       v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {},
       lastBackup: null, active: emptySession(todayDay()), sessionLog: [],
-      bodyweight: 165
+      bodyweight: 165, bodyweightSet: false
     };
   }
 
@@ -262,6 +262,7 @@
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
     p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 165;
+    p.bodyweightSet = p.bodyweightSet === true;
     if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];
@@ -326,16 +327,20 @@
     return p;
   }
 
-  /* v1 → v2 → v3 → v4; unknown/future versions are flagged, never dropped */
+  /* v1 → v2 → v3 → v4 → v5; unknown/future versions are flagged, never dropped.
+     v4 had no `bodyweightSet`, so derive it the way its merge rule behaved:
+     165 was the unset default, anything else was a real choice. */
   function migrate(raw) {
     var p;
     try { p = JSON.parse(raw); } catch (e) { return null; }
     if (!p || typeof p !== "object") return null;
     if (p.v === CURRENT) return normalize(p);
-    if (p.v === 1 || p.v === 2) return normalize(migrateV3(migrateV2(p)));
-    if (p.v === 3) return normalize(migrateV3(p));
-    if (typeof p.v === "number" && p.v > CURRENT) return { __future: p };
-    return null;
+    if (p.v === 1 || p.v === 2) p = migrateV3(migrateV2(p));
+    else if (p.v === 3) p = migrateV3(p);
+    else if (p.v !== 4) return typeof p.v === "number" && p.v > CURRENT ? { __future: p } : null;
+    p.bodyweightSet = p.bodyweight !== 165;
+    p.v = CURRENT;
+    return normalize(p);
   }
 
   /* ── corrupt-payload salvage (B4-02) ─────────────────────────────────────
@@ -868,8 +873,12 @@
       .sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
     while (out.sessionLog.length > SESSION_MAX) out.sessionLog.shift();
 
-    if (incoming && typeof incoming.bodyweight === "number" && isFinite(incoming.bodyweight) && incoming.bodyweight > 0 && incoming.bodyweight <= BODYWEIGHT_MAX && out.bodyweight === 165) {
-      out.bodyweight = incoming.bodyweight;
+    /* B6-03: a set local bodyweight wins; adopt the incoming one only while the
+       local flag says unset (legacy incoming: derive from ≠ 165). */
+    var ib = incoming && incoming.bodyweight;
+    if (out.bodyweightSet !== true && typeof ib === "number" && isFinite(ib) && ib > 0 && ib <= BODYWEIGHT_MAX) {
+      out.bodyweight = ib;
+      out.bodyweightSet = typeof incoming.bodyweightSet === "boolean" ? incoming.bodyweightSet : ib !== 165;
     }
     out.v = CURRENT;
     if (!out.lastBackup && incoming && incoming.lastBackup) out.lastBackup = incoming.lastBackup;

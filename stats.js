@@ -291,9 +291,7 @@
     if (!today) return [];
     var have = Object.create(null), s = sessionVolumes(payload), i;
     for (i = 0; i < s.length; i++) if (s[i].date) have[s[i].date] = 1;
-    /* B6-02: a completed off-day session covers its recorded training day in
-       the week containing its date, so it lights that cell even when the
-       history date is Mon–Thu. Same date key → one cell, never two.          */
+    /* B6-02: off-day sessions light their covered training day (once). */
     var covered = sessionCoverage(payload), ck = Object.keys(covered);
     for (i = 0; i < ck.length; i++) have[ck[i]] = 1;
     var fri0 = mostRecentFriday(today), out = [], w;
@@ -323,9 +321,7 @@
     return idx;
   }
 
-  /* B6-02: a session records the training day it banked under, so Mon–Thu work
-     belongs to that day in the Mon–Sun week containing the session date. The
-     strip and heatmap count it once, alongside the date-based rule. */
+  /* B6-02: count a session toward its recorded day in its Mon–Sun week. */
   function sessionLoggedLifts(s, day) {
     if (day !== "fri" && day !== "sat" && day !== "sun") return 0;
     var lifts = (s && s.lifts) || {}, prefix = day + ":", n = 0, k, rec;
@@ -335,7 +331,7 @@
     }
     return n;
   }
-  /** The YYYY-MM-DD key a session covers, or null when its date/day are junk. */
+  /** Session's covered YYYY-MM-DD key, or null. */
   function sessionCoveredKey(s) {
     var day = s && s.day;
     if (day !== "fri" && day !== "sat" && day !== "sun") return null;
@@ -347,7 +343,7 @@
     key.setDate(monday.getDate() + offs[day]);
     return keyOf(key);
   }
-  /** Covered day key → logged-lift count, for completed sessions with work. */
+  /** Covered day → logged-lift count. */
   function sessionCoverage(payload) {
     var log = (payload && payload.sessionLog) || [], out = Object.create(null), i, s, key, n;
     for (i = 0; i < log.length; i++) {
@@ -372,7 +368,7 @@
     var today = parseKey(nowKey);
     if (!today) return [];
     var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
-    var covered = sessionCoverage(payload); // B6-02: off-day sessions, keyed by covered day
+    var covered = sessionCoverage(payload); // B6-02: covered by an off-day session
     var names = ["fri", "sat", "sun"], out = [], i;
     for (i = 0; i < 3; i++) {
       var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);

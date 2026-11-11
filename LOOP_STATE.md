@@ -1,6 +1,6 @@
 # LOOP_STATE — checkpoint
 
-Status: queue empty (OpenCode, Nov 10 ~13:05 CT, supervisor-spawned run — latest checkpoint) — no unstarted builder item. `TASK.md`'s only buildable item, B6-01, is already shipped (`6c0f084`, on `origin/main`; `parseKey` round-trip in `stats.js:220-224`, tests in `test/stats.test.js:399-425`); the rest of Batch 6 is decision-gated (P9, `bodyweightSet`, P6, P8, P11/L6, P5, P7) and `QUEUE.md` ends at "End of prepared Batch 6". Gate re-run at HEAD `545772c`: `npm run check` 196/196 unit + syntax/asset/id/SW-cache guards OK (exit 0; `check-assets` 13 refs/14 assets/2 manifest icons, `check-ids` 110 refs/118 ids/9 scripts typechecked/3 day tabs, `check-sw-cache` digest `6d3b391c5f60a828`), `npm run typecheck` clean (exit 0), `npm run e2e` 112/112 at 390×667 and 390×844 (exit 0, 15.4 s), no overflow, no console errors; Node v26.13.0, npm 11.20.0; SW `gym-v88` (`CACHE-HASH` 6d3b391c5f60a828); `git diff 68f319c HEAD -- program.js` = 0 lines; sync-first clean (HEAD == `origin/main` at `545772c`, tree clean, authors Khang only). Docs-only checkpoint, no WIP claimed, no SW bump. Run exits — Muse promotes the gated items.
+Status: BATCH 6 IN PROGRESS (OpenCode, Nov 10 ~19:55 CT, interactive run) — B6-02 and B6-03 built and gated. B6-02: `stats.js` attributes a completed off-day session to its recorded training day in the Mon–Sun week of its date (week strip + heatmap, no double count) and `app.js` day summary says "Off day — this logs as Friday."; SW `gym-v90`. B6-03: schema v4 → v5 with `bodyweightSet`, derived on migration and used by the merge instead of the 165 heuristic (`store.js`, `app.js`); SW `gym-v91` (`CACHE-HASH` cb9d043437e18eb9). Gate at HEAD: `npm run check` exit 0 — 198/198 unit, `check-assets` 13 refs/14 assets/2 manifest icons, `check-ids` 110 refs/118 ids/9 scripts/3 day tabs, `check-sw-cache` digest `cb9d043437e18eb9`; `npm run typecheck` clean (exit 0); `npm run e2e` 112/112 at 390×667 and 390×844 (exit 0, no overflow, no console errors); `git diff 68f319c HEAD -- program.js` = 0 lines. Precache 255,980 / 256,000 bytes — next asset change must reclaim space. WIP cleared; next is B6-04 (2-for-2 progression) in `TASK.md`.
 
 Previous checkpoint (OpenCode, Nov 10 ~12:59 CT, supervisor-spawned run) — same verdict, gate green at HEAD `35209a9` (196/196 unit, typecheck clean, 112/112 e2e).
 
@@ -520,3 +520,14 @@ Pass 4 build, same phone check:
   (`CACHE-HASH` 6d3b391c5f60a828), `program.js` diff vs `68f319c` = 0 lines. Only this
   checkpoint written; no app asset changed, so no SW bump. Run exits; the supervisor wakes
   the next one.
+- 2026-11-10 19:55 CT: B6-02 + B6-03 built and gated (interactive run).
+  B6-02: week strip + heatmap attribute a completed off-day session to its
+  recorded day in the Mon–Sun week of its date; day summary says "Off day —
+  this logs as Friday."; 2 unit tests + the extended off-day journey e2e
+  (Wednesday clock → Friday strip `done`, `1/24` heat). B6-03: schema v5
+  `bodyweightSet` (migration derives it from 165, merge uses the flag,
+  bodyweight input stamps it); merge matrix + v5 expectations in the tests.
+  Gate: 198/198 unit (exit 0), typecheck clean (exit 0), 112/112 e2e at
+  390×667/844 (exit 0, no overflow, no console errors); SW `gym-v91`,
+  `CACHE-HASH` cb9d043437e18eb9; `program.js` diff vs `68f319c` = 0 lines.
+  Precache 255,980/256,000 bytes — flagged for the next item. No WIP.

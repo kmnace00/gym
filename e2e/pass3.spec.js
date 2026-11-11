@@ -299,7 +299,7 @@ for (const size of salvageSizes) {
         const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
         return { v: p.v, entries: (p.liftHistory[day + ":0"] || []).map((e) => e.date) };
       }, seeded.day);
-      expect(saved.v).toBe(4);
+      expect(saved.v).toBe(5);
       expect(saved.entries).toEqual([seeded.date]);
       await noOverflow();
 
