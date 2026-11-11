@@ -261,6 +261,8 @@ Pass 4 build, same phone check:
 - `NEEDS_RESEARCH`: none.
 - `NEEDS_DESIGN`: none.
 - `NEEDS_FIX`: none.
+- REVIEW NOTE (B6-02, Muse): on Mon–Thu the week strip projects the *previous* Fri–Sun block (`mostRecentFriday`), while a Mon–Thu session covers the *next* Friday (its Mon–Sun week). So the covered day appears when that week is projected — Friday onward — and the e2e advances the clock to Friday to assert the strip/heat. Making the strip show the upcoming block on Mon–Thu would change the adherence view and break the existing Monday-after tests; if that was the intent, it is a separate design call. Observed while building, not changed.
+- NOTE (size budget): precache is 255,980 / 256,000 bytes. B6-04 must reclaim space before adding any asset bytes; the alternative is a deliberate ceiling change.
 - `PAUSED`: no — resumed Nov 8, 21:09 CT. Finish Batch 2 (B1–B3) before 4:00 AM Mon, then stop and wait for Muse review. Muse is review-only after Batch 2.
 
 ## Log
