@@ -323,13 +323,9 @@
     return idx;
   }
 
-  /* ── off-day attribution (B6-02) ─────────────────────────────────────────
-     A session keeps the true calendar date it started on, but records the
-     training day it was banked under (`day`). Mon–Thu sessions therefore bank
-     Friday's workout on, say, a Wednesday. The week strip and heatmap project
-     Fri/Sat/Sun *dates*, so attribute such a session to its recorded day in
-     the Mon–Sun week containing its date — that is the Friday it was banked
-     into. A day covered twice (off-day + its real date) still counts once.  */
+  /* B6-02: a session records the training day it banked under, so Mon–Thu work
+     belongs to that day in the Mon–Sun week containing the session date. The
+     strip and heatmap count it once, alongside the date-based rule. */
   function sessionLoggedLifts(s, day) {
     if (day !== "fri" && day !== "sat" && day !== "sun") return 0;
     var lifts = (s && s.lifts) || {}, prefix = day + ":", n = 0, k, rec;
@@ -346,7 +342,7 @@
     var dt = parseKey(s.date);
     if (!dt) return null;
     var monday = new Date(dt), offs = { fri: 4, sat: 5, sun: 6 };
-    monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7)); // Mon–Sun week
+    monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
     var key = new Date(monday);
     key.setDate(monday.getDate() + offs[day]);
     return keyOf(key);
