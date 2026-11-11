@@ -14,7 +14,10 @@ test("Plan today pre-fills every lift from history in one tap", async ({ page })
   await seed(page, {
     v: 2, cur: "fri", idx: 0, state: {},
     liftHistory: {
-      "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }]
+      "fri:0": [
+        { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+        { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+      ]
     }
   });
   await expect(page.locator("#planBtn")).toBeVisible();
@@ -28,7 +31,10 @@ test("the plan line clears as soon as the first set is logged (B3-25)", async ({
   await seed(page, {
     v: 2, cur: "fri", idx: 0, state: {},
     liftHistory: {
-      "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }]
+      "fri:0": [
+        { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+        { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+      ]
     }
   });
   await page.locator("#planBtn").click();

@@ -81,17 +81,36 @@ test("set log shows a row per set and records the values", async ({ page }) => {
   await expect(page.locator("#setCount")).toContainText("Set 2 of 3");
 });
 
-test("auto-progression suggests +step and Apply sets it", async ({ page }) => {
+test("auto-progression: two qualifying sessions suggest +step and Apply sets it", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,
     state: { "fri:0": { done: 0, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: null } },
-    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+    liftHistory: { "fri:0": [
+      { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+      { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+    ] }
   });
   await page.locator(".liftrow").first().click();
+  await expect(page.locator("#suggestText")).toContainText("hit top twice");
   await expect(page.locator("#suggestText")).toContainText("try");
   await expect(page.locator("#applyLoad")).toBeVisible();
   await page.locator("#applyLoad").click();
   await expect(page.locator("#loadVal")).toHaveText("52.5");
+});
+
+test("auto-progression: one qualifying session says one more, with no Apply", async ({ page }) => {
+  await seed(page, {
+    v: 2, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 0, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: null } },
+    liftHistory: { "fri:0": [
+      { date: "2026-10-25", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
+      { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+    ] }
+  });
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#suggestText")).toContainText("one more top session to go up");
+  await expect(page.locator("#suggestText")).toContainText("keep 50");
+  await expect(page.locator("#applyLoad")).toBeHidden();
 });
 
 test("import restores a backup", async ({ page }) => {

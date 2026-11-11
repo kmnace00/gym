@@ -139,12 +139,33 @@
     return reps;
   }
 
-  /* double-progression: if the last session hit top reps at target RIR, add a step */
-  function suggestLoad(e, prev) {
-    if (!prev) return { suggest: null, last: null, hitTop: false };
+  /* 2-for-2 qualifier (NSCA): did this session exceed the rep goal on its
+     LAST set while staying at or above the target RIR? Banked entries carry a
+     per-set array; legacy entries fall back to their single reps/rir fields.
+     Pure and read-time — `hitTop` keeps its banked meaning, no schema change. */
+  function qualifies(e, entry) {
+    if (!entry) return false;
+    var last = Array.isArray(entry.sets) && entry.sets.length
+      ? entry.sets[entry.sets.length - 1]
+      : entry;
+    if (!last) return false;
+    var reps = last.reps, rir = last.rir;
+    return typeof reps === "number" && typeof rir === "number" &&
+      reps >= e.top + 2 && rir >= e.rir;
+  }
+
+  /* double progression, NSCA 2-for-2: add a step only after the rep goal was
+     exceeded at target RIR in TWO consecutive sessions. `prev`/`prev2` are the
+     newest and the one before it; `qualified` is how many of the two qualify
+     (counted newest first), so the UI can say "one more top session to go up".
+     No entries / one entry ⇒ no increase.                                     */
+  function suggestLoad(e, prev, prev2) {
+    if (!prev) return { suggest: null, last: null, hitTop: false, qualified: 0 };
     var hitTop = !!prev.hitTop;
-    var suggest = hitTop ? round2(prev.load + e.step) : prev.load;
-    return { suggest: suggest, last: prev, hitTop: hitTop };
+    var q = qualifies(e, prev) ? 1 : 0;
+    if (prev2 && qualifies(e, prev2)) q++;
+    var suggest = q === 2 ? round2(prev.load + e.step) : prev.load;
+    return { suggest: suggest, last: prev, hitTop: hitTop, qualified: q };
   }
 
   /* stall guard: three consecutive sessions that all missed top reps at the
@@ -166,7 +187,7 @@
 
   /**
    * The load to pre-fill for one lift from its history, and why.
-   * action: "none" (no history) | "up" (double progression) |
+   * action: "none" (no history) | "up" (the 2-for-2 rule fired) |
    *         "deload" (3-session stall) | "keep" (repeat last load).
    * @param {any} e exercise
    * @param {any[]} entries oldest → newest
@@ -176,8 +197,8 @@
     if (!entries || !entries.length) return { load: null, action: "none" };
     var stall = stallLoad(e, entries);
     if (stall) return { load: stall.load, action: "deload" };
-    var su = suggestLoad(e, entries[entries.length - 1]);
-    if (su.hitTop && su.suggest !== su.last.load) return { load: su.suggest, action: "up" };
+    var su = suggestLoad(e, entries[entries.length - 1], entries[entries.length - 2]);
+    if (su.qualified === 2 && su.suggest !== su.last.load) return { load: su.suggest, action: "up" };
     return { load: su.last.load, action: "keep" };
   }
 
@@ -186,6 +207,6 @@
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
-    stallLoad: stallLoad, planFor: planFor
+    qualifies: qualifies, stallLoad: stallLoad, planFor: planFor
   };
 });

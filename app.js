@@ -4,7 +4,7 @@
 
   var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc, dayMins = Gym.dayMins, dayMinsLeft = Gym.dayMinsLeft,
       getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
-      planFor = Gym.planFor, progressMetric = Gym.progressMetric,
+      qualifies = Gym.qualifies, planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
       Machine = Gym, Stats = Gym, Rest = Gym;
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
@@ -319,8 +319,9 @@
     var line = document.getElementById("suggestLine"), txt = document.getElementById("suggestText"), applyBtn = document.getElementById("applyLoad");
     var pri = priorEntries();
     var last = pri.length ? pri[pri.length - 1] : null;
+    var prior = pri.length > 1 ? pri[pri.length - 2] : null;
     var stall = stallLoad(ex(), pri);
-    var su = suggestLoad(ex(), last);
+    var su = suggestLoad(ex(), last, prior);
     renderPrev(su);
     if (!su.last) { line.hidden = true; applyBtn.hidden = true; return; }
     var when = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
@@ -330,10 +331,14 @@
       txt.innerHTML = base + " · 3 sessions stalled → deload to <b>" + esc(stall.load) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(stall.load));
-    } else if (su.hitTop && su.suggest !== su.last.load) {
-      txt.innerHTML = base + " (hit top) → try <b>" + esc(su.suggest) + "</b>";
+    } else if (su.qualified === 2 && su.suggest !== su.last.load) {
+      txt.innerHTML = base + " (hit top twice) → try <b>" + esc(su.suggest) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(su.suggest));
+    } else if (su.qualified === 1 && qualifies(ex(), last)) {
+      /* latest session cleared the bar, but it takes two in a row */
+      txt.textContent = base + " → keep " + su.last.load + " · one more top session to go up";
+      applyBtn.hidden = true;
     } else {
       txt.textContent = base + " → keep " + su.last.load;
       applyBtn.hidden = true;

@@ -43,8 +43,8 @@ for (const size of sizes) {
         },
         liftHistory: {
           "fri:0": [
-            { date: "2026-10-01", load: 50, reps: 6, rir: 2, hitTop: true, setsDone: 3 },
-            { date: "2026-10-08", load: 52.5, reps: 6, rir: 2, hitTop: true, setsDone: 3 }
+            { date: "2026-10-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+            { date: "2026-10-08", load: 52.5, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
           ]
         }
       });

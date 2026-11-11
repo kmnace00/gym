@@ -69,25 +69,69 @@ test("getLift repairs a partial record", () => {
 });
 
 test("suggestLoad: first time → no suggestion", () => {
-  const r = P.suggestLoad({ step: 2.5 }, null);
-  assert.deepEqual(r, { suggest: null, last: null, hitTop: false });
+  const r = P.suggestLoad({ step: 2.5, top: 6, rir: 2 }, null);
+  assert.deepEqual(r, { suggest: null, last: null, hitTop: false, qualified: 0 });
 });
 
-test("suggestLoad: hit top → add one step", () => {
-  const r = P.suggestLoad({ step: 2.5 }, { load: 50, reps: 6, rir: 2, hitTop: true });
+test("suggestLoad: two qualifying sessions → add one step", () => {
+  const e = { step: 2.5, top: 6, rir: 2 };
+  const r = P.suggestLoad(e,
+    { load: 50, reps: 8, rir: 2, hitTop: true },
+    { load: 50, reps: 8, rir: 2, hitTop: true });
   assert.equal(r.suggest, 52.5);
   assert.equal(r.hitTop, true);
+  assert.equal(r.qualified, 2);
+});
+
+test("suggestLoad: only the latest qualifies → keep the load", () => {
+  const e = { step: 2.5, top: 6, rir: 2 };
+  const r = P.suggestLoad(e, { load: 50, reps: 8, rir: 2 }, { load: 50, reps: 6, rir: 2 });
+  assert.equal(r.suggest, 50);
+  assert.equal(r.qualified, 1);
+});
+
+test("suggestLoad: only the older qualifies → keep the load", () => {
+  const e = { step: 2.5, top: 6, rir: 2 };
+  const r = P.suggestLoad(e, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 8, rir: 2 });
+  assert.equal(r.suggest, 50);
+  assert.equal(r.qualified, 1);
+  assert.equal(P.qualifies(e, { load: 50, reps: 6, rir: 2 }), false);
+});
+
+test("suggestLoad: one session can never raise the load", () => {
+  const e = { step: 2.5, top: 6, rir: 2 };
+  const r = P.suggestLoad(e, { load: 50, reps: 8, rir: 2, hitTop: true });
+  assert.equal(r.suggest, 50);
+  assert.equal(r.qualified, 1);
 });
 
 test("suggestLoad: missed top → keep load", () => {
-  const r = P.suggestLoad({ step: 5 }, { load: 90, reps: 4, rir: 1, hitTop: false });
+  const r = P.suggestLoad({ step: 5, top: 6, rir: 2 },
+    { load: 90, reps: 4, rir: 1, hitTop: false },
+    { load: 90, reps: 4, rir: 1, hitTop: false });
   assert.equal(r.suggest, 90);
+  assert.equal(r.qualified, 0);
 });
 
 test("suggestLoad: step precision (2.5 / 1 / 5)", () => {
-  assert.equal(P.suggestLoad({ step: 2.5 }, { load: 52.5, hitTop: true }).suggest, 55);
-  assert.equal(P.suggestLoad({ step: 1 }, { load: 13, hitTop: true }).suggest, 14);
-  assert.equal(P.suggestLoad({ step: 5 }, { load: 130, hitTop: true }).suggest, 135);
+  const q = (load) => ({ load, reps: 8, rir: 2 });
+  const e = (step) => ({ step, top: 6, rir: 2 });
+  assert.equal(P.suggestLoad(e(2.5), q(52.5), q(52.5)).suggest, 55);
+  assert.equal(P.suggestLoad(e(1), q(13), q(13)).suggest, 14);
+  assert.equal(P.suggestLoad(e(5), q(130), q(130)).suggest, 135);
+});
+
+test("qualifies: last banked set decides; legacy fields are the fallback", () => {
+  const e = { top: 6, rir: 2 };
+  const hit = { reps: 8, rir: 2 };
+  const miss = { reps: 6, rir: 2 };
+  assert.equal(P.qualifies(e, { sets: [hit, hit, hit] }), true);
+  assert.equal(P.qualifies(e, { sets: [hit, hit, miss] }), false, "an earlier hit does not count");
+  assert.equal(P.qualifies(e, { sets: [], reps: 8, rir: 2 }), true, "empty sets → legacy fields");
+  assert.equal(P.qualifies(e, { reps: 8, rir: 2 }), true, "no sets key → legacy fields");
+  assert.equal(P.qualifies(e, { sets: [{ reps: 8, rir: 1 }] }), false, "RIR under target");
+  assert.equal(P.qualifies(e, { sets: [{ reps: 7, rir: 2 }] }), false, "top + 1 is not enough");
+  assert.equal(P.qualifies(e, null), false);
 });
 
 test("epley1rm and progressMetric", () => {

@@ -10,21 +10,39 @@ test("planFor: no history → no plan", () => {
   assert.deepEqual(P.planFor({ step: 2.5 }, []), { load: null, action: "none" });
 });
 
-test("planFor: hit top → up one step", () => {
-  const r = P.planFor({ step: 2.5 }, [{ load: 50, reps: 6, hitTop: true }]);
+test("planFor: two qualifying sessions → up one step", () => {
+  const e = { step: 2.5, top: 6, rir: 2 };
+  const r = P.planFor(e, [
+    { load: 50, reps: 8, rir: 2, hitTop: true },
+    { load: 50, reps: 8, rir: 2, hitTop: true }
+  ]);
   assert.equal(r.action, "up");
   assert.equal(r.load, 52.5);
 });
 
+test("planFor: one qualifying session → keep the load", () => {
+  const r = P.planFor({ step: 2.5, top: 6, rir: 2 }, [{ load: 50, reps: 8, rir: 2, hitTop: true }]);
+  assert.equal(r.action, "keep");
+  assert.equal(r.load, 50);
+});
+
 test("planFor: missed top once → keep the load", () => {
-  const r = P.planFor({ step: 2.5 }, [{ load: 50, reps: 5, hitTop: false }]);
+  const r = P.planFor({ step: 2.5, top: 6, rir: 2 }, [{ load: 50, reps: 5, hitTop: false }]);
   assert.equal(r.action, "keep");
   assert.equal(r.load, 50);
 });
 
 test("planFor: three missed sessions → deload", () => {
   const miss = () => ({ load: 60, reps: 5, hitTop: false });
-  const r = P.planFor({ step: 2.5 }, [miss(), miss(), miss()]);
+  const r = P.planFor({ step: 2.5, top: 6, rir: 2 }, [miss(), miss(), miss()]);
+  assert.equal(r.action, "deload");
+  assert.equal(r.load, 55);
+});
+
+test("planFor: a stall still wins over a 2-for-2", () => {
+  /* all three missed `hitTop`, yet the last two clear the rep bar */
+  const q = () => ({ load: 60, reps: 8, rir: 2, hitTop: false });
+  const r = P.planFor({ step: 2.5, top: 6, rir: 2 }, [q(), q(), q()]);
   assert.equal(r.action, "deload");
   assert.equal(r.load, 55);
 });
