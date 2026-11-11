@@ -30,6 +30,7 @@
   var ACC_SEC_MAX = 8 * 3600;  // 8 h ceiling for one workout clock
   var BODYWEIGHT_MAX = 700;    // lb
   var SET_LOAD_MAX = 2000;     // same bounds the UI clamps to (B3-18)
+  var SWAP_ALT_MAX = 120;      // the longest approved alt name is ~90 chars (B6-06)
   var SET_REPS_MAX = 999;
   var RIR_MAX = 4;
 
@@ -171,6 +172,12 @@
     if (own(r, "done")) r.done = clampCount(r.done, DONE_MAX);
     if (own(r, "topHits")) r.topHits = clampCount(r.topHits, DONE_MAX);
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
+    /* B6-06: the swap marker survives only as a sane short string (the longest
+       approved alt is ~90 chars); anything hostile becomes null, and an absent
+       key stays absent. Additive field, no version bump (Pass 3 precedent).   */
+    if (Object.prototype.hasOwnProperty.call(r, "swapAlt")) {
+      r.swapAlt = typeof r.swapAlt === "string" && r.swapAlt.length <= SWAP_ALT_MAX ? r.swapAlt : null;
+    }
     if (Object.prototype.hasOwnProperty.call(r, "exId")) r.exId = typeof r.exId === "string" ? r.exId : String(r.exId);
     if (Object.prototype.hasOwnProperty.call(r, "bw")) r.bw = !!r.bw;
     sanitizeSetsField(r);
@@ -194,6 +201,10 @@
       if (!(e.bwKg > 0 && e.bwKg <= BODYWEIGHT_MAX)) delete e.bwKg;
     }
     if (Object.prototype.hasOwnProperty.call(e, "exId")) e.exId = typeof e.exId === "string" ? e.exId : String(e.exId);
+    /* B6-06: a history entry's swap marker is a name string, same bounds */
+    if (Object.prototype.hasOwnProperty.call(e, "swap")) {
+      e.swap = typeof e.swap === "string" && e.swap.length <= SWAP_ALT_MAX ? e.swap : null;
+    }
     sanitizeSetsField(e);
     return e;
   }

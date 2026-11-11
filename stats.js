@@ -432,7 +432,7 @@
       name = ex ? ex.n : k;
       isBw = !!(ex && ex.bw);
       for (i = 0; i < arr.length; i++) {
-        e = arr[i]; if (!e) continue;
+        e = arr[i]; if (!e || !countsForProgression(e)) continue; // a swapped session is not this lift's work
         sets = entrySets(e);
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
@@ -447,6 +447,11 @@
     out.sort(function (a, b) { return b.metric - a.metric; });
     return out;
   }
+
+  /* B6-06: the one shared exclusion rule — a banked entry counts for the
+     ORIGINAL lift's progression (suggestions, Plan today, sparkline, PRs)
+     iff it was not logged under an alternate. Volume/tonnage ignores this. */
+  function countsForProgression(e) { return !!e && !e.swap; }
 
   /** Compact tonnage label for the Progress view: 1234 → "1.2k", 999 → "999". */
   function compactVol(v) { v = Math.round(v || 0); return v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v); }
@@ -561,6 +566,7 @@
     setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
     resolveBodyweight: resolveBodyweight,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
+    countsForProgression: countsForProgression,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,

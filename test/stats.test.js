@@ -476,3 +476,22 @@ test("an impossible date in the payload is never attributed to Mar 2", () => {
   assert.equal(S.weekStatus(payload, "2026-02-30").length, 0);
   assert.equal(Object.getOwnPropertyNames(Object.prototype).length, protoBefore, "Object.prototype must stay unpolluted");
 });
+
+test("countsForProgression is the one swap-exclusion rule (B6-06)", () => {
+  assert.equal(S.countsForProgression(null), false);
+  assert.equal(S.countsForProgression({}), true);
+  assert.equal(S.countsForProgression({ swap: "DB reverse lunge" }), false);
+  assert.equal(S.countsForProgression({ swap: null }), true, "a dropped marker is not a swap");
+});
+
+test("swap entries are invisible to PRs but still counted in volume", () => {
+  const p = sample();
+  p.liftHistory["fri:0"].push({ date: "2026-11-08", load: 80, reps: 8, rir: 2, setsDone: 3, swap: "DB reverse lunge" });
+  const DAYS = { fri: { ex: [{}, {}] }, sat: { ex: [{}] }, sun: { ex: [] } };
+  const pr = S.personalRecords(p, DAYS, P.progressMetric)[0];
+  assert.equal(pr.load, 55, "the swapped 80 lb session is not this lift's PR");
+  /* the work was done — session volume keeps counting it */
+  const vols = S.sessionVolumes(p);
+  assert.equal(vols[vols.length - 1].volume, 80 * 8 * 3);
+  assert.equal(vols[vols.length - 2].volume, 990 + 960);
+});

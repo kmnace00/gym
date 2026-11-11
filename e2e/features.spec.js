@@ -312,3 +312,33 @@ test("Export CSV downloads gym-<date>.csv containing the logged sets", async ({ 
   expect(text, "each logged set is a row").toContain("2026-11-06,fri,Smith squat,1,70,6,2");
   expect(text, "multi-set entries expand per set").toContain("2026-11-06,fri,Smith squat,2,72.5,6,1");
 });
+
+test("a swapped session never feeds the original lift's progression (B6-06)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 0, load: 50, reps: 6, rir: 2 } },
+    liftHistory: { "fri:0": [
+      { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+      { date: "2026-11-01", load: 60, reps: 8, rir: 2, hitTop: true, setsDone: 3, swap: "DB reverse lunge" }
+    ] }
+  });
+  await page.locator(".liftrow").first().click();
+  /* the 60 lb swap is invisible: the suggestion reads the 50 lb session only */
+  await expect(page.locator("#suggestText")).toContainText("keep 50");
+  await expect(page.locator("#applyLoad")).toBeHidden();
+});
+
+test("banking a lift swapped to an alternate stamps the entry (B6-06)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 2, load: 60, reps: 6, rir: 2, swapAlt: "DB reverse lunge",
+      sets: [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // third set → bankLift
+  const arr = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["fri:0"]);
+  expect(arr.length).toBe(1);
+  expect(arr[0].swap).toBe("DB reverse lunge");
+  expect(arr[0].load).toBe(60); // the alternate's actual top set
+});

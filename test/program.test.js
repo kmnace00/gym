@@ -182,3 +182,15 @@ test("every lift has a unique exId", () => {
      merge two lifts into one record, so uniqueness is worth asserting. */
   assert.equal(ids.size, 24, "duplicate exId in program.js");
 });
+
+test("every lift carries its approved alternate (B6-06)", () => {
+  let count = 0;
+  for (const d of ["fri", "sat", "sun"]) {
+    for (const ex of P.DAYS[d].ex) {
+      count++;
+      assert.ok(typeof ex.alt === "string" && ex.alt.trim().length > 0, `${ex.n} has no alt`);
+      assert.ok(ex.alt.length <= 120, `${ex.n} alt exceeds the 120-char swapAlt bound`);
+    }
+  }
+  assert.equal(count, 24, "the program schedules 24 lifts");
+});

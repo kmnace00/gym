@@ -1193,3 +1193,20 @@ test("finalizeSession banks a clamped durationSec for a session left running ove
     q.state["fri:0"] = { done: 1, sets: [{ load: 50, reps: 6, rir: 2 }] }; return q; })(), t0 + 900000);
   assert.equal(short.durationSec, 900); // 15 min stays 15 min
 });
+
+test("swapAlt survives sanitize when sane and is nulled when hostile (B6-06)", () => {
+  const ok = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapAlt: "DB reverse lunge" } } }));
+  assert.equal(ok.state["fri:0"].swapAlt, "DB reverse lunge");
+  const long = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapAlt: "x".repeat(121) } } }));
+  assert.equal(long.state["fri:0"].swapAlt, null);
+  const notStr = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapAlt: 42 } } }));
+  assert.equal(notStr.state["fri:0"].swapAlt, null);
+  const none = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1 } } }));
+  assert.equal(Object.prototype.hasOwnProperty.call(none.state["fri:0"], "swapAlt"), false,
+    "an absent key stays absent — no version bump");
+  /* a banked entry's swap marker gets the same bounds */
+  const entry = S.migrate(JSON.stringify({ v: 5, liftHistory: { "fri:0": [{ date: "2026-11-01", load: 60, reps: 8, rir: 2, swap: "DB reverse lunge" }] } }));
+  assert.equal(entry.liftHistory["fri:0"][0].swap, "DB reverse lunge");
+  const badEntry = S.migrate(JSON.stringify({ v: 5, liftHistory: { "fri:0": [{ date: "2026-11-01", load: 60, reps: 8, rir: 2, swap: 7 }] } }));
+  assert.equal(badEntry.liftHistory["fri:0"][0].swap, null);
+});

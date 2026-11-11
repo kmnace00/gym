@@ -22,34 +22,34 @@
      can re-home them if a future program edit reorders the list.            */
   var DAYS = {
     fri: { label: "Friday — Push + Quads", ex: [
-      { id: "fri-smith-squat", n: "Smith squat", s: 3, r: 6, top: 6, load: 60, step: 2.5, rest: 180, rir: 2, cue: "Bar over mid-foot, heels flat." },
-      { id: "fri-smith-incline", n: "Smith incline press", s: 3, r: 6, top: 6, load: 50, step: 2.5, rest: 120, rir: 2, cue: "Bench ~30°. Bar to upper chest." },
-      { id: "fri-bulgarian", n: "Bulgarian split squat", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 120, rir: 2, cue: "Per leg. Upright = more quad." },
-      { id: "fri-incline-db", n: "Incline DB press", s: 3, r: 7, top: 8, load: 52.5, step: 2.5, rest: 120, rir: 2, cue: "Lower to a stretch, don't drift wide." },
-      { id: "fri-pec-deck", n: "Pec deck fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
-      { id: "fri-leg-ext", n: "Leg extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },
-      { id: "fri-cable-lat", n: "Cable lateral raise", s: 3, r: 10, top: 12, load: 10, step: 1, rest: 90, rir: 1, partial: 1, cue: "Per side. Arm across body, lead with elbow." },
-      { id: "fri-weighted-dip", n: "Weighted dip", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Lean forward, comfortable depth." }
+      { id: "fri-smith-squat", n: "Smith squat", alt: "Barbell back squat", s: 3, r: 6, top: 6, load: 60, step: 2.5, rest: 180, rir: 2, cue: "Bar over mid-foot, heels flat." },
+      { id: "fri-smith-incline", n: "Smith incline press", alt: "Barbell incline press", s: 3, r: 6, top: 6, load: 50, step: 2.5, rest: 120, rir: 2, cue: "Bench ~30°. Bar to upper chest." },
+      { id: "fri-bulgarian", n: "Bulgarian split squat", alt: "DB reverse lunge", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 120, rir: 2, cue: "Per leg. Upright = more quad." },
+      { id: "fri-incline-db", n: "Incline DB press", alt: "Barbell incline press", s: 3, r: 7, top: 8, load: 52.5, step: 2.5, rest: 120, rir: 2, cue: "Lower to a stretch, don't drift wide." },
+      { id: "fri-pec-deck", n: "Pec deck fly", alt: "Incline DB fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
+      { id: "fri-leg-ext", n: "Leg extension", alt: "Sissy squat (assisted, hold a rack)", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },
+      { id: "fri-cable-lat", n: "Cable lateral raise", alt: "DB lateral raise", s: 3, r: 10, top: 12, load: 10, step: 1, rest: 90, rir: 1, partial: 1, cue: "Per side. Arm across body, lead with elbow." },
+      { id: "fri-weighted-dip", n: "Weighted dip", alt: "Close-grip bench press", s: 3, r: 6, top: 8, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Lean forward, comfortable depth." }
     ] },
     sat: { label: "Saturday — Pull + Hinge", ex: [
-      { id: "sat-front-pulldown", n: "MTS front pulldown", s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
-      { id: "sat-cable-rdl", n: "Cable RDL", s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
-      { id: "sat-tbar-row", n: "T-bar row", s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "25+25+25. Chest-supported if you can." },
-      { id: "sat-leg-curl", n: "Seated leg curl", s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
-      { id: "sat-bayesian-curl", n: "Bayesian curl", s: 3, r: 8, top: 10, load: 13, step: 1, rest: 90, rir: 1, partial: 1, cue: "Arm behind body, elbow fixed." },
-      { id: "sat-preacher-curl", n: "Preacher curl", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
-      { id: "sat-rear-delt", n: "Rear delt crossover", s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
-      { id: "sat-calf-raise", n: "Standing calf raise", s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
+      { id: "sat-front-pulldown", n: "MTS front pulldown", alt: "Pull-ups (band-assisted if <5 reps)", s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
+      { id: "sat-cable-rdl", n: "Cable RDL", alt: "DB Romanian deadlift", s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
+      { id: "sat-tbar-row", n: "T-bar row", alt: "One-arm DB row (chest-supported if possible)", s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "25+25+25. Chest-supported if you can." },
+      { id: "sat-leg-curl", n: "Seated leg curl", alt: "Nordic hamstring curl (eccentric-only, assisted; fallback: lying leg curl machine)", s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
+      { id: "sat-bayesian-curl", n: "Bayesian curl", alt: "Incline DB curl", s: 3, r: 8, top: 10, load: 13, step: 1, rest: 90, rir: 1, partial: 1, cue: "Arm behind body, elbow fixed." },
+      { id: "sat-preacher-curl", n: "Preacher curl", alt: "Spider curl (chest-supported on incline bench)", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
+      { id: "sat-rear-delt", n: "Rear delt crossover", alt: "Bent-over DB reverse fly", s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
+      { id: "sat-calf-raise", n: "Standing calf raise", alt: "Single-leg DB calf raise on a step", s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
     ] },
     sun: { label: "Sunday — Light / Machines", ex: [
-      { id: "sun-leg-press", n: "Leg press / Hack squat", s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
-      { id: "sun-pullups", n: "Pull-ups", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Bodyweight. Under 5 reps? Use pulldown." },
-      { id: "sun-machine-ohp", n: "Machine overhead press", s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
-      { id: "sun-cable-fly", n: "Cable fly", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
-      { id: "sun-seated-row", n: "Machine seated row", s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
-      { id: "sun-lat-pec", n: "Lateral raise ↔ Reverse pec deck", s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
-      { id: "sun-oh-ext", n: "Overhead cable extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
-      { id: "sun-calf-raise", n: "Standing calf raise", s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
+      { id: "sun-leg-press", n: "Leg press / Hack squat", alt: "Barbell back squat (if no rack: goblet squat, heels elevated)", s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
+      { id: "sun-pullups", n: "Pull-ups", alt: "Lat pulldown", s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Bodyweight. Under 5 reps? Use pulldown." },
+      { id: "sun-machine-ohp", n: "Machine overhead press", alt: "Seated DB overhead press", s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
+      { id: "sun-cable-fly", n: "Cable fly", alt: "Pec deck fly", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
+      { id: "sun-seated-row", n: "Machine seated row", alt: "Barbell bent-over row", s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
+      { id: "sun-lat-pec", n: "Lateral raise ↔ Reverse pec deck", alt: "DB lateral raise + bent-over DB reverse fly", s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
+      { id: "sun-oh-ext", n: "Overhead cable extension", alt: "Single-arm DB overhead extension", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
+      { id: "sun-calf-raise", n: "Standing calf raise", alt: "Single-leg DB calf raise on a step", s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
     ] }
   };
 
@@ -116,6 +116,7 @@
       if (typeof s.rir !== "number") s.rir = e.rir;
       if (typeof s.topHits !== "number") s.topHits = 0;
       if (!("lastRir" in s)) s.lastRir = null;
+      if (!("swapAlt" in s)) s.swapAlt = null; // B6-06: the swap marker (name of the alternate)
     }
     if (!Array.isArray(s.sets)) s.sets = [];
     if (e && e.id && s.exId !== e.id) s.exId = e.id;

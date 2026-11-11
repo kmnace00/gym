@@ -4,7 +4,8 @@
 
   var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc, dayMins = Gym.dayMins, dayMinsLeft = Gym.dayMinsLeft,
       getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
-      qualifies = Gym.qualifies, planFor = Gym.planFor, progressMetric = Gym.progressMetric,
+      qualifies = Gym.qualifies, countsForProgression = Gym.countsForProgression,
+      planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
       Machine = Gym, Stats = Gym, Rest = Gym;
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
@@ -56,6 +57,7 @@
       bw: !!e.bw, exId: e.id
     };
     if (e.bw && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
+    if (s.swapAlt) entry.swap = s.swapAlt; // B6-06: logged under an alternate — excluded from progression/PRs
     Gym.upsertHistory(payload, d, i, entry);
   }
 
@@ -294,7 +296,7 @@
   /* history entries *before* this session. If the current lift is already
      complete, the newest entry is this session, so skip it. */
   function priorEntries() {
-    var entries = Gym.series(payload, cur, idx);
+    var entries = Gym.series(payload, cur, idx).filter(countsForProgression); // swapped sessions don't feed progression
     var s = curSt();
     var skip = (s.done >= ex().s && entries.length > 0) ? 1 : 0;
     return skip ? entries.slice(0, entries.length - 1) : entries;
@@ -348,7 +350,7 @@
     line.hidden = false;
   }
   function renderSpark() {
-    var entries = Gym.series(payload, cur, idx, 12);
+    var entries = Gym.series(payload, cur, idx, 12).filter(countsForProgression); // the original lift's trend
     var wrap = document.getElementById("sparkWrap"), svg = document.getElementById("sparkline");
     var toggle = document.getElementById("trendToggle");
     var has = entries.length >= 2;
@@ -1124,7 +1126,7 @@
       if (s.done > 0) return; // never overwrite an in-progress lift
       var dflt = e.load === null ? 0 : (e.load || 0);
       if (s.load !== dflt) { manual++; return; } // an explicit load (or an earlier plan) wins
-      var p = planFor(e, Gym.series(payload, cur, i));
+      var p = planFor(e, Gym.series(payload, cur, i).filter(countsForProgression));
       if (p.action === "none") return;
       if (p.action === "up") up++;
       else if (p.action === "deload") down++;
