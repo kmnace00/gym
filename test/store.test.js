@@ -1210,3 +1210,12 @@ test("swapAlt survives sanitize when sane and is nulled when hostile (B6-06)", (
   const badEntry = S.migrate(JSON.stringify({ v: 5, liftHistory: { "fri:0": [{ date: "2026-11-01", load: 60, reps: 8, rir: 2, swap: 7 }] } }));
   assert.equal(badEntry.liftHistory["fri:0"][0].swap, null);
 });
+
+test("swapLoad coerces like load at the store boundary (B6-07)", () => {
+  const ok = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapAlt: "Lat pulldown", swapLoad: 70 } } }));
+  assert.equal(ok.state["fri:0"].swapLoad, 70);
+  const junk = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapLoad: "abc" } } }));
+  assert.equal(junk.state["fri:0"].swapLoad, 0);
+  const numeric = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapLoad: "52.5" } } }));
+  assert.equal(numeric.state["fri:0"].swapLoad, 52.5);
+});

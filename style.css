@@ -123,6 +123,8 @@ h1{
 .resetlift:disabled{opacity:.4}
 .resetlift:not(:disabled):active{filter:brightness(1.15)}
 .resetlift.undoset{color:var(--accent)}
+/* B6-07: the swap mode's one-line sub under the lift title */
+.swapsub{margin:-2px 0 4px;font-size:12px;color:var(--muted)}
 /* per-set log — the log fills its region and the rows grow with it, so the
    void below the last set row is gone by construction (min 44px tap target) */
 .setlog{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto}

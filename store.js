@@ -168,7 +168,7 @@
   function sanitizeRecord(r) {
     if (!isObj(r)) return r;
     stripUnsafeKeys(r);               // nested `__proto__` must not survive the boundary
-    coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir");
+    coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir"); coerceNum(r, "swapLoad"); // B6-07: the alternate's working load coerces like load
     if (own(r, "done")) r.done = clampCount(r.done, DONE_MAX);
     if (own(r, "topHits")) r.topHits = clampCount(r.topHits, DONE_MAX);
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");

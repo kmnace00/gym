@@ -309,6 +309,15 @@
   /* per-set history: what the last session actually did, one compact line */
   function renderPrev(su) {
     var el = document.getElementById("prevLine");
+    /* the swap-aware Prev reads the newest entry even when it is a swap —
+       this is NOT the progression read, which filters swaps (B6-06/07) */
+    var all = Gym.series(payload, cur, idx);
+    var newest = all.length ? all[all.length - 1] : null;
+    if (newest && newest.swap) {
+      el.textContent = "Prev (swap): " + newest.swap + " " + (newest.load > 0 ? newest.load + "×" : "light×") + newest.reps;
+      el.hidden = false;
+      return;
+    }
     if (!su || !su.last) { el.hidden = true; return; }
     var e = ex(), txt;
     if (su.last.sets && su.last.sets.length) {
@@ -381,6 +390,14 @@
     var t = loadLabel(load, e);
     return (t === "light" || t === "BW" || t === "—") ? t : t + " lb";
   }
+  /* B6-07: while a lift is swapped, every load is the alternate's own added
+     weight — plain numbers, 0 renders as start light; the original lift's
+     bodyweight semantics don't apply. The working load lives in the record's
+     swapLoad field while swapped, and in `load` otherwise.                 */
+  function workingLoad(s) { return s.swapAlt ? (typeof s.swapLoad === "number" ? s.swapLoad : 0) : s.load; }
+  function setWorkingLoad(s, v) { if (s.swapAlt) s.swapLoad = v; else s.load = v; }
+  function swLoadLabel(load) { return load > 0 ? String(load) : "light"; }
+  function swLoadText(load) { return load > 0 ? load + " lb" : "light"; }
   /* the set log: one row per prescribed set, completed sets checked, the next
      set highlighted — rows flex to fill the vertical space (as in Hevy/Strong) */
   function renderSetLog(e, s) {
@@ -394,7 +411,7 @@
       var mark = done ? "✓" : (i === s.done ? "●" : "");
       html += '<div class="' + cls + '"' + (done ? ' data-set="' + i + '" role="button" tabindex="0"' : "") + '>'
         + '<span class="sn">' + (i + 1) + '</span>'
-        + '<span class="sr">' + loadLabel(rec.load, e) + " × " + rec.reps + '</span>'
+        + '<span class="sr">' + (s.swapAlt ? swLoadLabel(rec.load) : loadLabel(rec.load, e)) + " × " + rec.reps + '</span>'
         + '<span class="srir">@' + rec.rir + ' RIR</span>'
         + '<span class="smark" aria-hidden="true">' + mark + '</span>'
         + '</div>';
@@ -412,44 +429,67 @@
      runs on release.                                          */
   function updateLiftReadouts() {
     var e = ex(), s = curSt();
-    document.getElementById("loadVal").textContent = (e.load === null && s.load === 0) ? "—" : s.load;
+    var wl = workingLoad(s);
+    document.getElementById("loadVal").textContent = s.swapAlt
+      ? (wl > 0 ? wl : "—")
+      : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
-    var loadBig = e.load === null
-      ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
-      : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb");
+    var loadBig = s.swapAlt
+      ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
+      : (e.load === null
+        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+        : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
       + " · " + rirTxt + " · Rest " + fmt(effRest);
     var row = editSet >= 0 ? document.querySelector(".setrow.editing") : document.querySelector(".setrow.now");
     if (row) {
-      row.querySelector(".sr").textContent = loadLabel(s.load, e) + " × " + s.reps;
+      row.querySelector(".sr").textContent = (s.swapAlt ? swLoadLabel(wl) : loadLabel(s.load, e)) + " × " + s.reps;
       row.querySelector(".srir").textContent = "@" + s.rir + " RIR";
     }
   }
   function renderLift() {
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
+    var sw = !!s.swapAlt, wl = workingLoad(s), setsLogged = (s.sets || []).length > 0;
     var anyDone = false;
     list.forEach(function (x, i) { if (st(cur, i).done > 0) anyDone = true; });
     document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min";
-    document.getElementById("exName").textContent = e.n;
+    document.getElementById("exName").textContent = sw ? e.alt : e.n;
+    /* the swap's one-line state: what it replaced, or why it is locked */
+    var swapSub = document.getElementById("swapSub");
+    if (swapSub) {
+      swapSub.hidden = !(sw || setsLogged);
+      swapSub.textContent = setsLogged ? "Swap locked — sets logged" : "Swapped for " + e.n;
+    }
+    var swapBtn = document.getElementById("swapBtn");
+    if (swapBtn) {
+      swapBtn.disabled = setsLogged;
+      swapBtn.textContent = sw ? "Using " + e.alt + " — undo" : "Swap";
+    }
 
     var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
-    var loadBig = e.load === null
-      ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
-      : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb");
+    var loadBig = sw
+      ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
+      : (e.load === null
+        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+        : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
       + " · " + rirTxt + " · Rest " + fmt(effRest);
     document.getElementById("exCue").textContent = e.cue;
+    /* the cue describes the original movement — hide it while swapped (B6-07) */
+    document.getElementById("exCue").style.display = sw ? "none" : "";
     document.getElementById("tempoLine").style.display = ""; // the cue is the same for every lift
 
     var complete = s.done >= e.s;
     renderSetLog(e, s);
 
-    document.getElementById("loadVal").textContent = (e.load === null && s.load === 0) ? "—" : s.load;
+    document.getElementById("loadVal").textContent = sw
+      ? (wl > 0 ? wl : "—")
+      : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     rirRow.querySelectorAll(".rir").forEach(function (b) {
       var on = s.rir === parseInt(b.getAttribute("data-rir"), 10);
@@ -590,10 +630,11 @@
     elapsed: function () { return Gym.sessionElapsedSec(payload); },
     prep: function (tIdx) {
       var e = DAYS[cur].ex[tIdx], s = st(cur, tIdx);
+      var wl = workingLoad(s);
       return {
         name: tIdx === idx ? "Set " + (s.done + 1) + " of " + e.s
                            : "Next — " + e.n + ", Set " + (s.done + 1) + " of " + e.s,
-        load: loadText(s.load, e), reps: String(s.reps)
+        load: s.swapAlt ? swLoadText(wl) : loadText(wl, e), reps: String(s.reps)
       };
     }
   });
@@ -881,20 +922,20 @@
     if (!s.sets || !s.sets[editSet]) {
       /* the edited set vanished (undo shrank the log): put the working values
          back so the next set does not inherit the stale set's numbers. */
-      if (editBackup) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
+      if (editBackup) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
       editSet = -1; editBackup = null;
       return;
     }
-    s.sets[editSet] = { load: s.load, reps: s.reps, rir: s.rir };
+    s.sets[editSet] = { load: workingLoad(s), reps: s.reps, rir: s.rir };
     if (s.done >= e.s) bankLift(cur, idx);
   }
   /** Enter inline edit for a completed set, snapshotting the working values. */
   function startEdit(i) {
     var s = curSt();
     if (!s.sets || !s.sets[i]) return;
-    if (editSet !== i) editBackup = { load: s.load, reps: s.reps, rir: s.rir };
+    if (editSet !== i) editBackup = { load: workingLoad(s), reps: s.reps, rir: s.rir };
     editSet = i;
-    s.load = s.sets[i].load; s.reps = s.sets[i].reps; s.rir = s.sets[i].rir;
+    setWorkingLoad(s, s.sets[i].load); s.reps = s.sets[i].reps; s.rir = s.sets[i].rir;
     hintText = ""; hintGood = false;
     render();
   }
@@ -903,7 +944,7 @@
     var s = curSt();
     if (editSet < 0) return;
     applySetEdit();
-    if (editBackup) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
+    if (editBackup) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null;
     hintText = ""; hintGood = false;
     commit(); render();
@@ -919,7 +960,9 @@
   function stepLoad(d, tIdx) {
     if (tIdx === undefined || tIdx < 0) tIdx = idx;
     var s = st(cur, tIdx), e = DAYS[cur].ex[tIdx];
-    s.load = clampLoad(d < 0 ? Math.max(0, Math.round((s.load - e.step) * 100) / 100) : Math.round((s.load + e.step) * 100) / 100);
+    /* the working load field follows the swap mode (B6-07) */
+    var wl = workingLoad(s);
+    setWorkingLoad(s, clampLoad(d < 0 ? Math.max(0, Math.round((wl - e.step) * 100) / 100) : Math.round((wl + e.step) * 100) / 100));
     if (editSet >= 0) applySetEdit();
     scheduleSave();
     if (view === "lift") updateLiftReadouts();
@@ -988,8 +1031,9 @@
     inp.addEventListener("blur", function () { finish(true); });
   }
   function editLoad() {
-    editValue(document.getElementById("loadVal"), curSt().load, ex().step, function (v) {
-      curSt().load = clampLoad(Gym.round2(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+    var s = curSt();
+    editValue(document.getElementById("loadVal"), workingLoad(s), ex().step, function (v) {
+      setWorkingLoad(s, clampLoad(Gym.round2(v))); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   function editReps() {
@@ -1017,6 +1061,9 @@
       return;
     }
     var wasComplete = s.done >= e.s;
+    /* the working load follows the swap mode (B6-07); reps/RIR targets stay
+       the original lift's */
+    var wl = workingLoad(s);
     /* capture the log *before* this set so the PR check compares against
        history, not against the set we are about to bank */
     var priorHist = priorEntries();
@@ -1033,7 +1080,7 @@
     }
 
     s.sets = s.sets || [];
-    s.sets.push({ load: s.load, reps: s.reps, rir: s.rir });
+    s.sets.push({ load: wl, reps: s.reps, rir: s.rir });
     s.done = s.sets.length;
     s.lastRir = s.rir;
     hideRirHint();
@@ -1044,17 +1091,19 @@
     hintText = ""; hintGood = false;
     var finished = !wasComplete && s.done >= e.s;
     var restNote = "";
-    var newMetric = metricFor(e, s.load, s.reps);
+    var newMetric = metricFor(e, wl, s.reps);
 
     /* a PR beats the progression nudge — celebrate it first */
     if (prevBest > -Infinity && newMetric > prevBest) {
-      hintText = "New PR — " + (s.load > 0
-        ? loadLabel(s.load, e) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
+      hintText = "New PR — " + (wl > 0
+        ? (s.swapAlt ? swLoadLabel(wl) : loadLabel(wl, e)) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
         : s.reps + " reps");
       hintGood = true;
     }
 
-    if (finished && e.partial && s.lastRir <= 1) {
+    if (finished && e.partial && s.lastRir <= 1 && !s.swapAlt) {
+      /* the lengthened-partials cue is the original movement's evidence — it
+         does not speak for an alternate (B6-07) */
       restNote = "partials";
     } else if (!hintText && finished && s.topHits >= 1 && s.reps >= e.top && s.lastRir >= e.rir) {
       hintText = e.n + ": top reps at target RIR — do it again next session to add weight.";
@@ -1073,7 +1122,8 @@
       nextText = nx ? "Up next — " + nx.n + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
       nextText = "Up next — Set " + (s.done + 1) + " of " + e.s + " · " + s.reps + " reps" +
-        (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load));
+        (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
+          : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
     }
 
     commit();
@@ -1117,6 +1167,20 @@
     commit(); render();
   }
   resetLiftBtn.onclick = function () { twoTap(this, "Tap again to restart", doRestartLift); };
+
+  /* B6-07: one swap control on the lift view. Toggling before any set is
+     logged flips the record's swapAlt; once sets exist it locks (the banked
+     entry already carries the marker, so the mode must not change mid-set). */
+  document.getElementById("swapBtn").onclick = function () {
+    var s = curSt(), e = ex();
+    if ((s.sets || []).length > 0) return;
+    s.swapAlt = s.swapAlt ? null : e.alt;
+    if (s.swapAlt && typeof s.swapLoad !== "number") s.swapLoad = 0;
+    hintText = ""; hintGood = false;
+    commit();
+    render();
+    renderRestPrep(restCtl.view());
+  };
 
   /* plan the whole day: pre-fill each not-yet-started lift from its history */
   document.getElementById("planBtn").onclick = function () {

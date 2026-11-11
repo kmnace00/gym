@@ -484,3 +484,31 @@ test("destructive buttons meet 4.5:1 contrast in both themes (B5-18)", async ({ 
   const light = await dangerRatio();
   expect(light, `light-theme danger text contrast ${light.toFixed(2)} must be >= 4.5`).toBeGreaterThanOrEqual(4.5);
 });
+
+for (const size of sizes) {
+  test.describe(`swap mode viewport 390x${size.height}`, () => {
+    test.use({ viewport: size });
+
+    test("swapped lift: swap button is a 44px target and the view does not scroll", async ({ page }) => {
+      const errors = [];
+      page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+      page.on("pageerror", (e) => errors.push(String(e)));
+
+      await seed(page, {
+        v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+        state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2 } },
+        liftHistory: {}, sessionLog: []
+      });
+      await page.locator(".liftrow").first().click();
+      await page.locator("#swapBtn").click();
+
+      await expect(page.locator("#exName")).toHaveText("Barbell back squat");
+      await expect(page.locator("#swapSub")).toBeVisible();
+      await expect(page.locator("#swapBtn")).toBeVisible();
+      await boxAtLeast(page.locator("#swapBtn"), 44, 44);
+      await noOverflow(page);
+
+      expect(errors, "no console/page errors").toEqual([]);
+    });
+  });
+}

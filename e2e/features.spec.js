@@ -342,3 +342,70 @@ test("banking a lift swapped to an alternate stamps the entry (B6-06)", async ({
   expect(arr[0].swap).toBe("DB reverse lunge");
   expect(arr[0].load).toBe(60); // the alternate's actual top set
 });
+
+test("the swap UI swaps, logs under the alternate, and locks (B6-07)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {}, liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+
+  const swap = page.locator("#swapBtn");
+  await expect(swap).toBeVisible();
+  const box = await swap.boundingBox();
+  expect(box.height, "the swap control meets the 44px floor").toBeGreaterThanOrEqual(44);
+
+  await swap.click();
+  await expect(page.locator("#exName")).toHaveText("Barbell back squat"); // Smith squat's alt
+  await expect(page.locator("#swapSub")).toHaveText("Swapped for Smith squat");
+  await expect(swap).toHaveText("Using Barbell back squat — undo");
+  await expect(page.locator("#exCue")).toBeHidden(); // the cue describes the original movement
+  await expect(page.locator("#tempoLine")).toBeVisible();
+
+  /* the steppers now write the alternate's working load */
+  await page.locator("#loadUp").click();
+  await expect(page.locator("#loadVal")).toHaveText("2.5");
+  await page.locator("#loadUp").click();
+  await page.locator("#loadUp").click();
+  await page.locator("#loadUp").click();
+  await expect(page.locator("#loadVal")).toHaveText("10");
+
+  /* un-swap is still allowed before the first set */
+  await swap.click();
+  await expect(page.locator("#exName")).toHaveText("Smith squat");
+  await expect(page.locator("#loadVal")).toHaveText("60"); // the original's working load came back
+  await swap.click(); // swap again for the logged sets
+
+  for (let i = 0; i < 3; i++) {
+    await page.locator("#doneBtn").click();
+    await page.locator("#skipRest").click();
+  }
+  await page.reload(); // re-open the lift fresh, as a returning user would
+  await page.locator(".liftrow").first().click();
+  await expect(swap).toBeDisabled();
+  await expect(page.locator("#swapSub")).toHaveText("Swap locked — sets logged");
+
+  const arr = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["fri:0"]);
+  expect(arr[0].swap).toBe("Barbell back squat");
+  expect(arr[0].load).toBe(10); // the alternate's actual top set
+  /* the original's record never moved */
+  const st = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"]);
+  expect(st.load).toBe(60);
+  expect(st.swapLoad).toBe(10);
+});
+
+test("a swap day's Prev line reads the swap entry; the suggestion ignores it (B6-07)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, swapAlt: "Barbell back squat", swapLoad: 70 } },
+    liftHistory: { "fri:0": [
+      { date: "2026-10-25", load: 60, reps: 6, rir: 2, hitTop: false, setsDone: 3 },
+      { date: "2026-11-01", load: 70, reps: 8, rir: 2, hitTop: true, setsDone: 3, swap: "Barbell back squat" }
+    ] }
+  });
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#prevLine")).toHaveText("Prev (swap): Barbell back squat 70×8");
+  /* the suggestion reads the last non-swap entry (60 lb, Oct 25) */
+  await expect(page.locator("#suggestText")).toContainText("keep 60");
+  await expect(page.locator("#applyLoad")).toBeHidden();
+});

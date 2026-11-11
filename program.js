@@ -117,6 +117,7 @@
       if (typeof s.topHits !== "number") s.topHits = 0;
       if (!("lastRir" in s)) s.lastRir = null;
       if (!("swapAlt" in s)) s.swapAlt = null; // B6-06: the swap marker (name of the alternate)
+      if (typeof s.swapLoad !== "number") s.swapLoad = 0; // B6-07: the alternate's working load
     }
     if (!Array.isArray(s.sets)) s.sets = [];
     if (e && e.id && s.exId !== e.id) s.exId = e.id;
