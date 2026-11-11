@@ -12,4 +12,4 @@ B6-03 `bodyweightSet` flag (schema v4 → v5, merge rule) · B6-04 P6 2-for-2 pr
 
 ## WIP
 
-(none)
+WIP: OpenCode editing stats.js, app.js, test/stats.test.js, e2e/journeys.spec.js since 2026-11-10 19:10

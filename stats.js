@@ -291,6 +291,11 @@
     if (!today) return [];
     var have = Object.create(null), s = sessionVolumes(payload), i;
     for (i = 0; i < s.length; i++) if (s[i].date) have[s[i].date] = 1;
+    /* B6-02: a completed off-day session covers its recorded training day in
+       the week containing its date, so it lights that cell even when the
+       history date is Mon–Thu. Same date key → one cell, never two.          */
+    var covered = sessionCoverage(payload), ck = Object.keys(covered);
+    for (i = 0; i < ck.length; i++) have[ck[i]] = 1;
     var fri0 = mostRecentFriday(today), out = [], w;
     for (w = (weeks || 8) - 1; w >= 0; w--) {
       var fri = new Date(fri0); fri.setDate(fri0.getDate() - w * 7);
@@ -317,6 +322,50 @@
     }
     return idx;
   }
+
+  /* ── off-day attribution (B6-02) ─────────────────────────────────────────
+     A session keeps the true calendar date it started on, but records the
+     training day it was banked under (`day`). Mon–Thu sessions therefore bank
+     Friday's workout on, say, a Wednesday. The week strip and heatmap project
+     Fri/Sat/Sun *dates*, so attribute such a session to its recorded day in
+     the Mon–Sun week containing its date — that is the Friday it was banked
+     into. A day covered twice (off-day + its real date) still counts once.  */
+  function sessionLoggedLifts(s, day) {
+    if (day !== "fri" && day !== "sat" && day !== "sun") return 0;
+    var lifts = (s && s.lifts) || {}, prefix = day + ":", n = 0, k, rec;
+    for (k in lifts) if (Object.prototype.hasOwnProperty.call(lifts, k) && k.indexOf(prefix) === 0) {
+      rec = lifts[k];
+      if (rec && ((rec.done || 0) > 0 || (Array.isArray(rec.sets) && rec.sets.length > 0))) n++;
+    }
+    return n;
+  }
+  /** The YYYY-MM-DD key a session covers, or null when its date/day are junk. */
+  function sessionCoveredKey(s) {
+    var day = s && s.day;
+    if (day !== "fri" && day !== "sat" && day !== "sun") return null;
+    var dt = parseKey(s.date);
+    if (!dt) return null;
+    var monday = new Date(dt), offs = { fri: 4, sat: 5, sun: 6 };
+    monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7)); // Mon–Sun week
+    var key = new Date(monday);
+    key.setDate(monday.getDate() + offs[day]);
+    return keyOf(key);
+  }
+  /** Covered day key → logged-lift count, for completed sessions with work. */
+  function sessionCoverage(payload) {
+    var log = (payload && payload.sessionLog) || [], out = Object.create(null), i, s, key, n;
+    for (i = 0; i < log.length; i++) {
+      s = log[i];
+      if (!s || s.status !== "complete") continue;
+      n = sessionLoggedLifts(s, s.day);
+      if (!n) continue;
+      key = sessionCoveredKey(s);
+      if (!key) continue;
+      if (!out[key] || n > out[key]) out[key] = n;
+    }
+    return out;
+  }
+
   /**
    * Status of the current training week (Fri/Sat/Sun), oldest → newest.
    * @param {any} payload @param {string} nowKey YYYY-MM-DD
@@ -327,11 +376,14 @@
     var today = parseKey(nowKey);
     if (!today) return [];
     var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
+    var covered = sessionCoverage(payload); // B6-02: off-day sessions, keyed by covered day
     var names = ["fri", "sat", "sun"], out = [], i;
     for (i = 0; i < 3; i++) {
       var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);
       var key = keyOf(dt);
       var n = lifts[key] ? Object.keys(lifts[key]).length : 0;
+      /* an off-day session that banked this day counts it too, once */
+      if (covered[key] > n) n = covered[key];
       var need = dayLens && typeof dayLens[names[i]] === "number" && dayLens[names[i]] > 0 ? dayLens[names[i]] : 8;
       var state = dt > today ? "upcoming"
         : n >= need ? "done"

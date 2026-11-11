@@ -233,8 +233,8 @@
       ? "Workout complete — nice work"
       : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
     if (!Gym.actualDay()) {
-      var gap = Gym.daysUntil(Gym.todayDay());
-      summary = "Off day · next " + (DAY_LABEL[Gym.todayDay()] || "session") + (gap > 0 ? " in " + gap + "d" : "") + " · " + summary;
+      /* B6-02: the workout banks under the next training day, so say where it lands */
+      summary = "Off day — this logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + ". " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     document.getElementById("daySummary").textContent = summary;
