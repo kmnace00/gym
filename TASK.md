@@ -22,4 +22,4 @@ B6-05 P8 finish a partial workout · B6-06 P11 alternates — data + swap marker
 
 ## WIP
 
-WIP: OpenCode editing style.css e2e/liftgeom.spec.js version.js sw.js since Nov 10 22:10 CT (B6-11)
+No files claimed. The B6-11 claim (style.css, e2e/liftgeom.spec.js, version.js, sw.js, Nov 10 22:10 CT) is released: that run reverted its diff and pushed no code, so those files are free for Muse.
