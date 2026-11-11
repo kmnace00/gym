@@ -24,7 +24,7 @@
     fri: { label: "Friday — Push + Quads", ex: [
       { id: "fri-smith-squat", n: "Smith squat", alt: "Barbell back squat", s: 3, r: 6, top: 6, load: 60, step: 2.5, rest: 180, rir: 2, cue: "Bar over mid-foot, heels flat." },
       { id: "fri-smith-incline", n: "Smith incline press", alt: "Barbell incline press", s: 3, r: 6, top: 6, load: 50, step: 2.5, rest: 120, rir: 2, cue: "Bench ~30°. Bar to upper chest." },
-      { id: "fri-bulgarian", n: "Bulgarian split squat", alt: "DB reverse lunge", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 120, rir: 2, cue: "Per leg. Upright = more quad." },
+      { id: "fri-bulgarian", n: "Bulgarian split squat", alt: "DB reverse lunge", s: 3, r: 8, top: 8, load: 25, step: 2.5, rest: 150, rir: 2, cue: "Per leg. Upright = more quad." },
       { id: "fri-incline-db", n: "Incline DB press", alt: "Barbell incline press", s: 3, r: 7, top: 8, load: 52.5, step: 2.5, rest: 120, rir: 2, cue: "Lower to a stretch, don't drift wide." },
       { id: "fri-pec-deck", n: "Pec deck fly", alt: "Incline DB fly", s: 3, r: 8, top: 10, load: 100, step: 5, rest: 90, rir: 1, partial: 1, cue: "Handles at mid-chest, elbows fixed." },
       { id: "fri-leg-ext", n: "Leg extension", alt: "Sissy squat (assisted, hold a rack)", s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Start light, log the stack." },

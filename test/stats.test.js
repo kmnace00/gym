@@ -229,9 +229,9 @@ test("sessionDrift works with the real program estimate", () => {
     { day: "fri", status: "complete", durationSec: 4800 }
   ] }, "fri", P.dayMins);
   assert.equal(r.n, 3);
-  assert.equal(r.estimateMin, 74);        // 74-min model for Friday
+  assert.equal(r.estimateMin, 75);        // 75-min model for Friday (B6-08 raised the Bulgarian rest)
   assert.equal(r.medianActualMin, 73.3);
-  assert.equal(r.driftPct, -0.9);
+  assert.equal(r.driftPct, -2.3);
 });
 
 test("topSet picks the set with the highest metric", () => {

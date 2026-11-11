@@ -409,3 +409,22 @@ test("a swap day's Prev line reads the swap entry; the suggestion ignores it (B6
   await expect(page.locator("#suggestText")).toContainText("keep 60");
   await expect(page.locator("#applyLoad")).toBeHidden();
 });
+
+test("the Bulgarian split squat rests 2:30 after a set (B6-08)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 2, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:2": { done: 0, load: 25, reps: 8, rir: 2 } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").nth(2).click();
+  await expect(page.locator("#exName")).toHaveText("Bulgarian split squat");
+  await expect(page.locator("#exPres")).toContainText("Rest 2:30");
+
+  await page.locator("#doneBtn").click();
+  const secs = await page.evaluate(() => {
+    const t = document.getElementById("restTime").textContent.trim().split(":");
+    return parseInt(t[0], 10) * 60 + parseInt(t[1], 10);
+  });
+  expect(secs, "the countdown starts at 150 s").toBeGreaterThanOrEqual(149);
+  expect(secs).toBeLessThanOrEqual(150);
+});

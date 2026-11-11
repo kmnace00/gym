@@ -17,7 +17,7 @@ test("fmt", () => {
 });
 
 test("dayMins matches the published per-day totals", () => {
-  assert.equal(P.dayMins("fri"), 74);
+  assert.equal(P.dayMins("fri"), 75);
   assert.equal(P.dayMins("sat"), 69);
   assert.equal(P.dayMins("sun"), 72);
 });
@@ -132,6 +132,11 @@ test("qualifies: last banked set decides; legacy fields are the fallback", () =>
   assert.equal(P.qualifies(e, { sets: [{ reps: 8, rir: 1 }] }), false, "RIR under target");
   assert.equal(P.qualifies(e, { sets: [{ reps: 7, rir: 2 }] }), false, "top + 1 is not enough");
   assert.equal(P.qualifies(e, null), false);
+});
+
+test("fri-bulgarian rests 150 s (B6-08, the approved number)", () => {
+  const e = P.DAYS.fri.ex.find((x) => x.id === "fri-bulgarian");
+  assert.equal(e.rest, 150);
 });
 
 test("epley1rm and progressMetric", () => {
