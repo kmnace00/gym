@@ -154,7 +154,7 @@ test("typed and held load/reps stop at sane caps (B3-18)", async ({ page }) => {
   await expect(page.locator("#repVal")).toHaveText("999");
 });
 
-test("three stalled sessions surface a deload suggestion with Apply", async ({ page }) => {
+test("three stalled sessions surface a stall reset suggestion with Apply", async ({ page }) => {
   await seed(page, {
     v: 2, cur: "fri", idx: 0,
     state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, topHits: 0, lastRir: null } },
@@ -167,7 +167,7 @@ test("three stalled sessions surface a deload suggestion with Apply", async ({ p
     }
   });
   await page.locator(".liftrow").first().click();
-  await expect(page.locator("#suggestText")).toContainText("deload");
+  await expect(page.locator("#suggestText")).toContainText("reset to");
   await expect(page.locator("#applyLoad")).toBeVisible();
   await page.locator("#applyLoad").click();
   await expect(page.locator("#loadVal")).toHaveText("55");

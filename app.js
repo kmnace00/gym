@@ -25,6 +25,11 @@
   function effSets(e) { return deloadActive(payload) ? deloadSets(e) : e.s; }
   /** The first open lift of the current day for the effective (deload-aware) target. */
   function firstOpen(from) { return firstOpenLift(cur, payload.state, from, effSets); }
+  /* B6-10: the one filter every progression read goes through. A session feeds
+     the 2-for-2 / stall / trend maths only if it was neither logged under a
+     swap (B6-06) nor banked during a deload week (B6-09). Volume and
+     completion reads deliberately do not use it.                            */
+  function progressionEntry(e) { return countsForProgression(e) && !e.deload; }
 
   /* bodyweight-aware metric: total system weight, so adding a plate to a dip
      always moves the number up. */
@@ -231,6 +236,54 @@
         + '<b>' + esc(lbl) + '</b><i aria-hidden="true">' + mark + '</i></span>';
     }).join("");
   }
+  /* ── B6-10: deload follow-through nudge ────────────────────────────────────
+     Pure date math on fields that already exist: the anchor is the most recent
+     deload start + 7 days, or, when a deload has never been started, the
+     earliest logged session. Nothing is stored, nothing is auto-started, and
+     the line can only show while the Mon–Sun week is still empty.            */
+  function dayNum(key) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ""));
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function keyOfNum(ms) { return new Date(ms).toISOString().slice(0, 10); }
+  /** Monday of the Mon–Sun week that contains `key`. */
+  function weekStartKey(key) {
+    var d = dayNum(key);
+    if (d === null) return null;
+    var dow = new Date(d).getUTCDay();                 // 0 Sun … 6 Sat
+    return keyOfNum(d - (dow === 0 ? 6 : dow - 1) * 86400000);
+  }
+  /** Whole days from `from` to `to`, both "YYYY-MM-DD". */
+  function daysBetween(from, to) {
+    var a = dayNum(from), b = dayNum(to);
+    if (a === null || b === null) return null;
+    return Math.round((b - a) / 86400000);
+  }
+  /** Has any session been recorded in the current Mon–Sun week yet? */
+  function loggedThisWeek(today) {
+    var start = weekStartKey(today), log = (payload && payload.sessionLog) || [], i, d;
+    if (start === null) return false;
+    for (i = 0; i < log.length; i++) {
+      d = log[i] && log[i].date;
+      if (Gym.validDate(d) && d >= start && d <= today) return true;
+    }
+    return Gym.activeHasData(payload); // sets logged today are already training
+  }
+  /** 5+ weeks since the last deload ended, and nothing logged this week. */
+  function deloadNudgeDue() {
+    if (deloadActive(payload)) return false;
+    var today = Gym.dateKey(), anchor = null, i, log = (payload && payload.sessionLog) || [];
+    if (Gym.validDate(payload && payload.deloadSince)) anchor = keyOfNum(dayNum(payload.deloadSince) + 7 * 86400000);
+    else {
+      for (i = 0; i < log.length; i++) {
+        var d = log[i] && log[i].date;
+        if (Gym.validDate(d) && (anchor === null || d < anchor)) anchor = d;
+      }
+    }
+    if (anchor === null) return false;
+    return daysBetween(anchor, today) >= 35 && !loggedThisWeek(today);
+  }
+
   function renderDay() {
     var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i, hasHist = false;
     for (i = 0; i < list.length; i++) {
@@ -250,6 +303,8 @@
       summary = "Off day — this logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + ". " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
+    /* B6-10: one nudge line, gone as soon as the week has a session in it */
+    if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — Start deload week is in the menu.";
     document.getElementById("daySummary").textContent = summary;
     // first-run guidance: one line until the very first set is ever logged
     var firstRun = document.getElementById("firstRunHint");
@@ -307,7 +362,7 @@
   /* history entries *before* this session. If the current lift is already
      complete, the newest entry is this session, so skip it. */
   function priorEntries() {
-    var entries = Gym.series(payload, cur, idx).filter(countsForProgression); // swapped sessions don't feed progression
+    var entries = Gym.series(payload, cur, idx).filter(progressionEntry); // swaps and deload weeks don't feed progression
     var s = curSt();
     var skip = (s.done >= effSets(ex()) && entries.length > 0) ? 1 : 0;
     return skip ? entries.slice(0, entries.length - 1) : entries;
@@ -366,8 +421,8 @@
     var when = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
     var base = "Last " + when + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
     if (stall) {
-      /* a plateau — double progression can't help, so recommend the deload */
-      txt.innerHTML = base + " · 3 sessions stalled → deload to <b>" + esc(stall.load) + "</b>";
+      /* a plateau — double progression can't help, so recommend the stall reset */
+      txt.innerHTML = base + " · 3 sessions stalled → reset to <b>" + esc(stall.load) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(stall.load));
     } else if (su.qualified === 2 && su.suggest !== su.last.load) {
@@ -385,7 +440,7 @@
     line.hidden = false;
   }
   function renderSpark() {
-    var entries = Gym.series(payload, cur, idx, 12).filter(countsForProgression); // the original lift's trend
+    var entries = Gym.series(payload, cur, idx, 12).filter(progressionEntry); // the original lift's trend
     var wrap = document.getElementById("sparkWrap"), svg = document.getElementById("sparkline");
     var toggle = document.getElementById("trendToggle");
     var has = entries.length >= 2;
@@ -1216,7 +1271,7 @@
       if (s.done > 0) return; // never overwrite an in-progress lift
       var dflt = e.load === null ? 0 : (e.load || 0);
       if (s.load !== dflt) { manual++; return; } // an explicit load (or an earlier plan) wins
-      var p = planFor(e, Gym.series(payload, cur, i).filter(countsForProgression));
+      var p = planFor(e, Gym.series(payload, cur, i).filter(progressionEntry));
       if (p.action === "none") return;
       if (p.action === "up") up++;
       else if (p.action === "deload") down++;
@@ -1226,7 +1281,7 @@
       if (planned != null) s.load = planned;
     });
     planMsg = (up || down)
-      ? "Planned +" + up + (down ? " · deload " + down : "")
+      ? "Planned +" + up + (down ? " · reset " + down : "")
       : (manual > 0 ? "Planned · kept your loads" : "Planned · all keep");
     commit(); render();
   };

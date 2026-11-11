@@ -174,8 +174,8 @@
 
   /* stall guard: three consecutive sessions that all missed top reps at the
      same load = a plateau. Double progression alone would keep you stuck, so
-     recommend a ~10% deload (snapped to the machine's step) to reset fatigue
-     and let the next block climb again. `entries` is oldest → newest.        */
+     recommend a ~10% stall reset (snapped to the machine's step) to shake off
+     fatigue and let the next block climb again. `entries` is oldest → newest. */
   function stallLoad(e, entries) {
     if (!entries || entries.length < 3) return null;
     var last3 = entries.slice(entries.length - 3), i;
