@@ -1206,52 +1206,75 @@ stop and wait for Muse. Everything still open lives in
 `BACKLOG.md` (P4 caps, the general T3 categories, non-goals) and
 needs a fresh Khang decision, not a promotion by momentum.
 
-## B6-11 — Lift-view spacing rhythm [T1] — queued by Muse Nov 10, runs after B6-10
+## B6-11 — Lift-view spacing rhythm [T1] — RE-SPECIFIED by Muse Nov 11 (v2; v1 was NEEDS_DESIGN)
 
 Why: Khang flagged the top of the first set box on the lift view
 (screenshot, Nov 10 21:21 CT). Muse measured the live layout at
-440×956, 390×844, and 390×667 (Playwright, HEAD `ef242ee`): the set
-rows are equal height and their content is dead-centre (offset 0) —
-the defect is the spacing rhythm around the stack. The lift stack
-beats at 8px between blocks and 6px inside the set stack (4px on
-short screens), with 12px group breaks. Three values break the
-beat:
+440×956, 390×844, and 390×667: the set rows are equal height and
+their content is dead-centre (offset 0) — the defect is the spacing
+rhythm around the stack. The lift stack beats at 8px between blocks
+and 6px inside the set stack, with 12px group breaks. Three values
+break the beat: `.sethead` margin-bottom 8px (gap above the first
+box 8 vs 6 between boxes); the title run composing to 10 / 8 / 8
+(`.liftnav` margin-bottom 8 + `h1` margin-top 2; `h1` margin-bottom
+6 + `.pres` margin-top 2; `.guide` margin-top 8); and `.rirrow`
+margin-top 10px, the only off-beat value in the adjust cluster.
 
-1. `.sethead` margin-bottom is 8px, so the gap above the first set
-   box is 8px vs 6px between the boxes. In the
-   `@media (max-height:720px)` block the `.setlog` gap compresses
-   to 4px but `.sethead` margin-bottom stays 8px — a 2× step at
-   the top of the stack on short screens.
-2. The title run composes to 10 / 8 / 8: `.liftnav` margin-bottom
-   8px + `h1` margin-top 2px = 10px above the lift name, while
-   `h1` margin-bottom 6px + `.pres` margin-top 2px = 8px, and
-   `.guide` margin-top is 8px.
-3. `.rirrow` margin-top is 10px — the only off-beat value in the
-   adjust cluster.
+V1 history: the five values below were applied Nov 10 and the
+rhythm came out right, but two `e2e/smoke.spec.js` assertions went
+red and the diff was reverted: (1) at 390×844 the pill clearance
+went to −1 (required ≥ 1); (2) at 390×667 the log-fill assertion
+tipped on rounding (232 vs 233) once the short-screen gap shrank.
+The v2 resolution was scratch-verified by Muse Nov 11 in a
+throwaway clone BEFORE re-queueing: full gate green (216/216 unit,
+typecheck clean, 139/139 e2e including the two new rhythm tests
+below), and at 440×956 (Khang's phone): head gap 6 = row gap 6,
+nav→name 8, name→prescription 8, pill clearance 1, top stack 169.
+
+The conflict, precisely: the 44px `.resetlift` pills sit in
+`.sethead` with `margin:-7px 0`, bleeding 7px below the header box.
+Smoke's clearance = `.sethead` margin-bottom − downward bleed must
+stay ≥ 1, so margin-bottom 6 needs the downward bleed ≤ 5. Moving
+the bleed upward is free: the header box height is set by
+44 − total bleed, so any split of −14 keeps the box — and the
+B5-01 top-stack budget — unchanged.
 
 Do (`style.css` only, plus the geometry test):
 - `.sethead`: `margin:12px 0 8px` → `margin:12px 0 6px`.
-- In `@media (max-height:720px)`: `.sethead` margin-bottom 8px →
-  4px (margin-top stays 4px).
+- `.resetlift`: `margin:-7px 0` → `margin:-9px 0 -5px` (bleed
+  moves up: downward 5 → clearance 6−5 = 1 at tall sizes; upward
+  9 stays inside the 12px margin-top, so nothing above is touched).
 - `h1`: `margin:2px 0 6px` → `margin:0 0 8px`.
 - `.pres`: `margin:2px 0 0` → `margin:0`.
 - `.rirrow`: `margin-top:10px` → `margin-top:8px`.
+- In `@media (max-height:720px)`: short screens stay EXACTLY as at
+  HEAD — deliberate: with the symmetric −7 bleed, margin-bottom ≥ 8
+  is the clearance floor there, the short layout is already
+  compressed, and Khang's phone is a tall screen. `.sethead`
+  margin-bottom is already pinned to 8 in that block; add
+  restorations for the three base changes the block does not pin:
+  `.resetlift{margin:-7px 0}`, `.pres{margin:2px 0 0}`,
+  `.rirrow{margin-top:10px}`.
 
 Do not: touch the 12px group breaks (`.sethead` margin-top, the
 Set Done button's top margin), `.adjust` padding-top (14px / 8px —
 a section break, not part of the stack), the day view (lift rows
 uniform 8px / 5px — verified even), the progress view (cards
 uniform 10px — verified even), or the rest view (centred by
-design). No markup or JS changes. `program.js` untouched.
+design). Do not relax any existing assertion. No markup or JS
+changes. `program.js` untouched.
 
-Verify — extend `e2e/liftgeom.spec.js` (fresh profile, lift 1):
-- At 390×844: gap (`.sethead` bottom → first `.setrow` top) equals
-  the gap between set rows within 0.6px (both 6); gap (`.liftnav`
-  bottom → `#exName` top) = 8 ± 0.6; gap (`#exName` bottom →
-  `#exPres` top) = 8 ± 0.6; computed `margin-top` of `.rirrow`
-  = "8px".
-- At 390×667: gap (`.sethead` bottom → first `.setrow` top) equals
-  the gap between set rows within 0.6px (both 4).
-- The existing B5-01 contract still holds (top stack ≥20% under
-  baseline, setlog→adjust gap ≤8, rows ≥44px, no scroll, peek mode
-  clean). Full gate green; SW bump; one `BUILD_LOG.md` line.
+Verify — extend `e2e/liftgeom.spec.js` with one test inside the
+existing viewport loop (fresh profile, lift 1) measuring: headGap
+(first `.setrow` top − `.sethead` bottom), rowGap (second row top
+− first row bottom), navGap (`#exName` top − `.liftnav` bottom),
+presGap (`#exPres` top − `#exName` bottom), clear (first row top −
+max bottom of `#undoSetBtn` / `#resetLiftBtn`), and `.rirrow`'s
+computed margin-top:
+- Both viewports: clear ≥ 1.
+- At 390×844 only: |headGap − rowGap| ≤ 0.6 (both 6); headGap ≈ 6;
+  navGap ≈ 8; presGap ≈ 8; margin-top == "8px".
+- The existing contracts still hold, unmodified (B5-01 liftgeom +
+  `e2e/smoke.spec.js`, including the log-fill and pill-clearance
+  assertions). Full gate green; SW bump + CACHE-HASH
+  (`tools/check-sw-cache.js`); one `BUILD_LOG.md` line.

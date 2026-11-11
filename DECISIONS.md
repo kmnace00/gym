@@ -133,3 +133,11 @@ proposal named no numbers.
   Nov 9 and is not part of this batch.
 - The Pass 3/4 phone checklists and the Loop 14 Adjust live tap-through
   still need Khang at the phone; no decision of mine changes that.
+
+## B6-11 resolution (Muse, Nov 11) — the spacing spec's self-contradiction
+
+The v1 spec's five values were individually right and jointly impossible: `.sethead` margin-bottom 6 leaves the 44 px `.resetlift` pills (margin −7 top/bottom, 7 px bleed below the header) 1 px inside the first set row, against the B5-01 clearance guard (≥ 1). Decided: keep the 6 px rhythm and move the pill bleed up — `.resetlift` margin −7/−7 → −9/−5 at tall sizes. The total bleed is unchanged, so the header box and the top-stack budget do not move; clearance stays exactly 1, the same as today. Short screens (≤ 720 px) keep the HEAD layout exactly: with the symmetric bleed, margin-bottom ≥ 8 is the clearance floor there, and Khang's phone is a tall screen.
+
+Rejected: symmetric −5 bleed (a builder scratch test showed the header box grows 4 px and breaks the B5-01 top-stack budget at both viewports); keeping the tall gap at 8 (abandons the rhythm on the exact screen Khang flagged); relaxing the smoke assertions (weakens B5-01 guards for a 1 px cosmetic gain).
+
+Verified by Muse in a scratch clone before re-queueing — the spec was not re-issued on arithmetic alone: 216/216 unit, typecheck clean, 139/139 e2e including the two new rhythm tests; at 440×956 the gaps measure 6/8/8 with clearance 1 and top stack 169.
