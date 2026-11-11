@@ -252,8 +252,10 @@
     }
     var finBtn = document.getElementById("finishBtn");
     if (finBtn) {
-      finBtn.hidden = !complete || (payload.active && payload.active.status === "complete");
-      finBtn.textContent = "Finish workout";
+      /* P8: a time-boxed session that stops at lift 6 still gets a close —
+         any logged data can finish; only an already-complete session can't */
+      finBtn.hidden = !(totalDone > 0) || (payload.active && payload.active.status === "complete");
+      finBtn.textContent = complete ? "Finish workout" : "Finish partial workout";
     }
 
     var rows = "";
@@ -1161,7 +1163,12 @@
     var sessionDay = Gym.sessionDate(payload);
     var prs = Stats.personalRecords(payload, DAYS, progressMetric).filter(function (p) { return p.date === sessionDay; }).length;
     var dur = entry && typeof entry.durationSec === "number" ? entry.durationSec : Gym.sessionElapsedSec(payload);
-    document.getElementById("sumTitle").textContent = (DAY_LABEL[cur] || "") + " workout complete";
+    /* P8: title the partial case honestly — count the lifts that are done */
+    var doneLifts = 0;
+    for (i = 0; i < list.length; i++) if (st(cur, i).done >= list[i].s) doneLifts++;
+    document.getElementById("sumTitle").textContent = doneLifts < list.length
+      ? (DAY_LABEL[cur] || "") + " — partial, " + doneLifts + " of " + list.length + " lifts"
+      : (DAY_LABEL[cur] || "") + " workout complete";
     document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";
     document.getElementById("sumSets").textContent = String(sets);
     document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " lb";

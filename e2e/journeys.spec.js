@@ -96,8 +96,49 @@ test("the summary reports the day's tonnage and PRs", async ({ page }) => {
 
   await page.locator("#finishBtn").click();
   await expect(page.locator("#summary")).toBeVisible();
+  await expect(page.locator("#sumTitle")).toContainText("workout complete");
   await expect(page.locator("#sumSets")).toHaveText("24");
   await expect(page.locator("#sumVol")).toHaveText("1.8k lb"); // 100 lb × 6 reps × 3 sets
   await expect(page.locator("#sumPrs")).toHaveText("1 new");
   await expect(page.locator("#sumNext")).toContainText("Next");
+});
+
+test("a time-boxed session can finish partial, and the summary says so", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // Friday
+  await page.setViewportSize({ width: 390, height: 667 });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => {
+      if (i < 6) state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, bodyweightSet: true, state, sessionLog: [], liftHistory: {},
+      active: { id: "ses_partial", date: date, day: day, startedAt: Date.now() - 1800000, endedAt: null, accSec: 1800, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  const fin = page.locator("#finishBtn");
+  await expect(fin).toBeVisible();
+  await expect(fin).toHaveText("Finish partial workout");
+  await expect(page.locator("#continueBtn")).toBeVisible();
+  const fits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(fits, "Continue + Finish together must not overflow at 390×667").toBe(true);
+
+  await fin.click();
+  await expect(page.locator("#summary")).toBeVisible();
+  await expect(page.locator("#sumTitle")).toHaveText("Fri — partial, 6 of 8 lifts");
+  const log = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).sessionLog);
+  expect(log.length, "the partial session banks an entry").toBe(1);
+  expect(log[0].day).toBe(day);
+  expect(log[0].status).toBe("complete");
+  expect(log[0].lifts[day + ":5"]).toBeTruthy();
+  expect(log[0].lifts[day + ":6"]).toBeFalsy();
+});
+
+test("with zero sets logged there is nothing to finish", async ({ page }) => {
+  await page.goto(url);
+  await expect(page.locator("#finishBtn")).toBeHidden();
 });
