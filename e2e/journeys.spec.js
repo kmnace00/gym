@@ -5,11 +5,32 @@ const path = require("path");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
-test("an off day names the next session", async ({ page }) => {
+test("an off day names where it logs, and that session shows up in its week", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-04T10:00:00") }); // Wednesday
   await page.goto(url);
-  await expect(page.locator("#daySummary")).toContainText("Off day");
-  await expect(page.locator("#daySummary")).toContainText("next Fri");
+  await expect(page.locator("#daySummary")).toContainText("Off day — this logs as Friday");
+
+  // log and finish Friday's workout on the Wednesday clock
+  await page.locator(".liftrow").first().click();
+  for (let lift = 0; lift < 8; lift++) {
+    for (let set = 0; set < 3; set++) {
+      await page.locator("#doneBtn").click();
+      await page.locator("#skipRest").click();
+    }
+  }
+  await page.locator("#skipRest").click(); // second tap of the finish arm
+  await expect(page.locator("#summary")).toBeVisible();
+
+  // The sets were banked on Wed 4 Nov but belong to Friday. Come Friday, the
+  // week strip and the heatmap must show Friday without double-counting it.
+  await page.clock.setSystemTime(new Date("2026-11-06T10:00:00"));
+  await page.reload();
+  await expect(page.locator("#weekStrip .wk").first()).toHaveClass(/done/);
+  await expect(page.locator("#daySummary")).not.toContainText("Off day");
+
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pHeatCount")).toHaveText("1/24");
+  await expect(page.locator("#heatmap .hweek").last().locator(".hday").first()).toHaveClass(/on/);
 });
 
 test("a session that crosses midnight banks its sets on the start date", async ({ page }) => {

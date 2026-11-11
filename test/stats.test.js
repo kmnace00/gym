@@ -122,6 +122,53 @@ test("weekStatus honours a per-day lift count", () => {
   assert.equal(S.weekStatus({ liftHistory }, "2026-11-09")[0].state, "done");
 });
 
+test("B6-02: a Wednesday session covers Friday in the week containing its date", () => {
+  const lifts = {};
+  for (let i = 0; i < 8; i++) lifts["fri:" + i] = { done: 3, sets: [{ load: 50, reps: 6, rir: 2 }] };
+  const payload = { sessionLog: [{ date: "2026-11-04", day: "fri", status: "complete", lifts }] };
+  // Wed 4 Nov still projects the previous Fri–Sun block; the covered day is Fri 6 Nov.
+  const prev = S.weekStatus(payload, "2026-11-04");
+  assert.equal(prev[0].date, "2026-10-30");
+  assert.equal(prev[0].state, "missed");
+  const fri = S.weekStatus(payload, "2026-11-06");
+  assert.equal(fri[0].state, "done");
+  assert.equal(fri[0].lifts, 8);
+  assert.equal(S.weekStatus(payload, "2026-11-09")[0].state, "done"); // Monday after too
+  const weeks = S.trainingDays(payload, 8, "2026-11-06");
+  assert.equal(weeks[weeks.length - 1].fri, true);
+  assert.equal(weeks[weeks.length - 1].sat, false);
+  const snap = S.progressSnapshot(payload, P.DAYS, P.progressMetric, "2026-11-06", { fri: 8, sat: 8, sun: 8 });
+  assert.equal(snap.heatCount, 1);
+});
+
+test("B6-02: a covered day counts once and needs a complete session with work", () => {
+  const mk = (date, day) => {
+    const lifts = {};
+    for (let i = 0; i < 8; i++) lifts[day + ":" + i] = { done: 3, sets: [{ load: 50, reps: 6, rir: 2 }] };
+    return { date, day, status: "complete", lifts };
+  };
+  const liftHistory = {};
+  for (let i = 0; i < 8; i++) liftHistory["fri:" + i] = [{ date: "2026-11-06", load: 50, reps: 6, rir: 2, setsDone: 3 }];
+  const payload = { liftHistory, sessionLog: [mk("2026-11-04", "fri"), mk("2026-11-06", "fri")] };
+  const snap = S.progressSnapshot(payload, P.DAYS, P.progressMetric, "2026-11-06", { fri: 8, sat: 8, sun: 8 });
+  assert.equal(snap.heatCount, 1, "Friday is one training day, not two");
+  assert.equal(S.weekStatus(payload, "2026-11-06")[0].lifts, 8, "coverage is not summed");
+
+  // an incomplete session, or one with no logged lifts, covers nothing
+  const none = { sessionLog: [
+    { date: "2026-11-04", day: "fri", status: "active", lifts: mk("2026-11-04", "fri").lifts },
+    { date: "2026-11-04", day: "fri", status: "complete", lifts: {} }
+  ] };
+  assert.equal(S.trainingDays(none, 8, "2026-11-06").pop().fri, false);
+  assert.equal(S.weekStatus(none, "2026-11-07")[0].state, "missed");
+
+  // some but not all of the day's lifts logged → partial
+  const half = { sessionLog: [{ date: "2026-11-04", day: "fri", status: "complete", lifts: {
+    "fri:0": { done: 3, sets: [] }, "fri:1": { done: 3, sets: [] }, "fri:2": { done: 3, sets: [] }
+  } }] };
+  assert.equal(S.weekStatus(half, "2026-11-06")[0].state, "partial");
+});
+
 test("toCsv escapes formula-leading cells", () => {
   const csv = S.toCsv({ liftHistory: { "fri:0": [{ date: "2026-11-08", sets: [{ load: 0, reps: 1, rir: 0 }] }] } }, { fri: { ex: [{ n: "=cmd" }] } });
   assert.ok(csv.indexOf("'=cmd") !== -1);
