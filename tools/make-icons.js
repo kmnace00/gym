@@ -21,33 +21,38 @@ function chunk(type, data) {
   return Buffer.concat([len, t, data, crcBuf]);
 }
 
-function png(width, height, pixel) {
-  const raw = Buffer.alloc((width * 4 + 1) * height);
+/* Two-colour logo, so a 1-bit indexed PNG is the honest encoding: bit depth 1,
+   colour type 3, a 2-entry palette. It decodes to exactly the same pixels as
+   the old RGBA output at ~1/25th the bytes (the precache ceiling is tight).  */
+function pngIndexed2(width, height, pixel) {
+  const rowBytes = (width + 7) >> 3;
+  const raw = Buffer.alloc((rowBytes + 1) * height);
   let o = 0;
   for (let y = 0; y < height; y++) {
     raw[o++] = 0; // filter: none
-    for (let x = 0; x < width; x++) { const p = pixel(x, y); raw[o++] = p[0]; raw[o++] = p[1]; raw[o++] = p[2]; raw[o++] = p[3]; }
+    const row = o;
+    for (let x = 0; x < width; x++) if (pixel(x, y)) raw[row + (x >> 3)] |= 0x80 >> (x & 7);
+    o += rowBytes;
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  ihdr[8] = 1; ihdr[9] = 3; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  const plte = Buffer.from([11, 14, 18, 53, 208, 184]); // #0b0e12, #35d0b8
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  return Buffer.concat([sig, chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+  return Buffer.concat([sig, chunk("IHDR", ihdr), chunk("PLTE", plte), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
-const BG = [11, 14, 18, 255];      // #0b0e12
-const TEAL = [53, 208, 184, 255];  // #35d0b8
 const inRect = (x, y, x0, y0, x1, y1) => x >= x0 && x < x1 && y >= y0 && y < y1;
 
 function make(size) {
   const N = size, cy = N / 2;
-  return png(N, N, (x, y) => {
-    if (inRect(x, y, 0.30 * N, cy - 0.045 * N, 0.70 * N, cy + 0.045 * N)) return TEAL; // bar
-    if (inRect(x, y, 0.22 * N, cy - 0.14 * N, 0.30 * N, cy + 0.14 * N)) return TEAL;  // inner L
-    if (inRect(x, y, 0.70 * N, cy - 0.14 * N, 0.78 * N, cy + 0.14 * N)) return TEAL;  // inner R
-    if (inRect(x, y, 0.16 * N, cy - 0.10 * N, 0.22 * N, cy + 0.10 * N)) return TEAL;  // outer L
-    if (inRect(x, y, 0.78 * N, cy - 0.10 * N, 0.84 * N, cy + 0.10 * N)) return TEAL;  // outer R
-    return BG;
+  return pngIndexed2(N, N, (x, y) => {
+    if (inRect(x, y, 0.30 * N, cy - 0.045 * N, 0.70 * N, cy + 0.045 * N)) return 1; // bar
+    if (inRect(x, y, 0.22 * N, cy - 0.14 * N, 0.30 * N, cy + 0.14 * N)) return 1;  // inner L
+    if (inRect(x, y, 0.70 * N, cy - 0.14 * N, 0.78 * N, cy + 0.14 * N)) return 1;  // inner R
+    if (inRect(x, y, 0.16 * N, cy - 0.10 * N, 0.22 * N, cy + 0.10 * N)) return 1;  // outer L
+    if (inRect(x, y, 0.78 * N, cy - 0.10 * N, 0.84 * N, cy + 0.10 * N)) return 1;  // outer R
+    return 0;
   });
 }
 

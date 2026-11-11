@@ -12,4 +12,4 @@ B6-05 P8 finish a partial workout · B6-06 P11 alternates — data + swap marker
 
 ## WIP
 
-(none)
+WIP: OpenCode editing tools/make-icons.js (icon headroom) since 19:43 CST
