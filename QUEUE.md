@@ -1200,7 +1200,58 @@ deload and an empty week, the nudge line shows on the first
 training day and is gone after that day's first logged session.
 Full gate green; SW bump.
 
-End of Batch 6 (decided). When B6-10 lands, the queue is empty —
+End of Batch 6 (decided). When B6-10 lands, one item remains —
+B6-11, appended below. When B6-11 lands, the queue is empty —
 stop and wait for Muse. Everything still open lives in
 `BACKLOG.md` (P4 caps, the general T3 categories, non-goals) and
 needs a fresh Khang decision, not a promotion by momentum.
+
+## B6-11 — Lift-view spacing rhythm [T1] — queued by Muse Nov 10, runs after B6-10
+
+Why: Khang flagged the top of the first set box on the lift view
+(screenshot, Nov 10 21:21 CT). Muse measured the live layout at
+440×956, 390×844, and 390×667 (Playwright, HEAD `ef242ee`): the set
+rows are equal height and their content is dead-centre (offset 0) —
+the defect is the spacing rhythm around the stack. The lift stack
+beats at 8px between blocks and 6px inside the set stack (4px on
+short screens), with 12px group breaks. Three values break the
+beat:
+
+1. `.sethead` margin-bottom is 8px, so the gap above the first set
+   box is 8px vs 6px between the boxes. In the
+   `@media (max-height:720px)` block the `.setlog` gap compresses
+   to 4px but `.sethead` margin-bottom stays 8px — a 2× step at
+   the top of the stack on short screens.
+2. The title run composes to 10 / 8 / 8: `.liftnav` margin-bottom
+   8px + `h1` margin-top 2px = 10px above the lift name, while
+   `h1` margin-bottom 6px + `.pres` margin-top 2px = 8px, and
+   `.guide` margin-top is 8px.
+3. `.rirrow` margin-top is 10px — the only off-beat value in the
+   adjust cluster.
+
+Do (`style.css` only, plus the geometry test):
+- `.sethead`: `margin:12px 0 8px` → `margin:12px 0 6px`.
+- In `@media (max-height:720px)`: `.sethead` margin-bottom 8px →
+  4px (margin-top stays 4px).
+- `h1`: `margin:2px 0 6px` → `margin:0 0 8px`.
+- `.pres`: `margin:2px 0 0` → `margin:0`.
+- `.rirrow`: `margin-top:10px` → `margin-top:8px`.
+
+Do not: touch the 12px group breaks (`.sethead` margin-top, the
+Set Done button's top margin), `.adjust` padding-top (14px / 8px —
+a section break, not part of the stack), the day view (lift rows
+uniform 8px / 5px — verified even), the progress view (cards
+uniform 10px — verified even), or the rest view (centred by
+design). No markup or JS changes. `program.js` untouched.
+
+Verify — extend `e2e/liftgeom.spec.js` (fresh profile, lift 1):
+- At 390×844: gap (`.sethead` bottom → first `.setrow` top) equals
+  the gap between set rows within 0.6px (both 6); gap (`.liftnav`
+  bottom → `#exName` top) = 8 ± 0.6; gap (`#exName` bottom →
+  `#exPres` top) = 8 ± 0.6; computed `margin-top` of `.rirrow`
+  = "8px".
+- At 390×667: gap (`.sethead` bottom → first `.setrow` top) equals
+  the gap between set rows within 0.6px (both 4).
+- The existing B5-01 contract still holds (top stack ≥20% under
+  baseline, setlog→adjust gap ≤8, rows ≥44px, no scroll, peek mode
+  clean). Full gate green; SW bump; one `BUILD_LOG.md` line.
