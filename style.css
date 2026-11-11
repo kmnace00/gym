@@ -339,6 +339,8 @@ h1{
 /* ── menu extras + per-lift undo ───────────────────────────────────────── */
 .modalsep{height:1px;background:var(--line);margin:4px 0}
 .modalbtn-danger{color:var(--danger)}
+/* B6-09: the deload controls read as a mode switch, not a data action */
+.modalbtn-deload{color:var(--accent);background:var(--accent-soft)}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){
@@ -421,6 +423,14 @@ h1{
   background:var(--warn);color:var(--bg);font-weight:800;font-size:12px;
 }
 .bbdismiss{flex:none;width:44px;height:44px;margin:-9px 0;border-radius:999px;display:grid;place-items:center;font-size:13px;opacity:.7}
+
+/* ── B6-09: deload-week banner (day view, above the lift rows) ──────────── */
+.deloadbar{
+  flex:none;display:flex;align-items:center;gap:8px;margin:0 0 8px;
+  padding:8px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent);
+  font-size:12px;line-height:1.25;font-weight:700;
+}
+.deloadbar[hidden]{display:none}
 
 /* ── plan today + previous-session line ─────────────────────────────────── */
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px}

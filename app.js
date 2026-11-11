@@ -7,6 +7,7 @@
       qualifies = Gym.qualifies, countsForProgression = Gym.countsForProgression,
       planFor = Gym.planFor, progressMetric = Gym.progressMetric,
       firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
+      deloadSets = Gym.deloadSets, deloadLoad = Gym.deloadLoad, deloadActive = Gym.deloadActive,
       Machine = Gym, Stats = Gym, Rest = Gym;
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
@@ -18,6 +19,12 @@
   function st(d, i) { return getLift(payload.state, d, i, DAYS[d].ex[i]); }
   function ex() { return DAYS[cur].ex[idx]; }
   function curSt() { return st(cur, idx); }
+  /* B6-09: the one place a lift's effective set target is decided. During a
+     deload week every completion call uses the reduced count; otherwise it is
+     the programme's own `s`, exactly as before.                              */
+  function effSets(e) { return deloadActive(payload) ? deloadSets(e) : e.s; }
+  /** The first open lift of the current day for the effective (deload-aware) target. */
+  function firstOpen(from) { return firstOpenLift(cur, payload.state, from, effSets); }
 
   /* bodyweight-aware metric: total system weight, so adding a plate to a dip
      always moves the number up. */
@@ -44,7 +51,7 @@
   /** Bank a lift's whole set array into today's history entry (volume/PR/CSV truth). */
   function bankLift(d, i) {
     var e = DAYS[d].ex[i], s = st(d, i);
-    if (!s.sets || !s.sets.length || s.done < e.s) return;
+    if (!s.sets || !s.sets.length || s.done < effSets(e)) return;
     var top = topSetOf(e, s.sets) || s.sets[s.sets.length - 1];
     var hit = false;
     for (var j = 0; j < s.sets.length; j++) {
@@ -58,6 +65,7 @@
     };
     if (e.bw && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
     if (s.swapAlt) entry.swap = s.swapAlt; // B6-06: logged under an alternate — excluded from progression/PRs
+    if (deloadActive(payload)) entry.deload = true; // B6-09: banked during a deload week
     Gym.upsertHistory(payload, d, i, entry);
   }
 
@@ -226,10 +234,13 @@
   function renderDay() {
     var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i, hasHist = false;
     for (i = 0; i < list.length; i++) {
-      totalDone += Math.min(st(cur, i).done, list[i].s); totalSets += list[i].s;
+      totalDone += Math.min(st(cur, i).done, effSets(list[i])); totalSets += effSets(list[i]);
       if (!hasHist && Gym.series(payload, cur, i).length) hasHist = true;
     }
-    var complete = firstOpenLift(cur, payload.state, 0) === -1;
+    var complete = firstOpen(0) === -1;
+    /* B6-09: the deload banner sits above the lift rows for the whole week */
+    var deloadBar = document.getElementById("deloadBar");
+    if (deloadBar) deloadBar.hidden = !deloadActive(payload);
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
     var summary = complete
       ? "Workout complete — nice work"
@@ -246,11 +257,11 @@
     document.getElementById("planBtn").hidden = !hasHist || complete;
     renderWeekStrip();
 
-    var firstOpen = firstOpenLift(cur, payload.state, 0);
+    var firstOpenIdx = firstOpen(0);
     var contBtn = document.getElementById("continueBtn");
     if (contBtn) {
-      contBtn.hidden = complete || firstOpen < 0 || totalDone === 0;
-      contBtn.textContent = "Continue · Lift " + (firstOpen + 1);
+      contBtn.hidden = complete || firstOpenIdx < 0 || totalDone === 0;
+      contBtn.textContent = "Continue · Lift " + (firstOpenIdx + 1);
     }
     var finBtn = document.getElementById("finishBtn");
     if (finBtn) {
@@ -262,7 +273,7 @@
 
     var rows = "";
     list.forEach(function (e, i) {
-      var s = st(cur, i), done = s.done >= e.s;
+      var s = st(cur, i), done = s.done >= effSets(e);
       var loadTxt = e.load === null ? (s.load > 0 ? "Load " + s.load : "start light")
         : e.load === 0 ? "bodyweight" : "Load " + s.load;
       var restTxt = fmt(e.rest + (s.rir <= 1 ? 30 : 0));
@@ -277,7 +288,7 @@
     var segs = "";
     list.forEach(function (e, i) {
       var s = st(cur, i);
-      var pct = Math.max(0, Math.min(1, s.done / e.s));
+      var pct = Math.max(0, Math.min(1, s.done / effSets(e)));
       segs += '<span class="pseg"><i style="width:' + (pct * 100) + '%"></i></span>';
     });
     document.getElementById("progressSegs").innerHTML = segs;
@@ -298,7 +309,7 @@
   function priorEntries() {
     var entries = Gym.series(payload, cur, idx).filter(countsForProgression); // swapped sessions don't feed progression
     var s = curSt();
-    var skip = (s.done >= ex().s && entries.length > 0) ? 1 : 0;
+    var skip = (s.done >= effSets(ex()) && entries.length > 0) ? 1 : 0;
     return skip ? entries.slice(0, entries.length - 1) : entries;
   }
   function fmtDate(key) {
@@ -337,6 +348,21 @@
     var su = suggestLoad(ex(), last, prior);
     renderPrev(su);
     if (!su.last) { line.hidden = true; applyBtn.hidden = true; return; }
+    /* B6-09: while a deload week runs, the suggestion is planFor's load taken
+       10% lighter (snapped to the step), and the line says why. */
+    if (deloadActive(payload)) {
+      var dp = planFor(ex(), pri);
+      if (dp && typeof dp.load === "number" && dp.load > 0) {
+        var dl = deloadLoad(ex(), dp.load);
+        var dwhen = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
+        var dbase = "Last " + dwhen + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
+        txt.innerHTML = "Deload week → " + dbase + " · try <b>" + esc(dl) + "</b>";
+        applyBtn.hidden = false;
+        applyBtn.setAttribute("data-load", String(dl));
+        line.hidden = false;
+        return;
+      }
+    }
     var when = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
     var base = "Last " + when + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
     if (stall) {
@@ -401,7 +427,7 @@
   /* the set log: one row per prescribed set, completed sets checked, the next
      set highlighted — rows flex to fill the vertical space (as in Hevy/Strong) */
   function renderSetLog(e, s) {
-    var rows = Math.max(e.s, s.done);
+    var rows = Math.max(effSets(e), s.done);
     var html = "";
     for (var i = 0; i < rows; i++) {
       var done = i < s.done;
@@ -417,10 +443,10 @@
         + '</div>';
     }
     document.getElementById("setLog").innerHTML = html;
-    var complete = s.done >= e.s;
+    var complete = s.done >= effSets(e);
     document.getElementById("setCount").textContent = editSet >= 0
       ? "Editing set " + (editSet + 1) + " — tap Done"
-      : complete ? "All " + e.s + " sets done" : "Set " + (s.done + 1) + " of " + e.s;
+      : complete ? "All " + effSets(e) + " sets done" : "Set " + (s.done + 1) + " of " + effSets(e);
   }
   /* Light path for stepper taps (B5-20): a press-and-hold fires every 70 ms,
      and a full render() each time rebuilds the set log, suggestion and
@@ -434,7 +460,7 @@
       ? (wl > 0 ? wl : "—")
       : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
-    var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
+    var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     var loadBig = s.swapAlt
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
@@ -469,7 +495,7 @@
       swapBtn.textContent = sw ? "Using " + e.alt + " — undo" : "Swap";
     }
 
-    var rirTxt = (e.partial && s.done === e.s - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
+    var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var loadBig = sw
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
       : (e.load === null
@@ -484,7 +510,7 @@
     document.getElementById("exCue").style.display = sw ? "none" : "";
     document.getElementById("tempoLine").style.display = ""; // the cue is the same for every lift
 
-    var complete = s.done >= e.s;
+    var complete = s.done >= effSets(e);
     renderSetLog(e, s);
 
     document.getElementById("loadVal").textContent = sw
@@ -623,17 +649,17 @@
     idx: function () { return idx; },
     dayLen: function () { return DAYS[cur].ex.length; },
     done: function () { return curSt().done; },
-    sets: function () { return ex().s; },
+    sets: function () { return effSets(ex()); },
     exRest: function () { return ex().rest; },
     editSet: function () { return editSet; },
-    firstOpen: function (from) { return firstOpenLift(cur, payload.state, from); },
+    firstOpen: function (from) { return firstOpen(from); },
     elapsed: function () { return Gym.sessionElapsedSec(payload); },
     prep: function (tIdx) {
       var e = DAYS[cur].ex[tIdx], s = st(cur, tIdx);
       var wl = workingLoad(s);
       return {
-        name: tIdx === idx ? "Set " + (s.done + 1) + " of " + e.s
-                           : "Next — " + e.n + ", Set " + (s.done + 1) + " of " + e.s,
+        name: tIdx === idx ? "Set " + (s.done + 1) + " of " + effSets(e)
+                           : "Next — " + e.n + ", Set " + (s.done + 1) + " of " + effSets(e),
         load: s.swapAlt ? swLoadText(wl) : loadText(wl, e), reps: String(s.reps)
       };
     }
@@ -793,14 +819,14 @@
   function undoSet() {
     var s = curSt();
     if (s.done <= 0) return;
-    var wasComplete = s.done >= ex().s;
+    var wasComplete = s.done >= effSets(ex());
     s.done--;
     if (s.sets && s.sets.length > s.done) s.sets.length = s.done;
     if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
-    if (wasComplete && s.done < ex().s) {
+    if (wasComplete && s.done < effSets(ex())) {
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
       if (arr && arr.length && arr[arr.length - 1].date === Gym.sessionDate(payload)) arr.pop();
-    } else if (s.done >= ex().s) {
+    } else if (s.done >= effSets(ex())) {
       /* undoing an extra set leaves the lift complete: re-bank the shorter
          array so Prev/tonnage/PRs/CSV don't keep the removed set */
       bankLift(cur, idx);
@@ -927,7 +953,7 @@
       return;
     }
     s.sets[editSet] = { load: workingLoad(s), reps: s.reps, rir: s.rir };
-    if (s.done >= e.s) bankLift(cur, idx);
+    if (s.done >= effSets(e)) bankLift(cur, idx);
   }
   /** Enter inline edit for a completed set, snapshotting the working values. */
   function startEdit(i) {
@@ -1060,7 +1086,7 @@
       render();
       return;
     }
-    var wasComplete = s.done >= e.s;
+    var wasComplete = s.done >= effSets(e);
     /* the working load follows the swap mode (B6-07); reps/RIR targets stay
        the original lift's */
     var wl = workingLoad(s);
@@ -1089,7 +1115,7 @@
     if (s.reps >= e.top && s.rir >= e.rir) s.topHits++;
 
     hintText = ""; hintGood = false;
-    var finished = !wasComplete && s.done >= e.s;
+    var finished = !wasComplete && s.done >= effSets(e);
     var restNote = "";
     var newMetric = metricFor(e, wl, s.reps);
 
@@ -1114,21 +1140,21 @@
     bankLift(cur, idx);
 
     var list = DAYS[cur].ex, nextText = "";
-    if (s.done >= e.s) {
+    if (s.done >= effSets(e)) {
       var nx = list[idx + 1];
       var nxLoad = !nx ? "" : nx.load === null
         ? (st(cur, idx + 1).load > 0 ? " · Load " + st(cur, idx + 1).load : " · start light")
         : nx.load === 0 ? " · bodyweight" : " · Load " + st(cur, idx + 1).load;
       nextText = nx ? "Up next — " + nx.n + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
-      nextText = "Up next — Set " + (s.done + 1) + " of " + e.s + " · " + s.reps + " reps" +
+      nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " reps" +
         (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
           : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
     }
 
     commit();
     restNextRaw = nextText;
-    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, e.s) + " done", s.done >= e.s, restNote, nextText, hintText));
+    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, effSets(e)) + " done", s.done >= effSets(e), restNote, nextText, hintText));
 
     ensureAudio();
     if (navigator.vibrate) navigator.vibrate(10);
@@ -1195,7 +1221,9 @@
       if (p.action === "up") up++;
       else if (p.action === "deload") down++;
       else keep++;
-      if (p.load != null) s.load = p.load;
+      /* B6-09: a planned load is taken 10% lighter during a deload week */
+      var planned = (deloadActive(payload) && p.load) ? deloadLoad(e, p.load) : p.load;
+      if (planned != null) s.load = planned;
     });
     planMsg = (up || down)
       ? "Planned +" + up + (down ? " · deload " + down : "")
@@ -1222,7 +1250,7 @@
     if (!summary) return;
     sumFocus = document.activeElement;
     var list = DAYS[cur].ex, sets = 0, i;
-    for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, list[i].s);
+    for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, effSets(list[i]));
     var vol = Math.round((Stats.volumeByDay(payload, DAYS) || {})[cur] || 0);
     /* the session's own date, not the wall clock: a workout that started
        before midnight banks its PRs on the day it began (B3-11).          */
@@ -1231,7 +1259,7 @@
     var dur = entry && typeof entry.durationSec === "number" ? entry.durationSec : Gym.sessionElapsedSec(payload);
     /* P8: title the partial case honestly — count the lifts that are done */
     var doneLifts = 0;
-    for (i = 0; i < list.length; i++) if (st(cur, i).done >= list[i].s) doneLifts++;
+    for (i = 0; i < list.length; i++) if (st(cur, i).done >= effSets(list[i])) doneLifts++;
     document.getElementById("sumTitle").textContent = doneLifts < list.length
       ? (DAY_LABEL[cur] || "") + " — partial, " + doneLifts + " of " + list.length + " lifts"
       : (DAY_LABEL[cur] || "") + " workout complete";
@@ -1256,7 +1284,7 @@
   }
   document.getElementById("finishBtn").onclick = finishWorkout;
   document.getElementById("continueBtn").onclick = function () {
-    var first = firstOpenLift(cur, payload.state, 0);
+    var first = firstOpen(0);
     if (first >= 0) openLift(first);
   };
   /* the summary is a modal dialog like the menu: put focus back where it was
@@ -1351,7 +1379,7 @@
       resetEdit(); clearUndo();
       cur = b.getAttribute("data-day");
       idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
-      var open = firstOpenLift(cur, payload.state, 0);
+      var open = firstOpen(0);
       idx = open >= 0 ? open : 0;
       commit(); render();
     };
@@ -1406,6 +1434,7 @@
       }
     }
     renderBw();
+    renderDeload();
   }
   function noteBackup() {
     Gym.markBackup(payload); commit(); updateFoot();
@@ -1574,6 +1603,23 @@
     var inp = document.getElementById("bwInput");
     if (inp) inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 165);
   }
+  /* B6-09: the deload controls only show the action that is available */
+  function renderDeload() {
+    var active = deloadActive(payload);
+    var start = document.getElementById("deloadStart"), end = document.getElementById("deloadEnd");
+    if (start) start.hidden = active;
+    if (end) end.hidden = !active;
+  }
+  document.getElementById("deloadStart").onclick = function () {
+    payload.deloadSince = Gym.dateKey();
+    commit(); render(); updateFoot();
+    setMsg("Deload week started — fewer sets, ~10% lighter.");
+  };
+  document.getElementById("deloadEnd").onclick = function () {
+    payload.deloadSince = null;
+    commit(); render(); updateFoot();
+    setMsg("Deload week ended — normal targets restored.");
+  };
   document.getElementById("bwInput").addEventListener("change", function () {
     var v = parseFloat(this.value);
     if (isFinite(v) && v >= 66 && v <= 700) {

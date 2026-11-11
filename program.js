@@ -95,12 +95,14 @@
    * @param {number} from
    * @returns {number}
    */
-  function firstOpenLift(d, state, from) {
+  function firstOpenLift(d, state, from, target) {
     var list = DAYS[d].ex, i, rec, done;
     for (i = Math.max(0, from); i < list.length; i++) {
       rec = state && state[d + ":" + i];
       done = rec && typeof rec.done === "number" ? rec.done : 0;
-      if (done < list[i].s) return i;
+      /* B6-09: the target is `e.s` unless a deload week overrides it; the
+         default path reads the programme value exactly as before.            */
+      if (done < (target ? target(list[i]) : list[i].s)) return i;
     }
     return -1;
   }
@@ -204,11 +206,28 @@
     return { load: su.last.load, action: "keep" };
   }
 
+  /* ── B6-09 deload-week helpers (pure; no program data changes) ──────────── */
+  /** Sets prescribed during a deload: 60% of the programme's, at least one. */
+  function deloadSets(e) { return Math.max(1, Math.round(e.s * 0.6)); }
+
+  /** 90% of the working load, snapped to the machine's step the same way
+      stallLoad snaps it and never at or above the input. null / 0 pass
+      through unchanged, so bodyweight and start-light lifts are unaffected. */
+  function deloadLoad(e, load) {
+    if (load === null || load === undefined || load === 0) return load;
+    var raw = round2(load * 0.9);
+    var snapped = e.step > 0 ? round2(Math.round(raw / e.step) * e.step) : raw;
+    if (snapped >= load) snapped = round2(load - e.step);
+    if (snapped <= 0) return raw;
+    return snapped;
+  }
+
   return {
     DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
-    qualifies: qualifies, stallLoad: stallLoad, planFor: planFor
+    qualifies: qualifies, stallLoad: stallLoad, planFor: planFor,
+    deloadSets: deloadSets, deloadLoad: deloadLoad
   };
 });

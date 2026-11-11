@@ -1,12 +1,15 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — BATCH 6 (decided). Batch 5 (B5-01…B5-20) is COMPLETE + VERIFIED by Muse at HEAD `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`, Pages live; review record in `LOOP_STATE.md`). B6-01 is BUILT + VERIFIED. B6-02…B6-08 are BUILT and gated (210/210 unit, typecheck clean, 122/122 e2e, SW `gym-v97`; details in `BUILD_LOG.md`). The OpenCode loop stopped at B6-09: the free usage limit is reached (see `HANDOFF.md`). Remaining in order: B6-09, B6-10, B6-11.
+Status: ACTIVE — BATCH 6 (decided). Batch 5 (B5-01…B5-20) is COMPLETE + VERIFIED by Muse at HEAD `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`, Pages live; review record in `LOOP_STATE.md`). B6-01 is BUILT + VERIFIED. B6-02…B6-09 are BUILT and gated (216/216 unit, typecheck clean, 124/124 e2e, SW `gym-v98`; details in `BUILD_LOG.md`). Remaining in order: B6-10, B6-11.
 
-## Active — B6-09: Deload week: the mode [T2, fully specified in `QUEUE.md`]
+## Completed — B6-09: Deload week: the mode [T2, fully specified in `QUEUE.md`]
+- Built Nov 10 (OpenCode). Manual-only deload: `store.js` gains `deloadSince` (additive, v5, validated by `validDate()`), an exported pure `deloadActive(p, now)` (7 days), and `rollSession` clears an expired flag; `program.js` gains pure `deloadSets`/`deloadLoad` and an optional target callback on `firstOpenLift`; one `effSets(e)` helper in `app.js` threads the reduced target through every completion path; the suggestion/Plan prefill applies `deloadLoad` with a "Deload week → " prefix; `bankLift` stamps `deload: true`; banner + Start/End buttons in the menu. SW `gym-v98` (`CACHE-HASH` c50d3ba1d5f370f5). 216/216 unit, typecheck clean, 124/124 e2e at 390×667/844. Flagged for Muse (see `LOOP_STATE.md`): the day-row prescription text still prints the programme `3×6` during a deload, and `dayMins`/`dayMinsLeft` still estimate from `e.s` — display surfaces the spec did not authorise changing.
 
-Triage: **T2** (payload state + a set-target threaded through every read path), but the spec is complete, so the run continues — builder then tester, pinned to the free DeepSeek Flash hop. Files: `store.js`, `program.js`, `app.js`, `index.html`, `style.css`, `test/store.test.js`, `test/program.test.js`, `e2e/features.spec.js`, `e2e/a11y.spec.js`, `version.js`, `sw.js`.
+## Active — B6-10: Deload follow-through [T1]
 
-B6-08 is BUILT and gated (210/210 unit, typecheck clean, 122/122 e2e, SW `gym-v97`, `CACHE-HASH` c7186c371647bbfc; details in `BUILD_LOG.md`). Then B6-10 (deload follow-through), then B6-11 (lift-view spacing rhythm, queued by Muse Nov 10 — spec in `QUEUE.md`), which empties the queue.
+Triage: **T1** — mechanical and fully specified. Files: `app.js`, `program.js` (comments only), `test/*`, `e2e/*`. The shared progression predicate must now exclude entries carrying either `swap` (B6-06) or `deload` (B6-09); stall copy renames to "reset to"; the 35-day nudge line on the day view.
+
+B6-10 is next, then B6-11 (lift-view spacing rhythm, queued by Muse Nov 10 — spec in `QUEUE.md`), which empties the queue.
 
 ## Queued after B6-04 (full specs in `QUEUE.md`)
 

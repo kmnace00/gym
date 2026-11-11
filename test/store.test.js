@@ -1219,3 +1219,43 @@ test("swapLoad coerces like load at the store boundary (B6-07)", () => {
   const numeric = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 1, swapLoad: "52.5" } } }));
   assert.equal(numeric.state["fri:0"].swapLoad, 52.5);
 });
+
+/* B6-09 — deload week: a 7-day mode carried additively on the v5 payload */
+test("deloadActive: day 6 is active, day 7 is not", () => {
+  const p = S.emptyPayload();
+  p.deloadSince = "2026-11-01";
+  assert.equal(S.deloadActive(p, "2026-11-01"), true, "day 0");
+  assert.equal(S.deloadActive(p, "2026-11-06"), true, "day 5");
+  assert.equal(S.deloadActive(p, "2026-11-07"), true, "day 6 is still active");
+  assert.equal(S.deloadActive(p, "2026-11-08"), false, "day 7 ends the week");
+  assert.equal(S.deloadActive(p, "2026-11-09"), false, "past the week");
+  assert.equal(S.deloadActive({ deloadSince: null }, "2026-11-07"), false, "unset");
+  assert.equal(S.deloadActive({ deloadSince: "2026-02-29" }, "2026-11-07"), false, "impossible date");
+  assert.equal(S.deloadActive(p, "2026-10-31"), false, "a future start is not active");
+});
+
+test("rollSession clears an expired deload flag when it rolls", () => {
+  const sun = new Date(2026, 10, 8, 10).getTime();
+  const expired = S.emptyPayload();
+  expired.deloadSince = "2026-10-31";        // 8 days before the roll
+  expired.active.date = "2026-11-07";
+  S.rollSession(expired, "sun", sun);
+  assert.equal(expired.deloadSince, null);
+
+  const active = S.emptyPayload();
+  active.deloadSince = "2026-11-05";         // 3 days: still active
+  active.active.date = "2026-11-07";
+  S.rollSession(active, "sun", sun);
+  assert.equal(active.deloadSince, "2026-11-05");
+});
+
+test("normalize keeps a valid deloadSince and rejects junk", () => {
+  const good = S.migrate(JSON.stringify({ v: 5, deloadSince: "2026-11-03" }));
+  assert.equal(good.deloadSince, "2026-11-03");
+  const impossible = S.migrate(JSON.stringify({ v: 5, deloadSince: "2026-02-30" }));
+  assert.equal(impossible.deloadSince, null);
+  const notString = S.migrate(JSON.stringify({ v: 5, deloadSince: 42 }));
+  assert.equal(notString.deloadSince, null);
+  const absent = S.migrate(JSON.stringify({ v: 5, state: {} }));
+  assert.equal(absent.deloadSince, null, "additive field defaults to null");
+});

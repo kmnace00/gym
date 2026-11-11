@@ -86,6 +86,7 @@
       <div class="firstrun" id="firstRunHint" hidden>Tap a lift, do the set, tap Set Done — rest starts itself</div>
       <div class="weekstrip" id="weekStrip" aria-label="This training week"></div>
     </div>
+    <div class="deloadbar" id="deloadBar" role="status" hidden>Deload week — fewer sets, ~10% lighter, stop ~2 reps earlier.</div>
     <ul class="liftlist" id="liftList"></ul>
     <div class="progress" id="progressSegs" aria-hidden="true"></div>
   </section>
@@ -182,6 +183,8 @@
     <button class="modalbtn modalbtn-danger" id="replaceBtn" type="button">Restore (replace)</button>
     <input type="file" id="replaceFile" accept="application/json,text/plain" hidden>
     <label class="modalrow" for="bwInput">Bodyweight (lb)<input type="number" id="bwInput" inputmode="decimal" min="66" max="700" step="0.5"></label>
+    <button class="modalbtn modalbtn-deload" id="deloadStart" type="button">Start deload week</button>
+    <button class="modalbtn modalbtn-deload" id="deloadEnd" type="button" hidden>End deload week</button>
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
     <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>

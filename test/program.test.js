@@ -199,3 +199,49 @@ test("every lift carries its approved alternate (B6-06)", () => {
   }
   assert.equal(count, 24, "the program schedules 24 lifts");
 });
+
+/* B6-09 — deload-week helpers (no programme numbers change) */
+test("deloadSets: 60% of the prescribed sets, at least 1", () => {
+  assert.equal(P.deloadSets({ s: 3 }), 2);
+  assert.equal(P.deloadSets({ s: 4 }), 2);
+  assert.equal(P.deloadSets({ s: 2 }), 1);
+  assert.equal(P.deloadSets({ s: 1 }), 1);
+  for (const d of ["fri", "sat", "sun"]) for (const e of P.DAYS[d].ex) assert.equal(P.deloadSets(e), 2);
+});
+
+test("deloadLoad: 10% lighter snapped to the step, never at or above input", () => {
+  assert.equal(P.deloadLoad({ step: 5 }, 100), 90);
+  assert.equal(P.deloadLoad({ step: 5 }, 130), 115);   // 117 → 115
+  assert.equal(P.deloadLoad({ step: 5 }, 90), 80);     // 81 → 80
+  assert.equal(P.deloadLoad({ step: 5 }, 75), 70);     // 67.5 → 70
+  assert.equal(P.deloadLoad({ step: 5 }, 70), 65);     // 63 → 65
+  assert.equal(P.deloadLoad({ step: 5 }, 180), 160);   // 162 → 160
+  assert.equal(P.deloadLoad({ step: 2.5 }, 60), 55);   // 54 → 55
+  assert.equal(P.deloadLoad({ step: 2.5 }, 50), 45);
+  assert.equal(P.deloadLoad({ step: 2.5 }, 25), 22.5);
+  assert.equal(P.deloadLoad({ step: 1 }, 13), 12);     // 11.7 → 12
+  assert.equal(P.deloadLoad({ step: 1 }, 10), 9);
+  /* bodyweight / start-light lifts pass through untouched */
+  assert.equal(P.deloadLoad({ step: 2.5 }, 0), 0);
+  assert.equal(P.deloadLoad({ step: 2.5 }, null), null);
+  /* a load smaller than one step falls back to the raw 90% (never negative) */
+  assert.equal(P.deloadLoad({ step: 5 }, 2), 1.8);
+  for (const d of ["fri", "sat", "sun"]) {
+    for (const e of P.DAYS[d].ex) {
+      if (typeof e.load === "number" && e.load > 0) {
+        const dl = P.deloadLoad(e, e.load);
+        assert.ok(dl < e.load, `${e.n}: deload load must be lighter`);
+      }
+    }
+  }
+});
+
+test("firstOpenLift is unchanged without a target callback", () => {
+  const state = { "fri:0": { done: 2 } };
+  /* the programme's lift 0 prescribes 3 sets: 2 done leaves it open */
+  assert.equal(P.firstOpenLift("fri", state, 0), 0);
+  const complete = { "fri:0": { done: 3 } };
+  assert.equal(P.firstOpenLift("fri", complete, 0), 1);
+  /* an explicit target callback is what a deload week passes in */
+  assert.equal(P.firstOpenLift("fri", state, 0, (e) => P.deloadSets(e)), 1);
+});

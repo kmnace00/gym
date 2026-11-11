@@ -84,7 +84,7 @@
     return {
       v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {},
       lastBackup: null, active: emptySession(todayDay()), sessionLog: [],
-      bodyweight: 165, bodyweightSet: false
+      bodyweight: 165, bodyweightSet: false, deloadSince: null
     };
   }
 
@@ -274,6 +274,9 @@
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
     p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 165;
     p.bodyweightSet = p.bodyweightSet === true;
+    /* B6-09: the deload start date is additive on v5 — kept only when it is a
+       real date, otherwise null (no version bump).                          */
+    p.deloadSince = validDate(p.deloadSince) ? p.deloadSince : null;
     if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];
@@ -789,8 +792,23 @@
     if (p.active.date !== today) {
       if (p.active.status !== "complete" || activeHasData(p)) finalizeSession(p, ts);
       startSession(p, validDay(day) ? day : todayDay(), ts);
+      /* B6-09: a deload is a 7-day mode — once it has run its course the
+         rolled session clears the flag (day 6 still counts as active).      */
+      if (p.deloadSince && !deloadActive(p, today)) p.deloadSince = null;
     }
     return p;
+  }
+
+  /* B6-09: true while `deloadSince` is set and fewer than 7 whole days have
+     passed (day 6 active, day 7 not). Pure: reads only the payload and `now`
+     (a "YYYY-MM-DD" string or a timestamp; defaults to today).              */
+  function deloadActive(p, now) {
+    var since = p && validDate(p.deloadSince) ? parseDay(p.deloadSince) : null;
+    if (!since) return false;
+    var today = typeof now === "string" ? parseDay(now) : parseDay(dateKey(now ? new Date(now) : new Date()));
+    if (!today) return false;
+    var days = Math.round((today.getTime() - since.getTime()) / 86400000);
+    return days >= 0 && days < 7;
   }
 
   /* ── backup bookkeeping ── */
@@ -1046,6 +1064,7 @@
     resetLift: resetLift, resetDay: resetDay,
     markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue, hasData: hasData,
     mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
+    deloadActive: deloadActive,
     todayDay: todayDay, actualDay: actualDay, daysUntil: daysUntil, validDay: validDay, validDate: validDate,
     dateKey: dateKey, sessionDate: sessionDate
   };
