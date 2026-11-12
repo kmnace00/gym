@@ -1278,3 +1278,51 @@ computed margin-top:
   `e2e/smoke.spec.js`, including the log-fill and pill-clearance
   assertions). Full gate green; SW bump + CACHE-HASH
   (`tools/check-sw-cache.js`); one `BUILD_LOG.md` line.
+
+## Batch 7 — UI-only improvement phase (opened by Khang Nov 12, 2026)
+
+Khang's direction (Nov 12): "Run a continuous self-improvement loop
+on the gym html tool — a UI-only improvement phase, where the
+assistant acts as UI expert and may make drastic visual changes."
+Muse builds this batch in-session (planner + builder + reviewer),
+one item per commit, full gate per item. Scope is presentation
+only: `style.css` (plus a geometry/fit test where an item needs
+one). No behaviour changes, no markup changes unless an item says
+so, `program.js` untouched, and the usability guards stay binding:
+44px tap targets, the one-screen no-scroll lift view, the B5-01 /
+B6-11 geometry contracts, and the smoke pill-clearance rule. The
+Bear identity Khang picked Nov 10 stays — this phase deepens it
+(contrast, hierarchy, elevation), it does not re-brand.
+
+Audit basis (Muse, Nov 12, screenshots at 390×844 in both
+themes + rest/peek/progress/menu): the app is coherent but flat —
+cards separate from the page by a hairline only; the small muted
+text tiers (`--faint` at 11–12px) sit near 3:1 contrast; the day
+list's hierarchy is name-over-faint-meta with only the current row
+tinted; set rows carry small type inside tall rows; the rest
+screen's three actions are indistinguishable outline pills; the
+progress view's tracks and heatmap cells nearly vanish against
+their cards in light mode.
+
+- B7-01 Tokens & contrast foundation [T1] — retune both themes:
+  stronger `--line`, more legible `--muted`/`--faint` tiers, a
+  `--shadow-md` elevation token applied to the raised cards
+  (`.liftrow`, `.setrow`, `.ctl`, `.pstat`, `.pcard`). Values only.
+- B7-02 Day-view hierarchy [T1] — bigger lift names, a left accent
+  rail on the current row, done rows marked in `--good`, a
+  single-line day sub, taller week-strip pills; new e2e guard:
+  all 8 rows on screen, no scroll, at 390×844 and 390×667.
+- B7-03 Lift-view set stack [T1] — the load becomes the hero type
+  (16.5px/800), set numbers become chips, the current row gains an
+  inset accent rail, stepper values grow. B6-11's rhythm and the
+  B5-01 budget are not touched.
+- B7-04 Rest-screen presence [T1] — thicker progress bar, the End
+  rest action filled (it is the advance), elapsed readout legible,
+  prep card bordered. Full-screen rest scope only; the peek strip
+  and GO treatment keep their rules.
+- B7-05 Progress + menu finish [T1] — volume tracks and heatmap
+  cells read against their cards, stat numerals grow, menu buttons
+  gain a defining border.
+
+When B7-05 lands, the queue is empty and the UI phase closes with
+Muse's verification + screenshot pass.

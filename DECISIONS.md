@@ -141,3 +141,17 @@ The v1 spec's five values were individually right and jointly impossible: `.seth
 Rejected: symmetric −5 bleed (a builder scratch test showed the header box grows 4 px and breaks the B5-01 top-stack budget at both viewports); keeping the tall gap at 8 (abandons the rhythm on the exact screen Khang flagged); relaxing the smoke assertions (weakens B5-01 guards for a 1 px cosmetic gain).
 
 Verified by Muse in a scratch clone before re-queueing — the spec was not re-issued on arithmetic alone: 216/216 unit, typecheck clean, 139/139 e2e including the two new rhythm tests; at 440×956 the gaps measure 6/8/8 with clearance 1 and top stack 169.
+
+## Batch 7 authorization (Khang, Nov 12) — UI-only phase
+
+Khang opened a UI-only improvement phase and authorized drastic
+visual changes, with Muse acting as UI expert and building
+in-session. Muse's calls inside that grant: the Bear identity
+(picked Nov 10) is kept and deepened rather than replaced — a
+re-brand would spend his pick, not improve the app; presentation
+only, so no behaviour, feature, or program-data changes ride
+along; and the usability guards (44px targets, one-screen lift
+view, B5-01/B6-11 geometry, pill clearance) stay binding even
+under "drastic" — they are ergonomics, not styling. Items B7-01…
+B7-05 in `QUEUE.md` were written from Muse's Nov 12 screenshot
+audit of every screen in both themes.

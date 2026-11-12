@@ -1,6 +1,9 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — BATCH 6 (decided). Batch 5 (B5-01…B5-20) is COMPLETE + VERIFIED by Muse at HEAD `68f319c` (194/194 unit, typecheck clean, 112/112 e2e, SW `gym-v87`, Pages live; review record in `LOOP_STATE.md`). B6-01 is BUILT + VERIFIED. B6-02…B6-10 are BUILT and gated (216/216 unit, typecheck clean, 137/137 e2e, SW `gym-v99`; details in `BUILD_LOG.md`). Batch 6 is BUILT — B6-11 landed Nov 12 (SW `gym-v100`). A UI-only Batch 7 phase follows (Khang, Nov 12: Muse as UI expert, drastic visual changes authorized; specs in `QUEUE.md`).
+Status: ACTIVE — BATCH 7 (UI-only improvement phase). Batch 6 is COMPLETE + VERIFIED by Muse at HEAD `b970b9ba` (216/216 unit, typecheck clean, 139/139 e2e, SW `gym-v100`, Pages live). Batch 7: Muse as UI expert (Khang, Nov 12 — drastic visual changes authorized), building in-session; specs in `QUEUE.md`, decision record in `DECISIONS.md`.
+
+## Active — Batch 7: UI-only improvement phase
+B7-01 tokens & contrast · B7-02 day-view hierarchy · B7-03 lift-view set stack · B7-04 rest-screen presence · B7-05 progress + menu finish. Presentation only — no behaviour, no program data; usability contracts hold. Muse builds + gates + verifies each item in-session.
 
 ## Completed — B6-11: Lift-view spacing rhythm [T1] (v2 spec)
 - Built Nov 12 (Muse, in-session UI phase). Asymmetric `.resetlift` bleed (`-9px 0 -5px`) with `.sethead` margin-bottom 6 at tall sizes; title run 8/8/8; `.rirrow` margin-top 8; short screens unchanged. New rhythm test in `e2e/liftgeom.spec.js`. SW `gym-v100` (`CACHE-HASH` 0d1f072cf4c796bc). 216/216 unit, typecheck clean, 139/139 e2e at 390×667/844; `program.js` untouched.
