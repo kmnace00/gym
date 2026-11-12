@@ -106,20 +106,20 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 h1{
   flex:none;
   font-size:clamp(25px,6.6vw,31px);line-height:1.08;letter-spacing:-.02em;font-weight:800;
-  margin:2px 0 6px;
+  margin:0 0 8px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 /* one secondary-size meta line: reps · load · RIR · rest */
-.pres{flex:none;font-size:13.5px;line-height:1.35;color:var(--muted);margin:2px 0 0;font-variant-numeric:tabular-nums}
+.pres{flex:none;font-size:13.5px;line-height:1.35;color:var(--muted);margin:0;font-variant-numeric:tabular-nums}
 .pres b{color:var(--ink)}
 /* one guide block: cue text, tempo as a muted continuation, 2-line clamp */
 .guide{flex:none;margin:8px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .cue{display:inline;font-size:15px;line-height:1.5;color:var(--muted)}
 .tempo{display:inline;color:var(--faint);font-size:12px}
-.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 8px}
+.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 6px}
 .seth{font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
 .setacts{display:flex;gap:6px}
-.resetlift{flex:none;height:44px;margin:-7px 0;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
+.resetlift{flex:none;height:44px;margin:-9px 0 -5px;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
 .resetlift:disabled{opacity:.4}
 .resetlift:not(:disabled):active{filter:brightness(1.15)}
 .resetlift.undoset{color:var(--accent)}
@@ -150,7 +150,7 @@ h1{
 .ctl .mid{text-align:center;min-width:0}
 .ctl .k{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .ctl .v{display:block;font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
-.rirrow{display:flex;align-items:center;gap:6px;margin-top:10px}
+.rirrow{display:flex;align-items:center;gap:6px;margin-top:8px}
 .rirrow .k{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--faint);margin-right:2px}
 .rir{
   flex:1;height:44px;border-radius:999px;
@@ -289,6 +289,9 @@ h1{
   .guide{margin-top:4px;font-size:13.5px;line-height:1.4}
   .cue{font-size:13.5px;line-height:1.4}
   .sethead{margin-top:4px;margin-bottom:8px}
+  .resetlift{margin:-7px 0}
+  .pres{margin:2px 0 0}
+  .rirrow{margin-top:10px}
   .setlog{gap:4px}
   .adjust{padding-top:8px}
   .stepbtn{width:44px;height:44px;margin:-2px 0;font-size:20px}

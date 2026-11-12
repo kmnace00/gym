@@ -14,6 +14,42 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
   test.describe(`lift geometry 390x${size.height}`, () => {
     test.use({ viewport: size });
 
+    test("B6-11 spacing rhythm: stack gaps on the beat, pills clear the first row", async ({ page }) => {
+      await page.goto(url);
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await page.locator(".liftrow").first().click();
+      await expect(page.locator("#exName")).toBeVisible();
+      const m = await page.evaluate(() => {
+        const R = (el) => el.getBoundingClientRect();
+        const head = R(document.querySelector(".sethead"));
+        const rows = [...document.querySelectorAll("#setLog .setrow")].map(R);
+        const nav = R(document.querySelector(".liftnav"));
+        const name = R(document.getElementById("exName"));
+        const pres = R(document.getElementById("exPres"));
+        const pillBottom = Math.max(
+          ...[document.getElementById("undoSetBtn"), document.getElementById("resetLiftBtn")]
+            .map((b) => b.getBoundingClientRect().bottom)
+        );
+        return {
+          headGap: +(rows[0].top - head.bottom).toFixed(2),
+          rowGap: +(rows[1].top - rows[0].bottom).toFixed(2),
+          navGap: +(name.top - nav.bottom).toFixed(2),
+          presGap: +(pres.top - name.bottom).toFixed(2),
+          clear: +(rows[0].top - pillBottom).toFixed(2),
+          rirMt: getComputedStyle(document.querySelector(".rirrow")).marginTop
+        };
+      });
+      expect(m.clear, "44px pills must not touch the first set row").toBeGreaterThanOrEqual(1);
+      if (size.height === 844) {
+        expect(Math.abs(m.headGap - m.rowGap), "gap above the first row equals the gap between rows").toBeLessThanOrEqual(0.6);
+        expect(m.headGap, "top-of-stack gap is on the 6px beat").toBeCloseTo(6, 0);
+        expect(m.navGap, "nav -> name is 8px").toBeCloseTo(8, 0);
+        expect(m.presGap, "name -> prescription is 8px").toBeCloseTo(8, 0);
+        expect(m.rirMt, "RIR row margin-top is 8px").toBe("8px");
+      }
+    });
+
     test("the top stack is cut and the set log absorbs the slack", async ({ page }) => {
       const errors = [];
       page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
