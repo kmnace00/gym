@@ -1,6 +1,6 @@
 # TASK — for OpenCode (planner: Muse)
 
-Status: ACTIVE — BATCH 7 (UI-only improvement phase). Batch 6 is COMPLETE + VERIFIED by Muse at HEAD `b970b9ba` (216/216 unit, typecheck clean, 139/139 e2e, SW `gym-v100`, Pages live). Batch 7: Muse as UI expert (Khang, Nov 12 — drastic visual changes authorized), building in-session; specs in `QUEUE.md`, decision record in `DECISIONS.md`.
+Status: BATCHES 6 + 7 COMPLETE + VERIFIED; BATCHES 8–25 built in Muse's local tree and PUBLISHED Nov 12 (~15:50 CT) at Khang's order — SW `gym-v127` live on Pages. The push carries B7-05 through the 100-cycle run (Batches 16–25) plus the same-day removal of ALL wide-screen/desktop styling (Khang: phone-only, forever — see DECISIONS.md). Full gate before the push: sw-cache OK, 216/216 unit, typecheck clean, 143/143 e2e — the sandbox write fault that had blocked browser runs since ~12:23 CT cleared by ~15:42 CT and the deferred e2e finally ran green. A screenshot sweep was not separately re-run (the e2e suite's geometry assertions cover the layout contracts). The queue is empty; the supervisor remains PAUSED.
 
 ## Active — Batch 7: UI-only improvement phase
 B7-01 tokens & contrast · B7-02 day-view hierarchy · B7-03 lift-view set stack · B7-04 rest-screen presence · B7-05 progress + menu finish. Presentation only — no behaviour, no program data; usability contracts hold. Muse builds + gates + verifies each item in-session.

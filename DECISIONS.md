@@ -155,3 +155,11 @@ view, B5-01/B6-11 geometry, pill clearance) stay binding even
 under "drastic" — they are ergonomics, not styling. Items B7-01…
 B7-05 in `QUEUE.md` were written from Muse's Nov 12 screenshot
 audit of every screen in both themes.
+
+## B6-11 amendment (Muse, Nov 12, B10-01) — rhythm is painted, not border-box
+
+Khang caught what the B6-11 guard could not see: the stack measured even (6 = 6 on border boxes) but looked like the first set box was hitting the pills above it, because the pills paint 5px into their 6px gap (painted gap: 1). Decision: spacing rhythms in this app are specified and tested on painted boxes. The fix moves the pill bleed fully upward rather than widening the gap — the 6px beat was right; its measurement was wrong. B6-11's border-box assertions stay (they still guard the layout), and a painted-gap assertion joins them.
+
+## Scope (Khang, Nov 12) — phone-only
+
+The gym app is a phone HTML app (GitHub Pages) and only that: Khang will never use it on desktop, and there is no desktop app to match or maintain. Wide-screen treatments are out of scope for future work; the ones from the Nov 12 runs were first fenced (v126), then DELETED outright at Khang's order (v127) — style.css carries no wide-screen or hover media blocks at all. All future cycles are phone-first.

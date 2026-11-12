@@ -37,16 +37,25 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
           navGap: +(name.top - nav.bottom).toFixed(2),
           presGap: +(pres.top - name.bottom).toFixed(2),
           clear: +(rows[0].top - pillBottom).toFixed(2),
+          paintedGap: +(rows[0].top - pillBottom).toFixed(2),
           rirMt: getComputedStyle(document.querySelector(".rirrow")).marginTop
         };
       });
       expect(m.clear, "44px pills must not touch the first set row").toBeGreaterThanOrEqual(1);
       if (size.height === 844) {
-        expect(Math.abs(m.headGap - m.rowGap), "gap above the first row equals the gap between rows").toBeLessThanOrEqual(0.6);
-        expect(m.headGap, "top-of-stack gap is on the 6px beat").toBeCloseTo(6, 0);
+        expect(Math.abs(m.headGap - 3 - m.rowGap), "painted rhythm: border gap minus pill bleed equals the row gap").toBeLessThanOrEqual(0.6);
+        // B10-01 rebalance: the border gap is 9px, of which 3px is the
+        // pills' transparent bleed zone — the PAINTED gap (asserted below)
+        // is the 6px beat. All-up bleed (-14) crowded the guide instead.
+        expect(m.headGap, "border gap above the first row (3px is pill bleed)").toBeCloseTo(9, 0);
         expect(m.navGap, "nav -> name is 8px").toBeCloseTo(8, 0);
         expect(m.presGap, "name -> prescription is 8px").toBeCloseTo(8, 0);
         expect(m.rirMt, "RIR row margin-top is 8px").toBe("8px");
+        // B10-01: the rhythm is a PAINTED-box rhythm — the gap the eye sees
+        // between the pills and the first row equals the gap between rows.
+        // (B6-11 measured border boxes only; the pills' downward bleed ate
+        // 5 of the 6px and the stack looked like it was hitting the pills.)
+        expect(Math.abs(m.paintedGap - m.rowGap), "painted gap above the first row equals the gap between rows").toBeLessThanOrEqual(0.6);
       }
     });
 

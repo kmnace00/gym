@@ -136,3 +136,176 @@
 - 2026-11-12 T1 (Batch 7, B7-02): day-view hierarchy. Lift names grow (15→16.5px) and meta text with them (12→12.5px); the current row gains a 3px inset accent rail on top of its tint and elevation; done rows mark their status in `--good`; the day title grows to 17px and the sub line is single-line ellipsis so the header stays two lines; week-strip pills 22→24px tall. New `e2e/dayfit.spec.js` guards the fit the layout relies on: 8 rows, each ≥44px, last row on-screen, no document scroll at 390×844/667 (measured 71px / 54px row heights). SW `gym-v102` (`CACHE-HASH` f9b18380c62091bb). Built by Muse in-session (UI phase).
 - 2026-11-12 T1 (Batch 7, B7-03): lift-view set stack. The logged load becomes the hero type (`.setrow .sr` 14px/700 → 16.5px/800), RIR grows to 12.5px, set numbers become chips (`--surface-2` rounded blocks), the current row gains the same 3px inset accent rail as the day view's current row, and the stepper values grow 19→21px. Row heights, gaps, and the B6-11 rhythm are unchanged — the B5-01/B6-11 geometry specs pass unmodified. SW `gym-v103` (`CACHE-HASH` 01457bf7fe3be56f). Built by Muse in-session (UI phase).
 - 2026-11-12 T1 (Batch 7, B7-04): rest-screen presence. The progress bar thickens (7→9px) and its track becomes `--line` so it reads on the card; End rest — the advance action — is now a filled pill (ink on bg) against the +15 / Pause outlines, with the GO state's own fill still winning at GO; the elapsed readout goes 11px/.6 opacity → 11.5px/.85; the next-set prep card gains a border and soft shadow; the "Rest" label grows to 19px. Full-screen rest scope; peek-strip geometry untouched. SW `gym-v104` (`CACHE-HASH` 6bca5de5768d39b6). Built by Muse in-session (UI phase).
+- 2026-11-12 T1 (Batch 7, B7-05): progress + menu finish. Volume-bar and set-segment tracks and the heatmap's off cells move from `--surface-2` to `--line` so they read against their cards in both themes; heatmap cells round to 4px; progress stat numerals grow 22→24px; menu buttons gain a 1px `--line` border; the modal card's radius goes 16→18px. SW `gym-v105` (`CACHE-HASH` f46a3c4734f813c7). Built by Muse in-session (UI phase). NOTE: from this item on, the phase works locally without pushing (Khang, Nov 12 06:35) — this build is in the local tree only, not on origin.
+- 2026-11-12 T1 (Batch 8, B8-01): seeded-state polish, from Muse's audit with real history loaded (progress with data, suggestion state, GO screen, finish summary — screenshots in `review-shots/batch8/`). Week-strip text 10.5px/`--faint` → 11px/`--muted` (the last washed-out element); summary stat tiles gain the `--line` border the menu buttons got in B7-05; sparkline strokes fatten via CSS (lift 2→2.5, progress 2.5→3 — CSS overrides the SVG presentation attributes, no JS change). The seeded audit otherwise came back dry: progress-with-data, GO, and the summary already read well after Batch 7. SW `gym-v106` (`CACHE-HASH` d411d36eac8ad5b0). Local tree only (no-push direction, Nov 12 06:35).
+- 2026-11-12 T1 (Batch 9, B9-01): swap-state header fix, found by Muse's second audit round (menu, swap, set-edit, value editor, peek at both heights, short-screen rest, stall, deload states). While a lift is swapped, the `#swapBtn` label becomes the long "Using <alternate> — undo" pill; sharing the sethead row pushed Restart halfway off-screen and crushed the "Set 1 of 3" label into a vertical stack. Two `:has` rules scoped on the visible `#swapSub` give the action pills their own right-aligned row in the swapped/swap-locked states only — the normal state's geometry contracts are untouched. New `e2e/swapfit.spec.js` asserts every sethead action is fully on-screen while swapped at 390×844/667. SW `gym-v107` (`CACHE-HASH` 47767d272439466c). Local tree only (no-push direction, Nov 12 06:35).
+- 2026-11-12 T1 (Batch 10, B10-01): the set-stack rhythm is now a PAINTED-box rhythm. Khang flagged that the first set box looked like it was hitting the pills above it; measured: border-box gap 6 (B6-11's test, green) but painted gap 1 — the `.resetlift` pills' 5px downward bleed ate the gap, and the row's shadow halo finished the illusion. Fix: the bleed moves fully upward (`.resetlift` margin `-9px 0 -5px` → `-14px 0 0`); total bleed unchanged, so the header box and the B5-01 top-stack budget do not move, pill clearance rises 1→6, and the painted gap above the first row now equals the 6px row gap. The liftgeom rhythm test gains a painted-gap assertion so the guard measures what the eye sees. Short screens unchanged (documented B6-11 exception). SW `gym-v108` (`CACHE-HASH` 4cc5c056fe3e8bed). Local tree only (no-push direction, Nov 12 06:35).
+- 2026-11-12 T1 (Batch 10, B10-01 rebalance): the all-upward bleed crowded the guide line instead — the pills rode high and nearly touched the text above. Final split: `.resetlift` margin `-11px 0 -3px` with `.sethead` margin-bottom 6→9. Painted gaps balance: 6px below the pills (9 − 3 bleed), ~5px above them into the guide's slack, and the pill centre sits 4px high instead of 7. The liftgeom border-gap expectation is amended to 9 with the reason recorded in the test; the painted-gap assertion is unchanged and carries the rhythm. SW `gym-v109` (`CACHE-HASH` f85ccffa94ab2189). Local tree only.
+- 2026-11-12 T1 (Batch 10, B10-02): tap feedback for editable set rows — a done row is tappable (tap-to-edit) but gave no press response; `.setrow.done:active` now brightens, matching the feedback language of the other tappable rows. SW `gym-v110` (`CACHE-HASH` 3a15bd94868d0f6b). Local tree only.
+- 2026-11-12 T1 (Batch 11, cycle 1): theme-color meta was stale pre-Bear `#0b0e12` (blue-black); now `#17100b`, matching the Bear dark background so phone browser chrome tints with the app.
+- 2026-11-12 T1 (Batch 11, cycle 2): light theme-color variant added (`#fdebd2` via prefers-color-scheme media) so light-mode chrome matches too.
+- 2026-11-12 T1 (Batch 11, cycle 3): `text-size-adjust:100%` on body — iOS no longer inflates text in landscape.
+- 2026-11-12 T1 (Batch 11, cycle 4): `overscroll-behavior-y:none` on body — no pull-to-refresh/rubber-band chaining mid-workout.
+- 2026-11-12 T1 (Batch 11, cycle 5): themed `::selection` (accent-soft) instead of the OS default blue.
+- 2026-11-12 T1 (Batch 11, cycle 6): `.modalrow input` 15px → 16px — the app's only text input no longer triggers iOS focus auto-zoom.
+- 2026-11-12 T1 (Batch 11, cycle 7): `.menubtn:active` press state (surface-2 disc) — the header icon buttons gave no touch feedback.
+- 2026-11-12 T1 (Batch 11, cycle 8): view entrance motion — `.view` fades in (180ms, opacity only, restarts on the display flip that switches views; zero layout movement, reduced-motion guard already global).
+- 2026-11-12 T1 (Batch 11, cycle 9): modal + summary cards share the same soft fade-in instead of a hard cut.
+- 2026-11-12 T1 (Batch 11, cycle 10): header press states completed — `.pill:active` brightens, `.backbtn:active` dims, matching `.day:active`.
+- Batch 11 SW `gym-v111` (`CACHE-HASH` 1f94bf6c5370da00). Local tree only (no-push direction).
+- 2026-11-12 T1 (Batch 12, cycle 11): GO state breathes — the rest timer at GO gently pulses brightness (1.6s ease-in-out, filter only, no layout movement; the global reduced-motion guard disables it).
+- 2026-11-12 T1 (Batch 12, cycle 12): rest card fades in when rest starts (`.app.resting .timer` shares the viewIn fade) instead of cutting in.
+- 2026-11-12 T1 (Batch 12, cycle 13): set rows ease their state changes — `.setrow` gains background/border/opacity transitions, so marking a set done fades instead of snapping.
+- 2026-11-12 T1 (Batch 12, cycle 14): thin themed scrollbars on the scrollable surfaces (set log, modal, summary) — warm `--line` thumb instead of the OS default.
+- 2026-11-12 T1 (Batch 12, cycle 15): `-webkit-font-smoothing:antialiased` on body — crisper text on the warm dark theme.
+- 2026-11-12 T1 (Batch 12, cycle 16): session pill's press brightness now eases (filter added to its transition) instead of snapping.
+- 2026-11-12 T1 (Batch 12, cycle 17): lift-row chevron nudges 2px right while the row is pressed — a small directional cue.
+- 2026-11-12 T1 (Batch 12, cycle 18): focus-visible rule no longer forces `border-radius:8px` — keyboard outlines now follow each element's own radius (pills stay pill-shaped when focused).
+- 2026-11-12 T1 (Batch 12, cycle 19): modal and summary backdrops dim in (bdIn) to match their cards' fade instead of popping to full darkness.
+- 2026-11-12 T1 (Batch 12, cycle 20): header icon buttons ease their press state (background transition on `.menubtn`).
+- Batch 12 SW `gym-v112` (`CACHE-HASH` 689599d66f5a237c). Local tree only. NOTE: the e2e leg is environment-blocked this session (Playwright's transform cache write hits the sandbox EPERM fault); unit + typecheck + sw-cache gates run per batch and the full e2e is deferred to the final sweep.
+- 2026-11-12 T1 (Batch 13, cycle 21): light `--faint` #93744d → #7d6138 — computed contrast was 3.71 on the light background (10px stat labels, RIR label); now 4.94 on bg / 5.51 on surface / 4.60 on surface-2, all past 4.5.
+- 2026-11-12 T1 (Batch 13, cycle 22): light `--accent` #a06a3f → #8f5c2b (accent-soft retied to match) — accent text on surface was 4.33; now 5.37, and white-on-accent (filled buttons) rises 4.54 → 5.62.
+- 2026-11-12 T1 (Batch 13, cycle 23): light `--good` #4c8a3f → #3e7531 — done-status green was 4.00 on surface; now 5.28.
+- 2026-11-12 T1 (Batch 13, cycle 24): `.guide` line-height 1.45 — the two-line cue/tempo clamp breathes a little.
+- 2026-11-12 T1 (Batch 13, cycle 25): `.rirrow .k` letter-spacing .06em → .08em — matches the `.ctl .k` label system.
+- 2026-11-12 T1 (Batch 13, cycle 26): `.seth` ("Set 1 of 3") gains .01em letter-spacing — the set-stack header matches the display numerals' slight tightening.
+- 2026-11-12 T1 (Batch 13, cycle 27): light-theme scrims are warm instead of cold black — modal/summary backdrop becomes rgba(74,48,16,.45) in light mode.
+- 2026-11-12 T1 (Batch 13, cycle 28): light `--shadow-sm` warmed to the shadow-md family (rgba(120,72,20,.12), was flat black .1).
+- 2026-11-12 T1 (Batch 13, cycle 29): `.pstat .pk` letter-spacing .07em → .08em — same label harmonisation as cycle 25.
+- 2026-11-12 T1 (Batch 13, cycle 30): input placeholders themed (`--faint`, full opacity) instead of OS grey — covers both text inputs (value editor + modal rows).
+- Batch 13 SW `gym-v113` (`CACHE-HASH` 83c7a16fb78ce2da). Local tree only. Dark-theme contrast re-verified by computation: every text pair ≥ 5.6.
+- 2026-11-12 T1 (Batch 14, cycle 31): text cursor in both inputs is themed (`caret-color: var(--accent)`) instead of the OS default.
+- 2026-11-12 T1 (Batch 14, cycle 32): banner actions get press states — `.bbact:active` brightens, `.bbdismiss:active` goes full opacity.
+- 2026-11-12 T1 (Batch 14, cycle 33): deload banner gains an inset accent rail — the mode banner reads as a state, not a notice.
+- 2026-11-12 T1 (Batch 14, cycle 34): backup banner gains the matching warn rail.
+- 2026-11-12 T1 (Batch 14, cycle 35): heatmap "on" cells gain a subtle inner floor shadow — filled days read as tiles, not stickers.
+- 2026-11-12 T1 (Batch 14, cycle 36): hover-capable pointers get hover states (modal buttons warm their border, header icons and day tabs respond) — guarded by `@media (hover:hover)` so touch never sticks.
+- 2026-11-12 T1 (Batch 14, cycle 37): save/recovery bar gains the warn rail, completing the banner family.
+- 2026-11-12 T1 (Batch 14, cycle 38): week-strip cells ease their state colours (background/color transitions) at week rollover.
+- 2026-11-12 T1 (Batch 14, cycle 39): `.sumk` label tracking .06em → .08em — the summary tiles join the unified label system.
+- 2026-11-12 T1 (Batch 14, cycle 40): `.rpname` (rest prep label) tracking .04em → .08em — same harmonisation.
+- Batch 14 SW `gym-v114` (`CACHE-HASH` 1c1f56fadd6a00ec). Local tree only.
+- 2026-11-12 T1 (Batch 15, cycle 41): rest-strip buttons get press feedback (surface-2 fill + background transition) — Pause/Skip no longer feel inert.
+- 2026-11-12 T1 (Batch 15, cycle 42): set-progress fill gains the heatmap's inner-floor depth (`.pseg i` inset shadow).
+- 2026-11-12 T1 (Batch 15, cycle 43): progress day-bars get the same depth treatment (`.pdbar i`).
+- 2026-11-12 T1 (Batch 15, cycle 44): day-tab track gains a 1px `--line` border — the segmented control is defined against the page in light mode, where track and background nearly merge.
+- 2026-11-12 T1 (Batch 15, cycle 45): missed week-strip days stop washing out with opacity (.65 removed) — full-strength `--faint` keeps the de-emphasis and passes contrast in both themes.
+- 2026-11-12 T1 (Batch 15, cycle 46): rest strip's secondary line uses full-strength `--faint` instead of 75% opacity over muted (which fell under 4.5 in light mode).
+- 2026-11-12 T1 (Batch 15, cycle 47): same fix for the rest up-next line (was 80% opacity).
+- 2026-11-12 T1 (Batch 15, cycle 48): same fix for the rest elapsed line (was 85% opacity).
+- 2026-11-12 T1 (Batch 15, cycle 49): `.hint` radius joins the token system (var(--radius-sm), was a one-off 10px).
+- 2026-11-12 T1 (Batch 15, cycle 50): light-mode overlay shadows warmed (modal + summary cards cast warm brown shadows, completing cycle 27's scrim change).
+- Batch 15 SW `gym-v115` (`CACHE-HASH` 0ff4d077298a89d3). Local tree only. 50-cycle UI run (Batches 11–15) complete: gates per batch — sw-cache OK, 216/216 unit, typecheck clean; the e2e leg and screenshot sweeps stayed blocked by the sandbox write fault (Playwright transform cache + Chromium profile writes EPERM) and are DEFERRED, to run at the next healthy session before any push.
+- 2026-11-12 T1 (Batch 16, cycle 51): home-screen app gets a translucent status bar (`apple-mobile-web-app-status-bar-style: black-translucent`) — with viewport-fit + safe-area padding already in place, the app now runs truly edge-to-edge on iPhone.
+- 2026-11-12 T1 (Batch 16, cycle 52): wide screens get a warm halo behind the app column (token-driven radial accent wash on body, ≥720px).
+- 2026-11-12 T1 (Batch 16, cycle 53): the column is framed on wide screens — hairline side borders + a soft stage shadow.
+- 2026-11-12 T1 (Batch 16, cycle 54): wide screens get slightly roomier inline padding (18px).
+- 2026-11-12 T1 (Batch 16, cycle 55): tall wide screens get a 14px app gap (was 12).
+- 2026-11-12 T1 (Batch 16, cycle 56): theme flips crossfade — body background eases .25s instead of snapping.
+- 2026-11-12 T1 (Batch 16, cycle 57): stat tiles join the crossfade (background/border transitions on `.pstat`).
+- 2026-11-12 T1 (Batch 16, cycle 58): progress cards join the crossfade (`.pcard`).
+- 2026-11-12 T1 (Batch 16, cycle 59): menu modal card joins the crossfade (`.modal-card`).
+- 2026-11-12 T1 (Batch 16, cycle 60): summary card joins the crossfade (`.summary-card`). Elements with existing motion transitions were deliberately left untouched so nothing double-animates.
+- Batch 16 SW `gym-v116` (`CACHE-HASH` 298746e3cf54edfe). Local tree only. Browser/e2e verification still environment-blocked (sandbox write fault); deferred as recorded.
+- 2026-11-12 T1 (Batch 17, cycle 61): forced-colors mode — cards, panels, timer and the day track get explicit CanvasText borders (shadows are stripped in HC mode; structure now survives on borders).
+- 2026-11-12 T1 (Batch 17, cycle 62): forced-colors selections — active day tab, active RIR pill and done week cells map to Highlight/HighlightText.
+- 2026-11-12 T1 (Batch 17, cycle 63): forced-colors data fills — heatmap on-cells and all progress fills map to Highlight.
+- 2026-11-12 T1 (Batch 17, cycle 64): forced-colors GO state — the rest timer at GO becomes Highlight with HighlightText children; Skip keeps its inverted read.
+- 2026-11-12 T1 (Batch 17, cycle 65): forced-colors current markers — the box-shadow rails on the current lift/set rows become real Highlight outlines; today cell outlined too.
+- 2026-11-12 T1 (Batch 17, cycle 66): forced-colors tracks — heatmap off-cells and bar tracks get borders so empty state still reads as a chart.
+- 2026-11-12 T1 (Batch 17, cycle 67): print foundation — the token palette flips to ink-on-white (both theme attributes), shadows off, page scrolls.
+- 2026-11-12 T1 (Batch 17, cycle 68): print hides the chrome — buttons, session pill, timer and banner actions don't print.
+- 2026-11-12 T1 (Batch 17, cycle 69): print layout — the day view is the sheet (other views suppressed even against inline display), rows keep together and stop stretching.
+- 2026-11-12 T1 (Batch 17, cycle 70): print page setup — 14mm margins, print-sized title.
+- Batch 17 SW `gym-v117` (`CACHE-HASH` d58cabc265d71464). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 18, cycle 71): value-editor input target grows — `.vin` height 30px → 36px (the editor opens by tapping the value; the input itself should be tappable too).
+- 2026-11-12 T1 (Batch 18, cycle 72): menu input reaches the 44px standard — `.modalrow input` height 34px → 44px, row min-height 46px → 52px to hold it.
+- 2026-11-12 T1 (Batch 18, cycle 73): rest-screen "Show details" link drops its 70% opacity wash — full-strength inherited colour (still secondary via the underline treatment), readable in light mode.
+- 2026-11-12 T1 (Batch 18, cycle 74): no long-press callout on any button (`-webkit-touch-callout:none`) — pressing and holding a control mid-set never pops a copy menu.
+- 2026-11-12 T1 (Batch 18, cycle 75): menu buttons wrap gracefully — line-height + centre text + side padding for long labels.
+- 2026-11-12 T1 (Batch 18, cycle 76): banner action label never wraps (`.bbact` nowrap; the banner text flexes instead).
+- 2026-11-12 T1 (Batch 18, cycle 77): "Plan today" label never wraps (`.planbtn` nowrap).
+- 2026-11-12 T1 (Batch 18, cycle 78): rest strip's next-lift name ellipsises — a long name can no longer grow the peek strip to two lines.
+- 2026-11-12 T1 (Batch 18, cycle 79): stat numerals scale with the screen (`.pstat .pv` clamp 19–24px) — big volumes can't overflow their tile on narrow phones.
+- 2026-11-12 T1 (Batch 18, cycle 80): summary numerals get the same treatment (`.sumv` clamp 14–17px).
+- Batch 18 SW `gym-v118` (`CACHE-HASH` f0e9d859407a2284). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 19, cycle 81): new compaction tier at ≤560px height — app gap 12 → 8.
+- 2026-11-12 T1 (Batch 19, cycle 82): short tier title — h1 21px with a tighter margin, returning a line to the set log.
+- 2026-11-12 T1 (Batch 19, cycle 83): short tier guide clamps to one line.
+- 2026-11-12 T1 (Batch 19, cycle 84): short tier Set Done 60px → 52px (still above the 44px floor).
+- 2026-11-12 T1 (Batch 19, cycle 85): short tier lift names 15px.
+- 2026-11-12 T1 (Batch 19, cycle 86): short tier menu card padding 16px → 12px — more rows visible without scrolling.
+- 2026-11-12 T1 (Batch 19, cycle 87): short tier rest screen tightens (gap 8, padding 14px).
+- 2026-11-12 T1 (Batch 19, cycle 88): short tier rest clock scales with height (clamp 52px–72px on vh) instead of the 80px floor that crowds landscape.
+- 2026-11-12 T1 (Batch 19, cycle 89): short tier rest buttons return to 44px.
+- 2026-11-12 T1 (Batch 19, cycle 90): landscape phones get a wider column (max-width 640px) — the set log uses the horizontal room.
+- Batch 19 SW `gym-v119` (`CACHE-HASH` b0d8e1020b000af0). Local tree only. The tier sits below every tested viewport (667/844), so the geometry contracts are untouched; browser verification still environment-blocked, deferred as recorded.
+- 2026-11-12 T1 (Batch 20, cycle 91): swap pill can't burst its row — `#swapBtn` caps at 56vw and ellipsises (a long alternate name was the one untested overflow left in the set header).
+- 2026-11-12 T1 (Batch 20, cycle 92): the tempo line never splits mid-phrase (`.guide .tempo` nowrap — it fits a line whole at every supported width, so it now wraps as a unit).
+- 2026-11-12 T1 (Batch 20, cycle 93): progress day-bar value column is content-sized (58px fixed → auto) — five-figure volumes can't clip.
+- 2026-11-12 T1 (Batch 20, cycle 94): rest-prep exercise name ellipsises inside its card instead of wrapping the prep layout.
+- 2026-11-12 T1 (Batch 20, cycle 95): menu footer (version string) uses tabular numerals.
+- 2026-11-12 T1 (Batch 20, cycle 96): guide text can break an over-long single word (`overflow-wrap:anywhere`) instead of overflowing the clamp.
+- 2026-11-12 T1 (Batch 20, cycle 97): card volume figures never wrap mid-number (`.pvol` nowrap).
+- 2026-11-12 T1 (Batch 20, cycle 98): narrow phones (≤340px) reclaim side padding (14px → 10px).
+- 2026-11-12 T1 (Batch 20, cycle 99): narrow phones tighten the rest-strip buttons (padding 14px → 10px).
+- 2026-11-12 T1 (Batch 20, cycle 100): narrow phones narrow the day-bar name column (64px → 52px), returning width to the bars.
+- Batch 20 SW `gym-v120` (`CACHE-HASH` fb01e0e14fbf3694). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 21, cycle 101): progress subtitle uses tabular numerals (week counts no longer jitter).
+- 2026-11-12 T1 (Batch 21, cycle 102): progress footnote line-height 1.4 for its two-line narrow case.
+- 2026-11-12 T1 (Batch 21, cycle 103): heatmap week groups separate a touch more (gap 3px → 5px; days within a week stay tight — the grouping reads correctly).
+- 2026-11-12 T1 (Batch 21, cycle 104): big sparkline gets a baseline axis (hairline under the chart wrap).
+- 2026-11-12 T1 (Batch 21, cycle 105): top-movers rows get hairline dividers — the list reads as a list, not floating pairs.
+- 2026-11-12 T1 (Batch 21, cycle 106): progress title aligns with the card titles below it (head padding 4px → 12px, matching card padding).
+- 2026-11-12 T1 (Batch 21, cycle 107): suggestion sparkline corners round off (linejoin/linecap round).
+- 2026-11-12 T1 (Batch 21, cycle 108): progress sparkline gets the same rounded joins.
+- 2026-11-12 T1 (Batch 21, cycle 109): forced-colors — the backup-reminder dot maps to Highlight like everything else.
+- 2026-11-12 T1 (Batch 21, cycle 110): wide screens get slightly taller day bars (10px → 12px).
+- Batch 21 SW `gym-v121` (`CACHE-HASH` 9a073ab544397fb8). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 22, cycle 111): rest clock tracking tightens at display size (letter-spacing -.03em) — the big digits sit like a proper countdown.
+- 2026-11-12 T1 (Batch 22, cycle 112): the full-screen rest card gets the family hairline border (it floated borderless unlike every other card).
+- 2026-11-12 T1 (Batch 22, cycle 113): the rest card gets its elevation (shadow-md) to match.
+- 2026-11-12 T1 (Batch 22, cycle 114): up-next line wraps balanced (`text-wrap:balance`) when it takes two lines.
+- 2026-11-12 T1 (Batch 22, cycle 115): rest action buttons share a minimum width (108px) — Pause / Skip / extend read as one control family.
+- 2026-11-12 T1 (Batch 22, cycle 116): rest label block caps at 340px like the prep card and up-next line — one text measure across the rest screen.
+- 2026-11-12 T1 (Batch 22, cycle 117): elapsed readout steps up a size on the focus screen (11.5px → 12.5px).
+- 2026-11-12 T1 (Batch 22, cycle 118): rest footer (details / undo) gets a breath of margin above it.
+- 2026-11-12 T1 (Batch 22, cycle 119): hover-capable pointers get rest-button hovers (surface fill), joining the cycle-36 hover system.
+- 2026-11-12 T1 (Batch 22, cycle 120): "Show details" underline thickens on hover — the text-link affordance completes.
+- Batch 22 SW `gym-v122` (`CACHE-HASH` 046b5b6ae6380814). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 23, cycle 121): menu buttons get press feedback (`.modalbtn:active` brightens) — hover existed since cycle 36, touch didn't.
+- 2026-11-12 T1 (Batch 23, cycle 122): the danger menu action gets a danger-tinted border (color-mix at 55%) — destructive reads destructive before it's tapped.
+- 2026-11-12 T1 (Batch 23, cycle 123): menu rows join the theme crossfade (`.modalrow` background transition).
+- 2026-11-12 T1 (Batch 23, cycle 124): summary tiles join the crossfade (`.sumstat`).
+- 2026-11-12 T1 (Batch 23, cycle 125): all three banners join the crossfade (backup / deload / save bars).
+- 2026-11-12 T1 (Batch 23, cycle 126): body text colour crossfades with the theme too — the flip is now fully soft, no snapping layer left.
+- 2026-11-12 T1 (Batch 23, cycle 127): menu footer gets a hairline rule + breathing room — the version line reads as a footer, not a stray row.
+- 2026-11-12 T1 (Batch 23, cycle 128): narrow phones shrink the overlay padding (20px → 12px) — the card gets the room.
+- 2026-11-12 T1 (Batch 23, cycle 129): menu card reserves its scrollbar gutter — content no longer shifts sideways when the menu starts scrolling.
+- 2026-11-12 T1 (Batch 23, cycle 130): menu buttons get a 6px icon-to-label gap.
+- Batch 23 SW `gym-v123` (`CACHE-HASH` 3a95605e37555693). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 24, cycle 131): active day tab gets the hairline border too — in light mode the selected pill now separates from its track by edge, not just shade.
+- 2026-11-12 T1 (Batch 24, cycle 132): first-run hint wraps balanced.
+- 2026-11-12 T1 (Batch 24, cycle 133): week-strip cells use tabular numerals (dates align across the strip).
+- 2026-11-12 T1 (Batch 24, cycle 134): day title line-height tightens to 1.2 — the title/sub pair reads as one block.
+- 2026-11-12 T1 (Batch 24, cycle 135): wide screens give lift rows roomier padding (14px → 18px).
+- 2026-11-12 T1 (Batch 24, cycle 136): the current lift's chevron turns accent — the state echo completes (rail + tint + chevron).
+- 2026-11-12 T1 (Batch 24, cycle 137): day tab labels get .02em tracking.
+- 2026-11-12 T1 (Batch 24, cycle 138): lift names get the display tightening (-.01em) the title and clock already use.
+- 2026-11-12 T1 (Batch 24, cycle 139): wide screens get taller progress segments (6px → 8px).
+- 2026-11-12 T1 (Batch 24, cycle 140): wide screens get taller week cells (24px → 26px).
+- Batch 24 SW `gym-v124` (`CACHE-HASH` b2bd6b6b7de911e1). Local tree only. Browser/e2e verification still environment-blocked; deferred as recorded.
+- 2026-11-12 T1 (Batch 25, cycle 141): prescription emphasis matches the app's 800 weight (`.pres b`).
+- 2026-11-12 T1 (Batch 25, cycle 142): set-load numerals get the display tightening (-.01em) — the last untightened display number in the app.
+- 2026-11-12 T1 (Batch 25, cycle 143): stepper cards join the theme crossfade (`.ctl`) — the crossfade set is now complete.
+- 2026-11-12 T1 (Batch 25, cycle 144): the coaching cue leads its line (font-weight 600) — cue first, tempo second, as read.
+- 2026-11-12 T1 (Batch 25, cycle 145): hint banners fade in when they appear instead of popping.
+- 2026-11-12 T1 (Batch 25, cycle 146): the progression suggestion fades in the same way.
+- 2026-11-12 T1 (Batch 25, cycle 147): the current set's number chip fills accent — the row's state echo reaches its first cell.
+- 2026-11-12 T1 (Batch 25, cycle 148): wide screens get a taller Set Done (60px → 64px).
+- 2026-11-12 T1 (Batch 25, cycle 149): wide screens get larger stepper numerals (21px → 23px).
+- 2026-11-12 T1 (Batch 25, cycle 150): Set Done tracking opens a touch (.01em → .02em) — the primary action's presence matches its size.
+- Batch 25 SW `gym-v125` (`CACHE-HASH` 820d534c2c1ca029). Local tree only. THE 100-CYCLE RUN (Batches 16–25, cycles 51–150) IS COMPLETE: per-batch gates green throughout (sw-cache OK, 216/216 unit, typecheck clean). The e2e leg + screenshot sweeps for Batches 11–25 remain DEFERRED behind the sandbox write fault and must run before any push.
+- 2026-11-12 T1 (post-run, Khang's direction): the gym app is phone-only (HTML/Pages) — there is no desktop app and none is wanted. The run's wide-screen rules were fenced accordingly: every `@media (min-width:720px)` block now also requires `min-height:600px`, so they can only apply to genuinely large screens and can never touch the phone — including landscape, where the short-screen tiers now always win. No phone-facing behaviour changes. SW `gym-v126` (`CACHE-HASH` c67e180fc222af17). Local tree only.
+- 2026-11-12 T1 (post-run, Khang's direction — supersedes the v126 fence): ALL desktop/wide-screen styling DELETED from style.css at Khang's order — the five wide media blocks (cycles 51–55 stage/framing, 110, 135, 139–140, 148–149) and both hover media blocks (cycle 36, cycles 119–120) are gone; grep confirms zero `min-width:720px` / `hover:hover` remain. The app is, and only ever was, one phone HTML app — the wide rules were inert styling inside it, not a separate version. Phone CSS untouched. SW `gym-v127` (`CACHE-HASH` a38adcb764631671).
