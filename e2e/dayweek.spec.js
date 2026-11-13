@@ -66,6 +66,16 @@ test("the viewed marker follows the chevrons and keeps its own time", async ({ p
   await expect(page.locator("#dayWeek .dwtime")).toHaveText("~" + mins + " min");
 });
 
+test("the visual row is hidden from AT and the sentence is the only copy", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  await expect(page.locator("#dayWeek")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("#dayWeekSummary")).toHaveClass(/sr-only/);
+  await expect(page.locator("#dayWeekSummary")).not.toBeEmpty();
+});
+
 for (const size of [{ width: 390, height: 667 }, { width: 390, height: 844 }]) {
   test.describe(`week line fits 390x${size.height}`, () => {
     test.use({ viewport: size });
@@ -94,3 +104,33 @@ for (const size of [{ width: 390, height: 667 }, { width: 390, height: 844 }]) {
     });
   });
 }
+
+test.describe("week line with a session in progress", () => {
+  test.use({ viewport: { width: 390, height: 667 } });
+
+  test("the taller in-progress header still fits one screen", async ({ page }) => {
+    const errors = [];
+    page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+    page.on("pageerror", (e) => errors.push(String(e)));
+
+    await page.goto(url);
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.locator(".liftrow").first().click();
+    await page.locator("#doneBtn").click();
+    await page.locator("#skipRest").click();
+    await page.locator("#backBtn").click();
+
+    await expect(page.locator("#continueBtn")).toBeVisible();
+    await expect(page.locator("#finishBtn")).toBeVisible();
+    await expect(page.locator("#dayWeek .dwday")).toHaveCount(3);
+    const m = await page.evaluate(() => ({
+      rowMin: Math.min(...[...document.querySelectorAll(".liftrow")].map((r) => r.getBoundingClientRect().height)),
+      scrollH: document.documentElement.scrollHeight,
+      innerH: window.innerHeight
+    }));
+    expect(m.rowMin, "lift rows keep the 44px tap target").toBeGreaterThanOrEqual(44);
+    expect(m.scrollH, "day view still fits one screen").toBeLessThanOrEqual(m.innerH + 1);
+    expect(errors).toEqual([]);
+  });
+});

@@ -9,7 +9,8 @@ there is no sync.
 
 - Double-click **`Start Gym.command`** in this folder (first run installs
   Electron once), or
-- from the repo root: `npm run desktop`, or
+- from the repo root: `npm run desktop` (installs this folder's Electron on
+  first run, then starts it), or
 - from this folder: `npm install && npm start`.
 
 Set `GYM_DESKTOP_URL` to point the window somewhere else (e.g. a local

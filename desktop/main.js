@@ -41,6 +41,18 @@ function createWindow() {
     return { action: "deny" };
   });
 
+  // Keep the window on the gym app: a redirect or stray link goes to the real
+  // browser instead of silently replacing the app in this window.
+  win.webContents.on("will-navigate", (e, url) => {
+    let origin = null;
+    try { origin = new URL(url).origin; } catch (_) { origin = null; }
+    let appOrigin = null;
+    try { appOrigin = new URL(APP_URL).origin; } catch (_) { appOrigin = null; }
+    if (origin && origin === appOrigin) return; // the app may revisit itself
+    e.preventDefault();
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+  });
+
   win.loadURL(APP_URL);
 
   // `GYM_DESKTOP_SMOKE=<png path> npm start` loads the page once, prints what
