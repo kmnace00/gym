@@ -21,6 +21,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       await expect(page.locator("#exName")).toBeVisible();
 
       await page.locator("#swapBtn").click();
+      await page.locator(".swapchoice").first().click(); // N14: pick the first alternate
       await expect(page.locator("#swapBtn")).toContainText("Using");
 
       const m = await page.evaluate(() => {

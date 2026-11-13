@@ -183,12 +183,20 @@ test("Import backup is reachable and activatable by keyboard", async ({ page }) 
   expect(await page.evaluate(() => window.__importClicked), "Enter opens the file picker").toBe(true);
 });
 
-test("day tabs announce which day is active", async ({ page }) => {
+test("the day title names the day; the day chevrons are labelled (N12)", async ({ page }) => {
   await page.goto(url);
-  const pressed = () => page.evaluate(() => Array.from(document.querySelectorAll(".day")).map((b) => b.getAttribute("aria-pressed")));
-  expect(await pressed()).toEqual(["true", "false", "false"]);
-  await page.locator('.day[data-day="sat"]').click();
-  expect(await pressed()).toEqual(["false", "true", "false"]);
+  await expect(page.locator(".day")).toHaveCount(0);
+  const label = await page.evaluate(() => Gym.DAYS[Gym.todayDay()].label);
+  await expect(page.locator("#dayTitle")).toContainText(label.split(" — ")[0]);
+  await expect(page.locator("#dayPrev")).toHaveAttribute("aria-label", "Previous day");
+  await expect(page.locator("#dayNext")).toHaveAttribute("aria-label", "Next day");
+  // one chevron step moves the title to the neighbouring training day
+  const nextName = await page.evaluate(() => {
+    const keys = ["fri", "sat", "sun"];
+    return Gym.DAYS[keys[(keys.indexOf(Gym.todayDay()) + 1) % 3]].label.split(" — ")[0];
+  });
+  await page.locator("#dayNext").click();
+  await expect(page.locator("#dayTitle")).toContainText(nextName);
 });
 
 test("keyboard focus is visible on role=button rows and on buttons", async ({ page }) => {

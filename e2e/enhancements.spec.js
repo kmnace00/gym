@@ -57,9 +57,13 @@ test("switching day tabs mid-edit keeps the edit in its own day (B5-05)", async 
   await page.locator("#loadUp").click();
   await expect(page.locator("#loadVal")).toHaveText("62.5");
 
-  // Tap the Sat tab mid-edit. The tabs are hidden in lift view, so fire the
-  // handler the way a mid-edit tap would hit it: while the edit is live.
-  await page.evaluate(() => document.querySelector('.day[data-day="sat"]').click());
+  // Switch to Saturday mid-edit. The day chevrons live in the day view, so
+  // fire the switch the way a mid-edit one would hit it: while the edit is
+  // live, stepping forward until Saturday's title is up.
+  await page.evaluate(() => {
+    for (let i = 0; i < 3 && !document.getElementById("dayTitle").textContent.includes("Saturday"); i++)
+      document.getElementById("dayNext").click();
+  });
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#loadVal"), "Saturday's lift must not inherit Friday's edit").toHaveText("90");
 
@@ -305,16 +309,25 @@ test("every lift shows the tempo cue and lift 5 still fits 390x667 (B3-26)", asy
   expect(ok, "lift 5 at 390x667 must not scroll").toBe(true);
 });
 
-test("the RIR explainer retires on the first logged set (B5-03)", async ({ page }) => {
+test("the RIR line stays and says the number in plain words (N13)", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
 
-  await page.goto(url); // fresh profile: the one-time explainer shows
+  await page.goto(url);
   await page.locator(".liftrow").first().click();
+  // the first lift is prescribed 2 RIR: the line translates it with no tap
   await expect(page.locator("#rirHint")).toBeVisible();
+  await expect(page.locator("#rirHint")).toContainText("2 in the tank");
 
-  // log sets without ever tapping an RIR button (the programmed RIR is kept)
+  // tapping a different RIR re-words the line immediately
+  await page.locator('.rir[data-rir="0"]').click();
+  await expect(page.locator("#rirHint")).toContainText("0 in the tank");
+  await page.locator('.rir[data-rir="2"]').click();
+  await expect(page.locator("#rirHint")).toContainText("2 in the tank");
+
+  // the line survives logging the lift's sets and moving on (it used to
+  // retire forever after the first logged set — B5-03, superseded by N13)
   await page.locator("#doneBtn").click();
   await page.locator("#skipRest").click();
   await page.locator("#doneBtn").click();
@@ -323,10 +336,11 @@ test("the RIR explainer retires on the first logged set (B5-03)", async ({ page 
   await page.locator("#skipRest").click(); // lift complete -> advance to lift 2
 
   await expect(page.locator("#exName")).toBeVisible();
-  await expect(page.locator("#rirHint"), "the hint is gone on the next lift").toBeHidden();
+  await expect(page.locator("#rirHint"), "the line is still there on the next lift").toBeVisible();
 
   await page.reload();
-  await expect(page.locator("#rirHint"), "the hint stays gone after reload").toBeHidden();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#rirHint"), "and after a reload").toBeVisible();
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });

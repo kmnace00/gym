@@ -150,6 +150,11 @@
         set.reps = clampCount(set.reps, SET_REPS_MAX);
         set.rir = clampCount(set.rir, RIR_MAX);
         if (Object.prototype.hasOwnProperty.call(set, "kind")) set.kind = String(set.kind);
+        /* N10: per-set timestamps + the edited mark survive import,
+           normalized — a plausible epoch ms or nothing at all. */
+        if (typeof set.t === "number" && isFinite(set.t) && set.t > 946684800000 && set.t < 4102444800000) set.t = Math.round(set.t);
+        else if (Object.prototype.hasOwnProperty.call(set, "t")) delete set.t;
+        if (set.edited !== true && Object.prototype.hasOwnProperty.call(set, "edited")) delete set.edited;
       }
     }
   }
@@ -178,6 +183,19 @@
     if (Object.prototype.hasOwnProperty.call(r, "swapAlt")) {
       r.swapAlt = typeof r.swapAlt === "string" && r.swapAlt.length <= SWAP_ALT_MAX ? r.swapAlt : null;
     }
+    /* N14: the per-alternate load memory (name -> load). Only sane entries
+       survive: short name keys, finite non-negative numbers (numeric
+       strings coerce, like load). A non-object becomes an empty map.       */
+    if (Object.prototype.hasOwnProperty.call(r, "swapLoads")) {
+      if (isObj(r.swapLoads) && !Array.isArray(r.swapLoads)) {
+        var cleanLoads = {};
+        Object.keys(r.swapLoads).forEach(function (k) {
+          var v = Number(r.swapLoads[k]);
+          if (k.length > 0 && k.length <= SWAP_ALT_MAX && isFinite(v) && v >= 0) cleanLoads[k] = v;
+        });
+        r.swapLoads = cleanLoads;
+      } else r.swapLoads = {};
+    }
     if (Object.prototype.hasOwnProperty.call(r, "exId")) r.exId = typeof r.exId === "string" ? r.exId : String(r.exId);
     if (Object.prototype.hasOwnProperty.call(r, "bw")) r.bw = !!r.bw;
     sanitizeSetsField(r);
@@ -196,6 +214,7 @@
     if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;
+    if (Object.prototype.hasOwnProperty.call(e, "assist")) e.assist = !!e.assist; // N15: banked assistance marker
     if (own(e, "bwKg")) {
       e.bwKg = num(e.bwKg, 0);
       if (!(e.bwKg > 0 && e.bwKg <= BODYWEIGHT_MAX)) delete e.bwKg;

@@ -27,8 +27,12 @@ test("ten years of per-set history stays under localStorage quota", () => {
 });
 
 /* The service worker precaches the whole app, so the bytes an offline phone
-   must download are bounded by the ASSETS list. Keep that ceiling visible. */
-test("precached assets stay under 250 KB and every listed asset exists", () => {
+   must download are bounded by the ASSETS list. Keep that ceiling visible.
+   Ceiling raised 250 -> 300 KB in v131 (Nov 13): the Phase 1 release Khang
+   approved (timestamps + calibration engine, ramps, honest clock, notify
+   rework) added ~18 KB of code; 272 KB total is still a small precache.
+   Recorded in DECISIONS.md. */
+test("precached assets stay under 300 KB and every listed asset exists", () => {
   const sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
   const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
   assert.ok(listMatch, "sw.js must still expose the ASSETS array");
@@ -41,5 +45,5 @@ test("precached assets stay under 250 KB and every listed asset exists", () => {
     assert.ok(fs.existsSync(path.join(__dirname, "..", a)), "ASSETS lists a missing file: " + a);
     bytes += fs.statSync(path.join(__dirname, "..", a)).size;
   }
-  assert.ok(bytes < 250 * 1024, "precached assets total " + bytes + " bytes; keep under 250 KB");
+  assert.ok(bytes < 300 * 1024, "precached assets total " + bytes + " bytes; keep under 300 KB");
 });

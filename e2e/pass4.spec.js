@@ -183,9 +183,17 @@ test("navigating away from a set edit restores the working load", async ({ page 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
 });
 
-test("the day header shows a three-cell week strip", async ({ page }) => {
+test("the week strip and the day tabs are gone; chevrons switch days (N12)", async ({ page }) => {
   await page.goto(url);
-  await expect(page.locator("#weekStrip .wk")).toHaveCount(3);
+  await expect(page.locator("#weekStrip")).toHaveCount(0);
+  await expect(page.locator(".day")).toHaveCount(0);
+  await expect(page.locator("#dayPrev")).toBeVisible();
+  await expect(page.locator("#dayNext")).toBeVisible();
+  const before = await page.locator("#dayTitle").textContent();
+  await page.locator("#dayNext").click();
+  await expect(page.locator("#dayTitle")).not.toHaveText(before);
+  await page.locator("#dayPrev").click();
+  await expect(page.locator("#dayTitle")).toHaveText(before);
 });
 
 test("undoing the edited set restores the working load", async ({ page }) => {

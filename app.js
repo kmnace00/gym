@@ -11,7 +11,6 @@
       Machine = Gym, Stats = Gym, Rest = Gym;
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
-  var RIR_KEY = "gym-rir-seen";
 
   /* ── state ─────────────────────────────────────────────────────────────── */
   var payload, cur, idx, view = "day", hintText = "", hintGood = false, planMsg = "";
@@ -25,6 +24,65 @@
   function effSets(e) { return deloadActive(payload) ? deloadSets(e) : e.s; }
   /** The first open lift of the current day for the effective (deload-aware) target. */
   function firstOpen(from) { return firstOpenLift(cur, payload.state, from, effSets); }
+  /* N6/N10: the time model's calibration. Seeds until the learned values
+     exist (Stats.calibration over the last 6 timestamped sessions, >= 3 to
+     engage), stored outside the workout payload so they never export. */
+  var CALIB_KEY = "gym-calibration";
+  function learnedCal() {
+    try { var c = JSON.parse(localStorage.getItem(CALIB_KEY) || "null"); return c && typeof c === "object" ? c : null; }
+    catch (e) { return null; }
+  }
+  function calOpts() {
+    var c = learnedCal();
+    return {
+      stretch: c && typeof c.warmupSec === "number" ? c.warmupSec : Gym.STRETCH_SECS,
+      setup: c && typeof c.overheadSec === "number" ? c.overheadSec : Gym.SETUP_SECS
+    };
+  }
+  function refreshCalibration() {
+    var c = Stats.calibration(payload, DAYS, {
+      setSecs: Gym.SET_SECS, setupSeed: Gym.SETUP_SECS,
+      restSecs: function (e, prev) { return e.rest + ((prev && prev.rir <= 1) ? 30 : 0); },
+      rampSecs: function (e, load, isFirst) { var r = Gym.rampFor(e, load, isFirst); return r ? r.secs : 0; }
+    });
+    try {
+      if (c) localStorage.setItem(CALIB_KEY, JSON.stringify({ warmupSec: c.warmupSec, overheadSec: c.overheadSec, sessions: c.sessions, at: Date.now() }));
+      else localStorage.removeItem(CALIB_KEY);
+    } catch (e) {}
+    renderCalib();
+  }
+  function renderCalib() {
+    var info = document.getElementById("calibInfo");
+    var btn = document.getElementById("calibReset");
+    if (!info || !btn) return;
+    var c = learnedCal();
+    if (c) {
+      var parts = [];
+      if (typeof c.warmupSec === "number") parts.push("warm-up ~" + Math.round(c.warmupSec / 60) + " min");
+      if (typeof c.overheadSec === "number") parts.push("per-set overhead ~" + c.overheadSec + "s");
+      info.textContent = "Clock learning (from " + c.sessions + " timed sessions): " + parts.join(" · ");
+      info.hidden = false;
+      btn.hidden = false;
+    } else {
+      info.textContent = "Clock learning: estimates use starter values until 3 timed sessions are banked.";
+      info.hidden = false;
+      btn.hidden = true;
+    }
+  }
+  /* resolve a lift id to its current working load (state first, program
+     fallback) — the anchor lookup for starting guesses */
+  function loadForId(id) {
+    for (var d in DAYS) {
+      var list = DAYS[d].ex;
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].id === id) { var r = st(d, i); return r.load > 0 ? r.load : list[i].load; }
+      }
+    }
+    return null;
+  }
+  function rampText(ramp) {
+    return (ramp.kind === "full" ? "Ramp: " : "Feeler: ") + ramp.steps.map(function (s2) { return s2.load + "×" + s2.reps; }).join(" · ");
+  }
   /* B6-10: the one filter every progression read goes through. A session feeds
      the 2-for-2 / stall / trend maths only if it was neither logged under a
      swap (B6-06) nor banked during a deload week (B6-09). Volume and
@@ -34,7 +92,7 @@
   /* bodyweight-aware metric: total system weight, so adding a plate to a dip
      always moves the number up. */
   function metricFor(e, load, reps) {
-    return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: payload && payload.bodyweight });
+    return progressMetric(load, reps, { bw: !!(e && e.bw), assist: !!(e && e.assist), bodyweight: payload && payload.bodyweight });
   }
   /* bodyweight work is valued at the weight in force when that session was
      banked, so editing today's weight never rewrites past PRs. */
@@ -42,7 +100,7 @@
     return Stats.resolveBodyweight(entry, payload && payload.bodyweight);
   }
   function metricForEntry(e, entry, load, reps) {
-    return progressMetric(load, reps, { bw: !!(e && e.bw), bodyweight: bwFor(entry) });
+    return progressMetric(load, reps, { bw: !!(e && e.bw), assist: !!(e && e.assist), bodyweight: bwFor(entry) });
   }
   /** Highest-value set in a list for the lift's metric; `entry` supplies its banked weight. */
   function topSetOf(e, sets, entry) {
@@ -65,10 +123,16 @@
     var entry = {
       date: Gym.sessionDate(payload), load: top.load, reps: top.reps, rir: top.rir,
       hitTop: hit, setsDone: s.sets.length,
-      sets: s.sets.map(function (x) { return { load: x.load, reps: x.reps, rir: x.rir }; }),
+      sets: s.sets.map(function (x) {
+        var o = { load: x.load, reps: x.reps, rir: x.rir };
+        if (typeof x.t === "number") o.t = x.t; // N10: timestamps ride into history too
+        if (x.edited) o.edited = true;
+        return o;
+      }),
       bw: !!e.bw, exId: e.id
     };
-    if (e.bw && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
+    if (e.assist) entry.assist = true; // N15: the banked load is assistance — stats value it as bodyweight minus load
+    if ((e.bw || e.assist) && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
     if (s.swapAlt) entry.swap = s.swapAlt; // B6-06: logged under an alternate — excluded from progression/PRs
     if (deloadActive(payload)) entry.deload = true; // B6-09: banked during a deload week
     Gym.upsertHistory(payload, d, i, entry);
@@ -171,9 +235,9 @@
   var saveBarText = document.getElementById("saveBarText");
   var saveBarAction = document.getElementById("saveBarAction");
   var saveBarDownload = document.getElementById("saveBarDownload");
-  var weekStrip = document.getElementById("weekStrip");
   var summary = document.getElementById("summary");
   var editSet = -1, editBackup = null;
+  var swapOpen = false; // N14: the alternatives chooser is open
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
@@ -208,13 +272,6 @@
   }
 
   /* ── render ────────────────────────────────────────────────────────────── */
-  function syncDays() {
-    document.querySelectorAll(".day").forEach(function (b) {
-      var on = b.getAttribute("data-day") === cur;
-      b.classList.toggle("active", on);
-      b.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-  }
   function setNavDisabled() {
     var first = idx === 0, last = idx === DAYS[cur].ex.length - 1;
     document.getElementById("prevLift").disabled = first;
@@ -222,20 +279,10 @@
     rPrevBtn.disabled = first;
     rNextBtn.disabled = last;
   }
-  /* the strip is symbol + colour only, so every cell needs a spoken state */
-  var WK_DAY = { fri: "Friday", sat: "Saturday", sun: "Sunday" };
-  var WK_WORD = { done: "done", partial: "in progress", missed: "missed", today: "today", upcoming: "upcoming" };
-  function renderWeekStrip() {
-    if (!weekStrip) return;
-    var status = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
-    weekStrip.innerHTML = status.map(function (d) {
-      var lbl = DAY_LABEL[d.day] || d.day;
-      var name = WK_DAY[d.day] || lbl;
-      var mark = d.state === "done" ? "✓" : d.state === "partial" ? "·" : d.state === "missed" ? "—" : "";
-      return '<span class="wk ' + d.state + '" role="img" aria-label="' + esc(name + ", " + (WK_WORD[d.state] || d.state)) + '" title="' + esc(lbl + " " + d.date + " · " + d.state) + '">'
-        + '<b>' + esc(lbl) + '</b><i aria-hidden="true">' + mark + '</i></span>';
-    }).join("");
-  }
+  /* N12: the day tabs are gone (Khang: not needed) — day switching lives on
+     the day view's ‹ › chevrons (switchDay, below) and week visibility lives
+     in Progress. Stats.weekStatus itself stays; only its tab rendering,
+     added in N3 after the week strip went, was removed again here. */
   /* ── B6-10: deload follow-through nudge ────────────────────────────────────
      Pure date math on fields that already exist: the anchor is the most recent
      deload start + 7 days, or, when a deload has never been started, the
@@ -297,10 +344,10 @@
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
     var summary = complete
       ? "Workout complete — nice work"
-      : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : "");
+      : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min" + (totalDone > 0 ? " left" : "");
     if (!Gym.actualDay()) {
       /* B6-02: say which training day this session banks under */
-      summary = "Off day · logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + " · " + summary;
+      summary = "Off day · logs as " + (DAYS[Gym.todayDay()] ? DAYS[Gym.todayDay()].label.split(" — ")[0] : "the next session") + " · " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     /* B6-10: one nudge line, gone as soon as the week has a session in it */
@@ -310,7 +357,6 @@
     var firstRun = document.getElementById("firstRunHint");
     if (firstRun) firstRun.hidden = Gym.hasData(payload);
     document.getElementById("planBtn").hidden = !hasHist || complete;
-    renderWeekStrip();
 
     var firstOpenIdx = firstOpen(0);
     var contBtn = document.getElementById("continueBtn");
@@ -329,7 +375,7 @@
     var rows = "";
     list.forEach(function (e, i) {
       var s = st(cur, i), done = s.done >= effSets(e);
-      var loadTxt = e.load === null ? (s.load > 0 ? "Load " + s.load : "start light")
+      var loadTxt = e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
         : e.load === 0 ? "bodyweight" : "Load " + s.load;
       var restTxt = fmt(e.rest + (s.rir <= 1 ? 30 : 0));
       rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
@@ -476,7 +522,15 @@
      bodyweight semantics don't apply. The working load lives in the record's
      swapLoad field while swapped, and in `load` otherwise.                 */
   function workingLoad(s) { return s.swapAlt ? (typeof s.swapLoad === "number" ? s.swapLoad : 0) : s.load; }
-  function setWorkingLoad(s, v) { if (s.swapAlt) s.swapLoad = v; else s.load = v; }
+  /* N14: per-alternate load memory for the day — swapLoad stays the ACTIVE
+     alternate's load; swapLoads remembers each alternate's own, so swapping
+     away and back restores it instead of carrying the last-used load over. */
+  function stashSwapLoad(s) {
+    if (!s.swapAlt || typeof s.swapLoad !== "number") return;
+    if (!s.swapLoads || typeof s.swapLoads !== "object") s.swapLoads = {};
+    s.swapLoads[s.swapAlt] = s.swapLoad;
+  }
+  function setWorkingLoad(s, v) { if (s.swapAlt) { s.swapLoad = v; stashSwapLoad(s); } else s.load = v; }
   function swLoadLabel(load) { return load > 0 ? String(load) : "light"; }
   function swLoadText(load) { return load > 0 ? load + " lb" : "light"; }
   /* the set log: one row per prescribed set, completed sets checked, the next
@@ -532,12 +586,13 @@
     }
   }
   function renderLift() {
+    syncRestQuiet();
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
     var sw = !!s.swapAlt, wl = workingLoad(s), setsLogged = (s.sets || []).length > 0;
     var anyDone = false;
     list.forEach(function (x, i) { if (st(cur, i).done > 0) anyDone = true; });
-    document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min";
-    document.getElementById("exName").textContent = sw ? e.alt : e.n;
+    document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min";
+    document.getElementById("exName").textContent = sw ? s.swapAlt : e.n;
     /* the swap's one-line state: what it replaced, or why it is locked */
     var swapSub = document.getElementById("swapSub");
     if (swapSub) {
@@ -547,14 +602,43 @@
     var swapBtn = document.getElementById("swapBtn");
     if (swapBtn) {
       swapBtn.disabled = setsLogged;
-      swapBtn.textContent = sw ? "Using " + e.alt + " — undo" : "Swap";
+      swapBtn.textContent = sw ? "Using " + s.swapAlt + " — undo" : "Swap";
+      swapBtn.setAttribute("aria-expanded", swapOpen && !sw && !setsLogged ? "true" : "false");
+    }
+    /* N14: the alternatives chooser — one button per approved alternate,
+       plus Cancel. Only while unswapped, unlocked, and opened. */
+    var scEl = document.getElementById("swapChoices");
+    if (scEl) {
+      var showChoices = swapOpen && !sw && !setsLogged;
+      scEl.hidden = !showChoices;
+      if (showChoices) {
+        scEl.innerHTML = "";
+        (e.alts || []).forEach(function (name) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "swapchoice"; b.textContent = name;
+          b.onclick = function () { chooseSwap(name); };
+          scEl.appendChild(b);
+        });
+        var cx = document.createElement("button");
+        cx.type = "button"; cx.className = "swapchoice cancel"; cx.textContent = "Cancel";
+        cx.onclick = function () { swapOpen = false; render(); };
+        scEl.appendChild(cx);
+      }
+    }
+
+    /* N8: seed the one defensible starting guess into a fresh record so the
+       stepper starts somewhere sane. Marked (s.guess); the first logged set
+       clears the mark. Records with sets or a real load are never touched. */
+    if (!sw && e.load === null && s.load === 0 && !setsLogged && !s.guess && Gym.LOAD_GUESS_FROM[e.id]) {
+      var gLoad = Gym.guessLoad(e, loadForId(Gym.LOAD_GUESS_FROM[e.id]));
+      if (gLoad) { s.load = gLoad; s.guess = 1; commit(); }
     }
 
     var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var loadBig = sw
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
       : (e.load === null
-        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" + (s.guess && !setsLogged ? " · starting guess" : "") : "start light")
         : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     document.getElementById("exPres").innerHTML =
@@ -564,6 +648,50 @@
     /* the cue describes the original movement — hide it while swapped (B6-07) */
     document.getElementById("exCue").style.display = sw ? "none" : "";
     document.getElementById("tempoLine").style.display = ""; // the cue is the same for every lift
+
+    /* N2: per-side lifts — both sides are one set, then the full rest. The
+       line says so outright; the cue alone ("Per leg.") never settled it. */
+    var perLine = document.getElementById("perLine");
+    if (perLine) {
+      var perSide = !sw && e.per === "side";
+      perLine.hidden = !perSide;
+      if (perSide) perLine.textContent = "Both sides = 1 set · then rest " + fmt(effRest);
+    }
+    /* N4: from the last prescribed set onward, name the next lift — he was
+       leaving this view mid-set just to learn where to head next. Name only
+       when the next load is unknown (no dangling separator). */
+    var nextLine = document.getElementById("nextLine");
+    if (nextLine) {
+      var showNext = editSet < 0 && s.done >= effSets(e) - 1;
+      nextLine.hidden = !showNext;
+      if (showNext) {
+        if (idx >= list.length - 1) {
+          nextLine.textContent = "Last lift of the day";
+        } else {
+          var ne = list[idx + 1], ns = st(cur, idx + 1);
+          var nName = ns.swapAlt ? ns.swapAlt : ne.n;
+          var nLoadTxt = "";
+          if (!ns.swapAlt && ne.load === 0) nLoadTxt = "bodyweight";
+          else {
+            var nLoad = ns.swapAlt ? workingLoad(ns) : (ns.load > 0 ? ns.load : ne.load);
+            if (nLoad != null && nLoad > 0) nLoadTxt = String(nLoad);
+          }
+          nextLine.innerHTML = "Next: <b>" + esc(nName) + "</b>" + (nLoadTxt ? " · " + esc(nLoadTxt) : "");
+        }
+      }
+    }
+    /* N7: the ramp guide — display only, never logged. Only before the
+       lift's first set, and only off a real load: a starting guess (s.guess)
+       never qualifies a lift for a ramp. */
+    var rampLine = document.getElementById("rampLine");
+    if (rampLine) {
+      var ramp = null;
+      if (editSet < 0 && s.done === 0 && !s.guess) {
+        ramp = Gym.rampFor(e, sw ? wl : (s.load > 0 ? s.load : e.load), idx === 0);
+      }
+      rampLine.hidden = !ramp;
+      if (ramp) rampLine.textContent = rampText(ramp);
+    }
 
     var complete = s.done >= effSets(e);
     renderSetLog(e, s);
@@ -577,12 +705,37 @@
       b.classList.toggle("active", on);
       b.setAttribute("aria-pressed", on ? "true" : "false"); // the fill is invisible to a screen reader
     });
+    rirHint.textContent = rirText(s.rir); // N13: the selected RIR, in plain words
 
     var btn = document.getElementById("doneBtn");
     btn.classList.toggle("complete", complete);
     btn.textContent = editSet >= 0 ? "Done editing" : complete ? "✓ Add extra set" : "Set Done";
     btn.removeAttribute("aria-pressed");
     btn.setAttribute("aria-label", editSet >= 0 ? "Done editing — finish editing this set" : complete ? "All sets done. Tap to add an extra set." : "Set Done");
+
+    /* N5: on a finished lift the primary action is moving on — the earliest
+       still-open lift, the same target GO picks (B3-34). "Add extra set"
+       stays one tap below it. With the day complete it routes to the day
+       view, where Finish lives. */
+    var goBtn = document.getElementById("goNextBtn");
+    if (goBtn) {
+      var openIdx = complete && editSet < 0 ? firstOpen(0) : -1;
+      var showGo = complete && editSet < 0;
+      goBtn.hidden = !showGo;
+      if (showGo) {
+        if (openIdx >= 0) {
+          var oe = list[openIdx], os = st(cur, openIdx);
+          var oName = os.swapAlt ? os.swapAlt : oe.n;
+          goBtn.textContent = "Next: " + oName + " →";
+          goBtn.setAttribute("aria-label", "Go to the next unfinished lift: " + oName);
+          goBtn.onclick = function () { openLift(openIdx); };
+        } else {
+          goBtn.textContent = "All lifts done — finish ✓";
+          goBtn.setAttribute("aria-label", "All lifts done — back to the day view to finish");
+          goBtn.onclick = function () { showDay(); };
+        }
+      }
+    }
 
     var hint = document.getElementById("hint");
     hint.textContent = hintText;
@@ -673,7 +826,6 @@
   }
   function render() {
     appEl.classList.toggle("lift-mode", view === "lift");
-    syncDays();
     applyVisibility();
     if (view === "day") renderDay();
     else if (view === "progress") renderProgress();
@@ -743,9 +895,20 @@
     }
     renderRestView(out.view);
   }
+  /* N11: while a rest is running or paused, the lift view under the peek
+     goes quiet (the .rest-quiet CSS hides the editor; the rest card — its
+     own prep steppers, Undo, countdown — is the working surface). Editing a
+     logged set is the deliberate exception: opening an edit restores the
+     editor until the edit is done. GO and idle always restore it. */
+  function syncRestQuiet() {
+    var v = restCtl.view();
+    appEl.classList.toggle("rest-quiet", (v.phase === "active" || v.phase === "paused") && editSet < 0);
+  }
   /* one paint routine for every phase — idle, GO and the running clock */
   function renderRestView(v) {
     syncRestInterval(v);
+    syncRestQuiet();
+    if (v.phase === "active" && v.secs > 0) restEndEst = Date.now() + v.secs * 1000; // N9: stale-fire suppression anchor
     if (v.phase === "idle") {
       if (timerBar.contains(document.activeElement)) document.activeElement.blur();
       timerBar.classList.remove("active", "go");
@@ -803,7 +966,10 @@
       return;
     }
     restElapsedEl.textContent = "Workout " + fmt(sec);
-    restElapsedEl.hidden = false;
+    /* N11: with the workout peeked open, the header's session pill shows
+       this same clock — one workout clock per screen, not two. The rest
+       ticks re-run this, so toggling the peek corrects within a tick. */
+    restElapsedEl.hidden = appEl.classList.contains("show-details");
   }
   function setRestLabel(t, m) {
     document.getElementById("restLabel").textContent = t;
@@ -854,6 +1020,20 @@
     document.getElementById("restPrepName").textContent = v.prepName;
     document.getElementById("restPrepLoad").textContent = v.prepLoad;
     document.getElementById("restPrepReps").textContent = v.prepReps;
+    /* N7: the ramp rides the up-next block — the rest before a lift's first
+       set is when he is standing at the rack deciding warm-up weights. */
+    var rampEl = document.getElementById("restPrepRamp");
+    if (rampEl) {
+      var tIdx = v.prepIdx, rRamp = null;
+      if (tIdx >= 0) {
+        var te = DAYS[cur].ex[tIdx], ts = st(cur, tIdx);
+        if (ts.done === 0 && !ts.guess) {
+          rRamp = Gym.rampFor(te, ts.swapAlt ? workingLoad(ts) : (ts.load > 0 ? ts.load : te.load), tIdx === 0);
+        }
+      }
+      rampEl.hidden = !rRamp;
+      if (rRamp) rampEl.textContent = rampText(rRamp);
+    }
   }
   document.getElementById("plus15").onclick = function () { apply(restCtl.extend15()); };
   pauseBtn.onclick = function () {
@@ -969,27 +1149,34 @@
   }
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState !== "visible") return;
-    if (sInt) keepAwake();
+    /* N9: the wake lock is released whenever the page hides — re-acquire it
+       on return while a session or a rest is live (iOS 18.4+ honors it in
+       standalone apps), so the countdown stays on screen at the rack. */
+    if (sInt || appEl.classList.contains("resting")) keepAwake();
     checkForDeploy();
   });
 
-  /* ── RIR picker — built once, with a one-time explainer ────────────────── */
-  function showRirHintIfNew() {
-    try { if (!localStorage.getItem(RIR_KEY)) rirHint.hidden = false; } catch (e) {}
-  }
-  function hideRirHint() {
-    rirHint.hidden = true;
-    try { localStorage.setItem(RIR_KEY, "1"); } catch (e) {}
-  }
+  /* ── RIR picker — built once; the line above it always says what the
+     selected number means in plain words (N13: the old one-time explainer
+     retired itself after his first-ever set, leaving a bare number he had
+     to translate mid-workout). Wording only — values and logic unchanged. */
+  var RIR_TXT = [
+    "0 in the tank — couldn't do another rep",
+    "1 in the tank — one more rep if you had to",
+    "2 in the tank — two more reps if you had to",
+    "3 in the tank — three more reps if you had to",
+    "4 in the tank — easy, four or more left"
+  ];
+  function rirText(rir) { return RIR_TXT[Math.max(0, Math.min(4, rir | 0))]; }
   for (var ri = 0; ri <= 4; ri++) {
     (function (rv) {
       var b = document.createElement("button");
       b.type = "button"; b.className = "rir"; b.textContent = String(rv); b.setAttribute("data-rir", String(rv));
-      b.setAttribute("aria-label", "RIR " + rv);
+      b.setAttribute("aria-label", rirText(rv));
       b.onclick = function () {
         curSt().rir = rv;
         if (editSet >= 0) applySetEdit();
-        hideRirHint(); commit(); render(); renderRestPrep(restCtl.view());
+        commit(); render(); renderRestPrep(restCtl.view());
       };
       rirRow.appendChild(b);
     })(ri);
@@ -1007,7 +1194,10 @@
       editSet = -1; editBackup = null;
       return;
     }
-    s.sets[editSet] = { load: workingLoad(s), reps: s.reps, rir: s.rir };
+    /* N10: an edit keeps the set's original timestamp and earns the mark */
+    var prevSet = s.sets[editSet];
+    s.sets[editSet] = { load: workingLoad(s), reps: s.reps, rir: s.rir, edited: true };
+    if (prevSet && typeof prevSet.t === "number") s.sets[editSet].t = prevSet.t;
     if (s.done >= effSets(e)) bankLift(cur, idx);
   }
   /** Enter inline edit for a completed set, snapshotting the working values. */
@@ -1161,12 +1351,10 @@
     }
 
     s.sets = s.sets || [];
-    s.sets.push({ load: wl, reps: s.reps, rir: s.rir });
+    s.sets.push({ load: wl, reps: s.reps, rir: s.rir, t: Date.now() }); // N10: every set is timestamped
+    if (s.guess) delete s.guess; // N8: the first real set retires the guess mark
     s.done = s.sets.length;
     s.lastRir = s.rir;
-    hideRirHint();
-    /* the first logged set retires the one-time RIR explainer even when the
-       programmed RIR was accepted without tapping the buttons (B5-03) */
     if (s.reps >= e.top && s.rir >= e.rir) s.topHits++;
 
     hintText = ""; hintGood = false;
@@ -1249,18 +1437,52 @@
   }
   resetLiftBtn.onclick = function () { twoTap(this, "Tap again to restart", doRestartLift); };
 
-  /* B6-07: one swap control on the lift view. Toggling before any set is
-     logged flips the record's swapAlt; once sets exist it locks (the banked
-     entry already carries the marker, so the mode must not change mid-set). */
-  document.getElementById("swapBtn").onclick = function () {
-    var s = curSt(), e = ex();
+  /* B6-07 + N14: one swap control on the lift view. Unswapped, it opens the
+     alternatives chooser (program.js lists 2–3 per lift); swapped, it undoes
+     back to the programmed lift. Once sets exist it locks (the banked entry
+     already carries the marker, so the mode must not change mid-set). */
+  function lastSwapLoad(name) {
+    var hist = (payload.liftHistory || {})[cur + ":" + idx] || [];
+    for (var i = hist.length - 1; i >= 0; i--) {
+      var en = hist[i];
+      if (en && en.swap === name) {
+        if (typeof en.load === "number" && en.load > 0) return en.load;
+        if (en.sets && en.sets.length && typeof en.sets[en.sets.length - 1].load === "number") return en.sets[en.sets.length - 1].load;
+      }
+    }
+    return null;
+  }
+  function chooseSwap(name) {
+    var s = curSt();
     if ((s.sets || []).length > 0) return;
-    s.swapAlt = s.swapAlt ? null : e.alt;
-    if (s.swapAlt && typeof s.swapLoad !== "number") s.swapLoad = 0;
+    stashSwapLoad(s);
+    s.swapAlt = name;
+    /* the alternate's own load: today's memory first, then its last banked
+       session in history, else 0 (step it up, like a fresh swap always did) */
+    var mem = s.swapLoads && typeof s.swapLoads[name] === "number" ? s.swapLoads[name] : null;
+    var seed = mem !== null ? mem : lastSwapLoad(name);
+    s.swapLoad = seed !== null ? seed : 0;
+    swapOpen = false;
     hintText = ""; hintGood = false;
     commit();
     render();
     renderRestPrep(restCtl.view());
+  }
+  document.getElementById("swapBtn").onclick = function () {
+    var s = curSt();
+    if ((s.sets || []).length > 0) return;
+    if (s.swapAlt) {
+      stashSwapLoad(s);
+      s.swapAlt = null;
+      swapOpen = false;
+      hintText = ""; hintGood = false;
+      commit();
+      render();
+      renderRestPrep(restCtl.view());
+      return;
+    }
+    swapOpen = !swapOpen;
+    render();
   };
 
   /* plan the whole day: pre-fill each not-yet-started lift from its history */
@@ -1326,6 +1548,15 @@
     var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");
     if (Gym.backupDue(payload)) txt += " · Back up tonight";
     document.getElementById("sumNext").textContent = txt;
+    /* N10/R4: once the clock has learned his pace, grade the estimate
+       against the actual — full days only, where the two are comparable. */
+    var estEl = document.getElementById("sumEst");
+    if (estEl) {
+      if (learnedCal() && doneLifts === list.length && dur) {
+        estEl.hidden = false;
+        estEl.textContent = "Estimated " + dayMins(cur, calOpts()) + " min · Actual " + Math.round(dur / 60) + " min";
+      } else estEl.hidden = true;
+    }
     summary.hidden = false;
     var b = document.getElementById("sumDone");
     if (b) b.focus();
@@ -1336,6 +1567,7 @@
     commit();
     render();
     showSummary(entry);
+    refreshCalibration(); // N10: learn from the session just banked — after the summary has read the prior values
   }
   document.getElementById("finishBtn").onclick = finishWorkout;
   document.getElementById("continueBtn").onclick = function () {
@@ -1400,14 +1632,14 @@
   }
   function openLift(i) {
     if (i < 0 || i >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance(); resetEdit();
+    cancelPendingAdvance(); resetEdit(); swapOpen = false;
     idx = i; view = "lift"; hintText = ""; hintGood = false; commit(); render();
     document.getElementById("exName").focus();
   }
   function navigateLift(delta) {
     var n = idx + delta;
     if (n < 0 || n >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance(); resetEdit();
+    cancelPendingAdvance(); resetEdit(); swapOpen = false;
     idx = n; hintText = ""; hintGood = false; commit(); render();
     document.getElementById("exName").focus();
   }
@@ -1426,25 +1658,32 @@
   document.getElementById("nextLift").onclick = function () { navigateLift(1); };
   rPrevBtn.onclick = function () { navigateLift(-1); };
   rNextBtn.onclick = function () { navigateLift(1); };
-  document.querySelectorAll(".day").forEach(function (b) {
-    b.onclick = function () {
-      /* reset the in-progress set edit BEFORE switching days: the backup
-         restores into curSt(), so switching first writes it into the wrong
-         day's lift (B5-05, matching openLift's order) */
-      resetEdit(); clearUndo();
-      cur = b.getAttribute("data-day");
-      idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
-      var open = firstOpen(0);
-      idx = open >= 0 ? open : 0;
-      commit(); render();
-    };
-  });
+  /* N12: day switching — the ‹ › chevrons beside the day title cycle the
+     three training days (the header tab row is gone at Khang's word). */
+  var DAY_KEYS = ["fri", "sat", "sun"];
+  function switchDay(d) {
+    /* reset the in-progress set edit BEFORE switching days: the backup
+       restores into curSt(), so switching first writes it into the wrong
+       day's lift (B5-05, matching openLift's order) */
+    resetEdit(); clearUndo(); swapOpen = false;
+    cur = d;
+    idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
+    var open = firstOpen(0);
+    idx = open >= 0 ? open : 0;
+    commit(); render();
+  }
+  function stepDay(dir) {
+    var i = DAY_KEYS.indexOf(cur);
+    switchDay(DAY_KEYS[(i + dir + DAY_KEYS.length) % DAY_KEYS.length]);
+  }
+  document.getElementById("dayPrev").onclick = function () { stepDay(-1); };
+  document.getElementById("dayNext").onclick = function () { stepDay(1); };
 
   /* ── backup modal (export / import) + focus management ─────────────────── */
   var lastFocus = null;
   function openModal() {
     lastFocus = document.activeElement;
-    modal.hidden = false; hideMsg(); updateFoot(); initNotify();
+    modal.hidden = false; hideMsg(); updateFoot(); initNotify(); renderCalib();
     var first = modal.querySelector(".modalbtn, .modalclose");
     if (first) first.focus();
   }
@@ -1616,10 +1855,32 @@
       });
     } catch (e) { setMsg("Notifications are not available"); }
   };
+  document.getElementById("calibReset").onclick = function () {
+    try { localStorage.removeItem(CALIB_KEY); } catch (e) {}
+    renderCalib();
+    setMsg("Clock learning reset — starter values until 3 new timed sessions.");
+  };
+  /* N9 (Tier A): iOS throws on the Notification constructor ("Illegal
+     constructor. Use ServiceWorkerRegistration.showNotification()") — the
+     old call silently never fired on his iPhone. Route through the SW
+     registration, keeping the constructor as a fallback for engines that
+     allow it. Honest limit: this still only fires if the page's JS is alive
+     when GO lands — iOS suspends a locked/backgrounded web app, which is
+     what Tier B (Web Push) exists for. A stale fire is worse than none, so
+     a tick that runs >20s past the rest's scheduled end stays silent. */
+  var restEndEst = 0;
   function notifyRestDone() {
     if (!notifyOn() || !("Notification" in window)) return;
     if (Notification.permission !== "granted" || !document.hidden) return;
-    try { new Notification("Rest done — GO", { body: restNextRaw || "Next set", tag: "gym-rest" }); } catch (e) {}
+    if (restEndEst && Date.now() - restEndEst > 20000) return;
+    var opts = { body: restNextRaw || "Next set", tag: "gym-rest" };
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(function (reg) {
+        if (reg && reg.showNotification) reg.showNotification("Rest done — GO", opts);
+      }).catch(function () {});
+      return;
+    }
+    try { new Notification("Rest done — GO", opts); } catch (e) {}
   }
 
   /* two-tap confirm for destructive menu actions */
@@ -1733,7 +1994,6 @@
   if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
   if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
   sessBtn.title = "Workout timer — starts automatically on your first set";
-  showRirHintIfNew();
   initNotify();
   updateFoot();
   /* resume a clock that was running before the reload */

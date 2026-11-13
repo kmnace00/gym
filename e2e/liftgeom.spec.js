@@ -95,15 +95,19 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       expect(m.done, "Set Done stays >=44px").toBeGreaterThanOrEqual(44);
       expect(m.scrollH, "one screen, no scroll").toBeLessThanOrEqual(m.innerH + 1);
 
-      // peek mode (Set Done -> rest strip -> show workout): nothing overflows
+      // peek mode (Set Done -> rest -> show workout): the lift view goes
+      // quiet (N11) — editor hidden, the set log stays as the reference —
+      // and nothing overflows
       await page.locator("#doneBtn").click();
       await page.locator("#detailsBtn").click();
-      await expect(page.locator("#doneBtn")).toBeVisible();
+      await expect(page.locator("#doneBtn")).toBeHidden();
+      await expect(page.locator("#setLog")).toBeVisible();
       const peek = await page.evaluate(() => ({
         scrollH: document.documentElement.scrollHeight,
         innerH: window.innerHeight,
         guide: document.querySelector(".guide").getBoundingClientRect().height
       }));
+      expect(peek.guide, "the cue block is part of the quieted editor").toBe(0);
       expect(peek.scrollH, "peek mode must not overflow").toBeLessThanOrEqual(peek.innerH + 1);
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);

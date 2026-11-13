@@ -31,11 +31,13 @@ for (const size of sizes) {
       await expect(page.locator("#timerBar")).toHaveClass(/active/);
       await noOverflow();
 
-      // peek: workout returns behind a short rest strip, Set Done must stay on-screen
+      // peek: the workout returns in quiet mode (N11) — the set log is the
+      // reference; the editor and Set Done wait for GO
       await page.locator("#detailsBtn").click();
       await noOverflow();
-      await expect(page.locator("#exName")).toBeVisible();
-      await expect(page.locator("#doneBtn")).toBeVisible();
+      await expect(page.locator("#setLog")).toBeVisible();
+      await expect(page.locator("#exName")).toBeHidden();
+      await expect(page.locator("#doneBtn")).toBeHidden();
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });

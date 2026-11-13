@@ -21,14 +21,16 @@ test("an off day names where it logs, and that session shows up in its week", as
   await page.locator("#skipRest").click(); // second tap of the finish arm
   await expect(page.locator("#summary")).toBeVisible();
 
-  // The sets were banked on Wed 4 Nov but belong to Friday. Come Friday, the
-  // week strip and the heatmap must show Friday without double-counting it.
+  // The sets were banked on Wed 4 Nov but belong to Friday. Come Friday,
+  // Progress (this-week count + heatmap) must show Friday without
+  // double-counting it. (The day view itself carries no week marks since
+  // N12 removed the tabs; the off-day line below is its own signal.)
   await page.clock.setSystemTime(new Date("2026-11-06T10:00:00"));
   await page.reload();
-  await expect(page.locator("#weekStrip .wk").first()).toHaveClass(/done/);
   await expect(page.locator("#daySummary")).not.toContainText("Off day");
 
   await page.locator("#progressBtn").click();
+  await expect(page.locator("#pDays")).toHaveText("1/3");
   await expect(page.locator("#pHeatCount")).toHaveText("1/24");
   await expect(page.locator("#heatmap .hweek").last().locator(".hday").first()).toHaveClass(/on/);
 });

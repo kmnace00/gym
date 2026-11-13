@@ -17,9 +17,52 @@ test("fmt", () => {
 });
 
 test("dayMins matches the published per-day totals", () => {
-  assert.equal(P.dayMins("fri"), 75);
-  assert.equal(P.dayMins("sat"), 69);
-  assert.equal(P.dayMins("sun"), 72);
+  // N6 honest clock: base sets/rests + 5:00 stretch + 15s setup per set +
+  // ramp time. Fri 75 base -> 92, Sat 69 -> 86, Sun 72 -> 88.
+  assert.equal(P.dayMins("fri"), 92);
+  assert.equal(P.dayMins("sat"), 86);
+  assert.equal(P.dayMins("sun"), 88);
+});
+
+test("dayMins: zeroing the calibration leaves base + ramps only", () => {
+  assert.equal(P.dayMins("fri", { stretch: 0, setup: 0 }), 81); // 75 + 270s full + 75s feeler
+  assert.ok(P.dayMins("fri", { stretch: 0 }) < P.dayMins("fri"));
+  assert.ok(P.dayMins("fri", { setup: 0 }) < P.dayMins("fri"));
+});
+
+test("dayMinsLeft: the stretch block drops once any set is logged", () => {
+  const st = { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } };
+  // one set done removes its own ~4 min AND the 5 min stretch block
+  assert.ok(P.dayMinsLeft("fri", st) <= P.dayMins("fri") - 8);
+});
+
+test("rampFor: full ramp for the first lift, snapped to the step", () => {
+  const squat = P.DAYS.fri.ex[0];
+  assert.deepEqual(P.rampFor(squat, 60, true), {
+    kind: "full", secs: 270,
+    steps: [{ load: 30, reps: 5 }, { load: 42.5, reps: 3 }, { load: 50, reps: 1 }]
+  });
+});
+
+test("rampFor: one feeler for later heavy lifts only", () => {
+  assert.deepEqual(P.rampFor(P.DAYS.fri.ex[2], 25, false), { kind: "feeler", secs: 75, steps: [{ load: 15, reps: 4 }] }); // Bulgarian, rest 150
+  assert.equal(P.rampFor(P.DAYS.fri.ex[4], 100, false), null); // pec deck, rest 90
+  assert.equal(P.rampFor(P.DAYS.fri.ex[1], 50, false), null);  // Smith incline, rest 120
+});
+
+test("rampFor: never for bodyweight, unloaded, or guessed lifts", () => {
+  assert.equal(P.rampFor(P.DAYS.fri.ex[7], 0, true), null);    // an explicit zero load earns no ramp
+  assert.equal(P.rampFor(P.DAYS.sun.ex[6], null, false), null); // overhead cable extension, load null
+  assert.equal(P.rampFor(null, 100, true), null);
+});
+
+test("guessLoad: only the Sunday cable fly has an anchor", () => {
+  const fly = P.DAYS.sun.ex.find((e) => e.id === "sun-cable-fly");
+  assert.equal(P.guessLoad(fly, 100), 70);   // pec deck 100 x 0.7, snapped to 2.5
+  assert.equal(P.guessLoad(fly, 0), null);
+  assert.equal(P.guessLoad(fly, null), null);
+  const ohExt = P.DAYS.sun.ex.find((e) => e.id === "sun-oh-ext");
+  assert.equal(P.guessLoad(ohExt, 100), null); // load:null but no anchor -> stays blank by design
 });
 
 test("dayMinsLeft: nothing done equals the full day", () => {
@@ -121,6 +164,23 @@ test("suggestLoad: step precision (2.5 / 1 / 5)", () => {
   assert.equal(P.suggestLoad(e(5), q(130), q(130)).suggest, 135);
 });
 
+test("assisted lifts: progress runs downhill — less help is the PR (N15)", () => {
+  const dip = P.DAYS.fri.ex.find((x) => x.id === "fri-weighted-dip");
+  assert.equal(dip.assist, true);
+  assert.equal(dip.load, 45); // Khang's current machine setting, Nov 13
+  // the metric values effective load: 165 bodyweight − 45 help = 120
+  assert.equal(P.progressMetric(45, 6, { assist: true, bodyweight: 165 }), 144);
+  assert.ok(P.progressMetric(40, 6, { assist: true, bodyweight: 165 }) > 144, "less help scores higher");
+  // 2-for-2 suggests one step LESS help; a stall or deload adds help instead
+  const q = (load) => ({ load, reps: 10, rir: 2 });
+  assert.equal(P.suggestLoad(dip, q(45), q(45)).suggest, 42.5);
+  assert.equal(P.suggestLoad(dip, q(2.5), q(2.5)).suggest, 0, "never below zero help");
+  const miss = (load) => ({ load, reps: 5, rir: 1, hitTop: false });
+  assert.equal(P.stallLoad(dip, [miss(45), miss(45), miss(45)]).load, 50);
+  assert.equal(P.deloadLoad(dip, 45), 50);
+  assert.equal(P.deloadLoad(dip, 0), 2.5);
+});
+
 test("qualifies: last banked set decides; legacy fields are the fallback", () => {
   const e = { top: 6, rir: 2 };
   const hit = { reps: 8, rir: 2 };
@@ -188,13 +248,17 @@ test("every lift has a unique exId", () => {
   assert.equal(ids.size, 24, "duplicate exId in program.js");
 });
 
-test("every lift carries its approved alternate (B6-06)", () => {
+test("every lift carries approved alternates (B6-06; the list is N14)", () => {
   let count = 0;
   for (const d of ["fri", "sat", "sun"]) {
     for (const ex of P.DAYS[d].ex) {
       count++;
-      assert.ok(typeof ex.alt === "string" && ex.alt.trim().length > 0, `${ex.n} has no alt`);
-      assert.ok(ex.alt.length <= 120, `${ex.n} alt exceeds the 120-char swapAlt bound`);
+      assert.ok(Array.isArray(ex.alts) && ex.alts.length >= 2, `${ex.n} needs at least 2 alternates`);
+      assert.equal(new Set(ex.alts).size, ex.alts.length, `${ex.n} has a duplicate alternate`);
+      for (const a of ex.alts) {
+        assert.ok(typeof a === "string" && a.trim().length > 0, `${ex.n} has a blank alternate`);
+        assert.ok(a.length <= 120, `${ex.n} alternate exceeds the 120-char swapAlt bound`);
+      }
     }
   }
   assert.equal(count, 24, "the program schedules 24 lifts");
@@ -230,7 +294,9 @@ test("deloadLoad: 10% lighter snapped to the step, never at or above input", () 
     for (const e of P.DAYS[d].ex) {
       if (typeof e.load === "number" && e.load > 0) {
         const dl = P.deloadLoad(e, e.load);
-        assert.ok(dl < e.load, `${e.n}: deload load must be lighter`);
+        /* N15: an assisted lift deloads the other way — more help */
+        if (e.assist) assert.ok(dl > e.load, `${e.n}: assisted deload must add help`);
+        else assert.ok(dl < e.load, `${e.n}: deload load must be lighter`);
       }
     }
   }

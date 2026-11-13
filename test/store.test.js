@@ -1220,6 +1220,15 @@ test("swapLoad coerces like load at the store boundary (B6-07)", () => {
   assert.equal(numeric.state["fri:0"].swapLoad, 52.5);
 });
 
+test("swapLoads keeps sane per-alternate loads and drops junk (N14)", () => {
+  const ok = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: { "Leg press": 180, "Hack squat": "205.5" } } } }));
+  assert.deepEqual(ok.state["fri:0"].swapLoads, { "Leg press": 180, "Hack squat": 205.5 });
+  const junk = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: { "Leg press": "abc", "Hack squat": -5 } } } }));
+  assert.deepEqual(junk.state["fri:0"].swapLoads, {});
+  const notObj = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: 7 } } }));
+  assert.deepEqual(notObj.state["fri:0"].swapLoads, {});
+});
+
 /* B6-09 — deload week: a 7-day mode carried additively on the v5 payload */
 test("deloadActive: day 6 is active, day 7 is not", () => {
   const p = S.emptyPayload();

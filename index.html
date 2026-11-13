@@ -20,11 +20,6 @@
 <div class="app" id="app">
 
   <header class="header" id="header">
-    <div class="days" role="group" aria-label="Workout day">
-      <button class="day active" type="button" data-day="fri">Fri</button>
-      <button class="day" type="button" data-day="sat">Sat</button>
-      <button class="day" type="button" data-day="sun">Sun</button>
-    </div>
     <button class="backbtn" id="backBtn" type="button" aria-label="Back to lift list">‹ Back</button>
     <button class="menubtn" id="progressBtn" type="button" aria-label="Progress" title="Progress">▤</button>
     <button class="menubtn" id="menuBtn" type="button" aria-label="Menu">⋯</button>
@@ -58,6 +53,7 @@
     </div>
     <div class="rprep" id="restPrep" hidden aria-label="Next set adjustments">
       <span class="rpname" id="restPrepName">Set 1 of 3</span>
+      <span class="rpramp" id="restPrepRamp" hidden></span>
       <div class="rpctl">
         <button type="button" id="restLoadDown" aria-label="Decrease next-set load">−</button>
         <span id="restPrepLoad">—</span>
@@ -79,14 +75,15 @@
     </div>
     <div class="dayhead">
       <div class="daytop">
+        <button class="mini daynav" id="dayPrev" type="button" aria-label="Previous day">‹</button>
         <div class="daytitle" id="dayTitle">—</div>
+        <button class="mini daynav" id="dayNext" type="button" aria-label="Next day">›</button>
         <button class="planbtn" id="continueBtn" type="button" hidden>Continue</button>
         <button class="planbtn" id="finishBtn" type="button" hidden>Finish workout</button>
         <button class="planbtn" id="planBtn" type="button" hidden>Plan today</button>
       </div>
       <div class="daysub" id="daySummary">—</div>
       <div class="firstrun" id="firstRunHint" hidden>Tap a lift, do the set, tap Set Done — rest starts itself</div>
-      <div class="weekstrip" id="weekStrip" aria-label="This training week"></div>
     </div>
     <div class="deloadbar" id="deloadBar" role="status" hidden>Deload week — fewer sets, ~10% lighter, stop ~2 reps earlier.</div>
     <ul class="liftlist" id="liftList"></ul>
@@ -103,6 +100,9 @@
     <p class="swapsub" id="swapSub" hidden></p>
     <div class="pres" id="exPres">—</div>
     <div class="guide"><p class="cue" id="exCue">—</p> <p class="tempo" id="tempoLine">Tempo — explode up · 2s down · 1s hold</p></div>
+    <p class="perline" id="perLine" hidden></p>
+    <p class="nextline" id="nextLine" hidden></p>
+    <p class="rampeline" id="rampLine" hidden></p>
     <div class="sethead">
       <span class="seth" id="setCount">Set 1 of 3</span>
       <div class="setacts">
@@ -112,6 +112,7 @@
         <button class="resetlift" id="resetLiftBtn" type="button" aria-label="Restart this lift">↺ Restart</button>
       </div>
     </div>
+    <div class="swapchoices" id="swapChoices" hidden></div>
     <div class="setlog" id="setLog" aria-label="Set log"></div>
 
     <div class="suggest" id="suggestLine" hidden><span id="suggestText"></span><button class="applybtn" id="applyLoad" type="button" hidden>Apply</button></div>
@@ -131,13 +132,14 @@
           <button class="stepbtn" type="button" id="repUp" aria-label="Increase reps">+</button>
         </div>
       </div>
-      <p class="rirhint" id="rirHint" hidden>RIR = reps left in the tank · 0 = to failure</p>
+      <p class="rirhint" id="rirHint">In the tank — how many more reps you could do</p>
       <div class="rirrow" id="rirRow" aria-label="Reps in reserve">
         <span class="k">RIR</span>
       </div>
     </div>
 
     <div class="hint" id="hint" aria-live="polite"></div>
+    <button class="donebtn" id="goNextBtn" type="button" hidden></button>
     <button class="donebtn" id="doneBtn" type="button">Set Done</button>
   </section>
 
@@ -190,6 +192,8 @@
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
     <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>
+    <div class="modalmsg" id="calibInfo" role="status"></div>
+    <button class="modalbtn" id="calibReset" type="button" hidden>Reset clock learning</button>
     <button class="modalbtn" id="restoreSnapshot" type="button" hidden>Undo last reset / restore</button>
     <button class="modalbtn" id="resetDay" type="button">Reset day</button>
     <button class="modalbtn modalbtn-danger" id="clearAll" type="button">Clear all data</button>
@@ -208,6 +212,7 @@
       <div class="sumstat"><span class="sumv" id="sumPrs">—</span><span class="sumk">PRs</span></div>
     </div>
     <div class="sumnext" id="sumNext"></div>
+    <div class="sumnext" id="sumEst" hidden></div>
     <button class="donebtn" id="sumDone" type="button">Done</button>
   </div>
 </div>

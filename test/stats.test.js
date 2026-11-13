@@ -229,9 +229,9 @@ test("sessionDrift works with the real program estimate", () => {
     { day: "fri", status: "complete", durationSec: 4800 }
   ] }, "fri", P.dayMins);
   assert.equal(r.n, 3);
-  assert.equal(r.estimateMin, 75);        // 75-min model for Friday (B6-08 raised the Bulgarian rest)
+  assert.equal(r.estimateMin, 92);        // N6 honest clock: 75 base + stretch/setup/ramps
   assert.equal(r.medianActualMin, 73.3);
-  assert.equal(r.driftPct, -2.3);
+  assert.equal(r.driftPct, -20.3);
 });
 
 test("topSet picks the set with the highest metric", () => {
@@ -316,8 +316,8 @@ test("workoutDates / trainingDays are null-prototype maps — a __proto__ date c
 });
 
 test("topMovers forwards bodyweight options to the metric", () => {
-  const i = P.DAYS.fri.ex.findIndex((e) => e.bw);
-  const key = "fri:" + i;
+  const i = P.DAYS.sun.ex.findIndex((e) => e.bw); // pull-ups — Friday's dip is assisted since N15
+  const key = "sun:" + i;
   const p = {
     bodyweight: 90,
     liftHistory: {
@@ -329,7 +329,7 @@ test("topMovers forwards bodyweight options to the metric", () => {
   };
   const m = S.topMovers(p, P.DAYS, P.progressMetric);
   assert.equal(m.length, 1);
-  assert.equal(m[0].name, P.DAYS.fri.ex[i].n);
+  assert.equal(m[0].name, P.DAYS.sun.ex[i].n);
   assert.equal(m[0].delta, 12);   // 90 -> 100 bodyweight-adjusted
   assert.equal(m[0].pct, 11.1);   // 90 x 1.2 = 108 -> 100 x 1.2 = 120
   // the opts ride through as the metric's third argument
@@ -344,7 +344,7 @@ test("topMovers forwards bodyweight options to the metric", () => {
 });
 
 test("bodyweight history is valued at the weight in force", () => {
-  const i = P.DAYS.fri.ex.findIndex((x) => x.bw), key = "fri:" + i;
+  const i = P.DAYS.sun.ex.findIndex((x) => x.bw), key = "sun:" + i; // pull-ups (the dip is assisted since N15)
   const a = { date: "2026-10-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 75 };
   const b = { date: "2026-11-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 100 };
   assert.equal(S.entryVolume(a, 100), 1350); // 75 kg banked, not today's 100
@@ -494,4 +494,61 @@ test("swap entries are invisible to PRs but still counted in volume", () => {
   const vols = S.sessionVolumes(p);
   assert.equal(vols[vols.length - 1].volume, 80 * 8 * 3);
   assert.equal(vols[vols.length - 2].volume, 990 + 960);
+});
+
+/* ── N10: self-calibrating clock ─────────────────────────────────────────── */
+const CAL_OPTS = {
+  setSecs: P.SET_SECS, setupSeed: P.SETUP_SECS,
+  restSecs: (e, prev) => e.rest + ((prev && prev.rir <= 1) ? 30 : 0),
+  rampSecs: (e, load, isFirst) => { const r = P.rampFor(e, load, isFirst); return r ? r.secs : 0; }
+};
+function timedSession(startedAt, warmSec, residSec, extraLift) {
+  // first set lands after ramp (270) + set (50) + setup seed (15) + warmSec
+  const t1 = startedAt + (270 + 50 + 15 + warmSec) * 1000;
+  const gap = (50 + 180 + residSec) * 1000; // set + squat rest + residual
+  const lifts = {
+    "fri:0": { done: 3, sets: [
+      { load: 60, reps: 6, rir: 2, t: t1 },
+      { load: 60, reps: 6, rir: 2, t: t1 + gap },
+      { load: 60, reps: 6, rir: 2, t: t1 + gap * 2 }
+    ] }
+  };
+  if (extraLift) {
+    // a second lift starting long after — its boundary gap must NOT become
+    // an overhead sample; its own within-lift residual is residSec too
+    const u1 = t1 + gap * 2 + 900 * 1000;
+    lifts["fri:1"] = { done: 2, sets: [
+      { load: 50, reps: 6, rir: 2, t: u1 },
+      { load: 50, reps: 6, rir: 2, t: u1 + (50 + 120 + residSec) * 1000 }
+    ] };
+  }
+  return { id: "s" + startedAt, date: "2026-11-13", day: "fri", startedAt, endedAt: startedAt + 5400000, durationSec: 5400, status: "complete", lifts };
+}
+
+test("calibration: medians from the last timed sessions", () => {
+  const base = 1700000000000;
+  const p = { sessionLog: [
+    timedSession(base, 240, 14, true),
+    timedSession(base + 86400000, 300, 20, true),
+    timedSession(base + 2 * 86400000, 360, 26, true)
+  ] };
+  assert.deepEqual(S.calibration(p, P.DAYS, CAL_OPTS), { sessions: 3, warmupSec: 300, overheadSec: 20 });
+});
+
+test("calibration: fewer than 3 timed sessions stays silent", () => {
+  const base = 1700000000000;
+  const untimed = { id: "old", date: "2026-11-01", day: "fri", startedAt: base - 86400000, status: "complete",
+    lifts: { "fri:0": { done: 3, sets: [{ load: 60, reps: 6, rir: 2 }] } } };
+  const p = { sessionLog: [untimed, timedSession(base, 240, 20), timedSession(base + 86400000, 300, 20)] };
+  assert.equal(S.calibration(p, P.DAYS, CAL_OPTS), null);
+});
+
+test("calibration: clamps hold the learned values sane", () => {
+  const base = 1700000000000;
+  const p = { sessionLog: [
+    timedSession(base, 5000, 500), timedSession(base + 86400000, 5000, 500), timedSession(base + 2 * 86400000, 5000, 500)
+  ] };
+  const c = S.calibration(p, P.DAYS, CAL_OPTS);
+  assert.equal(c.warmupSec, 1200);
+  assert.equal(c.overheadSec, 40);
 });

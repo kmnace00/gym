@@ -248,7 +248,10 @@ test("bodyweight history is frozen at the weight in force", async ({ page }) => 
 
   await page.goto(url);
   // deterministic day: the bodyweight lift is on Friday (not necessarily today)
-  await page.locator('.day[data-day="fri"]').click();
+  await page.evaluate(() => {
+    for (let i = 0; i < 3 && !document.getElementById("dayTitle").textContent.includes("Friday"); i++)
+      document.getElementById("dayNext").click();
+  });
   const idx = await page.evaluate(() => Gym.DAYS.fri.ex.findIndex((e) => e.bw));
   if (idx === -1) {
     console.log("no bodyweight lift in Friday's program — test skipped");
@@ -356,7 +359,8 @@ test("the swap UI swaps, logs under the alternate, and locks (B6-07)", async ({ 
   expect(box.height, "the swap control meets the 44px floor").toBeGreaterThanOrEqual(44);
 
   await swap.click();
-  await expect(page.locator("#exName")).toHaveText("Barbell back squat"); // Smith squat's alt
+  await page.locator(".swapchoice", { hasText: "Barbell back squat" }).click(); // N14: chooser
+  await expect(page.locator("#exName")).toHaveText("Barbell back squat"); // Smith squat's first alternate
   await expect(page.locator("#swapSub")).toHaveText("Swapped for Smith squat");
   await expect(swap).toHaveText("Using Barbell back squat — undo");
   await expect(page.locator("#exCue")).toBeHidden(); // the cue describes the original movement
@@ -375,6 +379,7 @@ test("the swap UI swaps, logs under the alternate, and locks (B6-07)", async ({ 
   await expect(page.locator("#exName")).toHaveText("Smith squat");
   await expect(page.locator("#loadVal")).toHaveText("60"); // the original's working load came back
   await swap.click(); // swap again for the logged sets
+  await page.locator(".swapchoice", { hasText: "Barbell back squat" }).click();
 
   for (let i = 0; i < 3; i++) {
     await page.locator("#doneBtn").click();

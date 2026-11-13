@@ -119,7 +119,7 @@
    * `bodyweight + added load` per rep, so adding a plate never lowers tonnage.
    * An entry's own `bwKg` (the weight in force when it was banked) wins over
    * the `bwLb` argument, so editing the scalar never rewrites past tonnage.
-   * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean,bwKg?:number}} e
+   * @param {{load?:number,reps?:number,setsDone?:number,sets?:any[],bw?:boolean,assist?:boolean,bwKg?:number}} e
    * @param {number} [bwLb] bodyweight in lb (default 165)
    * @returns {number}
    */
@@ -129,7 +129,8 @@
     var sets = entrySets(e), total = 0, i, load, eff;
     for (i = 0; i < sets.length; i++) {
       load = typeof sets[i].load === "number" && isFinite(sets[i].load) ? sets[i].load : 0;
-      if (e.bw === true || (e.bw === undefined && load === 0)) eff = bw + Math.max(0, load);
+      if (e.assist === true) eff = Math.max(0, bw - load); // N15: assistance counts as bodyweight minus help
+      else if (e.bw === true || (e.bw === undefined && load === 0)) eff = bw + Math.max(0, load);
       else eff = load > 0 ? load : 0;
       total += eff * (sets[i].reps || 0);
     }
@@ -419,24 +420,25 @@
    * Best estimated 1RM (or reps for bodyweight) per lift, ranked desc.
    * @param {any} payload
    * @param {Record<string, {ex: any[]}>} DAYS
-   * @param {(load:number, reps:number, opts?:{bw?:boolean, bodyweight?:number}) => number} metric
+   * @param {(load:number, reps:number, opts?:{bw?:boolean, assist?:boolean, bodyweight?:number}) => number} metric
    * @returns {{key:string,name:string,load:number,reps:number,date:string,metric:number}[]}
    */
   function personalRecords(payload, DAYS, metric) {
     var lh = (payload && payload.liftHistory) || {}, bwKg = payload && payload.bodyweight;
-    var out = [], k, arr, i, j, e, sets, best, bestM, m, p, d, idx, name, ex, isBw, opts, set;
+    var out = [], k, arr, i, j, e, sets, best, bestM, m, p, d, idx, name, ex, isBw, isAssist, opts, set;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || []; best = null; bestM = -Infinity;
       p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
       ex = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[idx] : null;
       name = ex ? ex.n : k;
       isBw = !!(ex && ex.bw);
+      isAssist = !!(ex && ex.assist);
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; if (!e || !countsForProgression(e)) continue; // a swapped session is not this lift's work
         sets = entrySets(e);
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
-          opts = { bw: isBw || e.bw === true, bodyweight: resolveBodyweight(e, bwKg) };
+          opts = { bw: isBw || e.bw === true, assist: isAssist || e.assist === true, bodyweight: resolveBodyweight(e, bwKg) };
           m = metric(set.load || 0, set.reps || 0, opts);
           if (m > bestM) { bestM = m; best = { load: set.load || 0, reps: set.reps || 0, date: e.date }; }
         }
@@ -474,7 +476,7 @@
       e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
       if (!e) continue;
       function optsFor(en) {
-        return { bw: !!e.bw, bodyweight: resolveBodyweight(en, bwKg) };
+        return { bw: !!e.bw, assist: !!e.assist || en.assist === true, bodyweight: resolveBodyweight(en, bwKg) };
       }
       first = topSet(entrySets(arr[0]), metric, optsFor(arr[0])) || arr[0];
       last = topSet(entrySets(arr[arr.length - 1]), metric, optsFor(arr[arr.length - 1])) || arr[arr.length - 1];
@@ -561,6 +563,89 @@
     };
   }
 
+  function medianOf(nums) {
+    if (!nums.length) return null;
+    var a = nums.slice().sort(function (x, y) { return x - y; });
+    var mid = Math.floor(a.length / 2);
+    return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+  }
+  function clampN(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+  /**
+   * N10: self-calibrating clock inputs, learned from the finished-session
+   * log — rules and medians, not ML, all on-device. Reads the last 6
+   * sessions whose sets carry timestamps (`t`, ms at Set Done) and engages
+   * only with >= 3 of them. Two components:
+   *  - warmupSec: median of (first set's t − session start) minus the
+   *    modeled lead-in (first lift's ramp + one set + the setup seed) —
+   *    what is left is the stretch/warm-up block he actually takes.
+   *  - overheadSec: median of same-lift set-to-set gap residuals
+   *    (gap − set time − prescribed rest). Honestly a per-set overhead,
+   *    not a pure "setup": it also absorbs set-time error, which the two
+   *    cannot be separated from gap data alone. Cross-lift gaps are
+   *    excluded (they contain transitions and machine setup by design).
+   * Records without `t` are treated as unknown and skipped throughout.
+   * @param {any} payload
+   * @param {any} DAYS program data (passed in; this module stays data-free)
+   * @param {{setSecs:number, setupSeed:number,
+   *          restSecs:(e:any, prevSet:any)=>number,
+   *          rampSecs:(e:any, load:number, isFirst:boolean)=>number}} opts
+   * @returns {null | {sessions:number, warmupSec:number|null, overheadSec:number|null}}
+   */
+  function calibration(payload, DAYS, opts) {
+    var log = (payload && payload.sessionLog) || [];
+    var done = log.filter(function (s) { return s && s.status === "complete" && s.lifts && typeof s.startedAt === "number"; });
+    done.sort(function (a, b) { return a.startedAt - b.startedAt; });
+    var timed = done.filter(function (s) {
+      for (var k in s.lifts) {
+        var sets = (s.lifts[k] || {}).sets || [];
+        for (var i = 0; i < sets.length; i++) if (typeof sets[i].t === "number") return true;
+      }
+      return false;
+    }).slice(-6);
+    if (timed.length < 3) return null;
+    var warm = [], over = [];
+    timed.forEach(function (s) {
+      var day = DAYS[s.day];
+      if (!day) return;
+      var firstT = null, firstKey = null;
+      Object.keys(s.lifts).forEach(function (k) {
+        var sets = (s.lifts[k] || {}).sets || [];
+        for (var i = 0; i < sets.length; i++) {
+          if (typeof sets[i].t === "number" && (firstT === null || sets[i].t < firstT)) { firstT = sets[i].t; firstKey = k; }
+        }
+      });
+      if (firstT !== null && firstKey) {
+        var fi = parseInt(firstKey.split(":")[1], 10);
+        var fe = day.ex[fi];
+        var fSets = (s.lifts[firstKey] || {}).sets || [];
+        var fSet = null;
+        for (var j = 0; j < fSets.length; j++) if (fSets[j].t === firstT) { fSet = fSets[j]; break; }
+        if (fe && fSet) {
+          var leadIn = opts.rampSecs(fe, fSet.load || 0, fi === 0) + opts.setSecs + opts.setupSeed;
+          warm.push((firstT - s.startedAt) / 1000 - leadIn);
+        }
+      }
+      Object.keys(s.lifts).forEach(function (k) {
+        var idx = parseInt(k.split(":")[1], 10);
+        var e = day.ex[idx];
+        if (!e) return;
+        var sets = (s.lifts[k] || {}).sets || [];
+        for (var i = 1; i < sets.length; i++) {
+          var a = sets[i - 1], b = sets[i];
+          if (typeof a.t !== "number" || typeof b.t !== "number") continue;
+          over.push((b.t - a.t) / 1000 - opts.setSecs - opts.restSecs(e, a));
+        }
+      });
+    });
+    var w = medianOf(warm), o = medianOf(over);
+    return {
+      sessions: timed.length,
+      warmupSec: w === null ? null : Math.round(clampN(w, 0, 1200)),
+      overheadSec: o === null ? null : Math.round(clampN(o, 5, 40))
+    };
+  }
+
   return {
     sessionCount: sessionCount, setsLogged: setsLogged,
     setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
@@ -571,7 +656,7 @@
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
     compactVol: compactVol, topMovers: topMovers,
-    trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift,
+    trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift, calibration: calibration,
     progressSnapshot: progressSnapshot
   };
 });

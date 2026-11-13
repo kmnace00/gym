@@ -56,16 +56,8 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 }
 
 
-/* ── header: day tabs (day view) / back (lift view) + theme + session ──── */
-.header{display:flex;gap:10px;align-items:center;flex:none;min-width:0}
-.days{display:flex;gap:3px;flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px}
-.day{
-  flex:1;height:44px;border-radius:999px;font-weight:700;font-size:14px;letter-spacing:.02em;color:var(--muted);
-  transition:background .2s ease,color .2s ease;
-}
-.day.active{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);border:1px solid var(--line)}
-.day:active{filter:brightness(.96)}
-.app.lift-mode .days{display:none}
+/* ── header: back (lift view) + progress / menu / session ─────────────── */
+.header{display:flex;gap:10px;align-items:center;flex:none;min-width:0;justify-content:flex-end}
 .backbtn{
   display:none;flex:none;margin-right:auto;height:44px;padding:0 16px 0 12px;
   border-radius:999px;align-items:center;gap:6px;
@@ -90,12 +82,12 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 
 /* ── day view: the 8-lift overview ─────────────────────────────────────── */
 .dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
-.daytitle{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.daytitle{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2;flex:1}
 .daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .firstrun{font-size:12px;color:var(--muted);line-height:1.3;text-wrap:balance}
-.liftlist{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.liftlist{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
 .liftrow{
-  flex:1 1 0;min-height:0;overflow:hidden;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);
+  flex:1 0 auto;min-height:52px;overflow:hidden;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);
   width:100%;text-align:left;background:var(--surface);
   border:1px solid var(--line);border-radius:14px;padding:0 14px;
   transition:border-color .2s ease,background .2s ease,transform .08s ease;
@@ -136,10 +128,15 @@ h1{
 .guide .cue{font-weight:600}
 .cue{display:inline;font-size:15px;line-height:1.5;color:var(--muted)}
 .tempo{display:inline;color:var(--faint);font-size:12px}
-.sethead{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 9px}
+.sethead{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 9px}
+/* N14: the alternatives chooser under the sethead — one pill per alternate */
+.swapchoices{flex:none;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 9px}
+.swapchoices[hidden]{display:none}
+.swapchoice{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font-weight:600;font-size:14px;text-align:left}
+.swapchoice.cancel{background:transparent;color:var(--muted)}
 .seth{font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--muted);font-variant-numeric:tabular-nums}
-.setacts{display:flex;gap:6px}
-.resetlift{flex:none;height:44px;margin:-11px 0 -3px;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
+.setacts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.resetlift{flex:none;height:44px;padding:7px 10px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
 .resetlift:disabled{opacity:.4}
 .resetlift:not(:disabled):active{filter:brightness(1.15)}
 .resetlift.undoset{color:var(--accent)}
@@ -285,6 +282,27 @@ h1{
 .app.resting.can-undo .timer .undobtn{display:inline-flex}
 .app.resting .timer.paused .rbar i{background:var(--muted)}
 
+/* ── N11: rest running + workout peeked open = the lift view goes quiet.
+      The rest card is the working surface (countdown, next-set prep
+      steppers, Undo); below it only the lift crumb and the set log stay, as
+      the reference. The editor — name, prescription, cue, set actions,
+      steppers, RIR, Set Done — waits for GO (or for a set edit, which
+      lifts the quiet deliberately). ─────────────────────────────────────── */
+.app.rest-quiet #exName,
+.app.rest-quiet .swapsub,
+.app.rest-quiet .guide,
+.app.rest-quiet #perLine,
+.app.rest-quiet #nextLine,
+.app.rest-quiet #rampLine,
+.app.rest-quiet .sethead,
+.app.rest-quiet .suggest,
+.app.rest-quiet #prevLine,
+.app.rest-quiet #sparkWrap,
+.app.rest-quiet .adjust,
+.app.rest-quiet #hint,
+.app.rest-quiet #goNextBtn,
+.app.rest-quiet #doneBtn{display:none}
+
 /* GO: one unmistakable, tappable advance screen */
 .app.resting .timer.go{background:var(--accent);color:var(--accent-ink)}
 .app.resting .timer.go{animation:goPulse 1.6s ease-in-out infinite}
@@ -330,7 +348,6 @@ h1{
   .guide{margin-top:4px;font-size:13.5px;line-height:1.4}
   .cue{font-size:13.5px;line-height:1.4}
   .sethead{margin-top:4px;margin-bottom:8px}
-  .resetlift{margin:-7px 0}
   .pres{margin:2px 0 0}
   .rirrow{margin-top:10px}
   .setlog{gap:4px}
@@ -406,7 +423,6 @@ h1{
 /* ── progress button + progress view ───────────────────────────────────── */
 .app.lift-mode #progressBtn,
 .app.progress-mode #progressBtn{display:none}
-.app.progress-mode .days{display:none}
 .app.progress-mode .backbtn{display:inline-flex}
 .menubtn.needs-backup{position:relative;color:var(--accent)}
 .menubtn.needs-backup::after{
@@ -492,7 +508,7 @@ h1{
 /* ── plan today + previous-session line ─────────────────────────────────── */
 .daytop{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .planbtn{
-  flex:none;height:44px;padding:0 14px;margin:-8px 0;border-radius:999px;
+  flex:none;height:44px;padding:0 14px;border-radius:999px;
   background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:13px;white-space:nowrap;
 }
 /* "Plan today" overwrites loads: it reads as secondary so it cannot be
@@ -538,20 +554,13 @@ input{caret-color:var(--accent)}
   .savebar .bbtext{flex:1 0 100%}
 }
 
-/* ── v3: week strip on the day header ──────────────────────────────────── */
-.weekstrip{flex:none;display:flex;gap:6px;margin-top:6px}
-.wk{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
-  height:24px;border-radius:999px;background:var(--surface-2);
-  font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--muted);font-variant-numeric:tabular-nums;
-  transition:background .2s ease,color .2s ease;
-}
-.wk b{font-weight:800}
-.wk i{font-style:normal;font-size:11px;line-height:1}
-.wk.done{background:var(--accent-soft);color:var(--accent)}
-.wk.partial{background:var(--warn-bg);color:var(--warn)}
-.wk.today{box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
-.wk.missed{color:var(--faint)}
+/* ── N12: the day tabs and their week marks are gone (Khang: not needed);
+      day switching rides the .daynav chevrons beside the day title ─────── */
+
+/* ── N2/N4: per-side clarity + next-lift lines in the lift view ──────────── */
+.perline,.nextline,.rampeline{font-size:13px;color:var(--muted);margin:8px 0 0}
+.nextline b{color:var(--ink)}
+.rpramp{font-size:12px;color:var(--muted)}
 
 /* ── v3: rest-screen next-set prep ─────────────────────────────────────── */
 .rprep{display:none}
@@ -607,8 +616,6 @@ input{caret-color:var(--accent)}
   box-shadow:inset 0 0 0 1px var(--accent)}
 
 @media (max-height:720px){
-  .weekstrip{margin-top:4px}
-  .wk{height:19px;font-size:10px}
   .app.resting .timer .rprep{padding:5px 8px;gap:3px;max-width:300px}
   .rpctl button{width:44px;height:44px;font-size:17px}
   .rpctl span{font-size:15px;min-width:46px}
@@ -619,10 +626,10 @@ input{caret-color:var(--accent)}
 /* ── forced colors (Windows High Contrast et al.): structure by border and
       system colour, since backgrounds and shadows are stripped ─────────── */
 @media (forced-colors: active){
-  .liftrow,.setrow,.pstat,.pcard,.modal-card,.summary-card,.ctl,.timer,.days{
+  .liftrow,.setrow,.pstat,.pcard,.modal-card,.summary-card,.ctl,.timer{
     border:1px solid CanvasText;
   }
-  .day.active,.rir.active,.wk.done{
+  .rir.active{
     background:Highlight;color:HighlightText;
   }
   .hday.on,.pseg i,.pdbar i,.app.resting .timer .rbar i,.app.resting .timer.paused .rbar i{
@@ -636,8 +643,7 @@ input{caret-color:var(--accent)}
   }
   .app.resting .timer.go #skipRest{background:HighlightText;color:Highlight}
   .setrow.now,.liftrow.now{outline:2px solid Highlight;outline-offset:-2px}
-  .wk.today{outline:1px solid Highlight;outline-offset:-1px}
-  .hday,.pseg,.pdbar,.timer .rbar,.wk{border:1px solid CanvasText}
+  .hday,.pseg,.pdbar,.timer .rbar{border:1px solid CanvasText}
 }
 
 /* ── print: the day sheet on paper — tokens flip to ink-on-white ───────── */
@@ -649,7 +655,7 @@ input{caret-color:var(--accent)}
   }
   html,body{overflow:visible;height:auto}
   .app{height:auto;max-width:none}
-  .menubtn,.pill,.backbtn,.chev,.timer,.planbtn,.bbdismiss,.bbact,.days,.firstrun,.weekstrip,#progressSegs{display:none!important}
+  .menubtn,.pill,.backbtn,.chev,.timer,.planbtn,.bbdismiss,.bbact,.firstrun,#progressSegs{display:none!important}
   .view{display:none!important}
   #dayView{display:flex!important}
   .liftlist{flex:none}
@@ -710,6 +716,6 @@ input{caret-color:var(--accent)}
 
 /* R2 critique: the day header must never crush the title — when Continue and
    Finish both show, the actions wrap to their own row instead. */
-.daytop{flex-wrap:wrap}
+.daytop{flex-wrap:wrap;flex:none}
 .daytitle{flex:1 1 150px}
 .daytop .planbtn{flex:none}
