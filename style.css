@@ -91,7 +91,7 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 /* ── day view: the 8-lift overview ─────────────────────────────────────── */
 .dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
 .daytitle{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
-.daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .firstrun{font-size:12px;color:var(--muted);line-height:1.3;text-wrap:balance}
 .liftlist{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
 .liftrow{
@@ -290,7 +290,7 @@ h1{
 .app.resting .timer.go{animation:goPulse 1.6s ease-in-out infinite}
 @keyframes goPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
 .app.resting .timer.go .clock,.app.resting .timer.go .tlabel,.app.resting .timer.go .tlabel strong,
-.app.resting .timer.go .rnext{color:var(--accent-ink)}
+.app.resting .timer.go .tlabel span,.app.resting .timer.go .rnext,.app.resting .timer.go .relapsed{color:var(--accent-ink)}
 .app.resting .timer.go .rbar{background:rgba(0,0,0,.18)}
 .app.resting .timer.go .rbar i{background:var(--accent-ink)}
 .app.resting .timer.go .tbtns button{border-color:var(--accent-ink);color:var(--accent-ink)}
@@ -625,7 +625,7 @@ input{caret-color:var(--accent)}
   .day.active,.rir.active,.wk.done{
     background:Highlight;color:HighlightText;
   }
-  .hday.on,.pseg i,.pdbar i,.timer .rbar i{
+  .hday.on,.pseg i,.pdbar i,.app.resting .timer .rbar i,.app.resting .timer.paused .rbar i{
     background:Highlight;
   }
   .app.resting .timer.go{background:Highlight;color:HighlightText}
@@ -637,7 +637,7 @@ input{caret-color:var(--accent)}
   .app.resting .timer.go #skipRest{background:HighlightText;color:Highlight}
   .setrow.now,.liftrow.now{outline:2px solid Highlight;outline-offset:-2px}
   .wk.today{outline:1px solid Highlight;outline-offset:-1px}
-  .hday,.pseg,.pdbar,.timer .rbar{border:1px solid CanvasText}
+  .hday,.pseg,.pdbar,.timer .rbar,.wk{border:1px solid CanvasText}
 }
 
 /* ── print: the day sheet on paper — tokens flip to ink-on-white ───────── */
@@ -649,7 +649,7 @@ input{caret-color:var(--accent)}
   }
   html,body{overflow:visible;height:auto}
   .app{height:auto;max-width:none}
-  .menubtn,.pill,.backbtn,.chev,.timer,.planbtn,.bbdismiss,.bbact{display:none!important}
+  .menubtn,.pill,.backbtn,.chev,.timer,.planbtn,.bbdismiss,.bbact,.days,.firstrun,.weekstrip,#progressSegs{display:none!important}
   .view{display:none!important}
   #dayView{display:flex!important}
   .liftlist{flex:none}
@@ -695,3 +695,21 @@ input{caret-color:var(--accent)}
 
 
 
+
+@media (max-height:560px){
+  .liftlist{overflow-y:auto}
+  .liftrow{flex:none;min-height:44px}
+  #liftView{overflow-y:auto}
+  .setlog{flex:none;overflow:visible}
+  .setrow{flex:none}
+  .app.resting .timer{overflow-y:auto;justify-content:flex-start;min-height:0}
+}
+.setlog:has(.setrow.editing) .setrow.now:not(.editing){background:var(--surface);border-color:var(--line);box-shadow:var(--shadow-sm)}
+.setlog:has(.setrow.editing) .setrow.now:not(.editing) .sn{background:var(--surface-2);color:var(--faint)}
+.setlog:has(.setrow.editing) .setrow.now:not(.editing) .smark{color:var(--faint)}
+
+/* R2 critique: the day header must never crush the title — when Continue and
+   Finish both show, the actions wrap to their own row instead. */
+.daytop{flex-wrap:wrap}
+.daytitle{flex:1 1 150px}
+.daytop .planbtn{flex:none}

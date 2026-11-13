@@ -8,7 +8,7 @@ const url = "file://" + path.resolve(__dirname, "..", "index.html");
 test("an off day names where it logs, and that session shows up in its week", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-04T10:00:00") }); // Wednesday
   await page.goto(url);
-  await expect(page.locator("#daySummary")).toContainText("Off day — this logs as Friday");
+  await expect(page.locator("#daySummary")).toContainText("Off day · logs as Friday");
 
   // log and finish Friday's workout on the Wednesday clock
   await page.locator(".liftrow").first().click();

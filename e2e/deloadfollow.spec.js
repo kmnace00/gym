@@ -8,7 +8,7 @@ const path = require("path");
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 const sizes = [{ width: 390, height: 667 }, { width: 390, height: 844 }];
 
-const NUDGE = "5+ weeks since a deload — Start deload week is in the menu.";
+const NUDGE = "5+ weeks since a deload — start one in the Menu.";
 
 async function seed(page, obj, clock) {
   if (clock) await page.clock.install({ time: new Date(clock) });

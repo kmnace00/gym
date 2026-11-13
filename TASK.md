@@ -21,3 +21,7 @@ B6-05 P8 finish a partial workout · B6-06 P11 alternates — data + swap marker
 ## WIP
 
 No files claimed.
+
+## Expert critique (Nov 12 PM, Muse — closed, critic dry)
+
+Khang-directed critique loop (two rounds, aspects rotated per his instruction). 9 fixes at gym-v128–v130, all T1 presentation/copy: landscape/short-height degradation, GO-screen text contrast, day-summary truncation, pluralization, edit-mode highlight, day-header wrap, forced-colors rest-bar fill, print chrome, deload-nudge copy. Guards added: `e2e/shortheight.spec.js`, `e2e/dayheader.spec.js`. Final gate 147/147 e2e, 216/216 unit, typecheck clean. Full record: BUILD_LOG.md (critique entries) + LOOP_STATE.md top entry; screenshots in `review-shots/critique/`. SW `gym-v130` is LOCAL — publish on Khang's word.

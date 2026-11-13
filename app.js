@@ -297,14 +297,14 @@
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
     var summary = complete
       ? "Workout complete — nice work"
-      : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : " total");
+      : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state) : dayMins(cur)) + " min" + (totalDone > 0 ? " left" : "");
     if (!Gym.actualDay()) {
       /* B6-02: say which training day this session banks under */
-      summary = "Off day — this logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + ". " + summary;
+      summary = "Off day · logs as " + (WK_DAY[Gym.todayDay()] || "the next session") + " · " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     /* B6-10: one nudge line, gone as soon as the week has a session in it */
-    if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — Start deload week is in the menu.";
+    if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — start one in the Menu.";
     document.getElementById("daySummary").textContent = summary;
     // first-run guidance: one line until the very first set is ever logged
     var firstRun = document.getElementById("firstRunHint");
@@ -389,7 +389,7 @@
     if (su.last.sets && su.last.sets.length) {
       txt = su.last.sets.map(function (st) { return loadLabel(st.load, e) + "×" + st.reps; }).join(" · ");
     } else {
-      txt = loadLabel(su.last.load, e) + "×" + su.last.reps + " × " + (su.last.setsDone || 1) + " sets";
+      txt = loadLabel(su.last.load, e) + "×" + su.last.reps + " × " + (su.last.setsDone || 1) + ((su.last.setsDone || 1) === 1 ? " set" : " sets");
     }
     el.textContent = "Prev: " + txt;
     el.hidden = false;
