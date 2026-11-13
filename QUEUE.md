@@ -1,19 +1,18 @@
 # QUEUE — Batches 1–3
 
 Base HEAD: `6b3ffd6` (set-log sizing fix, Nov 9 11:12 CT; SW `gym-v37`, 154/154 unit, 65/65 e2e, CI green).
-Status: BATCH 3 QUEUED — Nov 9, from three Muse audits (code, UX, science) against the post-pipeline repo. Batch 1 (L1–L5) complete and verified by Muse at `b7d61f0`; Batch 2 (B1–B3) complete and self-reviewed by OpenCode at `9556a73`; L9 rest controller built and verified (145/145 unit, 48/48 e2e, SW `gym-v20`); pipeline Phases 1–5 + Pass 2 done. Their specs below are history, do not re-run them.
+Status: BATCH 3 QUEUED — Nov 9, from three Planner/Reviewer audits (code, UX, science) against the post-pipeline repo. Batch 1 (L1–L5) complete and verified at `b7d61f0`; Batch 2 (B1–B3) complete and self-reviewed by OpenCode at `9556a73`; L9 rest controller built and verified (145/145 unit, 48/48 e2e, SW `gym-v20`); pipeline Phases 1–5 + Pass 2 done. Their specs below are history, do not re-run them.
 Batch rules: one item at a time, in order. Finish an item (all
 verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update),
 then copy the next item's spec into `TASK.md` and start it. When the
-queue is empty, stop and wait for Muse — do not invent the next
+queue is empty, stop and wait for the Planner/Reviewer — do not invent the next
 item. Every item: `npm run check`, `npm run typecheck`,
 `npm run e2e` at 390×667 and 390×844, no overflow, no console
 errors. Program data (`program.js` numbers) is read-only in every
 item. If verification fails, log it and STOP — do not move on.
 
-Re-check summary (Muse, Nov 8 — read against Pass 4 source):
-- L1 revised: full rest-controller extraction is T2 (needs a Muse
-  DESIGN first; rest is the most user-critical path and Pass 2
+Re-check summary (Nov 8 — read against Pass 4 source):
+- L1 revised: full rest-controller extraction is T2 (needs a Planner/Reviewer DESIGN first; rest is the most user-critical path and Pass 2
   deferred the controller for that reason). This batch takes the
   safe pure slice instead; the full extraction is new backlog item
   L9 [T2].
@@ -173,7 +172,7 @@ Do (probe, then fix only what fails):
   green and note it in `BUILD_LOG.md`.
 - Write the threat-model paragraph in `PLAN.md` (one paragraph:
   trusts = Khang's own backups + `origin main` commits by
-  Khang/Muse; does not trust = imported JSON, any other commit
+  Khang; does not trust = imported JSON, any other commit
   author, SW cache contents; boundary = localStorage only, no
   network exfiltration).
 
@@ -184,19 +183,19 @@ typecheck + e2e green, no behaviour change.
 
 ---
 
-# BATCH 2 — Hardening follow-ups from Muse's Batch 1 review (Nov 8, 20:50 CT)
+# BATCH 2 — Hardening follow-ups from the Planner/Reviewer's Batch 1 review (Nov 8, 20:50 CT)
 
 Base HEAD: `b7d61f0`. Status: QUEUED — approved by Khang Nov 8, 20:53 CT.
 Batch rules (same as Batch 1): one item at a time, in order. Finish an item
 (all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update),
 then copy the next item's spec into `TASK.md` and start it. When the queue
-is empty, stop and wait for Muse — do not invent the next item. Every item:
+is empty, stop and wait for the Planner/Reviewer — do not invent the next item. Every item:
 `npm run check`, `npm run typecheck`, `npm run e2e` at 390x667 and 390x844,
 no overflow, no console errors. Program data (`program.js` numbers) is
 read-only in every item. If verification fails, log it and STOP — do not
 move on.
 
-Review findings that seeded this batch (Muse, independent clone at `b7d61f0`,
+Review findings that seeded this batch (independent clone at `b7d61f0`,
 unit 96/96 + typecheck clean verified):
 - A null state record crashes `mergePayload` — reproduced: base with
   `state["fri:0"]` done 1, incoming `state["fri:0"]: null` via JSON →
@@ -247,8 +246,7 @@ the hostile payloads as JSON strings, not JS object literals, so
 - `migrateV2` path (v2 payload with a null state record) → no crash.
 - `resetDay` with a null state record for that day → no crash.
 - `mergePayload` with incoming `liftHistory["fri:0"]: [null, {...}]` and
-  `sessionLog: [null]` → no crash, nulls dropped (already verified by
-  Muse on `b7d61f0` — lock it in as a test, do not regress it).
+  `sessionLog: [null]` → no crash, nulls dropped (already verified on `b7d61f0` — lock it in as a test, do not regress it).
 
 Files: `store.js`, `test/store.test.js`.
 Verify: `npm run check`, typecheck, e2e at both viewports, no-scroll
@@ -286,7 +284,7 @@ if an asset changed.
 
 ## B3 — Fix the Node test script (`node --test test/` fails on Node 24) [T1]
 
-Why: `npm run check` fails on Node 24 in Muse's VM because
+Why: `npm run check` fails on Node 24 in the Planner/Reviewer's VM because
 `node --test test/` does not resolve the folder there. Both
 `node --test test/*.test.js` and plain `node --test` give 96/96 on
 Node 24 at `b7d61f0`. CI uses Node 20, so this is fragility, not a
@@ -294,7 +292,7 @@ CI failure — fix it before it bites the Mac or a Node upgrade.
 
 Do:
 - In `package.json`, change `"test": "node --test test/"` to
-  `"test": "node --test test/*.test.js"` (explicit glob, the form Muse
+  `"test": "node --test test/*.test.js"` (explicit glob, the form the Planner/Reviewer
   verified at 96/96). Do not use plain `node --test` — the glob is
   explicit about which files are unit tests and cannot pick up future
   non-test files by discovery.
@@ -304,7 +302,7 @@ Do:
   needs quoting on that shell — check, do not assume).
 - If the glob does not expand on any shell in the loop (Mac sh / CI),
   stop and report it as a finding instead of trying a second form
-  without Muse — the script is the gate for every future item.
+  without the Planner/Reviewer — the script is the gate for every future item.
 
 Files: `package.json` only (plus `BUILD_LOG.md` line).
 Verify: `npm run check` green end-to-end (not just the unit step),
@@ -313,15 +311,15 @@ typecheck, e2e at both viewports. No code change, no SW bump needed
 
 ---
 
-# BATCH 3 — Long build queue (Nov 9, Muse audits)
+# BATCH 3 — Long build queue (Nov 9, Planner/Reviewer audits)
 
-Source: three read-only audits Nov 9 (code, UX, science), read against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only commits (set-log sizing — `style.css` + `sw.js` CACHE only) that touch none of the audited logic. Every T1 below was checked against source by Muse before queuing (spot-verified file:line in the spec); the science items that unblock L7/L8 are T3 proposals in `BACKLOG.md`, not builds. Order is value ÷ risk, highest first. **This queue is long (33 T1 + 2 T2) by Khang's explicit ask — one go, no back-and-forth.** If the session gets long, finish the current item, checkpoint in `LOOP_STATE.md`, and stop; Khang restarts with the same loop prompt and work resumes from the checkpoint. Do not skip items, do not reorder, do not batch two items into one commit.
+Source: three read-only audits Nov 9 (code, UX, science), read against HEAD `fccd85b`; base moved to `6b3ffd6` by two style-only commits (set-log sizing — `style.css` + `sw.js` CACHE only) that touch none of the audited logic. Every T1 below was checked against source before queuing (spot-verified file:line in the spec); the science items that unblock L7/L8 are T3 proposals in `BACKLOG.md`, not builds. Order is value ÷ risk, highest first. **This queue is long (33 T1 + 2 T2) by Khang's explicit ask — one go, no back-and-forth.** If the session gets long, finish the current item, checkpoint in `LOOP_STATE.md`, and stop; Khang restarts with the same loop prompt and work resumes from the checkpoint. Do not skip items, do not reorder, do not batch two items into one commit.
 
-Batch rules (same as Batches 1–2): one item at a time, in order. Finish an item (all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update), then copy the next item's spec into `TASK.md` and start it. When the queue is empty, stop and wait for Muse — do not invent the next item. Every item: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors. Program data (`program.js` numbers) is read-only in every item. Bump the SW `CACHE` whenever an asset changes. If verification fails, log it and STOP — do not move on.
+Batch rules (same as Batches 1–2): one item at a time, in order. Finish an item (all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md` update), then copy the next item's spec into `TASK.md` and start it. When the queue is empty, stop and wait for the Planner/Reviewer — do not invent the next item. Every item: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors. Program data (`program.js` numbers) is read-only in every item. Bump the SW `CACHE` whenever an asset changes. If verification fails, log it and STOP — do not move on.
 
 ## B3-01 — Mid-rest finish-arm freeze [T1] — ACTIVE
 
-Why: the one genuine bug in the audits, rest-critical, verified by Muse in source. After the final lift, tapping "End rest" once and hesitating >2.6 s freezes the rest clock and strands the finish flow: each later tap just re-arms. (TASK.md's L9 note claims this was "found in review and fixed" — it was not; the code at HEAD still does it.)
+Why: the one genuine bug in the audits, rest-critical, verified in source. After the final lift, tapping "End rest" once and hesitating >2.6 s freezes the rest clock and strands the finish flow: each later tap just re-arms. (TASK.md's L9 note claims this was "found in review and fixed" — it was not; the code at HEAD still does it.)
 
 Do:
 - In `restctl.js`, make `finishReset()` clear `finishUntil` AND `ctx.frozen` in all phases, not only when phase is `"go"` (today `finishReset()` returns early unless phase is `"go"`, so on an active rest the arm and the freeze survive the 2,600 ms window; `skip()` sets `ctx.frozen = true` when arming mid-rest, and `view()` stops ticking while frozen).
@@ -334,7 +332,7 @@ Verify: unit test — arm mid-rest, advance the fake clock past the window, call
 
 ## B3-02 — Future-version payload is silently wiped at boot [T1]
 
-Why: `load()` detects a newer-version payload, saves a copy to `gym-tool-v2-future`, and returns an empty payload — but the boot path never tells the user and immediately overwrites the store with the empty payload. The copy survives but there is no accessor and no UI to retrieve it, so the data is effectively lost. Reachable in practice: a stale cached SW serving an old `app.js` after a newer build wrote a newer schema. Verified by Muse: `store.js:319` (`p.v > CURRENT` → `{__future: p}`), `:336-341` (writes `-future`, returns empty), `app.js:1375` (only `kind === "corrupt"` sets `dataWarn`, `"future"` ignored), `app.js:1395` (`else commit()` overwrites STORE with the empty payload), `store.js:726` exports only `quarantineRaw`.
+Why: `load()` detects a newer-version payload, saves a copy to `gym-tool-v2-future`, and returns an empty payload — but the boot path never tells the user and immediately overwrites the store with the empty payload. The copy survives but there is no accessor and no UI to retrieve it, so the data is effectively lost. Reachable in practice: a stale cached SW serving an old `app.js` after a newer build wrote a newer schema. Verified: `store.js:319` (`p.v > CURRENT` → `{__future: p}`), `:336-341` (writes `-future`, returns empty), `app.js:1375` (only `kind === "corrupt"` sets `dataWarn`, `"future"` ignored), `app.js:1395` (`else commit()` overwrites STORE with the empty payload), `store.js:726` exports only `quarantineRaw`.
 
 Do:
 - In `store.js`, add a `futureRaw()` export (same shape as `quarantineRaw()`, reading `STORE + "-future"`).
@@ -356,7 +354,7 @@ Verify: run the new spec; the first two assertions green, the 500 assertion fail
 
 ## B3-04 — SW caches error pages as the shell and serves errors instead of cached assets [T1]
 
-Why: two `res.ok` gaps in the offline path — the app's core promise is "works in the gym basement". (a) The navigation handler caches *any* response as `./index.html`, so one transient 500/404 from Pages permanently poisons the offline shell until the next successful online load. (b) The asset SWR handler returns a non-ok revalidation response to the page instead of the good cached copy, so a transient 500 on `app.js` breaks the app even though a valid copy is cached. Verified by Muse in `sw.js:30-41` (no `res.ok` check on the navigation `put`) and `:62-64` (a 404/500 falls through to `return res`).
+Why: two `res.ok` gaps in the offline path — the app's core promise is "works in the gym basement". (a) The navigation handler caches *any* response as `./index.html`, so one transient 500/404 from Pages permanently poisons the offline shell until the next successful online load. (b) The asset SWR handler returns a non-ok revalidation response to the page instead of the good cached copy, so a transient 500 on `app.js` breaks the app even though a valid copy is cached. Verified in `sw.js:30-41` (no `res.ok` check on the navigation `put`) and `:62-64` (a 404/500 falls through to `return res`).
 
 Do:
 - Guard both `put`s with `res.ok`; when revalidation is not ok, return the cached `hit` instead of the error response. Do not change the 304 path, the conditional-revalidation headers, or the cache-first/offline behaviour otherwise.
@@ -366,7 +364,7 @@ Verify: B3-03's spec now fully green (in-test server returns 500 for `app.js` af
 
 ## B3-05 — `finalizeSession` logs phantom empty sessions [T1]
 
-Why: the no-data guard requires `!a.startedAt`, so a session whose clock was started but in which nothing was ever logged still gets a `sessionLog` entry with empty `lifts`. Reachable via `rollSession`: tap Start on the session pill, do nothing, open the app the next day. Consequences: the Progress "Workouts" count inflates, and a phantom entry with `durationSec > 0` pollutes `sessionDrift`'s median (L3's audit), since that function only filters on `status === "complete"` and `durationSec > 0`. Verified by Muse: `store.js:466` (the guard) and `:507` (`rollSession` finalizes whenever status isn't complete or data exists).
+Why: the no-data guard requires `!a.startedAt`, so a session whose clock was started but in which nothing was ever logged still gets a `sessionLog` entry with empty `lifts`. Reachable via `rollSession`: tap Start on the session pill, do nothing, open the app the next day. Consequences: the Progress "Workouts" count inflates, and a phantom entry with `durationSec > 0` pollutes `sessionDrift`'s median (L3's audit), since that function only filters on `status === "complete"` and `durationSec > 0`. Verified: `store.js:466` (the guard) and `:507` (`rollSession` finalizes whenever status isn't complete or data exists).
 
 Do:
 - In `store.js`, drop the `!a.startedAt` condition — return null whenever there is no data and no existing entry for the id. Keep the existing-entry update path (a session that already has a `sessionLog` entry still updates it).
@@ -376,7 +374,7 @@ Verify: unit test — start clock, finalize/roll with no lifts → no `sessionLo
 
 ## B3-06 — Undo of an extra set leaves a stale history entry [T1]
 
-Why: `undoSet` pops today's history entry only when the lift drops *below* its scheduled sets. Undoing an extra set (4→3 on a 3-set lift) truncates the in-memory set array but leaves the banked entry showing 4 sets — so Prev, tonnage, PRs and CSV overstate by one set until the next bank. Verified by Muse in `app.js:670-685` (the pop is inside `if (wasComplete && s.done < ex().s)`; no re-bank when still complete).
+Why: `undoSet` pops today's history entry only when the lift drops *below* its scheduled sets. Undoing an extra set (4→3 on a 3-set lift) truncates the in-memory set array but leaves the banked entry showing 4 sets — so Prev, tonnage, PRs and CSV overstate by one set until the next bank. Verified in `app.js:670-685` (the pop is inside `if (wasComplete && s.done < ex().s)`; no re-bank when still complete).
 
 Do:
 - In `app.js` `undoSet`, when the lift is still complete after the undo, call `bankLift(cur, idx)` to re-bank the current set array (same function the set-done path uses at `app.js:785`).
@@ -386,7 +384,7 @@ Verify: e2e — complete a lift, add an extra set, undo once, read `localStorage
 
 ## B3-07 — Restart-lift takes no snapshot [T1]
 
-Why: every other destructive path snapshots first (reset day, clear all, restore, merge), but `doRestartLift` doesn't. `resetLift` pops today's history entry for that lift. Worse, the "Undo last reset / restore" button stays visible from an *older* snapshot, so after a lift restart a user tapping it expecting the lift back gets a snapshot that may predate hours of work, with no staleness warning. Verified by Muse in `app.js:986-991` (`doRestartLift` → `Gym.resetLift` → `commit`, no `Gym.snapshot`).
+Why: every other destructive path snapshots first (reset day, clear all, restore, merge), but `doRestartLift` doesn't. `resetLift` pops today's history entry for that lift. Worse, the "Undo last reset / restore" button stays visible from an *older* snapshot, so after a lift restart a user tapping it expecting the lift back gets a snapshot that may predate hours of work, with no staleness warning. Verified in `app.js:986-991` (`doRestartLift` → `Gym.resetLift` → `commit`, no `Gym.snapshot`).
 
 Do:
 - In `app.js` `doRestartLift`, snapshot first with label `"pre-restart-lift"` (same `Gym.snapshot` shape the other destructive paths use), so "Undo last reset / restore" restores the pre-restart state.
@@ -396,7 +394,7 @@ Verify: e2e — complete a lift, restart it, tap "Undo last reset / restore" →
 
 ## B3-08 — Import-merge silently adopts the incoming backup's day/lift cursor [T1]
 
-Why: merging a backup is for reconciling history across devices. Instead it can yank the lifter mid-workout to a different day and lift (whatever the other device was looking at), with no message saying so. Cursor position is device-local state, not history. Verified by Muse: `store.js:598-599` copies `incoming.cur` / `incoming.idx` into the merged payload; `app.js:1274` then sets `cur`/`idx` from it. (Full replace via `importRaw` correctly adopts the cursor — only the merge path is wrong.)
+Why: merging a backup is for reconciling history across devices. Instead it can yank the lifter mid-workout to a different day and lift (whatever the other device was looking at), with no message saying so. Cursor position is device-local state, not history. Verified: `store.js:598-599` copies `incoming.cur` / `incoming.idx` into the merged payload; `app.js:1274` then sets `cur`/`idx` from it. (Full replace via `importRaw` correctly adopts the cursor — only the merge path is wrong.)
 
 Do:
 - Delete the two `cur`/`idx` lines from `mergePayload`; keep the base payload's cursor. Nothing else in the merge changes.
@@ -416,7 +414,7 @@ Verify: e2e keyboard test — open the menu, Tab to Import, press Enter, assert 
 
 ## B3-10 — The PR / top-reps hint is set on the final set — and wiped before the lifter ever sees it [T1]
 
-Why: the "New PR" / "top reps at target RIR — do it again next session" hint is the app's only in-workout feedback that progress happened, and it fires exactly on the final set (the top set). On the designed path the lifter is staring at the rest screen then, and GO-advance clears the hint. The only way to see it is to end rest early or peek — the celebration is invisible on the happy path. Verified by Muse: `app.js:925` and `:934` set `hintText` on completion; it renders only in the lift view (`#hint`), hidden while resting; the GO advance effect clears it (`app.js:539`, `advanceTo`: `hintText = ""`).
+Why: the "New PR" / "top reps at target RIR — do it again next session" hint is the app's only in-workout feedback that progress happened, and it fires exactly on the final set (the top set). On the designed path the lifter is staring at the rest screen then, and GO-advance clears the hint. The only way to see it is to end rest early or peek — the celebration is invisible on the happy path. Verified: `app.js:925` and `:934` set `hintText` on completion; it renders only in the lift view (`#hint`), hidden while resting; the GO advance effect clears it (`app.js:539`, `advanceTo`: `hintText = ""`).
 
 Do:
 - Surface the hint on the rest screen itself (as the rest message line under the countdown, or a one-line banner above the prep steppers — pick the one that fits the no-scroll layout; do not add a new view). Wire it through the rest view model (`restctl.js` view / `rest.js` `restMsg`) so it survives the rest phase and clears on advance, same as today.
@@ -427,7 +425,7 @@ Verify: e2e — seed a lift whose next set beats history, log it, assert the res
 
 ## B3-11 — Summary PR count uses the wall-clock date, not the session date [T1]
 
-Why: the app anchors history to the session's start date across midnight (documented design), but `showSummary` filters PRs by today's wall-clock date. Finish a workout after midnight and the summary shows "—" PRs even when the user just set them. Verified by Muse in `app.js:1036-1037` (`var today = Gym.dateKey(); … filter(p => p.date === today)`), against `store.js` `sessionDate` ("a session that crosses midnight keeps banking into the day it started").
+Why: the app anchors history to the session's start date across midnight (documented design), but `showSummary` filters PRs by today's wall-clock date. Finish a workout after midnight and the summary shows "—" PRs even when the user just set them. Verified in `app.js:1036-1037` (`var today = Gym.dateKey(); … filter(p => p.date === today)`), against `store.js` `sessionDate` ("a session that crosses midnight keeps banking into the day it started").
 
 Do:
 - In `app.js` `showSummary`, use `Gym.sessionDate(payload)` for the PR filter instead of `Gym.dateKey()`.
@@ -487,7 +485,7 @@ Verify: e2e — start a session, log a set, assert the rest screen shows an elap
 
 ## B3-17 — Import has no file-size guard [T1]
 
-Why: both file inputs accept any size; `FileReader.readAsText` + `JSON.parse` on a multi-MB file freezes the tab before any validation runs. The store caps history/session sizes (Phase 5), but the read/parse happens first. Verified by Muse: `app.js:1244-1277` — the `replaceFile` and `importFile` change handlers call `reader.readAsText(f)` with no `f.size` check.
+Why: both file inputs accept any size; `FileReader.readAsText` + `JSON.parse` on a multi-MB file freezes the tab before any validation runs. The store caps history/session sizes (Phase 5), but the read/parse happens first. Verified: `app.js:1244-1277` — the `replaceFile` and `importFile` change handlers call `reader.readAsText(f)` with no `f.size` check.
 
 Do:
 - In `app.js`, reject `f.size > 5_000_000` in both handlers with a message before reading. In `store.js`, add the same length guard in `importRaw` / `importMerge` as defence in depth (throw on an over-long string).
@@ -547,7 +545,7 @@ Verify: e2e — single tap arms, second tap opens the picker, timeout restores t
 
 ## B3-23 — The service worker never checks for updates while the app stays open [T1]
 
-Why: the app is installed to the home screen and can sit open/backgrounded for days. Navigations are network-first, but a page that never reloads never revalidates — the lifter can train for weeks on a stale deploy with no indication. The SW does `skipWaiting` + `clients.claim()` on install, but nothing ever triggers an update check after first load. Verified by Muse: `app.js:1392` — bare `navigator.serviceWorker.register("./sw.js")` with no `registration.update()` anywhere; no update listener in `sw.js`.
+Why: the app is installed to the home screen and can sit open/backgrounded for days. Navigations are network-first, but a page that never reloads never revalidates — the lifter can train for weeks on a stale deploy with no indication. The SW does `skipWaiting` + `clients.claim()` on install, but nothing ever triggers an update check after first load. Verified: `app.js:1392` — bare `navigator.serviceWorker.register("./sw.js")` with no `registration.update()` anywhere; no update listener in `sw.js`.
 
 Do:
 - Call `registration.update()` when the page becomes visible (`visibilitychange` → visible, next to the existing `keepAwake` handler at `app.js:746`), so the next navigation picks up the new deploy. No new UI; the existing network-first navigation does the rest.
@@ -587,7 +585,7 @@ Verify: e2e — open lift 5 at 390×667, assert `#tempoLine` is visible and the 
 
 ## B3-27 — `typecheck` never checks `restctl.js` [T1]
 
-Why: the newest, most user-critical module (rest orchestration) passes `node --check` (syntax only) but is invisible to `tsc --checkJs`, so a type error there ships past the gate. `package.json`'s `check` script *does* include it, which makes the gap easy to miss. Verified by Muse: `jsconfig.json` `include` lists `program.js, store.js, timer.js, machine.js, stats.js, rest.js, app.js` — no `restctl.js` (and no `sw.js`, which is fine given its `self`/`caches` globals).
+Why: the newest, most user-critical module (rest orchestration) passes `node --check` (syntax only) but is invisible to `tsc --checkJs`, so a type error there ships past the gate. `package.json`'s `check` script *does* include it, which makes the gap easy to miss. Verified: `jsconfig.json` `include` lists `program.js, store.js, timer.js, machine.js, stats.js, rest.js, app.js` — no `restctl.js` (and no `sw.js`, which is fine given its `self`/`caches` globals).
 
 Do:
 - Add `restctl.js` to `jsconfig.json` `include`. Extend `tools/check-ids.js` (or `tools/check-assets.js` — pick the one that fits) with a cross-check that every local `.js` loaded by `index.html` appears in `jsconfig.json`'s include, so this can't regress silently. Do not add `sw.js` to typecheck (its globals are out of scope for `tsc` here).
@@ -675,13 +673,13 @@ Verify: new helper tests green; full gate green; no number changes anywhere (ver
 
 ---
 
-End of Batch 3. When the queue is empty, stop and wait for Muse. The T2 items that still need designs, and all T3 proposals for Khang, are in `BACKLOG.md` — do not build them from this queue.
+End of Batch 3. When the queue is empty, stop and wait for the Planner/Reviewer. The T2 items that still need designs, and all T3 proposals for Khang, are in `BACKLOG.md` — do not build them from this queue.
 
 ---
 
-## BATCH 4 — QUEUED Nov 9 (Muse review of Batch 3; 2 items: 1 T1 + 1 T2)
+## BATCH 4 — QUEUED Nov 9 (review of Batch 3; 2 items: 1 T1 + 1 T2)
 
-Base HEAD: `85d2cd4` (Batch 3 complete, Nov 9 15:18 CT; SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). Status: BATCH 4 QUEUED — from Muse's independent review of B3-11…B3-35, which found no new defects; these are the backlog's own follow-ups, not invented work. Same batch rules as above: one item at a time, in order; program data read-only; full gate per item (`npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors); stop on failure.
+Base HEAD: `85d2cd4` (Batch 3 complete, Nov 9 15:18 CT; SW `gym-v66`, 169/169 unit, 91/91 e2e, Pages live). Status: BATCH 4 QUEUED — from the Planner/Reviewer's independent review of B3-11…B3-35, which found no new defects; these are the backlog's own follow-ups, not invented work. Same batch rules as above: one item at a time, in order; program data read-only; full gate per item (`npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors); stop on failure.
 
 ## B4-01 — `workoutDates` / `trainingDays` still use plain `{}` keyed by user-controlled dates [T1, defence in depth]
 
@@ -689,22 +687,22 @@ B3-29 fixed the same pattern in `weekLiftIndex` / `sessionVolumes` and flagged t
 
 ## B4-02 — Corrupt-payload salvage [T2, designed]
 
-Design in `DESIGN.md` ("Batch 4 T2: corrupt-payload salvage", Muse, Nov 9). `load()` salvages what still parses instead of dropping the whole payload: per-piece recovery of `liftHistory` arrays and `sessionLog` entries through the existing sanitize path, `loadError = { kind: "salvaged", recovered: N, dropped: M }`, quarantine bytes intact, boot never auto-commits while a load warning is active, bar names the recovered count and offers "Keep recovered log". Files: `store.js`, `app.js`, `test/store.test.js`, `e2e/pass3.spec.js`. Verify: full gate green; SW bump.
+Design in `DESIGN.md` ("Batch 4 T2: corrupt-payload salvage", Nov 9). `load()` salvages what still parses instead of dropping the whole payload: per-piece recovery of `liftHistory` arrays and `sessionLog` entries through the existing sanitize path, `loadError = { kind: "salvaged", recovered: N, dropped: M }`, quarantine bytes intact, boot never auto-commits while a load warning is active, bar names the recovered count and offers "Keep recovered log". Files: `store.js`, `app.js`, `test/store.test.js`, `e2e/pass3.spec.js`. Verify: full gate green; SW bump.
 
-End of Batch 4. When the queue is empty, stop and wait for Muse.
+End of Batch 4. When the queue is empty, stop and wait for the Planner/Reviewer.
 
 
 ---
 
-## BATCH 5 — QUEUED Nov 9 (Muse; 20 items: 1 T2 + 19 T1)
+## BATCH 5 — QUEUED Nov 9 (Planner/Reviewer; 20 items: 1 T2 + 19 T1)
 
-Base HEAD: `0d4ed1a` (SW `gym-v68`, 177/177 unit, 93/93 e2e, Pages live). Status: BATCH 5 QUEUED — from three Muse audits (code correctness, UX/user-workflows, tests/data-safety) against `0d4ed1a`, re-scoped to Khang's Nov 9 direction: UI/UX user workflows first, and a major lift-page redesign as the centerpiece (B5-01, designed by Muse in `DESIGN.md`, "Batch 5 T2: lift-page redesign" — read it before building). Same batch rules as above: one item at a time, in order; full gate per item (`npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors); program data read-only; stop on failure, log it, do not move on. Housekeeping already done by Muse in the queue push (not items): `__pycache__/` added to `.gitignore`, the `DESIGN.md` salvage Case B wording fix, the Batch 4 VERIFIED record in `LOOP_STATE.md`, and the Gate 1 install note in `SUPERVISOR_DESIGN.md`.
+Base HEAD: `0d4ed1a` (SW `gym-v68`, 177/177 unit, 93/93 e2e, Pages live). Status: BATCH 5 QUEUED — from three Planner/Reviewer audits (code correctness, UX/user-workflows, tests/data-safety) against `0d4ed1a`, re-scoped to Khang's Nov 9 direction: UI/UX user workflows first, and a major lift-page redesign as the centerpiece (B5-01, designed in `DESIGN.md`, "Batch 5 T2: lift-page redesign" — read it before building). Same batch rules as above: one item at a time, in order; full gate per item (`npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 and 390×844, no overflow, no console errors); program data read-only; stop on failure, log it, do not move on. Housekeeping already done in the queue push (not items): `__pycache__/` added to `.gitignore`, the `DESIGN.md` salvage Case B wording fix, the Batch 4 VERIFIED record in `LOOP_STATE.md`, and the Gate 1 install note in `SUPERVISOR_DESIGN.md`.
 
-Hands-on verification (Muse, Nov 9 ~20:12 CT, scratch clone at `d1e18e3` — nothing pushed): B5-05 CONFIRMED by source trace — the day-tab handler (`app.js:1220-1222`) reassigns `cur`/`idx` *before* `resetEdit()`, while `openLift`/`navigateLift` reset first; the handler is the only inverted path. B5-06 CONFIRMED by a failing test — `importRaw`/`importMerge` throw "Not a valid Gym backup" (`store.js:600` / `store.js:845`) on truncated bytes from which `salvage()` recovers entries and which `load()` accepts as `kind: "salvaged"`. Build both items as specified; the claims are proven, not audit opinion.
+Hands-on verification (Nov 9 ~20:12 CT, scratch clone at `d1e18e3` — nothing pushed): B5-05 CONFIRMED by source trace — the day-tab handler (`app.js:1220-1222`) reassigns `cur`/`idx` *before* `resetEdit()`, while `openLift`/`navigateLift` reset first; the handler is the only inverted path. B5-06 CONFIRMED by a failing test — `importRaw`/`importMerge` throw "Not a valid Gym backup" (`store.js:600` / `store.js:845`) on truncated bytes from which `salvage()` recovers entries and which `load()` accepts as `kind: "salvaged"`. Build both items as specified; the claims are proven, not audit opinion.
 
 ## B5-01 — Lift-page redesign: de-stack the top, kill the dead band [T2, designed]
 
-Design in `DESIGN.md` ("Batch 5 T2: lift-page redesign", Muse, Nov 9) — read it first; it is the contract. Summary: five stacked text layers become three blocks (name / one prescription meta line / one cue+tempo guide block, tempo still on every lift per B3-26); `.setlog` flexes and set rows grow to fill it so the ~150–190 px void at 390×844 is gone by construction; `.rir` back to 44 px in the short-phone block; Set Done's edit-state `aria-label` starts with "Done editing". Measure the top-stack height and the setlog→adjust gap before and after and record both pairs in `BUILD_LOG.md`; acceptance numbers (gap ≤8 px default state, stack ≥20% shorter incl. the `.sethead` margin trim) are in the design, which also carries Muse's prototype results from a scratch clone (gap 141.9 → 0 px, stack 217.8 → 182.6 px before the trim, no-scroll held at both viewports) — the approach is proven, build it for real. Preserve every position the design lists (Set Done bottom full-width, steppers above RIR row, RIR row above Set Done, tap-to-edit rows, Undo/Restart pills, header, focus-to-name). Update the set-log sizing e2e geometry to the new contract — do not delete it. Files: `style.css`, `app.js` (render/aria only), `index.html` (wrapper only if needed), `e2e/*`, `sw.js` bump. Verify: full gate green; geometry assertions pass at both viewports; B3-26 tempo e2e still green.
+Design in `DESIGN.md` ("Batch 5 T2: lift-page redesign", Nov 9) — read it first; it is the contract. Summary: five stacked text layers become three blocks (name / one prescription meta line / one cue+tempo guide block, tempo still on every lift per B3-26); `.setlog` flexes and set rows grow to fill it so the ~150–190 px void at 390×844 is gone by construction; `.rir` back to 44 px in the short-phone block; Set Done's edit-state `aria-label` starts with "Done editing". Measure the top-stack height and the setlog→adjust gap before and after and record both pairs in `BUILD_LOG.md`; acceptance numbers (gap ≤8 px default state, stack ≥20% shorter incl. the `.sethead` margin trim) are in the design, which also carries the Planner/Reviewer's prototype results from a scratch clone (gap 141.9 → 0 px, stack 217.8 → 182.6 px before the trim, no-scroll held at both viewports) — the approach is proven, build it for real. Preserve every position the design lists (Set Done bottom full-width, steppers above RIR row, RIR row above Set Done, tap-to-edit rows, Undo/Restart pills, header, focus-to-name). Update the set-log sizing e2e geometry to the new contract — do not delete it. Files: `style.css`, `app.js` (render/aria only), `index.html` (wrapper only if needed), `e2e/*`, `sw.js` bump. Verify: full gate green; geometry assertions pass at both viewports; B3-26 tempo e2e still green.
 
 ## B5-02 — Rest-screen prep steppers target the next lift between lifts [T1]
 
@@ -744,7 +742,7 @@ Why: one global `armedFn`/`armedUntil` pair (`app.js:1408-1419`) serves all dest
 
 ## B5-11 — Salvaged save bar masks a later save failure [T1]
 
-Why (from Muse's Batch 4 review): in `app.js`'s save-bar priority, the salvaged load-warning outranks a live `saveFailed` state — after a salvaged boot, if a save then fails (e.g. storage full), the bar keeps showing the salvage notice and the save-failure warning never surfaces. Low impact, no data-loss path (the original bytes stay quarantined and the warning does surface on the Keep tap), but the user should learn about a failed save when it happens. Do: a live save failure outranks the salvaged notice in `syncSaveBar` (the recovered counts stay reachable — fold them into the failure bar's copy or restore the salvaged bar once a save succeeds again; pick the simpler one and note it in `BUILD_LOG.md`). Files: `app.js`, `e2e/*` (extend the B4-02 salvaged-boot spec). Verify: e2e — salvaged boot → force a save failure via the existing save-failure harness → the failure warning is visible (fails before); Keep flow still works; full gate green; SW bump.
+Why (from the Planner/Reviewer's Batch 4 review): in `app.js`'s save-bar priority, the salvaged load-warning outranks a live `saveFailed` state — after a salvaged boot, if a save then fails (e.g. storage full), the bar keeps showing the salvage notice and the save-failure warning never surfaces. Low impact, no data-loss path (the original bytes stay quarantined and the warning does surface on the Keep tap), but the user should learn about a failed save when it happens. Do: a live save failure outranks the salvaged notice in `syncSaveBar` (the recovered counts stay reachable — fold them into the failure bar's copy or restore the salvaged bar once a save succeeds again; pick the simpler one and note it in `BUILD_LOG.md`). Files: `app.js`, `e2e/*` (extend the B4-02 salvaged-boot spec). Verify: e2e — salvaged boot → force a save failure via the existing save-failure harness → the failure warning is visible (fails before); Keep flow still works; full gate green; SW bump.
 
 ## B5-12 — Dead "Undo last reset / restore" button shows in the menu [T1]
 
@@ -782,7 +780,7 @@ Why: `grep -i csv e2e/*.spec.js` = zero hits, while the journey is wired at `app
 
 Why: hold-repeat fires every 70 ms (`app.js:897`) into `stepLoad`/`stepReps` (`app.js:874-886`), each calling full `render()` — set-log `innerHTML` rebuild plus suggestion and sparkline SVG redraw per step (~37 rebuilds in a 3-second hold). Load adjustment happens between nearly every set; this is where any jank is felt. Do: a light update path for steppers (the value readouts, the "now" row, the rest prep values), with the full render on release. **Re-check first:** B5-01 changed the lift view's render/geometry — if a light path already exists by the time this item starts, verify with the MutationObserver test below only and close the item with a note. Files: `app.js`, `e2e/*`. Verify: e2e MutationObserver counts `#setLog` replacements during a 1 s hold — ~14 before, ≤1 after; final value correct and persisted; full gate green; SW bump.
 
-End of Batch 5. When the queue is empty, stop and wait for Muse.
+End of Batch 5. When the queue is empty, stop and wait for the Planner/Reviewer.
 
 ---
 
@@ -790,9 +788,9 @@ End of Batch 5. When the queue is empty, stop and wait for Muse.
 # QUEUE — Batch 6 (decided)
 
 Base HEAD: current `origin/main` at promotion time. Batch 5 (B5-01…B5-20)
-is COMPLETE + VERIFIED by Muse at `68f319c`; B6-01 (below) is BUILT +
+is COMPLETE + VERIFIED at `68f319c`; B6-01 (below) is BUILT +
 VERIFIED. On Nov 10 Khang delegated the gated decisions ("Do the gym
-improvement list, do whatever you think is best"); Muse decided every
+improvement list, do whatever you think is best"); the Planner/Reviewer decided every
 gated item — rationale in `DECISIONS.md` (promoted alongside this file) —
 and promoted them here as B6-02…B6-10 in the staged dependency order:
 P9 off-day → `bodyweightSet` flag → P6 2-for-2 → P8 partial finish →
@@ -801,7 +799,7 @@ P11/L6 alternates → P5 Bulgarian rest → P7 deload week.
 Batch rules (same as Batches 1–5): one item at a time, in order. Finish
 an item (all verification green + `BUILD_LOG.md` line + `LOOP_STATE.md`
 update), then copy the next item's spec into `TASK.md` and start it.
-When the queue is empty, stop and wait for Muse — do not invent the
+When the queue is empty, stop and wait for the Planner/Reviewer — do not invent the
 next item. Every item: `npm run check`, `npm run typecheck`,
 `npm run e2e` at 390×667 and 390×844, no overflow, no console errors.
 Bump the SW `CACHE` whenever an asset changes. If verification fails,
@@ -811,8 +809,7 @@ is read-only in every item EXCEPT B6-06 (`alt` strings only) and B6-08
 
 ## B6-01 — `Stats.parseKey` rolls impossible dates [T1] — DONE
 
-Built Nov 10 (first live supervisor spawn) and independently verified by
-Muse: full gate green at 196/196 unit, typecheck clean, 112/112 e2e.
+Built Nov 10 (first live supervisor spawn) and independently verified: full gate green at 196/196 unit, typecheck clean, 112/112 e2e.
 Round-trip inside `parseKey` (construct, compare components, null on
 mismatch); `weekStatus` / `sessionVolumes` no longer attribute
 `"2026-02-30"` to Mar 2. History — do not re-run.
@@ -1202,14 +1199,14 @@ Full gate green; SW bump.
 
 End of Batch 6 (decided). When B6-10 lands, one item remains —
 B6-11, appended below. When B6-11 lands, the queue is empty —
-stop and wait for Muse. Everything still open lives in
+stop and wait for the Planner/Reviewer. Everything still open lives in
 `BACKLOG.md` (P4 caps, the general T3 categories, non-goals) and
 needs a fresh Khang decision, not a promotion by momentum.
 
-## B6-11 — Lift-view spacing rhythm [T1] — RE-SPECIFIED by Muse Nov 11 (v2; v1 was NEEDS_DESIGN)
+## B6-11 — Lift-view spacing rhythm [T1] — RE-SPECIFIED Nov 11 (v2; v1 was NEEDS_DESIGN)
 
 Why: Khang flagged the top of the first set box on the lift view
-(screenshot, Nov 10 21:21 CT). Muse measured the live layout at
+(screenshot, Nov 10 21:21 CT). The Planner/Reviewer measured the live layout at
 440×956, 390×844, and 390×667: the set rows are equal height and
 their content is dead-centre (offset 0) — the defect is the spacing
 rhythm around the stack. The lift stack beats at 8px between blocks
@@ -1225,7 +1222,7 @@ rhythm came out right, but two `e2e/smoke.spec.js` assertions went
 red and the diff was reverted: (1) at 390×844 the pill clearance
 went to −1 (required ≥ 1); (2) at 390×667 the log-fill assertion
 tipped on rounding (232 vs 233) once the short-screen gap shrank.
-The v2 resolution was scratch-verified by Muse Nov 11 in a
+The v2 resolution was scratch-verified Nov 11 in a
 throwaway clone BEFORE re-queueing: full gate green (216/216 unit,
 typecheck clean, 139/139 e2e including the two new rhythm tests
 below), and at 440×956 (Khang's phone): head gap 6 = row gap 6,
@@ -1284,7 +1281,7 @@ computed margin-top:
 Khang's direction (Nov 12): "Run a continuous self-improvement loop
 on the gym html tool — a UI-only improvement phase, where the
 assistant acts as UI expert and may make drastic visual changes."
-Muse builds this batch in-session (planner + builder + reviewer),
+The Planner/Reviewer builds this batch in-session (planner + builder + reviewer),
 one item per commit, full gate per item. Scope is presentation
 only: `style.css` (plus a geometry/fit test where an item needs
 one). No behaviour changes, no markup changes unless an item says
@@ -1294,7 +1291,7 @@ B6-11 geometry contracts, and the smoke pill-clearance rule. The
 Bear identity Khang picked Nov 10 stays — this phase deepens it
 (contrast, hierarchy, elevation), it does not re-brand.
 
-Audit basis (Muse, Nov 12, screenshots at 390×844 in both
+Audit basis (Nov 12, screenshots at 390×844 in both
 themes + rest/peek/progress/menu): the app is coherent but flat —
 cards separate from the page by a hairline only; the small muted
 text tiers (`--faint` at 11–12px) sit near 3:1 contrast; the day
@@ -1325,4 +1322,4 @@ their cards in light mode.
   gain a defining border.
 
 When B7-05 lands, the queue is empty and the UI phase closes with
-Muse's verification + screenshot pass.
+the Planner/Reviewer's verification + screenshot pass.

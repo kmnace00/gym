@@ -890,7 +890,7 @@ active:
 
 | id | name | session | cadence | status | checks | runs | last outcome | next due (UTC) |
 |---|---|---|---|---|---|---|---|---|
-| `sch_1c22d75f8001brE544zgavnnP9` | Muse queue watch | `ses_e3e44975dffeMbTj6Vf9sEVkqN` | every 5 min (America/Chicago) | **active** | 48 | 0 | `checked` | 2026-11-10 01:23:41 |
+| `sch_1c22d75f8001brE544zgavnnP9` | queue watch | `ses_e3e44975dffeMbTj6Vf9sEVkqN` | every 5 min (America/Chicago) | **active** | 48 | 0 | `checked` | 2026-11-10 01:23:41 |
 | `sch_1c2eb52d3001DJiXW9ipS5cDzS` | gym-loop-queue-watch | `ses_e3d182e4effeaXELEBrkFfiH76` | every 5 min | active | 8 | 0 | `checked` | 2026-11-10 01:26:04 |
 
 The watch you asked about, `sch_1c22d75f8001brE544zgavnnP9`, is **alive and

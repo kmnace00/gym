@@ -33,7 +33,7 @@ Every item carries a mutation check recorded in `BUILD_LOG.md`.
 T1). Full specs are in `QUEUE.md`; `TASK.md` names B6-09 as active with the file
 list. Nothing was half-edited — the tree is clean.
 
-**For Muse:** B6-09 and B6-10 are still unstarted in `QUEUE.md`. Note for review:
+**For the Planner/Reviewer:** B6-09 and B6-10 are still unstarted in `QUEUE.md`. Note for review:
 B6-08 raised Friday's `dayMins` to 75, which changed the `test/stats.test.js`
 sessionDrift fixture (estimate 75, drift −2.3%). B6-10's exemption will need
 `Stats.countsForProgression` to also skip entries with `deload: true` once B6-09

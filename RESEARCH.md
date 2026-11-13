@@ -13,7 +13,7 @@ timestamp, or paper + link/DOI) · **App rule** · **Confidence** ·
 
 These drove the current program. They are recorded here as the
 working rules, with their original sources to be re-attached with
-full citations in the next Muse research pass — do not treat the
+full citations in the next Planner/Reviewer research pass — do not treat the
 one-line source note as a verified citation yet.
 
 - **3 days is sufficient while studying is the priority.**
@@ -73,7 +73,7 @@ one-line source note as a verified citation yet.
   set" stays — it is harmless as a habit — but the ledger no longer
   presents stretching between sets as a hypertrophy technique.
 
-## How to add an entry (Muse research passes)
+## How to add an entry (Planner/Reviewer research passes)
 
 1. Watch / read the source. Record creator + video title + timestamp,
    or authors + paper title + link/DOI. A bare creator name is not a
@@ -97,16 +97,16 @@ one-line source note as a verified citation yet.
 - Peer-reviewed hypertrophy literature — rest intervals, proximity to
   failure, volume landmarks, tempo, partials. Cite the paper, not a
   summary of it.
-- Other YouTubers only as Khang names them or Muse cites them fully
+- Other YouTubers only as Khang names them or the Planner/Reviewer cites them fully
   (video + timestamp). Do not present a creator as "Khang's source"
   without evidence he uses them.
 
-## Research pass Nov 9 (Muse + research subagent) — L7/L8 unblocked
+## Research pass Nov 9 (the Planner/Reviewer + research subagent) — L7/L8 unblocked
 
 Every paper below was checked against PubMed/publisher records by the
-research pass; the two marked **Muse-verified** were re-checked by Muse
+research pass; the two marked **verified** were re-checked
 directly against the publisher page on Nov 9. The rest carry the DOI as
-cited — treat them as reported, not Muse-verified, until someone opens
+cited — treat them as reported, not verified, until someone opens
 the paper. Claims the pass could NOT verify are listed at the end and
 stay out of the plan.
 
@@ -124,7 +124,7 @@ stay out of the plan.
   long rest 9.2% vs short rest 5.8% across 6 studies, heterogeneous
   and not significant — both viable. Confidence: medium.
 - **Singer et al. 2024**, *Front Sports Act Living* 6:1429789.
-  DOI 10.3389/fspor.2024.1429789. **Muse-verified Nov 9** (Frontiers
+  DOI 10.3389/fspor.2024.1429789. **Verified Nov 9** (Frontiers
   + PMC). Bayesian meta-analysis, 9 studies: small hypertrophy benefit
   to resting >60 s, **no appreciable difference beyond >90 s**.
   Confidence: high.
@@ -216,7 +216,7 @@ with the volume-load mechanism — no direct citation, no change.
 
 - **Goto et al. 2019**, *J Strength Cond Res* 33(5):1286–1294.
   DOI 10.1519/JSC.0000000000002051, PMID 31034463.
-  **Muse-verified Nov 9** (PubMed). Partial-ROM triceps extensions at
+  **Verified Nov 9** (PubMed). Partial-ROM triceps extensions at
   long muscle lengths (45–90° elbow flexion) grew triceps CSA +48.7%
   vs +28.2% for full ROM (0–120°) in trained men, 8 weeks.
   Confidence: high (directly on triceps partials; small n, single

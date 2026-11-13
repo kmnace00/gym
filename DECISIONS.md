@@ -1,6 +1,6 @@
 # DECISIONS — Batch 6 decision-gated items
 
-Decided by Muse, Nov 10, under Khang's explicit delegation the same day:
+Decided Nov 10, under Khang's explicit delegation the same day:
 "Do the gym improvement list, do whatever you think is best." Every gated
 item below is decided; the buildable specs are in `QUEUE.md` as B6-02…B6-10
 (B6-01 was already built and verified before this round). Guiding calls,
@@ -134,29 +134,29 @@ proposal named no numbers.
 - The Pass 3/4 phone checklists and the Loop 14 Adjust live tap-through
   still need Khang at the phone; no decision of mine changes that.
 
-## B6-11 resolution (Muse, Nov 11) — the spacing spec's self-contradiction
+## B6-11 resolution (Nov 11) — the spacing spec's self-contradiction
 
 The v1 spec's five values were individually right and jointly impossible: `.sethead` margin-bottom 6 leaves the 44 px `.resetlift` pills (margin −7 top/bottom, 7 px bleed below the header) 1 px inside the first set row, against the B5-01 clearance guard (≥ 1). Decided: keep the 6 px rhythm and move the pill bleed up — `.resetlift` margin −7/−7 → −9/−5 at tall sizes. The total bleed is unchanged, so the header box and the top-stack budget do not move; clearance stays exactly 1, the same as today. Short screens (≤ 720 px) keep the HEAD layout exactly: with the symmetric bleed, margin-bottom ≥ 8 is the clearance floor there, and Khang's phone is a tall screen.
 
 Rejected: symmetric −5 bleed (a builder scratch test showed the header box grows 4 px and breaks the B5-01 top-stack budget at both viewports); keeping the tall gap at 8 (abandons the rhythm on the exact screen Khang flagged); relaxing the smoke assertions (weakens B5-01 guards for a 1 px cosmetic gain).
 
-Verified by Muse in a scratch clone before re-queueing — the spec was not re-issued on arithmetic alone: 216/216 unit, typecheck clean, 139/139 e2e including the two new rhythm tests; at 440×956 the gaps measure 6/8/8 with clearance 1 and top stack 169.
+Verified in a scratch clone before re-queueing — the spec was not re-issued on arithmetic alone: 216/216 unit, typecheck clean, 139/139 e2e including the two new rhythm tests; at 440×956 the gaps measure 6/8/8 with clearance 1 and top stack 169.
 
 ## Batch 7 authorization (Khang, Nov 12) — UI-only phase
 
 Khang opened a UI-only improvement phase and authorized drastic
-visual changes, with Muse acting as UI expert and building
-in-session. Muse's calls inside that grant: the Bear identity
+visual changes, with the Planner/Reviewer acting as UI expert and building
+in-session. The Planner/Reviewer's calls inside that grant: the Bear identity
 (picked Nov 10) is kept and deepened rather than replaced — a
 re-brand would spend his pick, not improve the app; presentation
 only, so no behaviour, feature, or program-data changes ride
 along; and the usability guards (44px targets, one-screen lift
 view, B5-01/B6-11 geometry, pill clearance) stay binding even
 under "drastic" — they are ergonomics, not styling. Items B7-01…
-B7-05 in `QUEUE.md` were written from Muse's Nov 12 screenshot
+B7-05 in `QUEUE.md` were written from the Planner/Reviewer's Nov 12 screenshot
 audit of every screen in both themes.
 
-## B6-11 amendment (Muse, Nov 12, B10-01) — rhythm is painted, not border-box
+## B6-11 amendment (Nov 12, B10-01) — rhythm is painted, not border-box
 
 Khang caught what the B6-11 guard could not see: the stack measured even (6 = 6 on border boxes) but looked like the first set box was hitting the pills above it, because the pills paint 5px into their 6px gap (painted gap: 1). Decision: spacing rhythms in this app are specified and tested on painted boxes. The fix moves the pill bleed fully upward rather than widening the gap — the 6px beat was right; its measurement was wrong. B6-11's border-box assertions stay (they still guard the layout), and a painted-gap assertion joins them.
 

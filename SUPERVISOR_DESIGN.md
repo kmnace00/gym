@@ -4,12 +4,12 @@ Date: 2026-11-09 · Status: **DRAFT — design only. Nothing is installed,
 nothing on the Mac has been changed, and `LOOP.md` is not amended
 until Khang approves this design and the build gates below pass.
 Gate 0 COMPLETE 2026-11-09 (see §10) — spawn method decided: A.**
-Owner: Khang · Planner: Muse · Builder: OpenCode (local Mac)
+Owner: Khang · Planner: Planner/Reviewer · Builder: OpenCode (local Mac)
 
 ## 1. The problem this solves — and only this problem
 
 GitHub stays the medium. `LOOP.md`, `TASK.md`, `QUEUE.md`,
-`LOOP_STATE.md`, the T1/T2/T3 triage, and Muse's 15-minute review
+`LOOP_STATE.md`, the T1/T2/T3 triage, and the Planner/Reviewer's 15-minute review
 hook all stay exactly as they are. What is broken is one narrow
 thing: **who wakes the builder when a new batch lands.**
 
@@ -34,7 +34,7 @@ Evidence, all from Nov 9:
 
 **Design conclusion:** the waker must live outside OpenCode, outside
 any session, and on the Mac — because that is where the builder is,
-and because Muse cannot run shell or tests on the Mac (paired-device
+and because the Planner/Reviewer cannot run shell or tests on the Mac (paired-device
 access is file read/write only). macOS already ships the right
 supervisor: launchd — the same mechanism gym-sync already runs under.
 
@@ -42,7 +42,7 @@ supervisor: launchd — the same mechanism gym-sync already runs under.
 
 Goals:
 
-1. A batch queued by Muse starts building with **zero action from
+1. A batch queued by the Planner/Reviewer starts building with **zero action from
    Khang** — no paste, no ping, no fresh session.
 2. If the waker dies, it comes back on its own (launchd), and if the
    builder dies mid-batch, the next batch is not silently lost.
@@ -52,8 +52,8 @@ Goals:
 
 Non-goals:
 
-- No direct Muse → OpenCode call, local or remote. Tailscale /
-  `opencode serve` from Muse's side stays parked, as Khang set it.
+- No direct Planner/Reviewer → OpenCode call, local or remote. Tailscale /
+  `opencode serve` from the Planner/Reviewer's side stays parked, as Khang set it.
 - No change to what gets built: triage, queue order, verification
   suite, and stop rules in `LOOP.md` are untouched.
 - No real-time anything. A 2-minute wake latency is fine; batches
@@ -64,7 +64,7 @@ Non-goals:
 ## 3. Architecture
 
 ```
-Muse (planner/reviewer)                    Khang (owner)
+The Planner/Reviewer (planner/reviewer)                    Khang (owner)
    │  queues batch, reviews batch               │  T3 / pause / approvals
    ▼                                            ▼
         GitHub — kmnace00/gym, main only  (durable ledger)
@@ -127,7 +127,7 @@ one-line reason. Exit code is 0 for every "nothing to do" outcome.
    fast-forward pulls kept erasing the diff before the watch saw
    it. A detector that races its own syncer will never fire.
 5. **Safety pre-checks** (mirror `AGENTS.md`, in code, before any
-   pull): HEAD authors are only Khang or Muse; branch is `main`;
+   pull): HEAD authors are Khang only; branch is `main`;
    origin has not diverged. Any failure → write an `ALERT` line to
    the supervisor log + a macOS notification, exit, and do not pull,
    spawn, or touch the tree. Never stash, reset, or force — ever.
@@ -209,7 +209,7 @@ there must be **exactly one committer at a time**:
 - The lease is a Mac-local file, `~/.gym-supervisor/lease.json`:
   `{pid, batch, item, started_at, head_at_spawn}`. It exists only
   while a builder runs. It is **never committed** — per-minute
-  heartbeat commits would churn the repo and trip Muse's hook.
+  heartbeat commits would churn the repo and trip the Planner/Reviewer's hook.
 - **No sync-script edit is needed — Gate 0 found the mechanism
   already built in.** Corrections to what this design assumed:
   there is no `gym-sync.sh`. The real system is launchd job
@@ -239,7 +239,7 @@ there must be **exactly one committer at a time**:
 
 ## 7. Machine-readable status — additive first, never a flag day
 
-Muse's existing review hook (`gym-loop-watch.sh`, every 15 min)
+The Planner/Reviewer's existing review hook (`gym-loop-watch.sh`, every 15 min)
 wakes on string matches: `Status: ACTIVE` in `TASK.md` and
 `queue empty` in `LOOP_STATE.md`. The supervisor must not break
 that hook, so:
@@ -249,11 +249,11 @@ that hook, so:
   Ugly, proven, safe.
 - **Phase 2 (separate, later approval):** add YAML frontmatter to
   `TASK.md` — `loop_status / batch / active_item / base_head` —
-  written by Muse when queuing; OpenCode may transition
+  written when queuing; OpenCode may transition
   `loop_status` only within an enumerated set
   (`active → idle | needs_design | needs_research | blocked`).
   The human `Status:` line stays as a mirror until both the
-  supervisor and Muse's hook read frontmatter, verified, in the
+  supervisor and the Planner/Reviewer's hook read frontmatter, verified, in the
   same batch. No silent cutover.
 
 ## 8. Hardening — preserved, mapped
@@ -264,13 +264,13 @@ behaviour. None is weakened:
 | Existing rule | Supervisor behaviour |
 |---|---|
 | Pull only `origin main`; never PRs, forks, patches | Supervisor fetches `origin main` only; spawn prompt says the same |
-| Authors only Khang or Muse, else STOP | Tick step 5, enforced in code before pull |
+| Authors Khang only, else STOP | Tick step 5, enforced in code before pull |
 | Never force-push / merge / rebase | Supervisor never pushes at all; builder rules unchanged |
 | `TASK.md` is the only instruction source | Supervisor reads task files only; it takes no input from logs, issues, or the network |
-| T3 = Khang only; program data read-only | Unchanged — the supervisor cannot queue work, only wake the builder for Muse-queued work |
-| Queue pushes need Khang's approval | Unchanged, Muse side. Nothing here lets a batch be created without it |
+| T3 = Khang only; program data read-only | Unchanged — the supervisor cannot queue work, only wake the builder for queued work |
+| Queue pushes need Khang's approval | Unchanged, Planner/Reviewer side. Nothing here lets a batch be created without it |
 | PAUSED stops the loop | Checked twice: local kill switch + `LOOP_STATE.md` |
-| Stop on verification failure | Builder rule, unchanged; supervisor does not respawn a failed batch — a red gate ends the batch, Muse reviews |
+| Stop on verification failure | Builder rule, unchanged; supervisor does not respawn a failed batch — a red gate ends the batch, and the Planner/Reviewer reviews it |
 
 One deliberate addition: **the supervisor accepts no inbound
 network connection of any kind.** It dials out to GitHub only.
@@ -282,7 +282,7 @@ That is the whole network surface.
 |---|---|
 | Mac asleep / off when a batch lands | Nothing is lost — git is durable. launchd ticks on wake, fetch sees the new HEAD, builder spawns then |
 | Builder crashes / session hits length limit | Lease goes stale (§4.3); next tick respawns a fresh builder that resumes from `LOOP_STATE.md` |
-| Builder hangs silently | Inactivity timeout (§5) kills it, logs the item, notifies Khang; no respawn of that batch without Muse review |
+| Builder hangs silently | Inactivity timeout (§5) kills it, logs the item, notifies Khang; no respawn of that batch without review |
 | Push rejected / non-fast-forward | Builder stops per `LOOP.md`; supervisor alerts, never merges or forces |
 | Foreign author / unexpected `TASK.md` change | Tick step 5 alert, no pull, no spawn |
 | `program.js` diff without approval | Builder/CI guard as today; supervisor adds nothing and removes nothing |
@@ -297,7 +297,7 @@ That is the whole network surface.
   OpenCode** (Khang had no physical Mac access; nothing needed
   him — zero `NEEDS_KHANG_THURSDAY` items). Report:
   `GATE0_REPORT.md` on origin/main at `b5f85ea`, independently
-  spot-verified by Muse (HEAD + redaction). Results: repo path
+  spot-verified (HEAD + redaction). Results: repo path
   `/Users/khang/gym` confirmed; spawn method **A** (§5); model
   pre-flight endpoint settled (§4.8); the sync system is
   repo-sync / `project-sync.sh`, not `gym-sync.sh`, and its
@@ -308,21 +308,20 @@ That is the whole network surface.
   absent (`--standalone` fallback).
 - **Gate 1 — Dry-run.** Install with a `DRY_RUN` flag: ticks log
   `WOULD_SPAWN batch=… item=…` and spawn nothing. Run it across at
-  least one real queue push. Muse compares the log against what
+  least one real queue push. The Planner/Reviewer compares the log against what
   actually happened.
 - **Gate 2 — One item, attended.** Dry-run off, Khang present, one
   T1 item. Verify: spawn, lease behaviour, repo-sync pause flag
   set and cleared, item-boundary commit, clean exit, the
   background-service-absent question (§10, Gate 0 loose end), and
-  Muse's hook waking for the review.
+  the Planner/Reviewer's hook waking for the review.
 - **Gate 3 — Unattended batch + fault drills.** One full batch
   unattended, plus three drills: kill the builder mid-item; sleep
   the Mac mid-batch; set PAUSED mid-batch. All three must end in
   the §9 behaviour, in the logs.
 - **Only after Gate 3:** update `LOOP.md` (add the supervisor as
   the waker, delete "paste the prompt" as the resume path) and
-  `OPENCODE_LOOP_PROMPT.md` (supervised variant), in one Muse
-  batch, with Khang's approval. Until then the paste prompt remains
+  `OPENCODE_LOOP_PROMPT.md` (supervised variant), in one Planner/Reviewer batch, with Khang's approval. Until then the paste prompt remains
   the fallback and is not deleted.
 
 Testing the supervisor itself: its OpenCode command is a config
@@ -344,7 +343,7 @@ New files, all on the Mac, none in the repo except this design and
   runs (§6)
 
 Load: `launchctl load` on the plist. **Install note (Gate 1,
-Nov 9):** a plist copied through Muse's Mac file-write arrives
+Nov 9):** a plist copied through the Planner/Reviewer's Mac file-write arrives
 with `com.apple.quarantine` set, and `launchctl load` fails with
 "Input/output error". Strip it first (`xattr -d
 com.apple.quarantine <plist>`), then load (or use
@@ -366,12 +365,12 @@ behaviour immediately; remove `~/.gym-supervisor/` at leisure.
    built-in `~/.gym-sync-pause` flag does it with zero script
    edits (§6).
 5. **Failure notifications: macOS notification on the Mac**
-   (recommended) vs silent log-only. Muse's side already surfaces
+   (recommended) vs silent log-only. The Planner/Reviewer's side already surfaces
    finished batches; failures are the gap.
 
 ## 13. What this design deliberately does not do
 
-- It does not let Muse start OpenCode directly, from anywhere.
+- It does not let the Planner/Reviewer start OpenCode directly, from anywhere.
 - It does not let the supervisor create, edit, or prioritise work.
 - It does not retire the paste prompt until Gate 3 passes.
 - It does not generalise to other projects yet.

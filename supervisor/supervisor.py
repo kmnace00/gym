@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """gym-supervisor — one tick. Run by launchd every 120 s.
 
-Watches origin/main of the gym repo. When Muse has queued a batch
+Watches origin/main of the gym repo. When the Planner/Reviewer has queued a batch
 (TASK.md Status: ACTIVE) and no builder is running, spawns ONE fresh
 `opencode run` builder, then exits. While a builder runs, repo-sync
 is paused via its own ~/.gym-sync-pause flag and the builder commits
@@ -41,7 +41,7 @@ MODEL_URL = "http://127.0.0.1:8010/v1/models"
 ITEM_INACTIVITY_S = 45 * 60
 BATCH_MAX_S = 4 * 3600
 ALLOWED_EMAILS = {"kmnace00@gmail.com"}
-ALLOWED_NAMES = {"Khang", "Muse", "kmnace00"}
+ALLOWED_NAMES = {"Khang", "kmnace00"}
 
 
 def log(msg):
@@ -203,7 +203,7 @@ def main():
     remote_head = r.stdout.strip()
     watermark = state.get("last_seen_head", "")
 
-    # --- safety: authors of new commits must be Khang or Muse
+    # --- safety: authors of new commits must be Khang
     if watermark and watermark != remote_head:
         r = git("log", "--format=%an|%ae", "%s..%s" % (watermark, remote_head))
         if r.returncode == 0:
@@ -250,7 +250,7 @@ def main():
         return 0
     if state.get("blocked_head") == remote_head:
         save_json(STATE_FILE, state)
-        return 0  # this head already timed out once; wait for Muse
+        return 0  # this head already timed out once; wait for the Planner/Reviewer
 
     batch = "unknown"
     for line in task.splitlines():

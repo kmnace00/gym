@@ -1,26 +1,26 @@
 # BACKLOG — ranked improvement ideas
 
-## Batch 6 — ACTIVE Nov 10 (Muse), approved by Khang (one-tap); DECISIONS LANDED Nov 10
+## Batch 6 — ACTIVE Nov 10, approved by Khang (one-tap); DECISIONS LANDED Nov 10
 
-B6-01 (`Stats.parseKey` round-trip) is BUILT + VERIFIED. The decision-gated items are decided: on Nov 10 Khang delegated them ("Do the gym improvement list, do whatever you think is best") and Muse decided all of them — P9 ATTRIBUTE (fix week-strip/heatmap visibility), `bodyweightSet` flag ADOPTED (schema v5), P6 2-for-2 ADOPTED, P8 APPROVED, P11 alternate list APPROVED for all 24 lifts (log under the original id with a swap marker, progression-exempt), P5 Bulgarian rest 120 → 150 APPROVED, P7 deload week APPROVED as a manual mode. Full rationale in `DECISIONS.md`; buildable specs in `QUEUE.md` as B6-02…B6-10 in dependency order. Nothing from this batch remains in the backlog sections below — the P5–P9 / P11 texts there are replaced with pointers.
+B6-01 (`Stats.parseKey` round-trip) is BUILT + VERIFIED. The decision-gated items are decided: on Nov 10 Khang delegated them ("Do the gym improvement list, do whatever you think is best") and the Planner/Reviewer decided all of them — P9 ATTRIBUTE (fix week-strip/heatmap visibility), `bodyweightSet` flag ADOPTED (schema v5), P6 2-for-2 ADOPTED, P8 APPROVED, P11 alternate list APPROVED for all 24 lifts (log under the original id with a swap marker, progression-exempt), P5 Bulgarian rest 120 → 150 APPROVED, P7 deload week APPROVED as a manual mode. Full rationale in `DECISIONS.md`; buildable specs in `QUEUE.md` as B6-02…B6-10 in dependency order. Nothing from this batch remains in the backlog sections below — the P5–P9 / P11 texts there are replaced with pointers.
 
 
-Not instructions. An item becomes work only when Muse promotes it into
+Not instructions. An item becomes work only when the Planner/Reviewer promotes it into
 `QUEUE.md` / `TASK.md`. Order is value ÷ risk, highest first.
-`[T1]` buildable now · `[T2]` needs a Muse design first ·
+`[T1]` buildable now · `[T2]` needs a Planner/Reviewer design first ·
 `[T3]` Khang-only proposal — the loop never builds it.
 
-## Batch 5 — QUEUED Nov 9 (1 T2 + 19 T1, from three Muse audits + Khang's redesign direction)
+## Batch 5 — QUEUED Nov 9 (1 T2 + 19 T1, from three Planner/Reviewer audits + Khang's redesign direction)
 
 Full specs in `QUEUE.md` (B5-01–B5-20); `TASK.md` has B5-01 active. Centerpiece: the lift-page redesign [T2, designed in `DESIGN.md`] answering Khang's Nov 9 screenshot critique (five stacked text layers at the top, ~150–190 px dead band at 390×844) and his user-workflows-first direction. Behind it: workflow fixes (inter-lift rest prep targeting the next lift, day-tab mid-edit backup corruption, false "New PR" on extra sets, stranded `twoTap` confirm label, overnight session-duration clamp, RIR explainer retirement, backup banner that backs up), data safety (salvage on Restore/Merge, newer-version import message, `validDate` round-trip, per-set clamps at the store boundary, sessionLog bad-date drop, salvaged-bar vs save-failure priority), a11y (44 px `.bbact`, week-strip `role`, danger-text contrast, dead menu button hidden), and the Export CSV e2e. Still blocked, not queued: off-day logging (needs Khang's P9 decision) and the `bodyweightSet` flag (schema change, Khang's call).
 
-## Batch 4 — QUEUED Nov 9 (1 T1 + 1 T2, from Muse's Batch 3 review)
+## Batch 4 — QUEUED Nov 9 (1 T1 + 1 T2, from the Planner/Reviewer's Batch 3 review)
 
-Full specs in `QUEUE.md` (B4-01–B4-02); `TASK.md` has B4-01 active. B4-01 is the B3-29 follow-up (`workoutDates` / `trainingDays` null-prototype maps). B4-02 is the corrupt-payload salvage, designed by Muse in `DESIGN.md`. Closed without queueing: the pro-review finding that `weekStatus` hardcodes 8 lifts — it already takes a `dayLens` parameter (pipeline, Nov 9 08:40) and `app.js` passes `DAY_LIFTS`; the 8 is only a fallback default. Still blocked, not queued: off-day logging (needs Khang's P9 decision) and the `bodyweightSet` flag (schema change, Khang's call per P4).
+Full specs in `QUEUE.md` (B4-01–B4-02); `TASK.md` has B4-01 active. B4-01 is the B3-29 follow-up (`workoutDates` / `trainingDays` null-prototype maps). B4-02 is the corrupt-payload salvage, designed in `DESIGN.md`. Closed without queueing: the pro-review finding that `weekStatus` hardcodes 8 lifts — it already takes a `dayLens` parameter (pipeline, Nov 9 08:40) and `app.js` passes `DAY_LIFTS`; the 8 is only a fallback default. Still blocked, not queued: off-day logging (needs Khang's P9 decision) and the `bodyweightSet` flag (schema change, Khang's call per P4).
 
-## Batch 3 — QUEUED Nov 9 (33 T1 + 2 T2, from three Muse audits)
+## Batch 3 — QUEUED Nov 9 (33 T1 + 2 T2, from three Planner/Reviewer audits)
 
-Full specs in `QUEUE.md` (B3-01–B3-35); `TASK.md` has B3-01 active. Sources: code audit (20 items), UX audit (20 items), science research pass (L7/L8 unblocked, L6 list ready). Two findings merged (mid-rest freeze = UX #1 + code #12; pill "Start" = UX #8 + code #16). Muse spot-verified the top claims in source before queuing (future-version wipe, SW `res.ok` gaps, `jsconfig` gap, phantom sessions, merge cursor, undo-extra-set, summary PR date, restart snapshot, import size, SW register) and two key citations (Singer 2024, Goto 2019 — see `RESEARCH.md`).
+Full specs in `QUEUE.md` (B3-01–B3-35); `TASK.md` has B3-01 active. Sources: code audit (20 items), UX audit (20 items), science research pass (L7/L8 unblocked, L6 list ready). Two findings merged (mid-rest freeze = UX #1 + code #12; pill "Start" = UX #8 + code #16). The Planner/Reviewer spot-verified the top claims in source before queuing (future-version wipe, SW `res.ok` gaps, `jsconfig` gap, phantom sessions, merge cursor, undo-extra-set, summary PR date, restart snapshot, import size, SW register) and two key citations (Singer 2024, Goto 2019 — see `RESEARCH.md`).
 
 Status corrections Nov 9: L9 is BUILT (verified 145/145 unit, 48/48 e2e, SW `gym-v20`) — the "proposed for Batch 3" line below is stale. Batch 2 (B1–B3) is COMPLETE + self-reviewed by OpenCode at `9556a73`. Pipeline Phases 1–5 + Pass 2 DONE (154/154 unit, 63/63 e2e, SW `gym-v35`, schema v4). The pipeline's "remaining work is Khang's" is answered by this batch (research done) and the T3 proposals below.
 
@@ -96,14 +96,14 @@ The evidence for triceps lengthened partials is the strongest in the partials li
 ### P11 — L6 exercise-swap alternates — DECIDED Nov 10 → `QUEUE.md` B6-06 + B6-07
 Approved: the proposed alternate list for all 24 lifts, unchanged (the verbatim strings, coaching parentheticals included, live in `QUEUE.md` B6-06 — that is now the single source). Progression model decided: log the swap under the original lift's `id` with a swap marker; swapped entries count toward volume and completion but are excluded from load suggestions, stall detection, the sparkline and PRs; no partials prompt while swapped; the swap locks once a set is logged. Decision record in `DECISIONS.md`.
 
-## Batch 2 — QUEUED Nov 8 (B1–B3, all T1, hardening from Muse's Batch 1 review)
+## Batch 2 — QUEUED Nov 8 (B1–B3, all T1, hardening from the Planner/Reviewer's Batch 1 review)
 
 `QUEUE.md` holds the full specs. `TASK.md` has B1 active. B1: null / non-object
-records crash merge/migrate/resetDay (reproduced by Muse on `b7d61f0`).
+records crash merge/migrate/resetDay (reproduced on `b7d61f0`).
 B2: nested `__proto__` inside a record survives sanitize (inert today).
 B3: `node --test test/` fails on Node 24 — fix the test script to the glob.
 
-## Batch 1 — COMPLETE Nov 8 (L1–L5, all T1, verified by Muse at `b7d61f0`)
+## Batch 1 — COMPLETE Nov 8 (L1–L5, all T1, verified at `b7d61f0`)
 
 `QUEUE.md` holds the full specs (history — do not re-run). L1 rest pure slice,
 L2 partials audit, L3 sessionDrift, L4 a11y pass, L5 security audit.
@@ -143,7 +143,7 @@ hostile coverage is one test. Probes: `__proto__` /
 non-array sets, hostile session lifts. Plus SW discipline
 (`gym-v7`) and the threat-model paragraph in `PLAN.md`.
 
-## Next (T2 — Muse designs first)
+## Next (T2 — the Planner/Reviewer designs first)
 
 ### L6 — Exercise swap map [T2]
 Curated alternates per lift (e.g. what replaces Smith squat if the

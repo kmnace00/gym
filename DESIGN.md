@@ -192,7 +192,7 @@ Verification: `npm run check`, `npm run typecheck`, `npm run e2e` at 390×667 an
 390×844; v2→v3 migration, rollover, extra-set/edit round-trip, bodyweight
 volume/metric, corruption quarantine, and no-scroll.
 
-## L9 design (2026-11-08, Muse) — Full rest-controller extraction [T2]
+## L9 design (2026-11-08) — Full rest-controller extraction [T2]
 
 Status: BUILT Nov 9, 06:12 CT (Khang approved at 05:45). The build contract
 below is what shipped; the two parity drifts found in review are recorded in
@@ -404,7 +404,7 @@ user at 165.3 never adopts one) — the alternative needs a "user set this"
 flag; (b) the field and the store both cap at 700 lb, so an imported value
 above that falls back to the default.
 
-## Batch 3 T2: nextLift wrap (Nov 9, Muse)
+## Batch 3 T2: nextLift wrap (Nov 9)
 
 Problem: `rest.js` `nextLift(idx, len, firstOpen)` falls back to the
 literal next index when no open lift exists *after* the current one,
@@ -437,7 +437,7 @@ Invariants: the 400 ms GO guard and the 2,500/2,600 ms two-tap finish
 are untouched; a fully-done day still reaches Finish, never an
 infinite advance loop; no program-data change. Rollback: one revert.
 
-## Batch 3 T2: bodyweight resolution helper (Nov 9, Muse)
+## Batch 3 T2: bodyweight resolution helper (Nov 9)
 
 Problem: "Banked `bwKg` wins, else current bodyweight, else 165" is
 re-implemented in `app.js` `bwFor` and three separate inline ternaries
@@ -462,7 +462,7 @@ banked value), `test/enhancements.test.js` (only if it covers
 here — that needs a `bodyweightSet` schema flag (BACKLOG, Khang's
 call); this item only de-duplicates the rule.
 
-## Batch 4 T2: corrupt-payload salvage (Nov 9, Muse)
+## Batch 4 T2: corrupt-payload salvage (Nov 9)
 
 Problem: `store.js` `load()` treats any unparseable payload as a total
 loss — `migrate()` returns null, the raw bytes are quarantined, and an
@@ -514,7 +514,7 @@ keys cannot survive salvage (same sanitize path as import); no
 program-data change. Rollback: one revert.
 
 
-## Batch 5 T2: lift-page redesign (Nov 9, Muse)
+## Batch 5 T2: lift-page redesign (Nov 9)
 
 Khang's direction (Nov 9): the lift page "can be improved,
 especially this page — empty space, lots of text together at the
@@ -583,7 +583,7 @@ Decisions:
    The meta line must show its full text on the longest
    prescription in the program (no ellipsis) — assert it in e2e.
 
-**Prototype check (Muse, Nov 9, scratch clone at `d1e18e3`,
+**Prototype check (Nov 9, scratch clone at `d1e18e3`,
 nothing pushed):** the design's core bet is proven. Gap
 141.9 → 0 px at 390×844 (47.3 → 0 at 390×667); set rows grew
 44 → 103 px (844) / 65 px (667); `scrollHeight` == viewport at
