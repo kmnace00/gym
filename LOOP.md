@@ -1,6 +1,10 @@
 # LOOP — continuous improvement framework
 
-Date: 2026-11-08 · Owner: Khang · Planner: Planner/Reviewer · Builder: OpenCode (local Mac)
+Date: 2026-11-08 · Owner: Khang
+
+Workflow (triage tiers, roles, model pins, the critic and its off-peak rule)
+lives in the global `~/.config/opencode/AGENTS.md` and the global agent
+definitions. This project does not define its own roles or model pins.
 
 Goal: keep improving the gym tool without Khang pasting prompts or
 supervising each step — research → optimize → ship, in small verified
@@ -8,12 +12,9 @@ cycles — while program numbers, quota, and safety stay under his control.
 
 ## Roles
 
-- **The Planner/Reviewer (planner + reviewer).** Picks the next item, does the research,
-  writes the task, reviews the diff, verifies Pages live. Burns its quota, so the Planner/Reviewer works in bounded batches (below), never an open-ended run.
-- **OpenCode (builder, Mac, local model).** Reads the task, implements
-  exactly one item, runs the full verification suite, logs it, pushes.
-  Essentially free; time is the trade-off. Never plans, never picks the
-  next item on its own, never changes program data.
+The roles are the global ones (see the pointer above). What this project adds
+is Khang's authority only:
+
 - **Khang.** Decides program-data changes, new features, and phone
   tap-through. Stops / pauses the loop any time by saying so.
 
@@ -125,8 +126,8 @@ Khang approves the schedule first.
 That is also why the loop is queue-batched, not poll-per-item.
 The Planner/Reviewer is not live — it only checks when pinged or scheduled — so
 "OpenCode finishes one item, waits for the Planner/Reviewer, which writes the next
-one" would leave the free local model idle most of the time and
-burn quota on every single item. Instead the Planner/Reviewer writes a whole
+one" would leave the local model idle most of the time and
+spend the review budget on every single item. Instead the Planner/Reviewer writes a whole
 `QUEUE.md` batch up front, OpenCode works through it, and the Planner/Reviewer
 reviews the batch in one pass. OpenCode polls for new Planner/Reviewer commits
 only when its queue is empty.

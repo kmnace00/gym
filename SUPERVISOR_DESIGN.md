@@ -4,7 +4,11 @@ Date: 2026-11-09 · Status: **DRAFT — design only. Nothing is installed,
 nothing on the Mac has been changed, and `LOOP.md` is not amended
 until Khang approves this design and the build gates below pass.
 Gate 0 COMPLETE 2026-11-09 (see §10) — spawn method decided: A.**
-Owner: Khang · Planner: Planner/Reviewer · Builder: OpenCode (local Mac)
+Owner: Khang
+
+Workflow (triage tiers, roles, model pins, the critic and its off-peak rule)
+lives in the global `~/.config/opencode/AGENTS.md` and the global agent
+definitions. This project does not define its own roles or model pins.
 
 ## 1. The problem this solves — and only this problem
 
@@ -79,8 +83,8 @@ The Planner/Reviewer (planner/reviewer)                    Khang (owner)
 │           ├─ state + lock + logs: ~/.gym-supervisor/       │
 │           ├─ lease gate → gym-sync (§6)                    │
 │           └─ spawns ONE fresh builder (§5)                 │
-│                └─ OpenCode (default model, unchanged)      │
-│                     └─ local Qwen — builds, tests, logs    │
+│                └─ OpenCode (global default, unchanged)     │
+│                     └─ builds, tests, logs                 │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -138,11 +142,12 @@ one-line reason. Exit code is 0 for every "nothing to do" outcome.
 7. **Is there work?** Parse the active-work signal (§7). No active
    batch → record HEAD as seen, exit. `LOOP_STATE.md` says
    `PAUSED` → exit.
-8. **Pre-flight.** The local model endpoint answers:
-   `curl -m 5 http://127.0.0.1:8010/v1/models` → HTTP 200 (Gate 0
-   verified; the server has no `/health` route — `/v1/models` is
-   the check; model `qwen3.8-flash-next`, launchd `com.dstar.serve`
-   loaded). The OpenCode CLI exists at `~/.opencode/bin/opencode`
+8. **Pre-flight.** The local model endpoint configured in the global
+   framework answers: `curl -m 5 <base-url>/v1/models` → HTTP 200
+   (Gate 0 verified; the server has no `/health` route — `/v1/models`
+   is the check; launchd `com.dstar.serve` loaded). Which model that
+   endpoint serves is the global framework's call, not this project's.
+   The OpenCode CLI exists at `~/.opencode/bin/opencode`
    (v2.2.5; Gate 0 environment: macOS 27.2 arm64, Python 3.14.6,
    Node v26.13.0). Either fails → log, notify, exit — never spawn
    a builder that cannot run.
@@ -154,8 +159,8 @@ one-line reason. Exit code is 0 for every "nothing to do" outcome.
 
 **A. `opencode run` (headless CLI) — the spawn method.** Gate 0
 evidence (Nov 9, `GATE0_REPORT.md`, commit `b5f85ea`): a headless
-run with the configured default model (`ds4/qwen3.8-flash-next`,
-agent `build`) exited 0 in 47 s and produced exactly the requested
+run with the configured default model (the global pin, agent `build`)
+exited 0 in 47 s and produced exactly the requested
 file, with no model flag and no permission intervention. There is
 no `--directory` flag — the project root is the process CWD, so
 the supervisor spawns with CWD = the Mac repo. `--format json` is
@@ -185,8 +190,8 @@ Two spawn details Gate 0 surfaced:
 The spawn shape:
 
 - CWD = the Mac repo. Model/config untouched — the run uses
-  OpenCode's configured default (Slotstream pool stays at its
-  settled 24 GB; no config change of any kind).
+  OpenCode's configured default (the local model server's memory
+  allocation stays as settled; no config change of any kind).
 - The prompt is generated from a file in the repo,
   `SUPERVISOR_PROMPT.md` — the current loop prompt **minus** the
   waiting/watch steps, **plus** three lines: work the queue in

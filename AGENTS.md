@@ -2,6 +2,10 @@
 
 Applies to every session in this folder, every time, without being asked.
 
+Workflow (triage tiers, roles, model pins, the critic and its off-peak rule)
+lives in the global `~/.config/opencode/AGENTS.md` and the global agent
+definitions. This project does not define its own roles or model pins.
+
 ## Sync first — before any work, every session and every new task
 
 1. Run `git fetch origin` and `git status -sb`.

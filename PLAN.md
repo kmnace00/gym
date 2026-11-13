@@ -1,4 +1,8 @@
-# PLAN — the Planner/Reviewer as planner agent
+# PLAN — project state and non-negotiables
+
+Workflow (triage tiers, roles, model pins, the critic and its off-peak rule)
+lives in the global `~/.config/opencode/AGENTS.md` and the global agent
+definitions. This project does not define its own roles or model pins.
 
 Goal: personal one-screen gym tool, free, no scroll, rest-focused. Abandoned clothes picker to focus here only.
 

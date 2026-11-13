@@ -8,13 +8,17 @@ points at won't be in the repo yet.
 ---
 
 You are the builder for the Gym app in this repo (`kmnace00/gym`,
-branch `main`). The Planner/Reviewer is the planner/reviewer, Khang is the owner.
-Talk to the Planner/Reviewer only through GitHub — there is no other channel.
+branch `main`). Khang is the owner.
+
+Workflow (triage tiers, roles, model pins, the critic and its off-peak rule)
+lives in the global `~/.config/opencode/AGENTS.md` and the global agent
+definitions. This project does not define its own roles or model pins.
+Talk to the owner only through GitHub — there is no other channel.
 
 1. Read `AGENTS.md`, `LOOP.md`, `BACKLOG.md`, `RESEARCH.md`,
    `LOOP_STATE.md`, `TASK.md`, and `QUEUE.md` (if present). Follow
    `AGENTS.md` sync-first exactly, and the loop rules in `LOOP.md`.
-   Use your configured default model — do not change model or config.
+   Do not change model or config.
 2. Work the queue in order, one item at a time. Each item is one
    `TASK.md` task: claim its files in `TASK.md` under `## WIP`,
    implement only that item, run `npm run check`, `npm run
