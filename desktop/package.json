@@ -1,0 +1,14 @@
+{
+  "name": "gym-desktop",
+  "productName": "Gym",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gym — a phone-shaped desktop window around the live app (Electron).",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "45.3.1"
+  }
+}

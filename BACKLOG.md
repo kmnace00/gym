@@ -41,6 +41,25 @@ before `goto`, so the seeded `accSec: 1800` is arithmetic rather than a race and
 `"30:00"` assertion stays. Validation: spec 11/11, then full `npm run e2e` × 3 = 172 passed
 each, exit 0; `check` 228/228, typecheck clean. Release shipped in the v131 commit.
 
+## Nov 13 — v132 batch (Khang's four items: N16, N17, N18, D1)
+
+Khang named these four and specified them in chat; `program.js` untouched.
+
+| # | Item | Triage |
+|---|---|---|
+| N16 | Day-header read-only week line: Fri/Sat/Sun + a status dot each (`Stats.weekStatus`), the viewed day marked, the day's time beside it. No buttons — the chevrons still switch days | T1 (specified) |
+| N17 | Bodyweight edit does not stick (set 150, later reads 165) | T1 |
+| N18 | "Clock learning" note clipped behind the next menu button | T1 |
+| D1 | macOS desktop app: 400 px phone window on the live site, no fork, no sync | T1 (specified) |
+
+Status lines (one per item, per house rules):
+
+- N16 BUILT (v132 release commit): `.dayweek` slim line in `.dayhead` — `renderDayWeek()` reads `Stats.weekStatus`/`dayMins`; each day is name + dot (done filled / partial half / today ring / missed / upcoming), the viewed day is accent + underlined, the viewed day's `~N min` sits right-aligned (the cluster stays beside the `#daySummary` progress readout). Visual row is `aria-hidden`; `#dayWeekSummary` carries the sentence ("This week: Fri done, Sat today, Sun upcoming. Viewing Fri — about 92 minutes."). No new ids beyond those two; nothing tappable. Existing day fit holds: 390×667 rows 56.1 px min, no scroll. `e2e/dayweek.spec.js` (6 tests: states-match-`weekStatus`, chevron/viewed marker/time, fit at both sizes).
+- N17 BUILT (v132): root cause was the `change`-only listener plus `renderBw()` refilling the input from the saved payload on every menu open — a typed value that had not produced a `change` yet (iOS can dismiss the numeric keypad, or a render/reload can land first) was replaced by the saved 165. Fix: `saveBw()` persists every legal value on `input` as well, `renderBw()` leaves a focused field alone, and the invalid path restores in place. `e2e/bodyweight.spec.js` (2 tests; the persistence test fails on the pre-fix code).
+- N18 BUILT (v132): `.modalmsg` was a shrinkable flex item (`flex: 0 1 auto`, `min-height:1.1em`), so a two-line note was compressed to one line's height and painted under the following button. `.modalmsg` is now `flex:none` with a 1.35 line-height, and the starter copy is the shorter "Clock learning: starter values until 3 timed sessions." `e2e/menunote.spec.js` (4 tests: starter + learned two-line case at both sizes; both fail on the pre-fix CSS).
+- D1 BUILT (v132): `desktop/` — Electron main process (`desktop/main.js`, 400 px content width, `min 340`, 820 tall) loads the live site (`https://kmnace00.github.io/gym/`, override with `GYM_DESKTOP_URL`), so there is one codebase and no sync. Opens with `desktop/Start Gym.command` (double-click; installs Electron once), `npm run desktop` from the root, or `cd desktop && npm install && npm start`. Launch check on the Mac: `GYM_DESKTOP_SMOKE` reported `width 400`, 8 lift rows, day title on screen, screenshot at the phone layout. Root gates do not cover `desktop/` (thin shell, no app logic).
+- Gates for the web batch: `npm run check` 228/228 unit, check-assets/ids/sw-cache OK; `npm run typecheck` clean; `npm run e2e` 182 passed (390×667 + 390×844, up from 172 — 10 new tests). CACHE-HASH `21ab4d6cbe2ca860`, `GYM_VERSION` `gym-v132`.
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.

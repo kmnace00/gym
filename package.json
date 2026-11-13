@@ -7,6 +7,7 @@
     "test": "node --test test/*.test.js",
     "icons": "node tools/make-icons.js",
     "e2e": "playwright test",
+    "desktop": "npm --prefix desktop start",
     "typecheck": "tsc -p jsconfig.json --noEmit",
     "check:assets": "node tools/check-assets.js",
     "check:sw": "node tools/check-sw-cache.js",

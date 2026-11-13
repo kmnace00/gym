@@ -64,7 +64,7 @@
       info.hidden = false;
       btn.hidden = false;
     } else {
-      info.textContent = "Clock learning: estimates use starter values until 3 timed sessions are banked.";
+      info.textContent = "Clock learning: starter values until 3 timed sessions.";
       info.hidden = false;
       btn.hidden = true;
     }
@@ -331,6 +331,32 @@
     return daysBetween(anchor, today) >= 35 && !loggedThisWeek(today);
   }
 
+  /* N16: a read-only week line in the day header — Fri/Sat/Sun with a status
+     dot each, the viewed day marked, and that day's scheduled time beside it.
+     Deliberately not interactive: the chevrons stay the only way to switch
+     days. The visual row is aria-hidden; screen readers get the same facts as
+     one sentence, the same bargain the Progress heat card makes.            */
+  var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
+  var WEEK_DAY_NAME = { fri: "Fri", sat: "Sat", sun: "Sun" };
+  function renderDayWeek() {
+    var el = document.getElementById("dayWeek");
+    if (!el) return;
+    var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
+    var mins = dayMins(cur, calOpts());
+    el.innerHTML = wk.map(function (w) {
+      return '<span class="dwday ' + w.state + (w.day === cur ? " on" : "") + '">' +
+        '<i class="dwdot"></i>' + WEEK_DAY_NAME[w.day] + "</span>";
+    }).join("") + '<span class="dwtime">~' + mins + " min</span>";
+    var sr = document.getElementById("dayWeekSummary");
+    if (sr) {
+      var spoken = wk.map(function (w) {
+        return WEEK_DAY_NAME[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
+      }).join(", ");
+      sr.textContent = "This week: " + spoken + ". Viewing " + WEEK_DAY_NAME[cur] +
+        " — about " + mins + " minutes.";
+    }
+  }
+
   function renderDay() {
     var list = DAYS[cur].ex, totalDone = 0, totalSets = 0, i, hasHist = false;
     for (i = 0; i < list.length; i++) {
@@ -342,6 +368,7 @@
     var deloadBar = document.getElementById("deloadBar");
     if (deloadBar) deloadBar.hidden = !deloadActive(payload);
     document.getElementById("dayTitle").textContent = DAYS[cur].label;
+    renderDayWeek();
     var summary = complete
       ? "Workout complete — nice work"
       : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min" + (totalDone > 0 ? " left" : "");
@@ -1915,9 +1942,27 @@
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
 
   /* ── bodyweight + snapshot recovery ───────────────────────────────────── */
+  /* N17: an edit must survive a render before the field blurs. The old
+     listener was `change`-only, and renderBw() refills the input from the
+     saved payload every time the menu opens, so a typed value could be
+     replaced by the default before the change event ever landed (iOS can
+     dismiss the numeric keypad — or the app can re-render / reload — without
+     firing it). Persist every legal value as it is typed, and never clobber a
+     field that still has focus.                                             */
+  function saveBw(raw) {
+    var v = parseFloat(raw);
+    if (!(isFinite(v) && v >= 66 && v <= 700)) return false;
+    v = Math.round(v * 10) / 10;
+    if (payload.bodyweight === v && payload.bodyweightSet === true) return true;
+    payload.bodyweight = v;
+    payload.bodyweightSet = true;
+    commit();
+    return true;
+  }
   function renderBw() {
     var inp = document.getElementById("bwInput");
-    if (inp) inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 165);
+    if (!inp || document.activeElement === inp) return;
+    inp.value = String(payload && payload.bodyweight ? payload.bodyweight : 165);
   }
   /* B6-09: the deload controls only show the action that is available */
   function renderDeload() {
@@ -1936,14 +1981,17 @@
     commit(); render(); updateFoot();
     setMsg("Deload week ended — normal targets restored.");
   };
-  document.getElementById("bwInput").addEventListener("change", function () {
-    var v = parseFloat(this.value);
-    if (isFinite(v) && v >= 66 && v <= 700) {
-      payload.bodyweight = Math.round(v * 10) / 10;
-      payload.bodyweightSet = true;
-      commit(); render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
+  var bwInput = document.getElementById("bwInput");
+  bwInput.addEventListener("input", function () {
+    if (saveBw(this.value)) setMsg("Bodyweight set to " + payload.bodyweight + " lb");
+  });
+  bwInput.addEventListener("change", function () {
+    if (saveBw(this.value)) {
+      render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
     } else {
-      renderBw(); setMsg("Bodyweight must be 66–700 lb");
+      /* still focused, so renderBw() would decline — restore in place */
+      this.value = String(payload.bodyweight || 165);
+      setMsg("Bodyweight must be 66–700 lb");
     }
   });
   document.getElementById("restoreSnapshot").onclick = function () {

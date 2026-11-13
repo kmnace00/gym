@@ -84,6 +84,17 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 .dayhead{flex:none;display:flex;flex-direction:column;gap:2px;padding:0 4px 10px}
 .daytitle{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2;flex:1}
 .daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* N16: read-only week line — day names + status dots + the viewed day's time.
+   One slim row, no buttons: the chevrons remain the only way to switch days. */
+.dayweek{flex:none;display:flex;align-items:center;gap:10px;min-height:15px;font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--faint);font-variant-numeric:tabular-nums}
+.dwday{display:inline-flex;align-items:center;gap:5px}
+.dwday.on{color:var(--accent);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
+.dwdot{display:block;width:7px;height:7px;border-radius:999px;background:transparent;border:1.5px solid var(--line)}
+.dwday.done .dwdot{background:var(--accent);border-color:var(--accent)}
+.dwday.partial .dwdot{background:linear-gradient(90deg,var(--accent) 50%,transparent 50%);border-color:var(--accent)}
+.dwday.today .dwdot{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent-soft)}
+.dwday.missed .dwdot{border-color:var(--faint)}
+.dwtime{margin-left:auto;color:var(--muted);font-weight:700}
 .firstrun{font-size:12px;color:var(--muted);line-height:1.3;text-wrap:balance}
 .liftlist{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
 .liftrow{
@@ -346,6 +357,7 @@ h1{
 @media (max-height:720px){
   .app{gap:8px;padding-top:9px}
   .dayhead{padding-bottom:6px}
+  .dayweek{font-size:11px;gap:8px;min-height:14px}
   .liftlist{gap:5px}
   h1{font-size:23px;margin:0 0 4px}
   .guide{margin-top:4px;font-size:13.5px;line-height:1.4}
@@ -388,7 +400,9 @@ h1{
    snapshot must not be there at all (B5-12) */
 .modalbtn[hidden]{display:none}
 .modalbtn:active{filter:brightness(1.15)}
-.modalmsg{min-height:1.1em;font-size:12.5px;color:var(--accent)}
+/* N18: never let the two-line clock-learning note shrink into one line and
+   paint under the next button — a flex item must keep its content height. */
+.modalmsg{flex:none;min-height:1.1em;font-size:12.5px;line-height:1.35;color:var(--accent)}
 .modalfoot{font-size:11px;color:var(--faint);text-align:center;margin-top:2px;padding-top:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 
 /* ── progression suggestion + sparkline ────────────────────────────────── */
