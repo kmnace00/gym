@@ -2,6 +2,6 @@
    sw.js importScripts() it, and the menu footer prints it — so the version the
    user sees is the version the cache is keyed on. Bump GYM_VERSION when an asset
    changes; tools/check-sw-cache.js keeps the CACHE-HASH in sw.js honest.      */
-var GYM_VERSION = "gym-v130";
+var GYM_VERSION = "gym-v131";
 
 if (typeof module === "object" && module.exports) module.exports = { GYM_VERSION: GYM_VERSION };

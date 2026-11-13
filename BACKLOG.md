@@ -18,6 +18,29 @@ its historical mentions below are records of finished batches, not protocol.
 
 None. `CRITIQUE_PENDING` entries (see the global framework) go here.
 
+## Nov 13 — v131 release gate: intermittent e2e flake (PRE-EXISTING on main, publish paused)
+
+`npm run e2e` on `v131-candidate` + the v131 version bump: 4 full-suite runs, **3 green
+(172 passed, exit 0), 1 red** — `e2e/pass4.spec.js:246` "finishing from the rest screen…"
+asserted `#sumDuration` `"30:00"`, got `"30:02"`.
+
+- **Cause (test brittleness, not app logic):** the test seeds `accSec: 1800` with
+  `runningSince: null`, then the app starts a live clock on the first set; the summary
+  reads `accSec + (now - runningSince)` (`store.js:759-760`), so the assertion races the
+  seconds spent clicking through. Under `fullyParallel` load that is ±2s.
+- **Not from this candidate, not from the release diff:** the test line is `9d65a63`
+  (2026-11-09), an ancestor of `c9453e7` on `main`. The v131 release diff touches only
+  `version.js` (`GYM_VERSION`) and the `CACHE-HASH` comment in `sw.js`.
+- **Options for Khang:** publish v131 now (gate green on the last 3 runs; flake is
+  pre-existing) — or harden the assertion first (tolerate ±5s / freeze the clock), which
+  is a separate item. Publishing is paused pending his call.
+
+**Resolved Nov 13 — Khang chose "harden the test first".** `e2e/pass4.spec.js:246` now
+installs a frozen clock (`page.clock.install`, the same house pattern as `e2e/rest.spec.js`)
+before `goto`, so the seeded `accSec: 1800` is arithmetic rather than a race and the exact
+`"30:00"` assertion stays. Validation: spec 11/11, then full `npm run e2e` × 3 = 172 passed
+each, exit 0; `check` 228/228, typecheck clean. Release shipped in the v131 commit.
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.

@@ -246,6 +246,10 @@ test("undoing the edited set restores the working load", async ({ page }) => {
 test("finishing from the rest screen finalizes the session and shows the summary", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  /* the summary prints a live clock (accSec + now - runningSince, store.js:759), so the
+     seeded 30:00 drifts by however long the clicks take under parallel load — freeze
+     time so "30:00" is the arithmetic, not a race against the runner */
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
 
   await page.goto(url);
   const { day, date } = await today(page);
