@@ -100,6 +100,8 @@
      flagged lowest-confidence entry). Deliberately NOT a ratio table:
      machine loads do not transfer, so everything else stays blank.         */
   var LOAD_GUESS_FACTOR = { "sun-cable-fly": 0.7 };
+  /* Which lift anchors each guess (the factor's input), by stable lift id. */
+  var LOAD_GUESS_FROM = { "sun-cable-fly": "fri-pec-deck" };
   function guessLoad(e, anchorLoad) {
     if (!e || typeof anchorLoad !== "number" || !(anchorLoad > 0)) return null;
     var f = LOAD_GUESS_FACTOR[e.id];
@@ -321,7 +323,7 @@
     STRETCH_SECS: STRETCH_SECS, SETUP_SECS: SETUP_SECS,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
-    rampFor: rampFor, guessLoad: guessLoad,
+    rampFor: rampFor, guessLoad: guessLoad, LOAD_GUESS_FROM: LOAD_GUESS_FROM,
     epley1rm: epley1rm, progressMetric: progressMetric, suggestLoad: suggestLoad,
     qualifies: qualifies, stallLoad: stallLoad, planFor: planFor,
     deloadSets: deloadSets, deloadLoad: deloadLoad

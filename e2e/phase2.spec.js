@@ -64,15 +64,15 @@ test("isolations get no ramp line in the lift view", async ({ page }) => {
 
 test("the Sunday cable fly starts from the marked pec-deck guess", async ({ page }) => {
   await page.goto(url);
-  await seedDay(page, "sun", {});
-  await page.locator('.day[data-day="sun"]').click();
+  await seedDay(page, "sun", {}); // N12: the day tabs are gone; the seed opens Sunday
   await page.locator(".liftrow").nth(3).click(); // Cable fly
   await expect(page.locator("#exPres")).toContainText("starting guess");
   await expect(page.locator("#loadVal")).toHaveText("70"); // pec deck 100 x 0.7
   await page.locator("#backBtn").click();
   await expect(page.locator(".liftrow").nth(3).locator(".liftmeta")).toContainText("(guess)");
   // and a null-load lift with no anchor still starts light
-  await page.locator('.day[data-day="fri"]').click();
+  await page.locator("#dayNext").click(); // sun → fri (the chevron cycles the three days)
+  await expect(page.locator("#dayTitle")).toHaveText("Friday — Push + Quads");
   await page.locator(".liftrow").nth(5).click(); // Fri leg extension, load null, no guess
   await expect(page.locator("#exPres")).toContainText("start light");
 });

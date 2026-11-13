@@ -48,7 +48,8 @@ for (const size of sizes) {
       await expect(page.locator("#setLog .setrow")).toHaveCount(3);
       const m = await page.evaluate(() => {
         const rows = [...document.querySelectorAll("#setLog .setrow")];
-        const hs = rows.map((r) => Math.round(r.getBoundingClientRect().height));
+        const rowH = rows.map((r) => r.getBoundingClientRect().height);
+        const hs = rowH.map((h) => Math.round(h));
         const log = document.getElementById("setLog").getBoundingClientRect();
         const pillBottom = Math.max(
           ...[document.getElementById("undoSetBtn"), document.getElementById("resetLiftBtn")]
@@ -58,7 +59,8 @@ for (const size of sizes) {
         const gap = document.querySelector(".adjust").getBoundingClientRect().top
           - rows[rows.length - 1].getBoundingClientRect().bottom;
         return {
-          hs, log: Math.round(log.height), gap: +gap.toFixed(1),
+          hs, rowsSum: rowH.reduce((a, b) => a + b, 0), logRaw: log.height,
+          gap: +gap.toFixed(1),
           clear: +(rowTop - pillBottom).toFixed(1)
         };
       });
@@ -66,9 +68,9 @@ for (const size of sizes) {
       const shortest = Math.min(...m.hs);
       expect(shortest, "rows must keep the 44px tap target").toBeGreaterThanOrEqual(44);
       expect(m.gap, "the log absorbs the slack: no void above the adjust cluster").toBeLessThanOrEqual(8);
-      expect(m.log, "the log fills its region, rows grow with it").toBeGreaterThanOrEqual(m.hs.reduce((a, b) => a + b, 0) + 2 * 4);
+      expect(m.logRaw, "the log fills its region, rows grow with it").toBeGreaterThanOrEqual(m.rowsSum + 2 * 4 - 1);
       expect(tallest, "a set row is still one line of content").toBeLessThanOrEqual(120);
-      expect(m.clear, "Undo/Restart (44px pills, -7px margins) must not touch the first set row").toBeGreaterThanOrEqual(1);
+      expect(m.clear, "Undo/Restart (44px pills, in flow) must not touch the first set row").toBeGreaterThanOrEqual(1);
     });
 
     test("no overflow with suggestion + sparkline + RIR hint (worst case)", async ({ page }) => {

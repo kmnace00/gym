@@ -566,7 +566,7 @@
     var e = ex(), s = curSt();
     var wl = workingLoad(s);
     document.getElementById("loadVal").textContent = s.swapAlt
-      ? (wl > 0 ? wl : "—")
+      ? swLoadLabel(wl)
       : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
@@ -697,7 +697,7 @@
     renderSetLog(e, s);
 
     document.getElementById("loadVal").textContent = sw
-      ? (wl > 0 ? wl : "—")
+      ? swLoadLabel(wl)
       : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     rirRow.querySelectorAll(".rir").forEach(function (b) {

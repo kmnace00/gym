@@ -10,6 +10,7 @@ test("resting peek is quiet, the clock shows once, GO restores the editor", asyn
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") }); // so the rest can be run out
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);
 
@@ -41,11 +42,13 @@ test("resting peek is quiet, the clock shows once, GO restores the editor", asyn
   await page.locator("#doneBtn").click(); // finish the edit -> quiet again
   await expect(page.locator("#doneBtn")).toBeHidden();
 
-  // GO restores the full editor
-  await page.locator("#skipRest").click();
+  // GO restores the full editor (the rest is 3:00; run the clock out)
+  await page.clock.runFor(185000);
   await expect(page.locator("#restTime")).toHaveText("GO");
   await expect(page.locator("#exName")).toBeVisible();
   await expect(page.locator("#doneBtn")).toBeVisible();
+  await expect(page.locator("#loadUp")).toBeVisible();
+  await expect(page.locator("#rirRow")).toBeVisible();
 
   // the next rest closes the details again and the card clock is back
   await page.locator("#doneBtn").click(); // set 2 logged -> rest starts

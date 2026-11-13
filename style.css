@@ -128,7 +128,10 @@ h1{
 .guide .cue{font-weight:600}
 .cue{display:inline;font-size:15px;line-height:1.5;color:var(--muted)}
 .tempo{display:inline;color:var(--faint);font-size:12px}
-.sethead{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 9px}
+.sethead{flex:none;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 6px}
+/* N1: no negative margins on the pills any more, so the visible gap above the
+   first set row is the border gap itself — 6px, the same beat as the rows
+   (B10-01: rhythms are measured on painted boxes). */
 /* N14: the alternatives chooser under the sethead — one pill per alternate */
 .swapchoices{flex:none;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 9px}
 .swapchoices[hidden]{display:none}

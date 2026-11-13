@@ -3,7 +3,10 @@
    topStack (nav-row bottom -> first setrow top) 217.8 at 390x844, 177.1 at
    390x667; setlog bottom -> .adjust top gap 141.9 / 47.3; set rows 44px.
    The new contract: top stack >=20% shorter, gap <=8px, rows grow to fill
-   the log, nothing scrolls, nothing clips.                              */
+   the log, nothing scrolls, nothing clips. N1 (Nov 13) then put the 44px
+   action pills fully in flow (+14px, no negative margins) and N7 added the
+   ramp guide to the first lift's view, so the budget allows for exactly
+   those two blocks and everything else must still meet the 20% cut.        */
 const { test, expect } = require("@playwright/test");
 const path = require("path");
 
@@ -43,18 +46,15 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       });
       expect(m.clear, "44px pills must not touch the first set row").toBeGreaterThanOrEqual(1);
       if (size.height === 844) {
-        expect(Math.abs(m.headGap - 3 - m.rowGap), "painted rhythm: border gap minus pill bleed equals the row gap").toBeLessThanOrEqual(0.6);
-        // B10-01 rebalance: the border gap is 9px, of which 3px is the
-        // pills' transparent bleed zone — the PAINTED gap (asserted below)
-        // is the 6px beat. All-up bleed (-14) crowded the guide instead.
-        expect(m.headGap, "border gap above the first row (3px is pill bleed)").toBeCloseTo(9, 0);
+        // N1 (Nov 13): the action pills sit fully in flow now — no negative
+        // margins — so the visible gap above the first row is the border gap.
+        // B10-01 still holds: it equals the gap between rows (the 6px beat).
+        expect(m.headGap, "border gap above the first row equals the row gap").toBeCloseTo(m.rowGap, 0);
         expect(m.navGap, "nav -> name is 8px").toBeCloseTo(8, 0);
         expect(m.presGap, "name -> prescription is 8px").toBeCloseTo(8, 0);
         expect(m.rirMt, "RIR row margin-top is 8px").toBe("8px");
         // B10-01: the rhythm is a PAINTED-box rhythm — the gap the eye sees
         // between the pills and the first row equals the gap between rows.
-        // (B6-11 measured border boxes only; the pills' downward bleed ate
-        // 5 of the 6px and the stack looked like it was hitting the pills.)
         expect(Math.abs(m.paintedGap - m.rowGap), "painted gap above the first row equals the gap between rows").toBeLessThanOrEqual(0.6);
       }
     });
@@ -76,8 +76,10 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
         const log = document.getElementById("setLog").getBoundingClientRect();
         const adj = document.querySelector(".adjust").getBoundingClientRect();
         const h = (el) => +el.getBoundingClientRect().height.toFixed(1);
+        const rampEl = document.getElementById("rampLine");
         return {
           topStack: +(rows[0].getBoundingClientRect().top - nav.bottom).toFixed(1),
+          ramp: rampEl.getBoundingClientRect().height ? +(rampEl.getBoundingClientRect().height + 8).toFixed(1) : 0, // + its 8px top margin
           gap: +(adj.top - log.bottom).toFixed(1),
           rows: rows.map(h),
           rir: Math.min(...[...document.querySelectorAll(".rir")].map(h)),
@@ -87,8 +89,15 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
         };
       });
 
-      expect(m.topStack, "the top stack must be >=20% shorter than the baseline")
-        .toBeLessThanOrEqual(0.8 * BASE[size.height]);
+      // B5-01's twenty-percent cut was calibrated on the pre-N1 layout, where
+      // the 44px action pills painted 14px INTO the gap above them (negative
+      // margins) and there was no ramp guide. N1 (Nov 13) put those pills
+      // fully in flow and N7 added the ramp line to the first lift's view;
+      // both are deliberate, so the budget allows for exactly those two
+      // blocks (+2px for rounding) and everything else must still fit the cut.
+      const N1_PILL_INFLOW = 14, ROUNDING = 2;
+      expect(m.topStack - m.ramp, "the top stack must be >=20% shorter than the baseline (plus N1's in-flow pills)")
+        .toBeLessThanOrEqual(0.8 * BASE[size.height] + N1_PILL_INFLOW + ROUNDING);
       expect(m.gap, "no void between the last set row and the adjust cluster").toBeLessThanOrEqual(8);
       expect(Math.min(...m.rows), "set rows keep the 44px tap target").toBeGreaterThanOrEqual(44);
       expect(m.rir, "RIR pills stay 44px").toBeGreaterThanOrEqual(44);

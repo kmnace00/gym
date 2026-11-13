@@ -59,7 +59,7 @@ test("a logged set carries a timestamp", async ({ page }) => {
 
 test("editing a set marks it edited and keeps its timestamp", async ({ page }) => {
   await page.goto(url);
-  await seed(page, { 0: 1 });
+  await seed(page, { doneMap: { 0: 1 } });
   const before = await page.evaluate(() => {
     const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
     return p.state["fri:0"] ? p.state["fri:0"].sets[0].t : p.state[Object.keys(p.state)[0]].sets[0].t;

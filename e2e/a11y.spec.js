@@ -81,13 +81,23 @@ for (const size of sizes) {
 
       await page.locator("#detailsBtn").click();
       await noOverflow(page);
-      await expect(page.locator("#exName")).toBeVisible();
-      await expect(page.locator("#doneBtn")).toBeVisible();
+      // N11: a running rest peek is quiet — the rest card is the working
+      // surface and the editor waits for GO (or for a set edit). The set log
+      // stays as the reference, and the rest controls keep their 44px targets.
+      await expect(page.locator("#setLog")).toBeVisible();
+      await expect(page.locator("#exName")).toBeHidden();
+      await expect(page.locator("#doneBtn")).toBeHidden();
 
       await boxAtLeast(page.locator("#plus15"), 44, 44);
       await boxAtLeast(page.locator("#pauseRest"), 44, 44);
       await boxAtLeast(page.locator("#skipRest"), 44, 44);
       await boxAtLeast(page.locator(".detailsbtn"), 44, 44);
+
+      // ending the rest restores the editor (GO and idle both do)
+      await page.locator("#skipRest").click();
+      await noOverflow(page);
+      await expect(page.locator("#exName")).toBeVisible();
+      await expect(page.locator("#doneBtn")).toBeVisible();
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
@@ -433,17 +443,17 @@ test("the menu is reachable on a short phone", async ({ page }) => {
 });
 
 /* B3-24 — adherence is drawn with symbols and colour, so a screen reader needs
-   the states in words: every week cell carries an aria-label, and the heat card
-   carries a hidden sentence instead of a bare "11/24". */
-test("the week strip names each day's state and the heat card states the count (B3-24)", async ({ page }) => {
+   the states in words. N12 removed the week strip (day switching lives on the
+   day chevrons, week state in Progress), so the states are read from the heat
+   card: the cells carry the pattern and the hidden summary states the count. */
+test("the heat card names each week's training days and states the count (B3-24)", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
 
-  /* The strip projects the most recent Fri–Sun block and calls any day after
-     today "upcoming" (stats.js weekStatus), so "in progress" and "missed" only
-     exist once that block is in the past. The clock is pinned to the Wednesday
-     the journey tests use, which puts 30–31 Oct and 1 Nov behind it. */
+  /* The heatmap projects the last 8 Fri–Sun blocks (stats.js progressSnapshot),
+     so the clock is pinned to the Wednesday the journey tests use — which puts
+     30–31 Oct in a finished week. */
   await page.clock.install({ time: new Date("2026-11-04T10:00:00") }); // Wednesday
   const fri = "2026-10-30", sat = "2026-10-31";
   const history = {};
@@ -454,19 +464,16 @@ test("the week strip names each day's state and the heat card states the count (
   await page.evaluate((h) => localStorage.setItem("gym-tool-v2", JSON.stringify({ v: 2, cur: "fri", idx: 0, state: {}, liftHistory: h })), history);
   await page.reload();
 
-  const cells = await page.locator(".wk").all();
-  expect(cells.length).toBe(3);
-  const expected = ["Friday, done", "Saturday, in progress", "Sunday, missed"];
-  for (let i = 0; i < cells.length; i++) {
-    expect(await cells[i].getAttribute("role"), `week cell ${i} must be a named image so its label is read`).toBe("img");
-    expect(await cells[i].getAttribute("aria-label"), `week cell ${i} must name its state`).toBe(expected[i]);
-  }
-  expect(await page.locator(".wk i").first().getAttribute("aria-hidden"), "the symbol is decorative").toBe("true");
-
   await page.locator("#progressBtn").click();
+
+  // 8 weeks × Fri/Sat/Sun, each cell named for a screen reader by the summary
+  expect(await page.locator("#heatmap .hweek").count()).toBe(8);
+  expect(await page.locator("#heatmap .hday").count()).toBe(24);
   const box = await page.locator("#heatSummary").boundingBox();
   expect(box && box.width <= 1 && box.height <= 1, "the summary is for screen readers only").toBe(true);
   const count = (await page.locator("#pHeatCount").textContent()).split("/")[0];
+  expect(count, "two training days were seeded into the finished week").toBe("2");
+  expect(await page.locator("#heatmap .hday.on").count(), "the painted cells agree with the count").toBe(2);
   expect((await page.locator("#heatSummary").textContent()) || "", "heat card names the count")
     .toContain(count + " of 24 training days in the last 8 weeks");
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e)), "no console errors").toEqual([]);
@@ -511,6 +518,11 @@ for (const size of sizes) {
       });
       await page.locator(".liftrow").first().click();
       await page.locator("#swapBtn").click();
+
+      // N14: Swap opens the alternatives chooser — every pill is a 44px target
+      await expect(page.locator("#swapChoices")).toBeVisible();
+      await boxAtLeast(page.locator(".swapchoice").first(), 44, 44);
+      await page.locator(".swapchoice", { hasText: "Barbell back squat" }).click();
 
       await expect(page.locator("#exName")).toHaveText("Barbell back squat");
       await expect(page.locator("#swapSub")).toBeVisible();
