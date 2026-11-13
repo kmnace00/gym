@@ -45,6 +45,12 @@ test("the chooser lists the alternates; each keeps its own load", async ({ page 
   await expect(page.locator("#exName")).toHaveText("Leg press");
   await expect(page.locator("#loadVal")).toHaveText("light");
 
+  // the stepper fast path (updateLiftReadouts) shows the same word at 0
+  await page.locator("#loadUp").click();
+  await expect(page.locator("#loadVal")).toHaveText("2.5");
+  await page.locator("#loadDown").click();
+  await expect(page.locator("#loadVal")).toHaveText("light");
+
   // back to the barbell: its own 10 is remembered
   await page.locator("#swapBtn").click(); // undo
   await page.locator("#swapBtn").click(); // chooser again

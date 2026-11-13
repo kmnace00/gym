@@ -443,10 +443,13 @@ test("the menu is reachable on a short phone", async ({ page }) => {
 });
 
 /* B3-24 — adherence is drawn with symbols and colour, so a screen reader needs
-   the states in words. N12 removed the week strip (day switching lives on the
-   day chevrons, week state in Progress), so the states are read from the heat
-   card: the cells carry the pattern and the hidden summary states the count. */
-test("the heat card names each week's training days and states the count (B3-24)", async ({ page }) => {
+   the states in words. N12 removed the week strip and with it B3-24's per-day
+   naming (Friday, done / Saturday, missed) — Khang retired that row outright —
+   and P9's week visibility now lives in Progress. What remains here is the
+   heat card's accessible count: the grid is decorative and the hidden summary
+   states "N of 24 training days". Per-day state naming in Progress is carried
+   as an open a11y item in BACKLOG; this test pins today's contract only. */
+test("the heat card states the count for the last 8 weeks (B3-24)", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));

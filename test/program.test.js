@@ -65,6 +65,20 @@ test("guessLoad: only the Sunday cable fly has an anchor", () => {
   assert.equal(P.guessLoad(ohExt, 100), null); // load:null but no anchor -> stays blank by design
 });
 
+/* N8: the guess anchor map is API, not an implementation detail — app.js reads
+   `Gym.LOAD_GUESS_FROM[e.id]` on every null-load lift, and a missing export
+   threw inside renderLift (blank prescription) while the whole unit suite
+   stayed green. Pin the map, its single entry, and both ids being real.     */
+test("LOAD_GUESS_FROM: the cable fly is anchored to Friday's pec deck", () => {
+  assert.equal(typeof P.LOAD_GUESS_FROM, "object");
+  assert.deepEqual(Object.keys(P.LOAD_GUESS_FROM), ["sun-cable-fly"]);
+  assert.equal(P.LOAD_GUESS_FROM["sun-cable-fly"], "fri-pec-deck");
+  const ids = new Set();
+  Object.keys(P.DAYS).forEach((d) => P.DAYS[d].ex.forEach((e) => ids.add(e.id)));
+  assert.ok(ids.has("sun-cable-fly"), "the guess target must be a program lift id");
+  assert.ok(ids.has(P.LOAD_GUESS_FROM["sun-cable-fly"]), "the anchor must be a program lift id");
+});
+
 test("dayMinsLeft: nothing done equals the full day", () => {
   for (const d of ["fri", "sat", "sun"]) assert.equal(P.dayMinsLeft(d, {}), P.dayMins(d));
 });
