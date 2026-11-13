@@ -50,17 +50,16 @@ Open it on iPhone from the Pages URL, add to Home Screen.
 
 CI (`.github/workflows/ci.yml`) runs `npm run check` and the Playwright suite on every push to `main` and every pull request.
 
-## How the Planner/Reviewer + OpenCode work here
+## How work happens here
 
-The Planner/Reviewer is the planner agent. OpenCode is the builder on the Mac.
-The Planner/Reviewer writes `TASK.md`. OpenCode pulls the branch, reads `TASK.md`, builds, tests, updates `BUILD_LOG.md`, pushes back.
-No paste loop — the repo is the handoff.
+OpenCode is the only agent; GitHub is the host. There is no external planner and
+no paste loop — the repo is the handoff.
 
-Continuous improvement runs on the loop in `LOOP.md`: the Planner/Reviewer plans a
-bounded batch into `QUEUE.md`, OpenCode works it one item at a time,
-`BACKLOG.md` holds ranked ideas, `RESEARCH.md` holds the science,
-`LOOP_STATE.md` is the checkpoint. Program-data changes and new
-features always need Khang's explicit approval first.
+`BACKLOG.md` is the live backlog (ranked, `[T1]`/`[T2]`/`[T3]`), `RESEARCH.md` holds
+the science, and `DESIGN.md` holds the designs still in force. The Muse-era loop —
+`LOOP.md`, `QUEUE.md`, `TASK.md`, `LOOP_STATE.md`, `BUILD_LOG.md`, `PLAN.md` and the
+Python supervisor — is retired and kept under `archive/muse-era/` as history only.
+Program-data changes and new features always need Khang's explicit approval first.
 
 ## Rules (do not break)
 

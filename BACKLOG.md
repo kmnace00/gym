@@ -5,10 +5,18 @@
 B6-01 (`Stats.parseKey` round-trip) is BUILT + VERIFIED. The decision-gated items are decided: on Nov 10 Khang delegated them ("Do the gym improvement list, do whatever you think is best") and the Planner/Reviewer decided all of them — P9 ATTRIBUTE (fix week-strip/heatmap visibility), `bodyweightSet` flag ADOPTED (schema v5), P6 2-for-2 ADOPTED, P8 APPROVED, P11 alternate list APPROVED for all 24 lifts (log under the original id with a swap marker, progression-exempt), P5 Bulgarian rest 120 → 150 APPROVED, P7 deload week APPROVED as a manual mode. Full rationale in `DECISIONS.md`; buildable specs in `QUEUE.md` as B6-02…B6-10 in dependency order. Nothing from this batch remains in the backlog sections below — the P5–P9 / P11 texts there are replaced with pointers.
 
 
-Not instructions. An item becomes work only when the Planner/Reviewer promotes it into
-`QUEUE.md` / `TASK.md`. Order is value ÷ risk, highest first.
-`[T1]` buildable now · `[T2]` needs a Planner/Reviewer design first ·
+This file is the live backlog. An item becomes work only when Khang names it (or
+it is the top `[T1]` here). Order is value ÷ risk, highest first.
+`[T1]` buildable now · `[T2]` needs a design first ·
 `[T3]` Khang-only proposal — the loop never builds it.
+
+The Muse-era queue machinery (`QUEUE.md`, `TASK.md`, `LOOP_STATE.md`, `LOOP.md`,
+`BUILD_LOG.md`, `PLAN.md`, the supervisor) is archived under `archive/muse-era/`;
+its historical mentions below are records of finished batches, not protocol.
+
+## Critique pending
+
+None. `CRITIQUE_PENDING` entries (see the global framework) go here.
 
 ## Batch 5 — QUEUED Nov 9 (1 T2 + 19 T1, from three Planner/Reviewer audits + Khang's redesign direction)
 
