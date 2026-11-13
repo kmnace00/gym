@@ -27,6 +27,11 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // the launch check must see the live site, not the persistent profile's
+      // service-worker cache, so it runs in a throwaway in-memory partition
+      ...(process.env.GYM_DESKTOP_SMOKE
+        ? { partition: "gym-smoke-" + process.pid }
+        : {}),
     },
   });
 
