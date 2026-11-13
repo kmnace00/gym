@@ -432,13 +432,15 @@ test("the week strip names each day's state and the heat card states the count (
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
 
-  const key = (dt) => dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
-  const fri = new Date();
-  fri.setDate(fri.getDate() - ((fri.getDay() + 2) % 7)); // most recent Friday
-  const sat = new Date(fri); sat.setDate(sat.getDate() + 1);
+  /* The strip projects the most recent Fri–Sun block and calls any day after
+     today "upcoming" (stats.js weekStatus), so "in progress" and "missed" only
+     exist once that block is in the past. The clock is pinned to the Wednesday
+     the journey tests use, which puts 30–31 Oct and 1 Nov behind it. */
+  await page.clock.install({ time: new Date("2026-11-04T10:00:00") }); // Wednesday
+  const fri = "2026-10-30", sat = "2026-10-31";
   const history = {};
-  for (let i = 0; i < 8; i++) history["fri:" + i] = [{ date: key(fri), load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 8 }];
-  for (let i = 0; i < 3; i++) history["sat:" + i] = [{ date: key(sat), load: 40, reps: 6, rir: 2, hitTop: false, setsDone: 3 }];
+  for (let i = 0; i < 8; i++) history["fri:" + i] = [{ date: fri, load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 8 }];
+  for (let i = 0; i < 3; i++) history["sat:" + i] = [{ date: sat, load: 40, reps: 6, rir: 2, hitTop: false, setsDone: 3 }];
 
   await page.goto(url);
   await page.evaluate((h) => localStorage.setItem("gym-tool-v2", JSON.stringify({ v: 2, cur: "fri", idx: 0, state: {}, liftHistory: h })), history);
