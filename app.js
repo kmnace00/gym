@@ -81,7 +81,7 @@
     return null;
   }
   function rampText(ramp) {
-    return (ramp.kind === "full" ? "Ramp: " : "Feeler: ") + ramp.steps.map(function (s2) { return s2.load + "×" + s2.reps; }).join(" · ");
+    return (ramp.kind === "full" ? "Ramp: " : ramp.kind === "feeler" ? "Feeler: " : "Warm-up: ") + ramp.steps.map(function (s2) { return s2.load + "×" + s2.reps; }).join(" · ");
   }
   /* B6-10: the one filter every progression read goes through. A session feeds
      the 2-for-2 / stall / trend maths only if it was neither logged under a

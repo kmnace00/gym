@@ -5,6 +5,12 @@ const path = require("path");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
+/* N14 is Friday-anchored (alternate loads are seeded against today's day);
+   pin a Friday clock so the spec is deterministic on any run day. */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+});
+
 async function openFirstLift(page) {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

@@ -129,7 +129,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       })));
       await page.reload();
       await page.locator(".liftrow").nth(7).click();
-      await expect(page.locator("#exName")).toHaveText("Standing calf raise");
+      await expect(page.locator("#exName")).toHaveText("Calf press");
 
       const meta = await page.evaluate(() => {
         const el = document.getElementById("exPres");

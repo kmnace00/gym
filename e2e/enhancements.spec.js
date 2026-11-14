@@ -10,6 +10,12 @@ async function seed(page, obj) {
   await page.reload();
 }
 
+/* Several checks seed a Friday state and assert Friday lifts/layout; pin a
+   Friday clock so the spec is deterministic on any run day. */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+});
+
 test("overdue backup banner backs up on tap and dismisses on ✕ (B5-04)", async ({ page }) => {
   const seedOverdue = () => seed(page, {
     v: 2, cur: "fri", idx: 0, state: {},

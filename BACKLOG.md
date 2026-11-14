@@ -61,6 +61,22 @@ Status lines (one per item, per house rules):
 - Gates for the web batch: `npm run check` 228/228 unit, check-assets/ids/sw-cache OK; `npm run typecheck` clean; `npm run e2e` 182 passed (390×667 + 390×844, up from 172 — 10 new tests). CACHE-HASH `21ab4d6cbe2ca860`, `GYM_VERSION` `gym-v132`.
 - Critic follow-ups (v132, commit noted in git log): `npm run desktop` now installs `desktop/` deps first (fresh-clone path works); `desktop/main.js` gained a `will-navigate` guard (same deny→external-browser rule as the window-open handler); `test/desktop.test.js` pins the Electron posture (contextIsolation, sandbox, no Node, deny handlers, loads the live app); `e2e/dayweek.spec.js` gained the aria contract (visual row `aria-hidden`, sr-only sentence is the only copy) and the taller in-progress header fit at 390×667. Re-gated: unit 229/229, typecheck clean, e2e 184 passed; CACHE-HASH unchanged (no web asset changed).
 
+## Nov 14 — v133 batch (Khang's named items: N19, N20, N21, N22, N23)
+
+Khang named these five and shipped a `program.js` diff (approved numbers). SHIPPED as `gym-v133`.
+
+Status lines (one per item, per house rules):
+
+- N19 BUILT (v133): Saturday rename-in-place (same `exId`, history carries): `sat-cable-rdl` → "Smith machine RDL" (hinge cue kept; "Cable RDL" stays as an alternate), `sat-tbar-row` → "MTS row" (cue now "Chest tall, pull to ribs."), and both `sat-calf-raise`/`sun-calf-raise` → "Calf press" (Standing calf raise first in alts, pause cue kept). History/progression untouched because ids are unchanged.
+- N20 BUILT (v133): the Bayesian curl retires — `sat-bayesian-curl` is replaced by `sat-rope-hammer-curl` ("Rope hammer curl", cable rope, neutral grip, 3×10–12, rest 90s, 1 RIR, partial, load null) in the same slot before preacher. `store.reconcile` now re-homes any state/history entry whose stamped `exId` is no longer a programme lift to a retired `"old:" + exId` key, so the Bayesian's banked history survives under its old id (still counts toward volume/CSV) while the new curl starts clean. `stats.personalRecords` skips non-program (`old:`) keys so there is no ghost Bayesian PR.
+- N21 BUILT (v133): every loaded, non-first/non-feeler lift now shows a display-only "Warm-up:" line (50% load × half reps, snapped to step) before its first set — never logged. Full ramps and feelers (rest ≥ 150s) still apply where they already did. Skipped for bodyweight / unloaded (load null) / zero load / **assisted** lifts (e.g. the assisted dip: its logged number is help, so 50% would be *heavier* than the working set — flagged to Khang). `RAMP_WARM_SECS = 40s` per warm-up in the `dayMins` estimate.
+- N22 BUILT (v133): each day closes with a display-only Zone 2 finisher card ("Zone 2 — 10 min (incline walk or bike)"), not a lift. `FINISHER_SECS = 600s` counted in `dayMins`/`dayMinsLeft` totals.
+- N23 BUILT (v133): all three gates green — `check` OK (235 unit / check-assets / check-ids / check-sw-cache), `typecheck` clean, `e2e` 187 passed (exit 0).
+
+New estimated day totals (was 92 / 86 / 88): **Fri 104 min · Sat 98 min · Sun 100 min**, via `dayMins`.
+
+Test counts: unit 235/235, e2e 187/187. CLOCK DETERMINISM: the suite is Friday-anchored, so `phase1/phase2/alts/enhancements/features` specs now pin a Friday clock (`page.clock.install`, same house pattern) — the pre-existing Saturday failures (proven at baseline via `git stash`) are gone on any run day. `GYM_VERSION` `gym-v133`, CACHE-HASH `eccfc82e61ebd539`.
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.

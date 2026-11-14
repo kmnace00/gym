@@ -406,7 +406,8 @@
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
       p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
-      name = DAYS && DAYS[d] && DAYS[d].ex[idx] ? DAYS[d].ex[idx].n : k;
+      name = DAYS && DAYS[d] && DAYS[d].ex[idx] ? DAYS[d].ex[idx].n
+        : (arr.length && arr[0] && typeof arr[0].exId === "string" ? arr[0].exId : k);
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; if (!e) continue;
         sets = Array.isArray(e.sets) && e.sets.length ? e.sets : [{ load: e.load, reps: e.reps, rir: e.rir }];
@@ -430,7 +431,11 @@
       arr = lh[k] || []; best = null; bestM = -Infinity;
       p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
       ex = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[idx] : null;
-      name = ex ? ex.n : k;
+      /* N20: a retired lift's history sits under an "old:" key. It still
+         counts toward total volume, but it is not a live lift, so it never
+         surfaces as a current personal record (top movers already skip it). */
+      if (!ex) continue;
+      name = ex.n;
       isBw = !!(ex && ex.bw);
       isAssist = !!(ex && ex.assist);
       for (i = 0; i < arr.length; i++) {

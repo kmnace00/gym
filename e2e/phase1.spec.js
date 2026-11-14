@@ -5,6 +5,13 @@ const path = require("path");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
+/* The suite is Friday-anchored (todayDay()/dateKey() are checked against today's
+   weekday-relative fixtures). Pin a Friday clock so the spec is deterministic
+   on any run day. */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+});
+
 async function seed(page, doneMap) {
   const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
   await page.evaluate(({ day, date, doneMap }) => {

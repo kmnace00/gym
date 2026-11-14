@@ -5,6 +5,13 @@ const path = require("path");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
+/* The suite is Friday-anchored (todayDay()/dateKey() and the Friday day-summary
+   total are asserted). Pin a Friday clock so the spec is deterministic on any
+   run day. */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+});
+
 async function seedDay(page, dayKey, doneMap) {
   const date = await page.evaluate(() => Gym.dateKey());
   await page.evaluate(({ dayKey, date, doneMap }) => {
@@ -28,7 +35,7 @@ test("the day summary quotes the honest total (stretch + setup + ramps)", async 
   await page.goto(url);
   const day = await page.evaluate(() => Gym.todayDay());
   await seedDay(page, day, {});
-  await expect(page.locator("#daySummary")).toContainText("~92 min"); // Fri: 75 base + 17 honest
+  await expect(page.locator("#daySummary")).toContainText("~104 min"); // Fri: 92 + N21 warm-ups + 10:00 finisher
 });
 
 test("the first lift shows its full ramp before set 1, then never again", async ({ page }) => {
@@ -54,12 +61,16 @@ test("the rest before a heavy lift's first set shows its feeler", async ({ page 
   await expect(page.locator("#restPrepRamp")).toHaveText("Feeler: 15×4");
 });
 
-test("isolations get no ramp line in the lift view", async ({ page }) => {
+test("an unloaded lift gets no ramp line; a loaded isolation gets its N21 warm-up", async ({ page }) => {
   await page.goto(url);
   const day = await page.evaluate(() => Gym.todayDay());
   await seedDay(page, day, {});
-  await page.locator(".liftrow").nth(4).click(); // Pec deck fly, rest 90
+  await page.locator(".liftrow").nth(5).click(); // Fri leg extension, load null
   await expect(page.locator("#rampLine")).toBeHidden();
+  await page.locator("#backBtn").click();
+  await page.locator(".liftrow").nth(4).click(); // Pec deck fly, load 100, rest 90 -> N21 warm-up
+  await expect(page.locator("#rampLine")).toBeVisible();
+  await expect(page.locator("#rampLine")).toHaveText("Warm-up: 50×4");
 });
 
 test("the Sunday cable fly starts from the marked pec-deck guess", async ({ page }) => {

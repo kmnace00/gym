@@ -89,6 +89,43 @@ test("reconcile keeps the fuller record on a key collision", () => {
   assert.equal(p.state["sat:0"].done, 3);
 });
 
+/* N20 — a retired lift (no longer in the program) keeps its banked history
+   under its old id and never strands at its old slot for the replacement. */
+test("reconcile retires a stale-exId state record to old:<id>", () => {
+  const p = { state: { "sat:4": { done: 3, load: 13, exId: "sat-bayesian-curl" } }, liftHistory: {} };
+  S.reconcile(p, DAYS);
+  assert.ok(p.state["old:sat-bayesian-curl"], "retired record moved to its retired key");
+  assert.equal(p.state["old:sat-bayesian-curl"].done, 3);
+  assert.ok(!p.state["sat:4"], "the slot is left empty for the replacement lift");
+});
+
+test("reconcile retires stale-exId history under old:<id>, not the old slot", () => {
+  const p = {
+    state: {},
+    liftHistory: {
+      "sat:4": [
+        { date: "2026-11-01", load: 13, reps: 8, rir: 1, setsDone: 3, exId: "sat-bayesian-curl" },
+        { date: "2026-11-08", load: 14, reps: 8, rir: 1, setsDone: 3, exId: "sat-bayesian-curl" }
+      ]
+    }
+  };
+  S.reconcile(p, DAYS);
+  assert.equal(p.liftHistory["old:sat-bayesian-curl"].length, 2, "history preserved under the old id");
+  assert.ok(!p.liftHistory["sat:4"], "the slot carries nothing for the new lift");
+});
+
+test("reconcile keeps real program lifts resolving alongside retired ones", () => {
+  const p = {
+    state: { "sat:4": { done: 2, exId: "sat-rope-hammer-curl" } },
+    liftHistory: {
+      "sat:4": [{ date: "2026-11-15", load: 15, reps: 10, rir: 1, setsDone: 3, exId: "sat-rope-hammer-curl" }]
+    }
+  };
+  S.reconcile(p, DAYS); // DAYS has no "sat-rope-hammer-curl", so as far as reconcile knows it is retired
+  assert.equal(p.state["old:sat-rope-hammer-curl"].done, 2);
+  assert.equal(p.liftHistory["old:sat-rope-hammer-curl"].length, 1);
+});
+
 /* ── trainingDays: the 8-week Fri/Sat/Sun heatmap ───────────────────────── */
 
 test("trainingDays marks the Fri/Sat/Sun of each training week", () => {

@@ -5,6 +5,12 @@ const path = require("path");
 
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 
+/* Several checks seed a Friday state and assert Friday lifts/layout; pin a
+   Friday clock so the spec is deterministic on any run day. */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+});
+
 async function seed(page, obj) {
   await page.goto(url);
   await page.evaluate((o) => localStorage.setItem("gym-tool-v2", JSON.stringify(o)), obj);

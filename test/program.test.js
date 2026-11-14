@@ -18,14 +18,15 @@ test("fmt", () => {
 
 test("dayMins matches the published per-day totals", () => {
   // N6 honest clock: base sets/rests + 5:00 stretch + 15s setup per set +
-  // ramp time. Fri 75 base -> 92, Sat 69 -> 86, Sun 72 -> 88.
-  assert.equal(P.dayMins("fri"), 92);
-  assert.equal(P.dayMins("sat"), 86);
-  assert.equal(P.dayMins("sun"), 88);
+  // ramp time; N21 adds ~40s per warm-up load lift; N22 adds the 10:00
+  // finisher that closes every day. Fri 92 -> 104, Sat 86 -> 98, Sun 88 -> 100.
+  assert.equal(P.dayMins("fri"), 104);
+  assert.equal(P.dayMins("sat"), 98);
+  assert.equal(P.dayMins("sun"), 100);
 });
 
-test("dayMins: zeroing the calibration leaves base + ramps only", () => {
-  assert.equal(P.dayMins("fri", { stretch: 0, setup: 0 }), 81); // 75 + 270s full + 75s feeler
+test("dayMins: zeroing the calibration leaves base + ramps + finisher only", () => {
+  assert.equal(P.dayMins("fri", { stretch: 0, setup: 0 }), 93); // base + ramps + N21 warm-ups + 10:00 finisher
   assert.ok(P.dayMins("fri", { stretch: 0 }) < P.dayMins("fri"));
   assert.ok(P.dayMins("fri", { setup: 0 }) < P.dayMins("fri"));
 });
@@ -44,15 +45,17 @@ test("rampFor: full ramp for the first lift, snapped to the step", () => {
   });
 });
 
-test("rampFor: one feeler for later heavy lifts only", () => {
+test("rampFor: one feeler for later heavy lifts; N21 warm-up for the rest", () => {
   assert.deepEqual(P.rampFor(P.DAYS.fri.ex[2], 25, false), { kind: "feeler", secs: 75, steps: [{ load: 15, reps: 4 }] }); // Bulgarian, rest 150
-  assert.equal(P.rampFor(P.DAYS.fri.ex[4], 100, false), null); // pec deck, rest 90
-  assert.equal(P.rampFor(P.DAYS.fri.ex[1], 50, false), null);  // Smith incline, rest 120
+  // N21: every other load-bearing lift gets one warm-up set (50% × half reps).
+  assert.deepEqual(P.rampFor(P.DAYS.fri.ex[4], 100, false), { kind: "warm", secs: 40, steps: [{ load: 50, reps: 4 }] }); // pec deck, rest 90
+  assert.deepEqual(P.rampFor(P.DAYS.fri.ex[1], 50, false), { kind: "warm", secs: 40, steps: [{ load: 25, reps: 3 }] });  // Smith incline, rest 120
 });
 
-test("rampFor: never for bodyweight, unloaded, or guessed lifts", () => {
+test("rampFor: never for bodyweight, unloaded, guessed, or assisted lifts", () => {
   assert.equal(P.rampFor(P.DAYS.fri.ex[7], 0, true), null);    // an explicit zero load earns no ramp
   assert.equal(P.rampFor(P.DAYS.sun.ex[6], null, false), null); // overhead cable extension, load null
+  assert.equal(P.rampFor(P.DAYS.fri.ex[7], 45, false), null);   // assisted dip: the number is help, so 50% would be heavier
   assert.equal(P.rampFor(null, 100, true), null);
 });
 
@@ -93,8 +96,9 @@ test("dayMinsLeft: all done except 2 remaining sets of lift 0", () => {
   const st = {};
   P.DAYS.fri.ex.forEach((e, i) => { st["fri:" + i] = { done: e.s }; });
   st["fri:0"] = { done: 1 }; // 2 sets left, rest 180
-  // 2*50 + 2*180 = 460s, single lift left => no transition => round(460/60)=8
-  assert.equal(P.dayMinsLeft("fri", st), 8);
+  // 2*50 + 2*180 = 460s, single lift left => no transition; + the 10:00 finisher
+  // still ahead (N22) => round((460+600)/60) = 18
+  assert.equal(P.dayMinsLeft("fri", st), 18);
 });
 
 test("getLift injects defaults", () => {
@@ -276,6 +280,58 @@ test("every lift carries approved alternates (B6-06; the list is N14)", () => {
     }
   }
   assert.equal(count, 24, "the program schedules 24 lifts");
+});
+
+/* N19 — exercise swaps (rename in place, same ids, history carries) */
+test("N19 renames: Smith machine RDL, MTS row, Calf press (both days)", () => {
+  const by = (id) => ["fri", "sat", "sun"].flatMap((d) => P.DAYS[d].ex).find((e) => e.id === id);
+  const rdl = by("sat-cable-rdl");
+  assert.equal(rdl.n, "Smith machine RDL");
+  assert.ok(rdl.alts.includes("Cable RDL"));
+  assert.ok(rdl.cue.includes("Hips back"), "the RDL keeps its hinge cue");
+  const row = by("sat-tbar-row");
+  assert.equal(row.n, "MTS row");
+  assert.deepEqual(row.alts, ["One-arm DB row", "Chest-supported machine row", "Barbell bent-over row", "T-bar row"]);
+  assert.equal(row.cue, "Chest tall, pull to ribs.");
+  assert.ok(!/25\+25\+25/.test(row.cue), "the MTS row drops the T-bar plate-math cue");
+  assert.equal(by("sat-calf-raise").n, "Calf press");
+  assert.equal(by("sun-calf-raise").n, "Calf press");
+  assert.equal(by("sat-calf-raise").alts[0], "Standing calf raise");
+  assert.equal(by("sun-calf-raise").alts[0], "Standing calf raise");
+  assert.ok(by("sat-calf-raise").cue.includes("Pause"), "the calf pause cue is kept");
+});
+
+/* N20 — the Bayesian curl retires; the rope hammer curl replaces it */
+test("N20: the Bayesian curl is replaced by the rope hammer curl (new id)", () => {
+  const all = ["fri", "sat", "sun"].flatMap((d) => P.DAYS[d].ex);
+  assert.ok(!all.some((e) => e.id === "sat-bayesian-curl"), "the Bayesian id no longer schedules");
+  assert.ok(!all.some((e) => e.n === "Bayesian curl"), "no lift is still named Bayesian curl");
+  const curl = all.find((e) => e.id === "sat-rope-hammer-curl");
+  assert.ok(curl, "the new rope hammer curl exists in the same slot");
+  assert.equal((["fri", "sat", "sun"]).findIndex((d) => P.DAYS[d].ex.some((x) => x.id === "sat-rope-hammer-curl")), 1, "slot is Saturday");
+  assert.equal(P.DAYS.sat.ex[4].id, "sat-rope-hammer-curl", "sits before preacher curl");
+  assert.equal(P.DAYS.sat.ex[5].id, "sat-preacher-curl");
+  assert.equal(curl.n, "Rope hammer curl");
+  assert.deepEqual(curl.alts, ["Bayesian curl", "Incline DB curl", "EZ-bar curl"]);
+  assert.equal(curl.s, 3); assert.equal(curl.r, 10); assert.equal(curl.top, 12);
+  assert.equal(curl.rest, 90); assert.equal(curl.rir, 1); assert.equal(curl.partial, 1);
+  assert.equal(curl.load, null, "start light");
+});
+
+/* N22 — the finisher is part of every day's scheduled total */
+test("N22: the Zone 2 finisher adds 10 minutes to each day's estimate", () => {
+  // The zero-cal total (no stretch, no setup) is lift time + ramp/warm-up
+  // + the 10:00 finisher; it must be at least 10 minutes more than the raw
+  // lift work. (Raw lift seconds = sets*(set+0) + sets*rest, no ramps.)
+  for (const d of ["fri", "sat", "sun"]) {
+    const list = P.DAYS[d].ex;
+    const liftSec = list.reduce((t, e) => t + e.s * P.SET_SECS + e.s * e.rest, 0);
+    const total = P.dayMins(d, { stretch: 0, setup: 0 }) * 60;
+    assert.ok(
+      total - liftSec - list.filter((e) => P.rampFor(e, e.load, e === list[0])).reduce((t, e) => t + P.rampFor(e, e.load, e === list[0]).secs, 0) >= 600,
+      `finisher ≥600s counted on ${d}`
+    );
+  }
 });
 
 /* B6-09 — deload-week helpers (no programme numbers change) */

@@ -966,7 +966,7 @@
      program (and for legacy records that never stored an exId).             */
   function reconcile(p, DAYS) {
     if (!p || !DAYS) return p;
-    var idKey = {}, d, i, list, e, k, hk, arr, j, target;
+    var idKey = {}, d, i, list, e, k, hk, arr, j, target, en;
     for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
       list = DAYS[d].ex;
       for (i = 0; i < list.length; i++) { e = list[i]; if (e && e.id) idKey[e.id] = d + ":" + i; }
@@ -977,7 +977,11 @@
     var newState = {};
     for (k in p.state) if (Object.prototype.hasOwnProperty.call(p.state, k)) {
       var rec = p.state[k];
-      target = rec && rec.exId && idKey[rec.exId] ? idKey[rec.exId] : k;
+      /* N20: a record whose stamped exId is no longer a programme lift (some
+         lifts retire, e.g. the Bayesian curl) follows its id to a retired
+         key instead of stranding at its old slot and being read by whatever
+         lift sits there now. A lift without an exId stays where it is.      */
+      target = rec && rec.exId ? (idKey[rec.exId] || "old:" + rec.exId) : k;
       if (newState[target]) {
         var a = newState[target], b = rec;
         newState[target] = (b && (b.done || 0) > (a.done || 0)) ? b : a;
@@ -988,11 +992,17 @@
     var newHist = {};
     for (hk in p.liftHistory) if (Object.prototype.hasOwnProperty.call(p.liftHistory, hk)) {
       arr = p.liftHistory[hk] || [];
-      target = hk;
+      /* per-entry routing: each entry follows its own stamped id. An entry
+         whose exId is still in the program lands on that lift's slot; one
+         whose id has been retired lands on its retired key ("old:" + id), so
+         the Bayesian's banked history survives under its old id and never
+         feeds progression / prefill for the lift that replaced it. Legacy
+         entries without an exId stay at their original key.                 */
       for (j = 0; j < arr.length; j++) {
-        if (arr[j] && arr[j].exId && idKey[arr[j].exId]) { target = idKey[arr[j].exId]; break; }
+        en = arr[j];
+        target = en && en.exId ? (idKey[en.exId] || "old:" + en.exId) : hk;
+        (newHist[target] = newHist[target] || []).push(en);
       }
-      newHist[target] = (newHist[target] || []).concat(arr);
     }
     for (k in newHist) if (Object.prototype.hasOwnProperty.call(newHist, k)) {
       var seen = Object.create(null);

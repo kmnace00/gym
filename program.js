@@ -33,13 +33,13 @@
     ] },
     sat: { label: "Saturday — Pull + Hinge", ex: [
       { id: "sat-front-pulldown", n: "MTS front pulldown", alts: ["Pull-ups (band-assisted if <5 reps)", "Cable lat pulldown"], s: 3, r: 7, top: 9, load: 90, step: 5, rest: 120, rir: 2, cue: "Elbows to ribs. Full stretch at top." },
-      { id: "sat-cable-rdl", n: "Cable RDL", alts: ["DB Romanian deadlift", "Barbell Romanian deadlift"], s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
-      { id: "sat-tbar-row", n: "T-bar row", alts: ["One-arm DB row (chest-supported if possible)", "Chest-supported machine row", "Barbell bent-over row"], s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "25+25+25. Chest-supported if you can." },
+      { id: "sat-cable-rdl", n: "Smith machine RDL", alts: ["DB Romanian deadlift", "Barbell Romanian deadlift", "Cable RDL"], s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
+      { id: "sat-tbar-row", n: "MTS row", alts: ["One-arm DB row", "Chest-supported machine row", "Barbell bent-over row", "T-bar row"], s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "Chest tall, pull to ribs." },
       { id: "sat-leg-curl", n: "Seated leg curl", alts: ["Nordic hamstring curl (eccentric-only, assisted)", "Lying leg curl machine", "Slider leg curl"], s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
-      { id: "sat-bayesian-curl", n: "Bayesian curl", alts: ["Incline DB curl", "EZ-bar curl", "Cable curl"], s: 3, r: 8, top: 10, load: 13, step: 1, rest: 90, rir: 1, partial: 1, cue: "Arm behind body, elbow fixed." },
+      { id: "sat-rope-hammer-curl", n: "Rope hammer curl", alts: ["Bayesian curl", "Incline DB curl", "EZ-bar curl"], s: 3, r: 10, top: 12, load: null, step: 1, rest: 90, rir: 1, partial: 1, cue: "Cable rope, neutral grip — elbows fixed." },
       { id: "sat-preacher-curl", n: "Preacher curl", alts: ["Spider curl (chest-supported on incline bench)", "Machine preacher curl", "Incline DB curl"], per: "side", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
       { id: "sat-rear-delt", n: "Rear delt crossover", alts: ["Bent-over DB reverse fly", "Reverse pec deck", "Cable rear-delt fly"], s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
-      { id: "sat-calf-raise", n: "Standing calf raise", alts: ["Single-leg DB calf raise on a step", "Seated calf raise", "Leg press calf raise"], s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
+      { id: "sat-calf-raise", n: "Calf press", alts: ["Standing calf raise", "Single-leg DB calf raise on a step", "Seated calf raise", "Leg press calf raise"], s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
     ] },
     sun: { label: "Sunday — Light / Machines", ex: [
       { id: "sun-leg-press", n: "Leg press / Hack squat", alts: ["Barbell back squat", "Goblet squat (heels elevated)", "Smith squat"], s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
@@ -49,7 +49,7 @@
       { id: "sun-seated-row", n: "Machine seated row", alts: ["Barbell bent-over row", "One-arm DB row", "Cable seated row"], s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
       { id: "sun-lat-pec", n: "Lateral raise ↔ Reverse pec deck", alts: ["DB lateral raise + bent-over DB reverse fly", "Cable lateral raise + cable rear-delt fly", "Machine lateral raise + reverse pec deck"], s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
       { id: "sun-oh-ext", n: "Overhead cable extension", alts: ["Single-arm DB overhead extension", "EZ-bar skullcrusher", "DB overhead extension (two-hand)"], s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
-      { id: "sun-calf-raise", n: "Standing calf raise", alts: ["Single-leg DB calf raise on a step", "Seated calf raise", "Smith calf raise"], s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
+      { id: "sun-calf-raise", n: "Calf press", alts: ["Standing calf raise", "Single-leg DB calf raise on a step", "Seated calf raise", "Smith calf raise"], s: 3, r: 15, top: 20, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in stretch. Alt weeks: hip abduction 2×12 · 205." }
     ] }
   };
 
@@ -61,8 +61,16 @@
      learned calibration (stats.js) replaces them (see app.js calOpts).     */
   var STRETCH_SECS = 300, SETUP_SECS = 15;
   /* ramp-up time: a full ramp (3 light sets) before the day's first lift,
-     one feeler set before later heavy lifts (rest >= 150 s marks heavy).  */
-  var RAMP_FULL_SECS = 270, RAMP_FEELER_SECS = 75, RAMP_FEELER_MIN_REST = 150;
+     one feeler set before later heavy lifts (rest >= 150 s marks heavy), and
+     a single warm-up set (N21) before every other lift that carries a working
+     load. RAMP_WARM_SECS is the N21 one-warm-up allowance: 40s added to the
+     day-time estimate — the self-calibrating clock learns the real number. */
+  var RAMP_FULL_SECS = 270, RAMP_FEELER_SECS = 75, RAMP_FEELER_MIN_REST = 150, RAMP_WARM_SECS = 40;
+
+  /* N22: every day ends with a display-only Zone 2 finisher (not a lift — no
+     sets, nothing logged). FINISHER_SECS is its 10 minutes, counted in the
+     day's scheduled total so the estimate stays honest.                        */
+  var FINISHER_SECS = 600;
 
   function calOf(cal) {
     var c = cal || {};
@@ -75,12 +83,15 @@
 
   /* The ramp-up sets before a lift's first working set, display-only (never
      logged): full ramp for the day's first lift, one feeler for later heavy
-     lifts. null when the lift has no real external load to ramp toward —
-     bodyweight, unloaded (load null), or a zero load. Loads snap to the
-     lift's step. (app.js only ever passes a lift's real working load, so a
-     starting guess never earns a ramp.)                                     */
+     lifts, and (N21) a single warm-up set for every other lift with a working
+     load — 50% of the load × half the working reps (rounded). null when the
+     lift has no real external load to ramp toward — bodyweight, unloaded
+     (load null), a zero load, or an assisted lift (its logged number is help,
+     so 50% would be heavier than the working set, not lighter). Loads snap to
+     the lift's step. (app.js only ever passes a lift's real working load, so
+     a starting guess never earns a ramp.)                                    */
   function rampFor(e, load, isFirst) {
-    if (!e || e.bw || typeof load !== "number" || !(load > 0)) return null;
+    if (!e || e.bw || e.assist || typeof load !== "number" || !(load > 0)) return null;
     if (isFirst) {
       return { kind: "full", secs: RAMP_FULL_SECS, steps: [
         { load: snapStep(load * 0.5, e.step), reps: 5 },
@@ -91,7 +102,7 @@
     if (typeof e.rest === "number" && e.rest >= RAMP_FEELER_MIN_REST) {
       return { kind: "feeler", secs: RAMP_FEELER_SECS, steps: [{ load: snapStep(load * 0.6, e.step), reps: 4 }] };
     }
-    return null;
+    return { kind: "warm", secs: RAMP_WARM_SECS, steps: [{ load: snapStep(load * 0.5, e.step), reps: Math.round(e.r / 2) }] };
   }
 
   /* N8: starting-load guesses for lifts whose programme load is blank. One
@@ -132,6 +143,7 @@
       if (ramp) t += ramp.secs;
     }
     t += (list.length - 1) * TRANSITION_SECS;
+    t += FINISHER_SECS; // N22: the Zone 2 finisher closes every day
     return Math.round(t / 60);
   }
 
@@ -157,6 +169,8 @@
       }
     }
     t += Math.max(0, liftsLeft - 1) * TRANSITION_SECS;
+    /* N22: the finisher (10 min) is still ahead while any lift remains */
+    if (liftsLeft > 0) t += FINISHER_SECS;
     return Math.round(t / 60);
   }
 
