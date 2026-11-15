@@ -1829,12 +1829,22 @@
      menu's one-time setup note.                                              */
   function sendAppleHealthText(text) {
     if (!text) { setMsg("No finished workout to send yet"); return; }
-    if (navigator.share) {
-      navigator.share({ title: "Gym — Apple Health", text: text })
-        .then(function () { setMsg("Sent — pick “Log Gym Workout” in the share sheet"); }, function () { setMsg("Share cancelled"); });
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { setMsg("Copied — run the “Log Gym Workout” Shortcut"); }, function () { setMsg("Clipboard blocked — use Safari to enable Web Share"); });
-    } else { setMsg("Apple Health needs Web Share (iOS Safari) or clipboard"); }
+    try {
+      if (navigator.share) {
+        navigator.share({ title: "Gym — Apple Health", text: text })
+          .then(function () { setMsg("Sent — pick “Log Gym Workout” in the share sheet"); }, function () { setMsg("Share cancelled"); });
+      } else if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { setMsg("Copied — run the “Log Gym Workout” Shortcut"); }, function () { setMsg("Clipboard blocked — use Safari to enable Web Share"); });
+      } else { setMsg("Apple Health needs Web Share (iOS Safari) or clipboard"); }
+    } catch (err) {
+      /* iOS can throw synchronously — e.g. NotAllowedError when the tap's
+         transient activation is lost or the origin isn't a secure context —
+         which would otherwise kill the sheet and the message with no trace.
+         Surface it and fall back to the clipboard.                       */
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { setMsg("iOS blocked the share sheet — text copied, run “Log Gym Workout” Shortcut"); }, function () { setMsg("iOS blocked the share sheet and the clipboard — open in Safari and tap again"); });
+      } else { setMsg("iOS blocked the share sheet — open in Safari and tap again"); }
+    }
   }
   document.getElementById("sumHealth").onclick = function () { sendAppleHealthText(lastHealth); };
 

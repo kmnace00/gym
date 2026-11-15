@@ -115,6 +115,9 @@ Status lines (one per item, per house rules):
 
 New estimated day totals unchanged: **Fri 105 min · Sat 98 min · Sun 100 min**.
 
+### Nov 14 — v135-B follow-up (v136): in-app "Send workout to Apple Health" was silent on iPhone
+`navigator.share(...)` was invoked with no `try/catch`, so when iOS throws synchronously (e.g. `NotAllowedError` from a lost transient activation, or a non-secure-context guard) the share sheet never opened **and** no on-screen message appeared. `app.js` `sendAppleHealthText` now wraps the call, surfaces the failure, and falls back to the clipboard with a "run the Log Gym Workout Shortcut" prompt. Shipped as `gym-v136` (gates green: 238 unit, 192 e2e, typecheck clean). The parallel shortcut error ("does not have access to your workouts / walking + running distance / active energy") is the iOS Health **write** permission not yet granted to Shortcuts — a Settings fix on the phone, not a code issue.
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.
