@@ -77,6 +77,26 @@ New estimated day totals (was 92 / 86 / 88): **Fri 104 min · Sat 98 min · Sun 
 
 Test counts: unit 235/235, e2e 187/187. CLOCK DETERMINISM: the suite is Friday-anchored, so `phase1/phase2/alts/enhancements/features` specs now pin a Friday clock (`page.clock.install`, same house pattern) — the pre-existing Saturday failures (proven at baseline via `git stash`) are gone on any run day. `GYM_VERSION` `gym-v133`, CACHE-HASH `eccfc82e61ebd539`.
 
+## Nov 14 — v134 batch (Khang's named items: N21-follow-up, N24; N25 + P2 QUEUED)
+
+Khang named the N21 follow-up and N24, and specified N25 + P2 for queueing (not built here). SHIPPED as `gym-v134`.
+
+| # | Item | Triage |
+|---|---|---|
+| N21-fu | Assisted-lift warm-up: a heavier help (more assistance) at lower reps — `snapStep(load×1.5)` at `max(3, round(r/2))` reps (the N-v133 "skip assisted" note was flagged to Khang, who wants them warmed up) | T1 (specified) |
+| N24 | Move Fri/Sat/Sun control into the top header (left where the brand would sit), real ≥44px buttons wired through `switchDay` (same mid-edit-reset semantics), keep status dots, remove the N16 `.dayweek` under-title row, exactly one `~N min` readout (`#daySummary`) | T1 (specified) |
+| N25 | Month calendar in Progress beside the heat card (`‹ ›` stepping; FINISHED if a sessionLog entry, PARTIAL if `t` set-timestamps but no session entry, else blank; tap → read-only summary; phone-only, Bear style, 44px, internal scroll acceptable) | **QUEUED** — build next web release |
+| P2 | Web Push rest notifications + automatic data safety: Cloudflare Worker + ONE Durable Object, `setAlarm` (not cron), Declarative Web Push JSON (web-push library, RFC 8291 + VAPID RFC 8292), classic push fallback for iOS, `navigator.storage.persist()` + rotating snapshots, Export/Import demoted to advanced | **QUEUED** — build after N25; deploys independently |
+
+Status lines (one per item, per house rules):
+
+- N21-fu BUILT (v134): `rampFor` gained a dedicated `e.assist` branch before the isFirst/feeler logic — assisted lifts now warm up with `kind:"warm", secs:RAMP_WARM_SECS(40)`, one step `{load: snapStep(load*1.5, e.step), reps: Math.max(3, Math.round(e.r/2))}` (heavier help = more assistance = easier). The assisted dip (load 45, r 6, step 2.5) warms at 67.5×3. `e.assist` removed from the null-guard. Friday's total rose 104→105 min and the calibration 93→94 (`program.test.js`); `stats.test.js` `estimateMin` 105, `driftPct` −30.2.
+- N24 BUILT (v134): `.daycluster` (`#dayCluster`) is a left-anchored `<nav>` in the header; `renderDayWeek()` renders three real `.daytab` buttons (data-day, aria-pressed, accessible name with the state word, a `.dwdot` status dot) wired to `switchDay(w.day)` — same path as the chevrons, so the B5-05 mid-edit reset is preserved. The `.dayweek` under-title row is gone; exactly ONE `~N min` readout remains (`#daySummary`); `#dayWeekSummary` sr-only sentence kept. Cluster hides in lift-mode (`.app.lift-mode .daycluster{display:none}`) where `.backbtn` owns the left edge. Header fit contract (gap 6px, pill padding 11px, daytab padding 7px/font 12px, cluster gap 3px): 360×800 + 390×844 measured, cluster x=14 w=147.2, pill ends 78.5, all inside 332px content width. `e2e/dayweek.spec.js` rewritten (7 tests: states/≥44px/aria-pressed, chevron+header switch parity, B5-05 via a real set edit + Fri clock pin, SR labels, fit at both sizes, in-progress fit); `layoutguards.spec.js` gained a header guard (containment, ≥44px, no cluster/progress/menu/pill overlap, header ≤56px, one-screen fit) at 360×800 + 390×844; `phase2.spec.js` day-summary 104→105.
+- Desktop sync (v134): the uncommitted `desktop/main.js` icon change (APP_ICON `icon-512.png` + `app.dock.setIcon` on macOS) is sound and ships in this release so the desktop window/Dock keep the app identity instead of the Electron atom.
+- Gates for the web batch: `npm run check` OK (236 unit, `program.js`/`program.test.js`/`stats.test.js` indicate 236/236; check-assets/check-ids OK — CACHE-HASH stale until ship), `npm run typecheck` clean, `npm run e2e` 190 passed.
+
+New estimated day totals: **Fri 105 min · Sat 98 min · Sun 100 min** (was 104/98/100 — the assisted dip now earns a warm-up).
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.

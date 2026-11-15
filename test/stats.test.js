@@ -229,9 +229,9 @@ test("sessionDrift works with the real program estimate", () => {
     { day: "fri", status: "complete", durationSec: 4800 }
   ] }, "fri", P.dayMins);
   assert.equal(r.n, 3);
-  assert.equal(r.estimateMin, 104);       // N6 honest clock + N21 warm-ups + N22 finisher
+  assert.equal(r.estimateMin, 105);       // N6 honest clock + N21 warm-ups + N22 finisher + assisted-dip warm-up
   assert.equal(r.medianActualMin, 73.3);
-  assert.equal(r.driftPct, -29.5);
+  assert.equal(r.driftPct, -30.2);
 });
 
 test("topSet picks the set with the highest metric", () => {

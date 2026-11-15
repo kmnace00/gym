@@ -19,14 +19,16 @@ test("fmt", () => {
 test("dayMins matches the published per-day totals", () => {
   // N6 honest clock: base sets/rests + 5:00 stretch + 15s setup per set +
   // ramp time; N21 adds ~40s per warm-up load lift; N22 adds the 10:00
-  // finisher that closes every day. Fri 92 -> 104, Sat 86 -> 98, Sun 88 -> 100.
-  assert.equal(P.dayMins("fri"), 104);
+  // finisher that closes every day; N21-follow-up adds the assisted dip's
+  // warm-up to Friday (+1 min). Fri 104 -> 105, Sat 98, Sun 100.
+  assert.equal(P.dayMins("fri"), 105);
   assert.equal(P.dayMins("sat"), 98);
   assert.equal(P.dayMins("sun"), 100);
 });
 
 test("dayMins: zeroing the calibration leaves base + ramps + finisher only", () => {
-  assert.equal(P.dayMins("fri", { stretch: 0, setup: 0 }), 93); // base + ramps + N21 warm-ups + 10:00 finisher
+  // 93 before N21-follow-up; the assisted dip now earns a warm-up too (+40s).
+  assert.equal(P.dayMins("fri", { stretch: 0, setup: 0 }), 94); // base + ramps (incl. assisted dip warm-up) + 10:00 finisher
   assert.ok(P.dayMins("fri", { stretch: 0 }) < P.dayMins("fri"));
   assert.ok(P.dayMins("fri", { setup: 0 }) < P.dayMins("fri"));
 });
@@ -52,11 +54,18 @@ test("rampFor: one feeler for later heavy lifts; N21 warm-up for the rest", () =
   assert.deepEqual(P.rampFor(P.DAYS.fri.ex[1], 50, false), { kind: "warm", secs: 40, steps: [{ load: 25, reps: 3 }] });  // Smith incline, rest 120
 });
 
-test("rampFor: never for bodyweight, unloaded, guessed, or assisted lifts", () => {
+test("rampFor: never for bodyweight, unloaded, guessed, or zero-load lifts", () => {
   assert.equal(P.rampFor(P.DAYS.fri.ex[7], 0, true), null);    // an explicit zero load earns no ramp
   assert.equal(P.rampFor(P.DAYS.sun.ex[6], null, false), null); // overhead cable extension, load null
-  assert.equal(P.rampFor(P.DAYS.fri.ex[7], 45, false), null);   // assisted dip: the number is help, so 50% would be heavier
   assert.equal(P.rampFor(null, 100, true), null);
+});
+
+test("rampFor: assisted lifts still warm up — heavier help at lower reps (N21-follow-up)", () => {
+  // The assisted dip's logged number is help, so a heavier (larger) help
+  // number is EASIER: one set at 1.5× the help, at max(3, round(r/2)) reps.
+  // 45 help × 1.5 = 67.5 (snaps clean on step 2.5), r 6 → 3 reps.
+  assert.deepEqual(P.rampFor(P.DAYS.fri.ex[7], 45, true), { kind: "warm", secs: 40, steps: [{ load: 67.5, reps: 3 }] });
+  assert.deepEqual(P.rampFor(P.DAYS.fri.ex[7], 45, false), { kind: "warm", secs: 40, steps: [{ load: 67.5, reps: 3 }] });
 });
 
 test("guessLoad: only the Sunday cable fly has an anchor", () => {

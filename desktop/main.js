@@ -14,6 +14,10 @@ const path = require("path");
 const APP_URL = process.env.GYM_DESKTOP_URL || "https://kmnace00.github.io/gym/";
 const PHONE_WIDTH = 400; // content width, not window frame
 
+// The repository's own icon (shared with the web app): the desktop window and
+// Dock keep the app identity instead of falling back to the Electron atom.
+const APP_ICON = path.join(__dirname, "..", "icon-512.png");
+
 function createWindow() {
   const win = new BrowserWindow({
     width: PHONE_WIDTH,
@@ -22,6 +26,7 @@ function createWindow() {
     minHeight: 560,
     useContentSize: true,
     title: "Gym",
+    icon: APP_ICON,
     backgroundColor: nativeTheme.shouldUseDarkColors ? "#17100b" : "#fdebd2",
     webPreferences: {
       contextIsolation: true,
@@ -87,6 +92,11 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  // macOS shows app.dock, not the window icon — mirror the web app's icon so
+  // the running Gym doesn't look like the generic Electron atom in the Dock.
+  if (process.platform === "darwin" && app.dock?.setIcon) {
+    try { app.dock.setIcon(APP_ICON); } catch { /* icon is cosmetic */ }
+  }
   createWindow();
   app.on("activate", () => {
     if (!BrowserWindow.getAllWindows().length) createWindow();

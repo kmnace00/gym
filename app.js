@@ -331,29 +331,37 @@
     return daysBetween(anchor, today) >= 35 && !loggedThisWeek(today);
   }
 
-  /* N16: a read-only week line in the day header — Fri/Sat/Sun with a status
-     dot each, the viewed day marked, and that day's scheduled time beside it.
-     Deliberately not interactive: the chevrons stay the only way to switch
-     days. The visual row is aria-hidden; screen readers get the same facts as
-     one sentence, the same bargain the Progress heat card makes.            */
+  /* N24: the Fri/Sat/Sun switcher moved into the top header as real buttons —
+     each carries a status dot from Stats.weekStatus, the viewed day is the
+     selected one, today gets its own distinct mark. Buttons go through
+     switchDay so they share the chevrons' exact semantics incl. the mid-edit
+     reset (B5-05). The visual dots are knit into the labels; screen readers
+     get the same week facts as one sentence.                              */
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
   var WEEK_DAY_NAME = { fri: "Fri", sat: "Sat", sun: "Sun" };
   function renderDayWeek() {
-    var el = document.getElementById("dayWeek");
-    if (!el) return;
-    var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
-    var mins = dayMins(cur, calOpts());
-    el.innerHTML = wk.map(function (w) {
-      return '<span class="dwday ' + w.state + (w.day === cur ? " on" : "") + '">' +
-        '<i class="dwdot"></i>' + WEEK_DAY_NAME[w.day] + "</span>";
-    }).join("") + '<span class="dwtime">~' + mins + " min</span>";
+    var cluster = document.getElementById("dayCluster");
+    if (cluster) {
+      var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
+      cluster.innerHTML = wk.map(function (w) {
+        return '<button type="button" class="daytab ' + w.state + (w.day === cur ? " on" : "") + '"' +
+          ' data-day="' + w.day + '" aria-pressed="' + (w.day === cur) + '"' +
+          ' aria-label="' + WEEK_DAY_NAME[w.day] + ' — ' + (WEEK_STATE_WORD[w.state] || w.state) + '">' +
+          '<i class="dwdot" aria-hidden="true"></i>' + WEEK_DAY_NAME[w.day] + "</button>";
+      }).join("");
+      var btns = cluster.querySelectorAll(".daytab");
+      for (var b = 0; b < btns.length && b < wk.length; b++) {
+        btns[b].onclick = (function (d) { return function () { switchDay(d); }; })(wk[b].day);
+      }
+    }
     var sr = document.getElementById("dayWeekSummary");
     if (sr) {
-      var spoken = wk.map(function (w) {
+      var wk2 = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
+      var spoken = wk2.map(function (w) {
         return WEEK_DAY_NAME[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
       }).join(", ");
       sr.textContent = "This week: " + spoken + ". Viewing " + WEEK_DAY_NAME[cur] +
-        " — about " + mins + " minutes.";
+        " — about " + dayMins(cur, calOpts()) + " minutes.";
     }
   }
 

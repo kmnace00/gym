@@ -35,7 +35,7 @@ test("the day summary quotes the honest total (stretch + setup + ramps)", async 
   await page.goto(url);
   const day = await page.evaluate(() => Gym.todayDay());
   await seedDay(page, day, {});
-  await expect(page.locator("#daySummary")).toContainText("~104 min"); // Fri: 92 + N21 warm-ups + 10:00 finisher
+  await expect(page.locator("#daySummary")).toContainText("~105 min"); // Fri: 92 + N21 warm-ups + assisted-dip warm-up + 10:00 finisher
 });
 
 test("the first lift shows its full ramp before set 1, then never again", async ({ page }) => {

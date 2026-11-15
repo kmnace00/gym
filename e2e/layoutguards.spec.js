@@ -129,3 +129,73 @@ test("sethead action pills never overlap in any lift state", async ({ page }) =>
   await page.locator("#skipRest").click();      // GO wraps to the next open lift
   await page.waitForTimeout(250);
 });
+
+/* N24: the header packs the day cluster (left) + Progress + menu + the running
+   clock pill — the fit contract at both phone sizes. Nothing may overlap and
+   every tap target stays ≥44px. */
+async function seedRunningSession(page) {
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => {
+      state[day + ":" + i] = { done: 0, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_clock", date, day, startedAt: Date.now() - 900000, endedAt: null, accSec: 900, runningSince: Date.now() - 40000, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+  await expect(page.locator("#sessBtn")).toHaveClass(/on/);
+}
+
+for (const vp of [{ width: 360, height: 800 }, { width: 390, height: 844 }]) {
+  test(`header holds day cluster + Progress + menu + running clock with no overlap (${vp.width}x${vp.height})`, async ({ page }) => {
+    await page.setViewportSize(vp);
+    await page.goto(url);
+    await seedRunningSession(page);
+
+    const m = await boxes(page, {
+      header: ".header",
+      clusterTabs: "all:#dayCluster .daytab",
+      progress: "#progressBtn",
+      menu: "#menuBtn",
+      pill: "#sessBtn"
+    });
+
+    // every header control sits inside the header row
+    for (const tab of m.clusterTabs) expectContained(m.header, tab, "day tab");
+    expectContained(m.header, m.progress, "progress");
+    expectContained(m.header, m.menu, "menu");
+    expectContained(m.header, m.pill, "session pill");
+
+    // day tabs ≥44px each
+    m.clusterTabs.forEach((tab, i) => {
+      expect(tab.h, `day tab ${i} height ≥44px`).toBeGreaterThanOrEqual(44);
+      expect(tab.w, `day tab ${i} width ≥44px`).toBeGreaterThanOrEqual(44);
+    });
+
+    // no overlaps between the cluster, progress, menu and pill
+    const controls = [["progress", m.progress], ["menu", m.menu], ["pill", m.pill]];
+    m.clusterTabs.forEach((tab, i) => {
+      for (const [name, b] of controls) {
+        expect(overlapArea(tab, b), `day tab ${i} must not overlap ${name}`).toBeLessThanOrEqual(1);
+      }
+    });
+    for (let i = 0; i < controls.length; i++) {
+      for (let j = i + 1; j < controls.length; j++) {
+        expect(overlapArea(controls[i][1], controls[j][1]), `${controls[i][0]} must not overlap ${controls[j][0]}`).toBeLessThanOrEqual(1);
+      }
+    }
+
+    // the header itself stays on one row of ≤ 44px-plus content height, and the
+    // day view still fits one screen with the taller header
+    const view = await page.evaluate(() => ({
+      headerH: document.querySelector(".header").getBoundingClientRect().height,
+      scrollH: document.documentElement.scrollHeight,
+      innerH: window.innerHeight
+    }));
+    expect(view.headerH, "header stays compact").toBeLessThanOrEqual(56);
+    expect(view.scrollH, "day view still fits one screen").toBeLessThanOrEqual(view.innerH + 1);
+  });
+}

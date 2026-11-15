@@ -86,12 +86,16 @@
      lifts, and (N21) a single warm-up set for every other lift with a working
      load — 50% of the load × half the working reps (rounded). null when the
      lift has no real external load to ramp toward — bodyweight, unloaded
-     (load null), a zero load, or an assisted lift (its logged number is help,
-     so 50% would be heavier than the working set, not lighter). Loads snap to
-     the lift's step. (app.js only ever passes a lift's real working load, so
-     a starting guess never earns a ramp.)                                    */
+     (load null), or a zero load. Assisted lifts (N15) still warm up: their
+     logged number is help, so a heavier (larger) help number is EASIER — one
+     set at 1.5× the help, at fewer reps, which is what Khang actually does
+     (N21-follow-up). Loads snap to the lift's step. (app.js only ever passes
+     a lift's real working load, so a starting guess never earns a ramp.)    */
   function rampFor(e, load, isFirst) {
-    if (!e || e.bw || e.assist || typeof load !== "number" || !(load > 0)) return null;
+    if (!e || e.bw || typeof load !== "number" || !(load > 0)) return null;
+    if (e.assist) {
+      return { kind: "warm", secs: RAMP_WARM_SECS, steps: [{ load: snapStep(load * 1.5, e.step), reps: Math.max(3, Math.round(e.r / 2)) }] };
+    }
     if (isFirst) {
       return { kind: "full", secs: RAMP_FULL_SECS, steps: [
         { load: snapStep(load * 0.5, e.step), reps: 5 },
