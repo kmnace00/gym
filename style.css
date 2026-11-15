@@ -750,3 +750,57 @@ input{caret-color:var(--accent)}
 .daytop{flex-wrap:wrap;flex:none}
 .daytitle{flex:1 1 150px}
 .daytop .planbtn{flex:none}
+
+/* ── tall Home-Screen canvas (>=880px standalone, Pro/Pro-Max class phones ──
+   Here the app has real spare height, so stretch-to-fill turns the day rows
+   and set-log rows into tall, sparse cards. Instead we keep those cards
+   compact, let the extra height read as calm breathing room, and pin a
+   designed bottom band — a "Today" tally + the Zone 2 finisher — at the base.
+   Standard/short phones (<=844px) keep the existing fill layout untouched.
+   The band lives in the DOM but is display:none below the tall tier.        */
+.dayband{
+  display:none;flex:none;margin-top:14px;padding:12px 14px;
+  border:1px solid var(--line);border-radius:14px;background:var(--surface);
+  box-shadow:var(--shadow-sm);font-variant-numeric:tabular-nums;
+  transition:background-color .25s ease,border-color .25s ease;
+}
+.dayband .bandrow{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dayband .bandtit{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.dayband .bandinfo{font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+
+@media (min-height:880px){
+  .app{gap:16px}
+  /* day view: compact, scannable rows up top; the flex:1 list absorbs the
+     spare height as breathing room above the pinned bottom band */
+  .dayhead{padding-bottom:14px}
+  .daytitle{font-size:19px}
+  .liftlist{overflow-y:auto}
+  .liftrow{flex:none;min-height:58px}
+  .liftname{font-size:17px}
+  .liftmeta{font-size:13px}
+  /* the designed bottom band: session tally + finisher coalesce into one */
+  .dayband{display:flex;margin-top:16px}
+  .progress{margin-top:16px}
+  .finisher{
+    margin-top:10px;padding:13px 14px;border:1px solid var(--line);
+    border-radius:14px;background:var(--surface-2);box-shadow:var(--shadow-sm);
+    font-size:14px;
+  }
+  /* lift view: compact set rows, more air above the pinned adjust + Set Done
+     so the action cluster stays put at the base */
+  .setlog{overflow-y:auto}
+  .setrow{flex:none;min-height:54px}
+  .sethead{margin-top:16px}
+  .pres{font-size:14px}
+  .guide{margin-top:12px;font-size:15px}
+  .adjust{padding-top:18px}
+  .donebtn{height:66px;margin-top:18px}
+  /* progress: roomier stats + cards on the taller canvas */
+  .pstat{padding:14px 10px}
+  .pcard{padding:14px 16px;gap:10px}
+}
+
+/* print: never expose the on-screen day band */
+@media print{
+  .dayband{display:none!important}
+}

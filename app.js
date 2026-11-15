@@ -388,6 +388,12 @@
     /* B6-10: one nudge line, gone as soon as the week has a session in it */
     if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — start one in the Menu.";
     document.getElementById("daySummary").textContent = summary;
+    /* today-band tally (tall Home-Screen canvas): sets done, time left */
+    var bandInfo = document.getElementById("bandInfo");
+    if (bandInfo) {
+      bandInfo.textContent = totalDone + "/" + totalSets + " sets"
+        + (complete ? " · done" : " · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min left");
+    }
     // first-run guidance: one line until the very first set is ever logged
     var firstRun = document.getElementById("firstRunHint");
     if (firstRun) firstRun.hidden = Gym.hasData(payload);
