@@ -227,6 +227,8 @@ h1{
 }
 .donebtn:active{opacity:.88;transform:scale(.985)}
 .donebtn.complete{background:var(--surface-2);color:var(--accent)}
+/* v135: the secondary "Apple Health" action on the summary — quieter than Done */
+.donebtn.donebtn-ghost{background:var(--surface-2);color:var(--muted);font-weight:600;font-size:15px;letter-spacing:0}
 
 /* ── rest timer: a strip when peeking, the whole screen while counting ─── */
 .timer{
@@ -640,6 +642,7 @@ input{caret-color:var(--accent)}
 .sumk{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .sumnext{font-size:12.5px;color:var(--muted);text-align:center}
 .summary-card .donebtn{margin-top:0}
+.summary-card .donebtn-ghost{margin-top:8px}
 
 /* ── v3: per-set edit target ───────────────────────────────────────────── */
 .setrow.done{cursor:pointer}

@@ -304,3 +304,67 @@ with the volume-load mechanism — no direct citation, no change.
 - NSCA 2-for-2 wording in the book itself — verified via multiple
   secondary sources, not by opening *Essentials* directly. Cite as
   Baechle & Earle, Ch. 18.
+
+## Research pass Nov 14 (v135) — Saturday curl-slot: grip for biceps hypertrophy
+
+Khang's ask: "the option that is best for hypertrophy." The slot before
+preacher curl currently ran the **neutral** rope hammer curl (added in
+v133 as the Bayesian's replacement). Verdict: swap it for a **supinated**
+cable curl; keep the 6 direct biceps sets (3 curl + 3 preacher), do not
+reorder/trim.
+
+- **Supinated > neutral > pronated for biceps:** Coratella, Paoli et al.
+  2023, *Sports Med* 53(5):921–938. An umbrella/mechanistic synthesis of
+  grip-dependent biceps activation: supinated (underhand) grip biases the
+  biceps brachii and long head; neutral splits toward brachioradialis/brachialis.
+  For "biceps hypertrophy" specifically, supinated is the strongest option
+  (PMID 10054060 / PMC10054060 in our notes; DOI 10.1007/s40279-023-01813-2).
+- **The hammer's brachioradialis/brachialis carve-out is unsupported:**
+  Bagchi & Raizada 2019 (*J Exerc Rehabil*, n=20) found the brachioradialis
+  difference between neutral and supinated curls **non-significant**; brachialis
+  was not even measured. Loading more brachioradialis would not be "biceps"
+  hypertrophy anyway. So the neutral grip bought little per the evidence, and
+  it gave up biceps-brachii activation the supinated curl keeps.
+- **Preacher ≈ Bayesian for growth, so the preacher curl stays untouched:**
+  a 2024 systematic review/meta comparing curl variants found preacher (chest-
+  supported) and Bayesian (shoulder behind the torso) curls equivalent for
+  biceps hypertrophy (recorded as PMC11906226 in the notes). The second
+  Saturday curl (per-side preacher) is already evidence-aligned; no change.
+- **Exercise order has ~no hypertrophy effect here:** Nunes, Kassiano &
+  Libardi 2021, *Sports Med* 51(8):1631–1641. Pre- vs post-fatigue ordering of
+  a workout changes little (ES ≈ 0.03) when volume is equated. The curl sits
+  after four back/row/hinge movements — fine; biceps pick up indirect pulling
+  work anyway. No reorder needed.
+- **Volume unchanged (6 direct sets) — evidence-consistent:** Schoenfeld,
+  Ogborn & Krieger 2017 (already cited above for the 10+ set band). Saturday
+  keeps 3 supinated curl + 3 preacher = 6 direct biceps sets; the new curl
+  keeps `load: null` (start light, ramp via suggestion line), so Saturday's
+  ~98-minute estimate is unchanged.
+
+Decision: replace `sat-rope-hammer-curl` (neutral) in its slot with
+`sat-supinated-curl` ("Cable curl (supinated)", underhand grip). The old id
+retires via `store.reconcile` → `old:sat-rope-hammer-curl` (the hammer is a
+v133 novelty; no real banked history to preserve). Records in BACKLOG under
+the v135 batch.
+
+### Apple Health / Watch (v135) — $0, static-PWA-safe iOS Shortcut gateway
+
+Reverses `DESIGN.md`'s "Apple Health requires native packaging" non-goal with a
+free path that never calls HealthKit from the page:
+
+- A **one-time**, user-built iOS Shortcut ("Log Gym Workout", free, no Apple
+  Developer account) receives Text, greps the app's structured machine line
+  `GYMWORKOUT|strength|<mins>|<date>`, and calls **Health's "Log Workout"**
+  (Activity type: Strength Training). The workout then syncs to the **Apple
+  Watch** automatically.
+- The PWA's Finish summary gains "Send workout to Apple Health", which hands
+  that structured line to `navigator.share` (iOS Web Share) so the Shortcut
+  appears as a share-sheet destination; clipboard + `shortcuts://` is the
+  fallback. Menu has an "Apple Health / Watch" note with the one-time build.
+- Duration comes from the real banked session (`sessionElapsed` → `durationSec`),
+  so Health gets his actual minutes, not an estimate.
+
+Delivery model mirrors the "Mac session sync" cross-machine merge tool: the
+integration is a script/shortcut the user builds once from a paste-able
+prompt, transport is plain (Web Share), and there is no cloud backend or
+shared live data to corrupt.

@@ -98,6 +98,23 @@ Status lines (one per item, per house rules):
 
 New estimated day totals: **Fri 105 min · Sat 98 min · Sun 100 min** (was 104/98/100 — the assisted dip now earns a warm-up).
 
+## Nov 14 — v135 batch (two new backlog items: curl-slot change + Apple Health/Watch)
+
+Two items added to the backlog and built through to a green, deployed release. Khang named them and delegated the evidence decisions ("best for hypertrophy" for the curl; "easiest method, less work" for Apple Health).
+
+| # | Item | Triage |
+|---|---|---|
+| v135-A | Saturday curl-slot change: swap the neutral rope hammer curl for a **supinated cable curl** (best grip for biceps hypertrophy); keep 6 direct biceps sets, don't reorder/trim | T1 (decided) |
+| v135-B | $0 Apple Health / Watch integration via a one-time **iOS Shortcut gateway** (no Apple Developer account, no native packaging) | T1 (decided) |
+
+Status lines (one per item, per house rules):
+
+- v135-A BUILT: `program.js` replaces `sat-rope-hammer-curl` (neutral "Rope hammer curl", v133 novelty) in the slot before preacher with `sat-supinated-curl` ("Cable curl (supinated)", underhand grip, 3×10–12, top 12, rest 90s, 1 RIR, partial, load null). Total direct biceps stays 6 sets (3 supinated curl + 3 preacher, which research shows is ≈ Bayesian for growth and stays untouched). Load is still `null`, so Saturday's estimate is unchanged at 98 min and `stats.test.js` `estimateMin`/`driftPct` are untouched. The old id retires via `store.reconcile` → `old:sat-rope-hammer-curl`; no real banked hammer history to preserve. Unit tests: the N20 test narrows to "Bayesian id no longer schedules" + a new v135 test pins the supinated curl (slot 4, name, alts, gauge, null load). Science recorded in `RESEARCH.md` (Coratella 2023 supinated>neutral; Bagchi & Raizada 2019 hammer carve-out unsupported; preacher≈Bayesian PMC11906226; Nunes 2021 order negligible).
+- v135-B BUILT: Finish summary gains **"Send workout to Apple Health"** (`#sumHealth`), which hands a structured `GYMWORKOUT|strength|<mins>|<date>` line to `navigator.share` (iOS Web Share) so a user-built one-time Shortcut ("Log Gym Workout", receives Text → Health's "Log Workout" Strength Training) appears in the share sheet; clipboard + `shortcuts://` fallback; the menu gains "Apple Health / Watch" (`#healthBtn`) toggling the one-time build note (`#healthInfo`). Duration is the real banked session (`durationSec`). Pure helper `Stats.appleHealthText` is unit-tested (machine line + human line, tolerant of zero sets/volume, rejects empty mins); `e2e/health.spec.js` (2 tests: summary shares the exact `GYMWORKOUT|strength|30|<date>` record via a stubbed `navigator.share`; menu note toggles + aria-expanded). Reverses `DESIGN.md`'s "Apple Health needs native packaging" non-goal with a $0 static-safe path. Design mirrors the "Mac session sync" approach (one-shot script/shortcut, plain transport, no cloud/no shared live data).
+- Gates for the batch: `npm run check` (unit **238/238** — was 236; check-assets/check-ids OK), `npm run typecheck` clean, `npm run e2e` green (new `health.spec.js` 2 tests; `v133.spec.js` curl name updated to the supinated curl). CACHE-HASH + `GYM_VERSION` bumped at the release commit.
+
+New estimated day totals unchanged: **Fri 105 min · Sat 98 min · Sun 100 min**.
+
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 
 Khang authorized Muse to build these directly and push; he syncs on the MacBook after. All ship as one release, SW `gym-v131`.

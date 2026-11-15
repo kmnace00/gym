@@ -1558,6 +1558,7 @@
     return { day: day, gap: gap };
   }
   var sumFocus = null;
+  var lastHealth = null; // v135: the finished session's Apple Health text
   function showSummary(entry) {
     if (!summary) return;
     sumFocus = document.activeElement;
@@ -1579,6 +1580,12 @@
     document.getElementById("sumSets").textContent = String(sets);
     document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " lb";
     document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
+    /* v135: stash the Apple Health record for the workout just finished so the
+       summary's "Send to Apple Health" button has exact numbers at tap time. */
+    lastHealth = Stats.appleHealthText({
+      mins: Math.round(dur / 60), date: sessionDay, dayLabel: DAY_LABEL[cur],
+      sets: sets, volLb: vol
+    });
     var nx = nextTrainingGap();
     var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");
     if (Gym.backupDue(payload)) txt += " · Back up tonight";
@@ -1812,6 +1819,33 @@
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () { setMsg("Summary copied ✓"); }, function () { setMsg("Share not available"); });
     } else { setMsg("Share not available"); }
+  };
+
+  /* ── v135: Apple Health / Watch gateway (iOS Shortcut path) ────────────────
+     $0, static-PWA-safe: no native HealthKit. The button hands the workout to
+     iOS via Web Share so the user's one-time "Log Gym Workout" Shortcut
+     (receiving Text) calls Health's "Log Workout", which syncs to the Watch.
+     Clipboard + Shortcut is the fallback; the last message points at the
+     menu's one-time setup note.                                              */
+  function sendAppleHealthText(text) {
+    if (!text) { setMsg("No finished workout to send yet"); return; }
+    if (navigator.share) {
+      navigator.share({ title: "Gym — Apple Health", text: text })
+        .then(function () { setMsg("Sent — pick “Log Gym Workout” in the share sheet"); }, function () { setMsg("Share cancelled"); });
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { setMsg("Copied — run the “Log Gym Workout” Shortcut"); }, function () { setMsg("Clipboard blocked — use Safari to enable Web Share"); });
+    } else { setMsg("Apple Health needs Web Share (iOS Safari) or clipboard"); }
+  }
+  document.getElementById("sumHealth").onclick = function () { sendAppleHealthText(lastHealth); };
+
+  /* the menu note shows the one-time iOS Shortcut build once; toggles open
+     (calibration-note pattern). The setup copy lives in index.html #healthInfo. */
+  var healthBtn = document.getElementById("healthBtn"), healthInfo = document.getElementById("healthInfo");
+  healthBtn.onclick = function () {
+    var open = healthInfo.hidden;
+    healthInfo.hidden = !open;
+    healthBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    healthBtn.textContent = open ? "Apple Health / Watch — hide set-up" : "Apple Health / Watch";
   };
   /* Restore (replace) is destructive: arm it with the same two-tap guard as
      Reset day and Clear (B3-22); the second tap opens the picker. */

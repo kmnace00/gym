@@ -36,7 +36,10 @@
       { id: "sat-cable-rdl", n: "Smith machine RDL", alts: ["DB Romanian deadlift", "Barbell Romanian deadlift", "Cable RDL"], s: 3, r: 8, top: 8, load: 120, step: 5, rest: 150, rir: 2, cue: "Hips back, stop when stretch stops you." },
       { id: "sat-tbar-row", n: "MTS row", alts: ["One-arm DB row", "Chest-supported machine row", "Barbell bent-over row", "T-bar row"], s: 3, r: 8, top: 8, load: 75, step: 5, rest: 120, rir: 2, cue: "Chest tall, pull to ribs." },
       { id: "sat-leg-curl", n: "Seated leg curl", alts: ["Nordic hamstring curl (eccentric-only, assisted)", "Lying leg curl machine", "Slider leg curl"], s: 3, r: 9, top: 11, load: 130, step: 5, rest: 90, rir: 1, cue: "Lean back for hard sets." },
-      { id: "sat-rope-hammer-curl", n: "Rope hammer curl", alts: ["Bayesian curl", "Incline DB curl", "EZ-bar curl"], s: 3, r: 10, top: 12, load: null, step: 1, rest: 90, rir: 1, partial: 1, cue: "Cable rope, neutral grip — elbows fixed." },
+      /* v135: the neutral hammer curl is replaced by a supinated curl — the
+         hypertrophy-best grip for biceps (supinated > neutral; Coratella 2023).
+         The old id retires: any hammer history re-homes to old:sat-rope-hammer-curl. */
+      { id: "sat-supinated-curl", n: "Cable curl (supinated)", alts: ["Bayesian cable curl", "Incline DB curl", "EZ-bar curl"], s: 3, r: 10, top: 12, load: null, step: 1, rest: 90, rir: 1, partial: 1, cue: "Cable, underhand grip — elbows fixed, supinated." },
       { id: "sat-preacher-curl", n: "Preacher curl", alts: ["Spider curl (chest-supported on incline bench)", "Machine preacher curl", "Incline DB curl"], per: "side", s: 3, r: 6, top: 6, load: 25, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Per side. Don't cut the bottom." },
       { id: "sat-rear-delt", n: "Rear delt crossover", alts: ["Bent-over DB reverse fly", "Reverse pec deck", "Cable rear-delt fly"], s: 3, r: 12, top: 14, load: 10, step: 1, rest: 90, rir: 1, cue: "Sweep back, squeeze, slow return." },
       { id: "sat-calf-raise", n: "Calf press", alts: ["Standing calf raise", "Single-leg DB calf raise on a step", "Seated calf raise", "Leg press calf raise"], s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }

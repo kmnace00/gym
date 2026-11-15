@@ -59,6 +59,9 @@ any code changes.
 - Real cloud backend / accounts — violates the "free, static Pages, no backend"
   constraint. The durable-data story is solved with prompted backups + merge.
 - Apple Watch / Wear companion — requires native packaging; out of scope.
+  (REVERSED for Apple Health/Watch in v135 via a free iOS Shortcut gateway —
+  no native packaging needed; see BACKLOG v135-B. Native *live-activity* /
+  lockscreen widgets remain out of scope.)
 - Full ESM migration / IndexedDB — see decisions 1 and 2.
 
 ## Verification
@@ -136,7 +139,11 @@ Decisions:
    enough to keep the progress view inside `100dvh`.
 6. **Portability = CSV + Web Share, not Apple Health.** Apple Health needs
    native packaging (non-goal); CSV download and a `navigator.share` summary
-   give the same "data leaves the silo" value inside a static PWA.
+   give the same "data leaves the silo" value inside a static PWA. *(v135:
+   reversed for Apple Health/Watch — a free iOS Shortcut gateway reaches
+   Health's "Log Workout" via `navigator.share` with no native packaging.
+   CSV + Web Share remain the raw-data portability story; the Shortcut path
+   is the Fitness/Watch story. See BACKLOG v135-B.)*
 7. **Restore (replace) is exposed.** `importRaw` already existed but was
    unreachable; it becomes a two-tap "Restore (replace)" beside the merge import.
 

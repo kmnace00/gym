@@ -310,18 +310,28 @@ test("N19 renames: Smith machine RDL, MTS row, Calf press (both days)", () => {
   assert.ok(by("sat-calf-raise").cue.includes("Pause"), "the calf pause cue is kept");
 });
 
-/* N20 — the Bayesian curl retires; the rope hammer curl replaces it */
-test("N20: the Bayesian curl is replaced by the rope hammer curl (new id)", () => {
+/* N20 — the Bayesian curl retired when the hammer curl (neutral) took the slot. */
+test("N20: the Bayesian curl id no longer schedules", () => {
   const all = ["fri", "sat", "sun"].flatMap((d) => P.DAYS[d].ex);
   assert.ok(!all.some((e) => e.id === "sat-bayesian-curl"), "the Bayesian id no longer schedules");
-  assert.ok(!all.some((e) => e.n === "Bayesian curl"), "no lift is still named Bayesian curl");
-  const curl = all.find((e) => e.id === "sat-rope-hammer-curl");
-  assert.ok(curl, "the new rope hammer curl exists in the same slot");
-  assert.equal((["fri", "sat", "sun"]).findIndex((d) => P.DAYS[d].ex.some((x) => x.id === "sat-rope-hammer-curl")), 1, "slot is Saturday");
-  assert.equal(P.DAYS.sat.ex[4].id, "sat-rope-hammer-curl", "sits before preacher curl");
+  assert.ok(!all.some((e) => e.n === "Bayesian curl"), "no lift is named Bayesian curl");
+});
+
+/* v135 — the Saturday curl slot is a supinated curl (best grip for biceps
+   hypertrophy). It replaces the neutral hammer curl in the same slot, before
+   preacher curl, keeping Saturday's 6 direct biceps sets (3 + 3 preacher). */
+test("v135: the Saturday curl slot is a supinated cable curl (replaces the hammer)", () => {
+  const all = ["fri", "sat", "sun"].flatMap((d) => P.DAYS[d].ex);
+  assert.ok(!all.some((e) => e.id === "sat-rope-hammer-curl"), "the neutral hammer id no longer schedules");
+  assert.ok(!all.some((e) => e.n === "Rope hammer curl"), "no lift is still named Rope hammer curl");
+  const curl = all.find((e) => e.id === "sat-supinated-curl");
+  assert.ok(curl, "the supinated curl exists in the same slot");
+  assert.equal((["fri", "sat", "sun"]).findIndex((d) => P.DAYS[d].ex.some((x) => x.id === "sat-supinated-curl")), 1, "slot is Saturday");
+  assert.equal(P.DAYS.sat.ex[4].id, "sat-supinated-curl", "sits before preacher curl");
   assert.equal(P.DAYS.sat.ex[5].id, "sat-preacher-curl");
-  assert.equal(curl.n, "Rope hammer curl");
-  assert.deepEqual(curl.alts, ["Bayesian curl", "Incline DB curl", "EZ-bar curl"]);
+  assert.equal(curl.n, "Cable curl (supinated)");
+  assert.equal(curl.cue.includes("underhand"), true, "the grip is supinated");
+  assert.deepEqual(curl.alts, ["Bayesian cable curl", "Incline DB curl", "EZ-bar curl"]);
   assert.equal(curl.s, 3); assert.equal(curl.r, 10); assert.equal(curl.top, 12);
   assert.equal(curl.rest, 90); assert.equal(curl.rir, 1); assert.equal(curl.partial, 1);
   assert.equal(curl.load, null, "start light");
