@@ -185,8 +185,6 @@
     <button class="modalbtn" id="exportDownload" type="button">Download JSON</button>
     <button class="modalbtn" id="exportCsv" type="button">Export CSV</button>
     <button class="modalbtn" id="shareSummary" type="button">Share summary</button>
-    <button class="modalbtn" id="healthBtn" type="button" aria-expanded="false">Apple Health / Watch</button>
-    <div class="modalmsg" id="healthInfo" hidden>One-time set-up (free, no Apple Developer account): in the Shortcuts app, make a Shortcut named “Log Gym Workout” that receives Text from the Share Sheet, greps the first line “GYMWORKOUT|strength|” for the minutes, and calls Health's “Log Workout” (Activity type: Strength Training, Duration: that many minutes). After that, finish a workout and tap “Send workout to Apple Health” — the Shortcut writes to Health and your Watch syncs.</div>
     <button class="modalbtn" id="importBtn" type="button">Import backup</button>
     <input type="file" id="importFile" accept="application/json,text/plain" hidden>
     <button class="modalbtn modalbtn-danger" id="replaceBtn" type="button">Restore (replace)</button>
@@ -219,7 +217,6 @@
     <div class="sumnext" id="sumNext"></div>
     <div class="sumnext" id="sumEst" hidden></div>
     <button class="donebtn" id="sumDone" type="button">Done</button>
-    <button class="donebtn donebtn-ghost" id="sumHealth" type="button">Send workout to Apple Health</button>
   </div>
 </div>
 

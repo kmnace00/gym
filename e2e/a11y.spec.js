@@ -409,13 +409,13 @@ test("the summary traps focus and returns it on close", async ({ page }) => {
   expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumDone");
 
   // Tab wraps inside the dialog instead of escaping to the page behind it.
-  // Order: sumDone → sumHealth (v135) → wraps to sumClose → back to sumHealth.
-  await page.keyboard.press("Tab");
-  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumHealth");
+  // Order: sumDone → sumClose → wraps back to sumDone (sumHealth removed v137).
   await page.keyboard.press("Tab");
   expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumClose");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumDone");
   await page.keyboard.press("Shift+Tab");
-  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumHealth");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumClose");
   await page.keyboard.press("Shift+Tab");
   expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe("sumDone");
 

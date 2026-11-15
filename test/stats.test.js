@@ -553,24 +553,7 @@ test("calibration: clamps hold the learned values sane", () => {
   assert.equal(c.overheadSec, 40);
 });
 
-/* ── v135: Apple Health gateway text (iOS Shortcut path) ─────────────────── */
-test("appleHealthText emits the machine line + a human line", () => {
-  const t = S.appleHealthText({ mins: 42, date: "2026-11-14", dayLabel: "Saturday", sets: 8, volLb: 12500 });
-  const lines = t.split("\n");
-  assert.equal(lines[0], "GYMWORKOUT|strength|42|2026-11-14");
-  assert.ok(lines[1].includes("Saturday"));
-  assert.ok(lines[1].includes("2026-11-14"));
-  assert.ok(lines[1].includes("42 min"));
-  assert.ok(lines[1].includes("8 sets"));
-  assert.ok(lines[1].includes("12500 lb"));
-});
+/* ── v135/v136 Apple Health gateway was removed in v137: Health cannot store
+   sets/reps/weight or volume, and the Watch already writes the strength-training
+   workout. No appleHealthText helper, no tests. */
 
-test("appleHealthText tolerates missing/zero sets and volume, and rejects empty mins", () => {
-  const t = S.appleHealthText({ mins: 60, date: "2026-11-14", dayLabel: "Friday", sets: 0 });
-  assert.ok(t.split("\n")[1].includes("Friday — 2026-11-14 — strength training — 60 min"));
-  assert.ok(!t.split("\n")[1].includes("sets"));
-  assert.ok(!t.split("\n")[1].includes("lb"));
-  assert.equal(S.appleHealthText(null), null);
-  assert.equal(S.appleHealthText({ mins: 0, date: "2026-11-14" }), null);
-  assert.equal(S.appleHealthText({ mins: 0.4, date: "2026-11-14" }), null, "sub-minute rounds to 0");
-});

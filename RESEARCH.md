@@ -347,24 +347,24 @@ retires via `store.reconcile` → `old:sat-rope-hammer-curl` (the hammer is a
 v133 novelty; no real banked history to preserve). Records in BACKLOG under
 the v135 batch.
 
-### Apple Health / Watch (v135) — $0, static-PWA-safe iOS Shortcut gateway
+### Apple Health / Watch (v135) — evaluated, then removed (v137)
 
-Reverses `DESIGN.md`'s "Apple Health requires native packaging" non-goal with a
-free path that never calls HealthKit from the page:
+A v135 $0 iOS Shortcut gateway reached Health's "Log Workout" from the static
+PWA (no native packaging). Evaluated for depth before deciding to keep it and
+**removed in v137 as not worth the surface area**:
 
-- A **one-time**, user-built iOS Shortcut ("Log Gym Workout", free, no Apple
-  Developer account) receives Text, greps the app's structured machine line
-  `GYMWORKOUT|strength|<mins>|<date>`, and calls **Health's "Log Workout"**
-  (Activity type: Strength Training). The workout then syncs to the **Apple
-  Watch** automatically.
-- The PWA's Finish summary gains "Send workout to Apple Health", which hands
-  that structured line to `navigator.share` (iOS Web Share) so the Shortcut
-  appears as a share-sheet destination; clipboard + `shortcuts://` is the
-  fallback. Menu has an "Apple Health / Watch" note with the one-time build.
-- Duration comes from the real banked session (`sessionElapsed` → `durationSec`),
-  so Health gets his actual minutes, not an estimate.
+- HealthKit's `Workout` stores an *envelope* — duration, active energy, heart
+  rate, distance. It has **no native fields for sets, reps, or weight per
+  exercise**, and the Apple Watch Workout app records none of them either;
+  "Health stores the workout envelope, not its contents." Per-exercise weight /
+  volume trends live in third-party apps' own databases, not Health, because
+  Health can't represent them.
+- The app's own tracking already holds volume, PRs, top movers, and
+  week-over-week — that is where lifting progress belongs and is displayed.
+- Khang starts a Workout on his Watch every session, so the Watch already writes
+  the strength-training entry with richer data than the app could. The app's
+  only addition was a label + duration backfill — pure duplication with no
+  lifting data Health can store.
 
-Delivery model mirrors the "Mac session sync" cross-machine merge tool: the
-integration is a script/shortcut the user builds once from a paste-able
-prompt, transport is plain (Web Share), and there is no cloud backend or
-shared live data to corrupt.
+Conclusion: not worth keeping unused UI for a replica of what the Watch already
+writes. Removed the button, menu note, `appleHealthText` helper, and spec.

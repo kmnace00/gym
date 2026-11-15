@@ -115,8 +115,11 @@ Status lines (one per item, per house rules):
 
 New estimated day totals unchanged: **Fri 105 min · Sat 98 min · Sun 100 min**.
 
-### Nov 14 — v135-B follow-up (v136): in-app "Send workout to Apple Health" was silent on iPhone
+### Nov 14 — v136 (follow-up): in-app "Send workout to Apple Health" was silent on iPhone
 `navigator.share(...)` was invoked with no `try/catch`, so when iOS throws synchronously (e.g. `NotAllowedError` from a lost transient activation, or a non-secure-context guard) the share sheet never opened **and** no on-screen message appeared. `app.js` `sendAppleHealthText` now wraps the call, surfaces the failure, and falls back to the clipboard with a "run the Log Gym Workout Shortcut" prompt. Shipped as `gym-v136` (gates green: 238 unit, 192 e2e, typecheck clean). The parallel shortcut error ("does not have access to your workouts / walking + running distance / active energy") is the iOS Health **write** permission not yet granted to Shortcuts — a Settings fix on the phone, not a code issue.
+
+### Nov 14 — v135-B REVERSED (v137): Apple Health / Watch path deleted as not worth keeping
+On Khang's decision after research (see `RESEARCH.md`), the whole Apple Health / Watch gateway is **removed in v137**: the Finish summary's "Send workout to Apple Health" button, the menu's "Apple Health / Watch" note, the `Stats.appleHealthText` helper, and `e2e/health.spec.js` (+ its 2 e2e tests and 2 unit tests and the a11y tab-order expectations). Rationale: HealthKit stores a workout *envelope* (duration/calories/HR/distance) with no fields for sets, reps, or weight, so it can't hold lifting volume anyway; Khang starts a Workout on his Watch every session, so the Watch already writes the strength-training entry with richer data; the app's only addition was a label+duration backfill — pure duplication for zero value, and dead UI made the program less clean. Recoverable in git history if ever wanted. Gates re-checked green for v137.
 
 ## Nov 13 — Khang's in-session requests + Phase 1 plan (approved by Khang in chat; full plan in his workspace PLAN-2026-11-13.md)
 

@@ -651,24 +651,6 @@
     };
   }
 
-  /* ── Apple Health gateway (v135, $0 iOS Shortcut path) ─────────────────────
-     Builds a structured, Shortcut-parseable one-liner for the workout just
-     finished. The first line is a stable machine record the user's one-time
-     Freeform Shortcut greps (GYMWORKOUT|strength|<mins>|<date>) so it can call
-     Health's "Log Workout", which syncs to the Apple Watch. The human line
-     follows. Pure and deterministic so the unit tests pin the shape.      */
-  function appleHealthText(o) {
-    if (!o) return null;
-    var mins = Math.round(o.mins);
-    if (!(mins > 0)) return null;
-    var date = o.date || "", day = o.dayLabel || "Workout";
-    var setPart = typeof o.sets === "number" && o.sets > 0 ? o.sets + " sets" : "";
-    var volPart = typeof o.volLb === "number" && o.volLb > 0 ? o.volLb + " lb" : "";
-    return "GYMWORKOUT|strength|" + mins + "|" + date + "\n" +
-      day + " — " + date + " — strength training — " + mins + " min" +
-      (setPart ? " — " + setPart : "") + (volPart ? " — " + volPart : "");
-  }
-
   return {
     sessionCount: sessionCount, setsLogged: setsLogged,
     setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
@@ -680,7 +662,6 @@
     weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
     compactVol: compactVol, topMovers: topMovers,
     trainingDays: trainingDays, toCsv: toCsv, sessionDrift: sessionDrift, calibration: calibration,
-    appleHealthText: appleHealthText,
     progressSnapshot: progressSnapshot
   };
 });
