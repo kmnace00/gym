@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#1E3A5F"/>
+  <!-- ears -->
+  <circle cx="166" cy="178" r="48" fill="#F7F1DE"/>
+  <circle cx="166" cy="178" r="26" fill="#D9C7A3"/>
+  <circle cx="346" cy="178" r="48" fill="#F7F1DE"/>
+  <circle cx="346" cy="178" r="26" fill="#D9C7A3"/>
+  <!-- head -->
+  <ellipse cx="256" cy="270" rx="156" ry="150" fill="#F7F1DE"/>
+  <!-- eyes -->
+  <circle cx="198" cy="250" r="16" fill="#2B2B2B"/>
+  <circle cx="314" cy="250" r="16" fill="#2B2B2B"/>
+  <circle cx="203" cy="244" r="5" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="319" cy="244" r="5" fill="#FFFFFF" opacity="0.9"/>
+  <!-- muzzle -->
+  <ellipse cx="256" cy="322" rx="68" ry="52" fill="#FFFFFF"/>
+  <!-- nose -->
+  <path d="M240 296 q16 -18 32 0 q-4 14 -16 16 q-12 -2 -16 -16 Z" fill="#2B2B2B"/>
+  <!-- mouth -->
+  <path d="M256 312 v12" stroke="#2B2B2B" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M238 334 q18 12 36 0" stroke="#2B2B2B" stroke-width="7" stroke-linecap="round" fill="none"/>
+</svg>
