@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v149: topMovers and PRs exclude swapped and deload sessions at their boundaries
+
+Survey findings #2 + #3 (per-lift progression-reader consistency). `topMovers` compared filterless `arr[0]` to `arr[arr.length-1]`, so a deload week (intentionally ~10% light) sitting last dragged the top-mover delta into a false decline, and a swapped-boundary session compared a different exercise's 1RM. Every other per-lift progression read (`progressionEntry` = `countsForProgression && !e.deload`) already excluded both; `topMovers` excluded neither and `personalRecords` excluded only swap.
+
+BUILT: both now use the shared rule — `topMovers` builds `seq = arr[countsForProgression && !deload]`, requires `seq.length >= 2`, reads first/last from `seq`; `personalRecords` also skips `e.deload` so a deload week can never be a PR. **v148 reconciliation:** v148's `topMovers` swap-aware `optsFor` branch is now dead (swaps filtered before `optsFor` runs) and was removed; its unit test was replaced with a coherent boundary-exclusion test + a banked-swap `entryVolume` plain-load test. v148's persistence fix (stamping swapped entries `bw:false/assist:false`) is untouched and still e2e-covered. Gate: check/unit **244 pass**, typecheck clean, e2e **205 passed**. `GYM_VERSION` `gym-v149`, CACHE-HASH `566797d905ea4f27`. Critic **GO** (noted minor cosmetics, no action).
+
 ## Nov 16 — v148: a swapped-in machine on a bodyweight/assist lift is valued at its real weight
 
 Survey finding #1 (real data-correctness bug on an existing feature). `bankLift` stamped a history entry with the ORIGINAL exercise's valuation flags (`bw`/`assist`/`bwKg`) even when the lift was swapped, so e.g. Friday's Assisted dip or Sunday's pull-ups swapped to a plain machine alternate had its external weight mis-valued as `max(0, bodyweight − load)` — 90 lb of real work counted as (165−90)=75 lb. That corrupted Progress volume + `volumeByDay` and the finish summary for swaps (CSV actually exports raw loads, so it was never wrong; the context was overstated on that point). Untested before.
