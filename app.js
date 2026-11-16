@@ -1752,6 +1752,23 @@
     var age = Gym.backupAgeDays(payload);
     var b = age === null ? "never backed up" : (age === 0 ? "backed up today" : "backed up " + age + "d ago");
     document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + (typeof GYM_VERSION === "string" ? GYM_VERSION : "dev") + " · " + Stats.sessionCount(payload) + " workouts · " + b;
+    /* support line: the numbers that decide the Home-Screen layout — the app
+       box, the reported viewport, the resolved safe-area insets, the mode */
+    var sf = document.getElementById("screenFoot");
+    if (sf) {
+      var appBox = document.getElementById("app");
+      var cs = getComputedStyle(appBox);
+      var vp = window.innerHeight;
+      var vv = window.visualViewport ? Math.round(window.visualViewport.height) : vp;
+      var safeTop = Math.round(parseFloat(cs.paddingTop) - 12);
+      var safeBot = Math.round(parseFloat(cs.paddingBottom) - 12);
+      var mode = "browser";
+      if ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+        /** @type {any} */ (window.navigator).standalone === true) mode = "standalone";
+      sf.textContent = "Screen " + screen.width + "×" + screen.height +
+        " · app " + Math.round(appBox.getBoundingClientRect().height) +
+        " · vp " + vp + "/" + vv + " · safe " + safeTop + "/" + safeBot + " · " + mode;
+    }
     menuBtn.classList.toggle("needs-backup", Gym.backupDue(payload));
     var snapBtn = document.getElementById("restoreSnapshot");
     if (snapBtn) {

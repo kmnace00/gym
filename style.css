@@ -146,10 +146,10 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
    margins cancel .app's 14px side padding and its bottom padding exactly. */
 .dock{
   flex:none;
-  margin:10px -14px calc(-1 * (12px + env(safe-area-inset-bottom)));
-  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  margin:8px -14px calc(-1 * (12px + env(safe-area-inset-bottom)));
+  padding:8px 14px calc(8px + env(safe-area-inset-bottom));
   background:var(--surface);border-top:1px solid var(--line);
-  display:flex;flex-direction:column;gap:9px;
+  display:flex;flex-direction:column;gap:7px;
   font-variant-numeric:tabular-nums;
   transition:background-color .25s ease,border-color .25s ease;
 }

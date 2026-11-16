@@ -17,6 +17,16 @@ test("the backup menu footer shows the schema version and the deploy tag", async
   expect(/v5 · gym-v\d+ · \d+ workouts · /.test(foot), "footer reads like 'v5 · gym-v90 · 0 workouts · never backed up'").toBe(true);
 });
 
+test("the menu's screen line reports the layout numbers used on this device", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  const line = await page.locator("#screenFoot").textContent();
+  expect(line).toMatch(/^Screen \d+×\d+ · app \d+ · vp \d+\/\d+ · safe \d+\/\d+ · (browser|standalone)$/);
+  const vp = await page.evaluate(() => window.innerHeight);
+  expect(line, "the reported app box matches the live viewport").toContain("app " + vp + " · vp " + vp);
+});
+
 test("the service worker takes its cache name from version.js, not a second literal", () => {
   const sw = fs.readFileSync(path.resolve(__dirname, "..", "sw.js"), "utf8");
   expect(sw).toMatch(/importScripts\("\.\/version\.js"\);/);
