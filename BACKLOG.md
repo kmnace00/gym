@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v147: the day overview shows a swapped lift's working load, not the original's
+
+Critique-pending follow-up (display-consistency). The day-overview list rendered each row's load from `s.load` (the exercised lift's own load) even while the lift was swapped, so a swapped lift showed the original's load there while its lift view correctly showed the alternate's — a stale, contradictory display. Now the day row reads via `workingLoad(s)` (the `swapLoad` while swapped), matching the lift view and B6-07/N14 semantics; non-swapped rows are byte-identical (`workingLoad` = `s.load`).
+
+BUILT: `app.js` day-overview `loadTxt` (now routed through `workingLoad`). Regression e2e (`e2e/alts.spec.js`): seed swapped `fri:0` (`load:60` → `swapLoad:10`), assert the day row reads `"Load 10 lb"` and not `"Load 60 lb"` — **fails on pre-fix**. Gate: check/typecheck clean, e2e **204 passed** (203 + 1). `GYM_VERSION` `gym-v147`, CACHE-HASH `462f518196648e65`. Remaining critique-pending: `applyLoad`-while-swapped (hide Apply while swapped) and `planBtn`-into-dormant-load (out of scope).
+
 ## Nov 16 — v146: finish-screen tonnage now reads the live set arrays, agreeing with history and CSV
 
 `showSummary()` derived tonnage from `Stats.volumeByDay` (aggregate **history**), so a session just finished or still in progress — whose today's lifts weren't all banked yet — under-reported, and a lift not yet touched could inherit a stale prior week's tonnage. The fix values each lift's **live `s.sets`** in place with the same `bw`/`assist` flags and `entryVolume` rule `bankLift` uses for history: the finish screen and the banked CSV always agree, extra-set sessions count their true sets, and a dormant lift contributes 0. `sets` now sums actual `s.done` (was `Σ min(done, effSets)`).
@@ -80,7 +86,7 @@ its historical mentions below are records of finished batches, not protocol.
 
 - **Swap + suggestion load (low, display-consistency):** `applyLoadBtn.onclick` (`app.js:1502`) writes the suggested load into `curSt().load` directly. The suggestion is always the ORIGINAL lift's next load (swapped entries are excluded from suggestions per P11), so while a lift is swapped the button applies the original's progression to the original's dormant `load` — invisible-but-coherent, not corruption. NOT fixed in v145: rewriting it into `swapLoad` (as first proposed) was rejected as wrong-value-into-wrong-field; the correct fix, if wanted, is to hide `applyLoad`/`suggestLine` while swapped. No test clicks Apply on a swapped lift today.
 - **Swap + Plan day (low):** `planBtn` (`app.js:1578`) writes the planned load into `s.load`, so a swapped, not-yet-started lift is planned on the original lift's dormant field rather than the alternate's working load — an incompleteness, not corruption. Leave out of scope unless Khang wants planning to target swapped lifts.
-- **Swap + day-row load (low, display):** the day overview row (`app.js:419-421`) reports `s.load` (the programmed lift's load) rather than `workingLoad(s)`, so a swapped lift's day row shows the original's load while the lift view correctly shows the alternate's. Stale in the day view only.
+- **Swap + day-row load (low, display):** ~~the day overview row (`app.js:419-421`) reports `s.load` (the programmed lift's load) rather than `workingLoad(s)`, so a swapped lift's day row shows the original's load while the lift view correctly shows the alternate's. Stale in the day view only.~~ **FIXED v147** (commit `2796535`): the day row now renders via `workingLoad(s)`, matching the lift view's B6-07/N14 semantics; regression e2e added. Still open: `applyLoad`-while-swapped (hide Apply while swapped) and `planBtn`-into-dormant-load (out of scope).
 
 ## Nov 13 — v131 release gate: intermittent e2e flake (PRE-EXISTING on main, publish paused)
 
