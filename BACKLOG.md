@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v146: finish-screen tonnage now reads the live set arrays, agreeing with history and CSV
+
+`showSummary()` derived tonnage from `Stats.volumeByDay` (aggregate **history**), so a session just finished or still in progress — whose today's lifts weren't all banked yet — under-reported, and a lift not yet touched could inherit a stale prior week's tonnage. The fix values each lift's **live `s.sets`** in place with the same `bw`/`assist` flags and `entryVolume` rule `bankLift` uses for history: the finish screen and the banked CSV always agree, extra-set sessions count their true sets, and a dormant lift contributes 0. `sets` now sums actual `s.done` (was `Σ min(done, effSets)`).
+
+BUILT: `app.js` `showSummary()` (per-lift `Stats.entryVolume` accumulation). Regression e2e seeds literal 100×6 sets and asserts `sumVol` **"13.8k lb"** / `sumSets` **"24"** (complete: 7 plain lifts ×1800 + assisted dip (165−100)×6×3=1170) and **"10.8k lb"** / **"18"** (partial) — the partial `sumVol` assertion is the pre/post discriminator (old code read empty history → "0 lb"). Gate: unit 241/241, typecheck clean, e2e **203 passed**. `GYM_VERSION` `gym-v146`, CACHE-HASH `338511e6488802ee`. Reviewed by the critic on the diff (GO; noted the comment wording, tightened). The `applyLoadBtn`-while-swapped and day-row-load display items remain under Critique pending below.
+
 ## Nov 16 — v145: swap-mode set-edit no longer corrupts the original lift's load
 
 The survey flagged a real data-corruption bug in the swap path (B6-07/N14). When a swapped lift was mid-edit and the user navigated away (Back, ‹ › chevrons, day switch), `resetEdit()` restored `editBackup.load` — captured from `workingLoad(s)`, i.e. the alternate's `swapLoad` while swapped — into `s.load`, the **original lift's** dormant field. The original's working load (e.g. 60) was silently overwritten with the alternate's (10) and resurfaced later when the lift was reset/un-swapped.
