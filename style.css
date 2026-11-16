@@ -49,10 +49,17 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 
 /* ── shell ─────────────────────────────────────────────────────────────── */
 .app{
-  height:100dvh;max-width:520px;margin:0 auto;
+  height:100dvh;height:var(--app-h,100dvh);max-width:520px;margin:0 auto;
   display:flex;flex-direction:column;gap:12px;
   padding:calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
   -webkit-user-select:none;user-select:none;
+}
+/* iOS Home-Screen (installed PWA) mode has historically under-reported the
+   dynamic viewport height, leaving a strip of body under the app ("chin gap").
+   In standalone the layout viewport is the whole screen, so 100vh fills it;
+   the JS --app-h pin (app.js syncViewportHeight) then keeps it exact. */
+@media (display-mode: standalone){
+  .app{height:100vh;height:var(--app-h,100vh)}
 }
 
 
@@ -405,7 +412,7 @@ h1{
 .modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.6);animation:bdIn .18s ease}
 @keyframes bdIn{from{background-color:rgba(0,0,0,0)}}
 .modal[hidden]{display:none}
-.modal-card{width:100%;max-width:340px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);transition:background-color .25s ease,border-color .25s ease}
+.modal-card{width:100%;max-width:340px;max-height:calc(var(--app-h,100dvh) - 32px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);transition:background-color .25s ease,border-color .25s ease}
 .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .modalclose{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;color:var(--muted);font-size:16px}
 .modalbtn{min-height:46px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700;font-size:14px;cursor:pointer;line-height:1.25;text-align:center;padding:0 10px}
@@ -629,7 +636,7 @@ input{caret-color:var(--accent)}
 .summary{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.66);animation:bdIn .18s ease}
 .summary[hidden]{display:none}
 .summary-card{
-  width:100%;max-width:360px;max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain;
+  width:100%;max-width:360px;max-height:calc(var(--app-h,100dvh) - 32px);overflow-y:auto;overscroll-behavior:contain;
   background:var(--surface);border:1px solid var(--line);
   border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;
   box-shadow:0 12px 44px rgba(0,0,0,.55);transition:background-color .25s ease,border-color .25s ease;

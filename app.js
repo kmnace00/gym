@@ -2047,6 +2047,26 @@
   };
 
   /* ── boot ──────────────────────────────────────────────────────────────── */
+  /* Home-Screen mode on iOS can under-report the dynamic viewport height, so
+     the app box ends above the real screen bottom (a strip of body shows).
+     Pin the shell to window.innerHeight — the one height the engine always
+     reports correctly — and keep it in step with rotation and the URL bar. */
+  function syncViewportHeight() {
+    var h = window.innerHeight;
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+      /** @type {any} */ (window.navigator).standalone === true;
+    /* In Home-Screen mode the window IS the whole screen, so the screen height
+       is the honest upper bound even when the engine under-reports the
+       viewport. The 200px guard keeps a stale/odd value from overshooting. */
+    if (standalone && window.screen && window.screen.height > h && window.screen.height - h <= 200) {
+      h = window.screen.height;
+    }
+    document.documentElement.style.setProperty("--app-h", h + "px");
+  }
+  syncViewportHeight();
+  window.addEventListener("resize", syncViewportHeight);
+  window.addEventListener("orientationchange", syncViewportHeight);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", syncViewportHeight);
   initTheme();
   payload = Gym.reconcile(Gym.load(), DAYS);
   var loadErr = Gym.lastLoadError();
