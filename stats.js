@@ -481,6 +481,11 @@
       e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
       if (!e) continue;
       function optsFor(en) {
+        /* B6-06/N14: a session logged under an ALTERNATE carries the machine's
+           own external load — a plain number. Value it as such (bw:false,
+           assist:false) rather than the original lift's bodyweight/assist rule,
+           so a swapped-in machine is measured at its real weight. */
+        if (en && en.swap) return { bw: false, assist: false, bodyweight: resolveBodyweight(en, bwKg) };
         return { bw: !!e.bw, assist: !!e.assist || en.assist === true, bodyweight: resolveBodyweight(en, bwKg) };
       }
       first = topSet(entrySets(arr[0]), metric, optsFor(arr[0])) || arr[0];

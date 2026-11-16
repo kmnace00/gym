@@ -116,6 +116,7 @@
     var e = DAYS[d].ex[i], s = st(d, i);
     if (!s.sets || !s.sets.length || s.done < effSets(e)) return;
     var top = topSetOf(e, s.sets) || s.sets[s.sets.length - 1];
+    var val = liftValuation(e, s);
     var hit = false;
     for (var j = 0; j < s.sets.length; j++) {
       if (s.sets[j].reps >= e.top && s.sets[j].rir >= e.rir) hit = true;
@@ -129,10 +130,10 @@
         if (x.edited) o.edited = true;
         return o;
       }),
-      bw: !!e.bw, exId: e.id
+      bw: val.bw, exId: e.id
     };
-    if (e.assist) entry.assist = true; // N15: the banked load is assistance — stats value it as bodyweight minus load
-    if ((e.bw || e.assist) && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
+    if (val.assist) entry.assist = true; // N15: the banked load is assistance — stats value it as bodyweight minus load
+    if ((val.bw || val.assist) && payload && typeof payload.bodyweight === "number" && payload.bodyweight > 0) entry.bwKg = payload.bodyweight;
     if (s.swapAlt) entry.swap = s.swapAlt; // B6-06: logged under an alternate — excluded from progression/PRs
     if (deloadActive(payload)) entry.deload = true; // B6-09: banked during a deload week
     Gym.upsertHistory(payload, d, i, entry);
@@ -578,6 +579,14 @@
      bodyweight semantics don't apply. The working load lives in the record's
      swapLoad field while swapped, and in `load` otherwise.                 */
   function workingLoad(s) { return s.swapAlt ? (typeof s.swapLoad === "number" ? s.swapLoad : 0) : s.load; }
+  /* Valuation flags for a lift's sets: while the lift is swapped, the alternate's
+     load is the machine's own external weight — a plain number, per the workingLoad
+     semantics above (B6-07/N14). So a bodyweight/assisted lift swapped to a plain
+     machine alternate is valued at its real weight (bw:false, assist:false), never
+     as bodyweight-minus-help. bankLift and showSummary share this one rule. */
+  function liftValuation(e, s) {
+    return (s && s.swapAlt) ? { bw: false, assist: false } : { bw: !!e.bw, assist: !!e.assist };
+  }
   /* N14: per-alternate load memory for the day — swapLoad stays the ACTIVE
      alternate's load; swapLoads remembers each alternate's own, so swapping
      away and back restores it instead of carrying the last-used load over. */
@@ -1614,7 +1623,8 @@
          tonnage here as they will in CSV. A dormant lift has done 0 and no
          sets, so it contributes 0 — and can never read a stale prior load. */
       sets += s.done;
-      vol += Stats.entryVolume({ sets: s.sets || [], load: s.load, reps: s.reps, setsDone: s.done || 0, bw: !!list[i].bw, assist: !!list[i].assist }, payload.bodyweight);
+      var val = liftValuation(list[i], s);
+      vol += Stats.entryVolume({ sets: s.sets || [], load: s.load, reps: s.reps, setsDone: s.done || 0, bw: val.bw, assist: val.assist }, payload.bodyweight);
     }
     vol = Math.round(vol);
     /* the session's own date, not the wall clock: a workout that started

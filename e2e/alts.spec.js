@@ -114,6 +114,34 @@ test("the day overview shows a swapped lift's working load, not the original's",
   expect(errors).toEqual([]);
 });
 
+test("a swapped-in machine on an assisted lift is valued at its real weight", async ({ page }) => {
+  /* Friday lift 7 is the Assisted dip (assist:true). Swapped to the plain
+     "Close-grip bench press" alternate at 135 lb, its 3 done sets must sum as
+     plain external weight (135×6×3 = 2430 → "2.4k lb"), NOT bodyweight-minus-help
+     ((165−135)×6×3 = 540 → "540 lb") the ORIGINAL's assist rule would apply. */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay();
+    const state = {};
+    state[day + ":7"] = { done: 3, load: 45, reps: 6, rir: 2,
+      swapAlt: "Close-grip bench press", swapLoad: 135,
+      sets: [{ load: 135, reps: 6, rir: 2 }, { load: 135, reps: 6, rir: 2 }, { load: 135, reps: 6, rir: 2 }] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, bodyweightSet: false, state,
+      sessionLog: [], liftHistory: {},
+      active: { id: "ses_swapval", date: "", day: day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator("#finishBtn").click();
+  await expect(page.locator("#summary")).toBeVisible();
+  await expect(page.locator("#sumVol")).toHaveText("2.4k lb"); // 135×6×3, plain load
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);

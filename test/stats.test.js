@@ -527,6 +527,27 @@ test("swap entries are invisible to PRs but still counted in volume", () => {
   assert.equal(vols[vols.length - 2].volume, 990 + 960);
 });
 
+test("a swapped-in machine on an assisted lift is valued at its real weight (N14/B6-06)", () => {
+  /* fri:7 is the Assisted dip (assist:true, no bw). Its last session was
+     swapped to "Close-grip bench press" at 90 lb — external machine weight.
+     topMovers must value that 90 lb as plain load (1RM 108.0), NOT as
+     bodyweight-minus-help (165−90=75 → 90.0), which would fabricate a decline. */
+  const p = {
+    bodyweight: 165,
+    liftHistory: {
+      "fri:7": [
+        { date: "2026-10-18", load: 45, reps: 6, rir: 2, setsDone: 3, assist: true },
+        { date: "2026-11-15", load: 90, reps: 6, rir: 2, setsDone: 3, swap: "Close-grip bench press" }
+      ]
+    }
+  };
+  const m = S.topMovers(p, P.DAYS, P.progressMetric);
+  assert.equal(m.length, 1);
+  assert.equal(m[0].name, P.DAYS.fri.ex[7].n);
+  assert.equal(m[0].delta, 108.0 - 144.0); // 90 lb plain, not (165−90)=75 assist
+  assert.equal(m[0].pct, -25); // (−36 / 144) × 100
+});
+
 /* ── N10: self-calibrating clock ─────────────────────────────────────────── */
 const CAL_OPTS = {
   setSecs: P.SET_SECS, setupSeed: P.SETUP_SECS,
