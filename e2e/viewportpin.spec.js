@@ -16,11 +16,13 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
 
     const m = await page.evaluate(() => {
       const app = document.getElementById("app").getBoundingClientRect();
+      const dock = document.getElementById("dayDock").getBoundingClientRect();
       return {
         pinned: document.documentElement.style.getPropertyValue("--app-h"),
         innerH: window.innerHeight,
         appTop: app.top,
         appBottom: app.bottom,
+        dockBottom: dock.bottom,
         scrollH: document.documentElement.scrollHeight
       };
     });
@@ -31,6 +33,9 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     // legacy bug was an app box shorter than the viewport (empty strip below)
     expect(m.appTop).toBe(0);
     expect(Math.abs(m.appBottom - m.innerH)).toBeLessThanOrEqual(1);
+    // the day's bottom dock bleeds into the home-indicator inset: the painted
+    // surface must reach the screen edge, not stop above a strip of background
+    expect(Math.abs(m.dockBottom - m.innerH)).toBeLessThanOrEqual(1);
     expect(m.scrollH).toBeLessThanOrEqual(m.innerH + 1);
   });
 }
