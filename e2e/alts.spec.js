@@ -66,6 +66,35 @@ test("the chooser lists the alternates; each keeps its own load", async ({ page 
   expect(errors).toEqual([]);
 });
 
+test("navigating away mid-edit on a swapped lift never writes the alternate load into the original lift", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 2, load: 60, reps: 6, rir: 2, swapAlt: "Barbell back squat", swapLoad: 10,
+      sets: [{ load: 10, reps: 6, rir: 2 }, { load: 10, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#exName")).toHaveText("Barbell back squat");
+  await expect(page.locator("#loadVal")).toHaveText("10");
+
+  /* enter the inline edit on the first done set: startEdit snapshots the
+     working load (swapLoad 10), then navigating back runs resetEdit() which
+     must restore it into swapLoad, not the original lift's `load` field. */
+  await page.locator("[data-set='0']").click();
+  await page.locator("#backBtn").click();
+
+  const st = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"]);
+  expect(st.load, "the original lift's load is untouched by the edit").toBe(60);
+  expect(st.swapLoad, "the alternate's load survives the restore").toBe(10);
+
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);

@@ -1689,7 +1689,11 @@
      reps/RIR back — the next set must not inherit the edited set's numbers. */
   function resetEdit() {
     var s = curSt();
-    if (editBackup && s) { s.load = editBackup.load; s.reps = editBackup.reps; s.rir = editBackup.rir; }
+    /* editBackup.load was captured from workingLoad(s), so while the lift is
+       swapped it holds the alternate's swapLoad — restore it through
+       setWorkingLoad so it goes back into swapLoad, never the original lift's
+       dormant `load` field (which would otherwise be corrupted on navigate). */
+    if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null;
   }
   function showDay() {

@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v145: swap-mode set-edit no longer corrupts the original lift's load
+
+The survey flagged a real data-corruption bug in the swap path (B6-07/N14). When a swapped lift was mid-edit and the user navigated away (Back, ‹ › chevrons, day switch), `resetEdit()` restored `editBackup.load` — captured from `workingLoad(s)`, i.e. the alternate's `swapLoad` while swapped — into `s.load`, the **original lift's** dormant field. The original's working load (e.g. 60) was silently overwritten with the alternate's (10) and resurfaced later when the lift was reset/un-swapped.
+
+BUILT: `app.js` `resetEdit()` restores through `setWorkingLoad(s, editBackup.load)`, the exact inverse of how the load was captured (correct field while swapped; byte-identical for non-swapped lifts). This is the last direct `s.load = editBackup.load` write in the codebase (the other two restore paths already used `setWorkingLoad`). E2E regression (`e2e/alts.spec.js`): seed a swapped lift, edit a done set, tap Back, assert the original load is untouched — **fails on pre-fix** (`Received: 10` vs 60), passes after. Gate: unit 241/241, typecheck clean, e2e **203 passed** (202 + 1). `GYM_VERSION` `gym-v145`, CACHE-HASH `36830218b5ccb2d2`. Reviewed by the critic pre- and post-build (GO both times). NOT taken in this slice: the `applyLoadBtn`/`planBtn` and day-row-load items → recorded under Critique pending below.
+
 ## Nov 15 — v138: Home-Screen (standalone PWA) tall-canvas redesign
 
 Khang added the app to his iPhone Home Screen and reported extra empty space at the bottom; the standalone PWA viewport is taller than the 667/844 canvases the layout was tuned for. On investigation the app already filled edge-to-edge with no literal void — the "space" was flex regions stretching day rows (52→~70–81px) and set-log rows into sparse cards. Khang chose the direction: **compact cards + a calm designed bottom band** — stop cards stretching, fix a comfortable height, and spend the leftover as an intentional bottom zone (finisher + today summary + breathing room) instead of stretched empty cards.
@@ -66,7 +72,9 @@ its historical mentions below are records of finished batches, not protocol.
 
 ## Critique pending
 
-None. `CRITIQUE_PENDING` entries (see the global framework) go here.
+- **Swap + suggestion load (low, display-consistency):** `applyLoadBtn.onclick` (`app.js:1502`) writes the suggested load into `curSt().load` directly. The suggestion is always the ORIGINAL lift's next load (swapped entries are excluded from suggestions per P11), so while a lift is swapped the button applies the original's progression to the original's dormant `load` — invisible-but-coherent, not corruption. NOT fixed in v145: rewriting it into `swapLoad` (as first proposed) was rejected as wrong-value-into-wrong-field; the correct fix, if wanted, is to hide `applyLoad`/`suggestLine` while swapped. No test clicks Apply on a swapped lift today.
+- **Swap + Plan day (low):** `planBtn` (`app.js:1578`) writes the planned load into `s.load`, so a swapped, not-yet-started lift is planned on the original lift's dormant field rather than the alternate's working load — an incompleteness, not corruption. Leave out of scope unless Khang wants planning to target swapped lifts.
+- **Swap + day-row load (low, display):** the day overview row (`app.js:419-421`) reports `s.load` (the programmed lift's load) rather than `workingLoad(s)`, so a swapped lift's day row shows the original's load while the lift view correctly shows the alternate's. Stale in the day view only.
 
 ## Nov 13 — v131 release gate: intermittent e2e flake (PRE-EXISTING on main, publish paused)
 
