@@ -416,9 +416,14 @@
     var rows = "";
     list.forEach(function (e, i) {
       var s = st(cur, i), done = s.done >= effSets(e);
-      var loadTxt = e.assist ? (s.load > 0 ? "Help " + s.load + " lb" : "bodyweight")
-        : e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
-          : e.load === 0 ? "bodyweight" : "Load " + s.load;
+      /* B6-07/N14: while a lift is swapped, the day row must show the ALTERNATE's
+         working load — plain add weight, "Load N lb" / "start light" — just like
+         the lift view, not the original's dormant load with its own semantics. */
+      var wl = workingLoad(s);
+      var loadTxt = s.swapAlt ? (wl > 0 ? "Load " + wl + " lb" : "start light")
+        : e.assist ? (s.load > 0 ? "Help " + s.load + " lb" : "bodyweight")
+          : e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
+            : e.load === 0 ? "bodyweight" : "Load " + s.load;
       var restTxt = fmt(e.rest + (s.rir <= 1 ? 30 : 0));
       rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
         + '<span class="liftstatus">' + (done ? "✓" : "") + '</span>'

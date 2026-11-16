@@ -95,6 +95,25 @@ test("navigating away mid-edit on a swapped lift never writes the alternate load
   expect(errors).toEqual([]);
 });
 
+test("the day overview shows a swapped lift's working load, not the original's", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 2, load: 60, reps: 6, rir: 2, swapAlt: "Barbell back squat", swapLoad: 10,
+      sets: [{ load: 10, reps: 6, rir: 2 }, { load: 10, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  // lift 0's day-overview row must report the ALTERNATE's 10, not "Load 60 lb".
+  const meta = page.locator(".liftrow").first().locator(".liftmeta");
+  await expect(meta).toContainText("Load 10 lb");
+  await expect(meta).not.toContainText("Load 60 lb");
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);
