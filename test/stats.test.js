@@ -527,25 +527,58 @@ test("swap entries are invisible to PRs but still counted in volume", () => {
   assert.equal(vols[vols.length - 2].volume, 990 + 960);
 });
 
-test("a swapped-in machine on an assisted lift is valued at its real weight (N14/B6-06)", () => {
-  /* fri:7 is the Assisted dip (assist:true, no bw). Its last session was
-     swapped to "Close-grip bench press" at 90 lb — external machine weight.
-     topMovers must value that 90 lb as plain load (1RM 108.0), NOT as
-     bodyweight-minus-help (165−90=75 → 90.0), which would fabricate a decline. */
+test("topMovers skips swapped and deload sessions at the first/last boundary, including on an assisted lift (B6-06/B6-09)", () => {
+  /* A swapped session on an assisted lift (fri:7) is not this lift's work, so it
+     must not serve as a topMovers boundary — with only one real session the lift
+     is not a mover at all. */
   const p = {
-    bodyweight: 165,
+    bodyweight: 75,
     liftHistory: {
+      "fri:0": [
+        { date: "2026-10-01", load: 50, reps: 6, setsDone: 3 },
+        { date: "2026-11-08", load: 45, reps: 6, setsDone: 3, deload: true },
+        { date: "2026-11-15", load: 55, reps: 6, setsDone: 3 }
+      ],
+      "fri:1": [
+        { date: "2026-10-01", load: 40, reps: 8, setsDone: 3, swap: "DB incline press" },
+        { date: "2026-10-15", load: 40, reps: 8, setsDone: 3 },
+        { date: "2026-11-15", load: 44, reps: 8, setsDone: 3 }
+      ],
       "fri:7": [
         { date: "2026-10-18", load: 45, reps: 6, rir: 2, setsDone: 3, assist: true },
         { date: "2026-11-15", load: 90, reps: 6, rir: 2, setsDone: 3, swap: "Close-grip bench press" }
       ]
     }
   };
-  const m = S.topMovers(p, P.DAYS, P.progressMetric);
-  assert.equal(m.length, 1);
-  assert.equal(m[0].name, P.DAYS.fri.ex[7].n);
-  assert.equal(m[0].delta, 108.0 - 144.0); // 90 lb plain, not (165−90)=75 assist
-  assert.equal(m[0].pct, -25); // (−36 / 144) × 100
+  const m = S.topMovers(p, P.DAYS, P.epley1rm);
+  assert.equal(m.length, 2); // fri:7 has only 1 real session → not a mover
+  const fri0 = m.find((x) => x.name === P.DAYS.fri.ex[0].n);
+  assert.equal(fri0.delta, 6); // 66 − 60; the 45-lb deload is not the boundary
+  assert.equal(fri0.pct, 10);
+});
+
+test("a banked swap entry without assist/bw counts as plain volume (N14)", () => {
+  /* v148 stamps swapped banked entries with bw:false/assist:false. That entry
+     must value at the alternate's real external weight, not bodyweight-minus-help. */
+  const p = {
+    bodyweight: 165,
+    liftHistory: {
+      "fri:7": [{
+        date: "2026-11-15", load: 135, reps: 6, rir: 2, setsDone: 3, swap: "Close-grip bench press",
+        sets: [{ load: 135, reps: 6, rir: 2 }, { load: 135, reps: 6, rir: 2 }, { load: 135, reps: 6, rir: 2 }]
+      }]
+    }
+  };
+  const v = S.entryVolume(p.liftHistory["fri:7"][0], 165);
+  assert.equal(v, 135 * 6 * 3); // 2430, plain load — NOT (165−135)×6×3 assisted
+});
+
+test("a deload week cannot become a personal record (B6-09)", () => {
+  const p = sample();
+  p.liftHistory["fri:0"].push({ date: "2026-11-20", load: 100, reps: 6, rir: 2, setsDone: 3, deload: true });
+  const out = S.personalRecords(p, P.DAYS, P.progressMetric);
+  const fri = out.find((r) => r.key === "fri:0");
+  assert.equal(fri.load, 55, "the deload 100 lb session is not this lift's PR");
 });
 
 /* ── N10: self-calibrating clock ─────────────────────────────────────────── */

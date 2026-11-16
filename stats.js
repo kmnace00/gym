@@ -439,7 +439,7 @@
       isBw = !!(ex && ex.bw);
       isAssist = !!(ex && ex.assist);
       for (i = 0; i < arr.length; i++) {
-        e = arr[i]; if (!e || !countsForProgression(e)) continue; // a swapped session is not this lift's work
+        e = arr[i]; if (!e || !countsForProgression(e) || e.deload) continue; // B6-06/B6-09: neither a swap nor a deload week can be a PR
         sets = entrySets(e);
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
@@ -481,17 +481,25 @@
       e = DAYS && DAYS[d] && DAYS[d].ex ? DAYS[d].ex[i] : null;
       if (!e) continue;
       function optsFor(en) {
-        /* B6-06/N14: a session logged under an ALTERNATE carries the machine's
-           own external load — a plain number. Value it as such (bw:false,
-           assist:false) rather than the original lift's bodyweight/assist rule,
-           so a swapped-in machine is measured at its real weight. */
-        if (en && en.swap) return { bw: false, assist: false, bodyweight: resolveBodyweight(en, bwKg) };
+        /* B6-06/B6-09: swapped and deload sessions are filtered out of `seq`
+           below before any boundary is read, so the original exercise's own
+           valuation flags apply to every entry that reaches here. */
         return { bw: !!e.bw, assist: !!e.assist || en.assist === true, bodyweight: resolveBodyweight(en, bwKg) };
       }
-      first = topSet(entrySets(arr[0]), metric, optsFor(arr[0])) || arr[0];
-      last = topSet(entrySets(arr[arr.length - 1]), metric, optsFor(arr[arr.length - 1])) || arr[arr.length - 1];
-      var fm = metric(first.load || 0, first.reps || 0, optsFor(arr[0]));
-      var lm = metric(last.load || 0, last.reps || 0, optsFor(arr[arr.length - 1]));
+      /* B6-06/B6-09: "top movers" compares the ORIGINAL lift's own progression,
+         so boundary sessions must be neither a swap (a different exercise) nor a
+         deload week (intentionally ~10% light) — the same rule app.js
+         `progressionEntry` uses for suggestions/sparkline/PRs. */
+      var seq = [], en;
+      for (var gj = 0; gj < arr.length; gj++) {
+        en = arr[gj];
+        if (en && countsForProgression(en) && !en.deload) seq.push(en);
+      }
+      if (seq.length < 2) continue;
+      first = topSet(entrySets(seq[0]), metric, optsFor(seq[0])) || seq[0];
+      last = topSet(entrySets(seq[seq.length - 1]), metric, optsFor(seq[seq.length - 1])) || seq[seq.length - 1];
+      var fm = metric(first.load || 0, first.reps || 0, optsFor(seq[0]));
+      var lm = metric(last.load || 0, last.reps || 0, optsFor(seq[seq.length - 1]));
       if (!fm) continue;
       delta = lm - fm; pct = Math.round((delta / fm) * 1000) / 10;
       out.push({ name: e.n, delta: Math.round(delta * 10) / 10, pct: pct });
