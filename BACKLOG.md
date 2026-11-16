@@ -1,5 +1,13 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v148: a swapped-in machine on a bodyweight/assist lift is valued at its real weight
+
+Survey finding #1 (real data-correctness bug on an existing feature). `bankLift` stamped a history entry with the ORIGINAL exercise's valuation flags (`bw`/`assist`/`bwKg`) even when the lift was swapped, so e.g. Friday's Assisted dip or Sunday's pull-ups swapped to a plain machine alternate had its external weight mis-valued as `max(0, bodyweight − load)` — 90 lb of real work counted as (165−90)=75 lb. That corrupted Progress volume + `volumeByDay` and the finish summary for swaps (CSV actually exports raw loads, so it was never wrong; the context was overstated on that point). Untested before.
+
+BUILT: one shared rule `liftValuation(e,s)` — while `s.swapAlt`, value sets as **plain external load** (`bw:false, assist:false`, no `bwKg`), matching `workingLoad`'s documented "plain numbers" semantics; non-swap paths are byte-identical. Used by `bankLift` (persisted flags), `showSummary` (live tonnage), and `topMovers` `optsFor` (boundary entries). Regression: unit test (fri:7 assisted dip — swapped 90 lb now epley 108.0, not 90.0; asserts delta −36, pct −25) + e2e (seed dip swapped to Close-grip bench at 135 lb, finish → `#sumVol` "2.4k lb" not "540 lb"). Gate: check/unit clean, typecheck clean, e2e **205 passed**. `GYM_VERSION` `gym-v148`, CACHE-HASH `7a5c73a213e31a7c`. Critic **GO** (noted one open decision below).
+
+**KNOWN / decision for Khang (from critic, not blocking v148):** a few alternates are genuinely *bodyweight* movements ("Band-assisted pull-up", "Bench dip"). Under the new plain rule, a logged 0 on such a swap now contributes 0 tonnage (start-light) instead of ~bodyweight — consistent with the documented "bodyweight semantics don't apply while swapped," and no test covers them. Flag for his call if he ever wants bodyweight alternates valued by bodyweight.
+
 ## Nov 16 — v147: the day overview shows a swapped lift's working load, not the original's
 
 Critique-pending follow-up (display-consistency). The day-overview list rendered each row's load from `s.load` (the exercised lift's own load) even while the lift was swapped, so a swapped lift showed the original's load there while its lift view correctly showed the alternate's — a stale, contradictory display. Now the day row reads via `workingLoad(s)` (the `swapLoad` while swapped), matching the lift view and B6-07/N14 semantics; non-swapped rows are byte-identical (`workingLoad` = `s.load`).
