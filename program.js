@@ -45,10 +45,24 @@
       { id: "sat-calf-raise", n: "Calf press", alts: ["Standing calf raise", "Single-leg DB calf raise on a step", "Seated calf raise", "Leg press calf raise"], s: 3, r: 12, top: 15, load: null, step: 5, rest: 90, rir: 0, partial: 1, cue: "Pause 1s in the stretch. No bounce." }
     ] },
     sun: { label: "Sunday — Light / Machines", ex: [
-      { id: "sun-leg-press", n: "Leg press / Hack squat", alts: ["Barbell back squat", "Goblet squat (heels elevated)", "Smith squat"], s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
-      { id: "sun-pullups", n: "Pull-ups", alts: ["Lat pulldown", "Assisted pull-up machine"], s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, cue: "Bodyweight. Under 5 reps? Use pulldown." },
+      /* Nov 15 (Khang): the leg press and the hack squat are different
+         machines with different numbers (his hack squat runs at 0 load) — they
+         are NOT interchangeable, so the row names the leg press (his 180) and
+         the hack squat is an alternate with its own remembered load, seeded at
+         0, rather than a second name sharing one number. */
+      { id: "sun-leg-press", n: "Leg press", alts: ["Hack squat", "Barbell back squat", "Goblet squat (heels elevated)", "Smith squat"], s: 3, r: 6, top: 8, load: 180, step: 5, rest: 150, rir: 2, cue: "45×4 plates. Full depth, back stays down." },
+      /* Nov 15 (Khang): pull-ups are assisted. `assist: true` makes the logged
+         number the machine's HELP, so it can fall to 0 (bodyweight) and
+         progress runs downhill — less help is the PR. `bw` stays set: a
+         zero-help session still values at bodyweight, and bodyweight lifts
+         earn no ramp-up.                                                      */
+      { id: "sun-pullups", n: "Assisted pull-up", alts: ["Lat pulldown", "Band-assisted pull-up"], s: 3, r: 6, top: 6, load: 0, step: 2.5, rest: 120, rir: 2, bw: true, assist: true, cue: "Assist = help: 0 is bodyweight, less help is harder." },
       { id: "sun-machine-ohp", n: "Machine overhead press", alts: ["Seated DB overhead press", "Standing barbell overhead press", "Smith overhead press"], s: 3, r: 7, top: 9, load: 80, step: 5, rest: 120, rir: 2, cue: "Only overhead press this week." },
-      { id: "sun-cable-fly", n: "Cable fly", alts: ["Pec deck fly", "Incline DB fly", "Machine chest fly"], s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Soft elbows, full stretch on return." },
+      /* Nov 15 (Khang): the cable stack is gone from Sunday — this is an
+         incline dumbbell fly now. New id, because cable and dumbbell loads do
+         not transfer: the retired sun-cable-fly history re-homes to
+         old:sun-cable-fly (kept for volume/CSV, never a ghost PR).           */
+      { id: "sun-incline-db-fly", n: "Incline DB fly", alts: ["Flat DB fly", "Pec deck fly", "Machine chest fly"], s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Bench ~30°, soft elbows, stretch across the chest." },
       { id: "sun-seated-row", n: "Machine seated row", alts: ["Barbell bent-over row", "One-arm DB row", "Cable seated row"], s: 3, r: 8, top: 8, load: 130, step: 5, rest: 120, rir: 2, cue: "Chest-supported. Pull to ribs." },
       { id: "sun-lat-pec", n: "Lateral raise ↔ Reverse pec deck", alts: ["DB lateral raise + bent-over DB reverse fly", "Cable lateral raise + cable rear-delt fly", "Machine lateral raise + reverse pec deck"], s: 3, r: 10, top: 12, load: 70, step: 5, rest: 120, rir: 1, partial: 1, cue: "Superset. Lateral 70, then pec deck ×12. One rest after pair." },
       { id: "sun-oh-ext", n: "Overhead cable extension", alts: ["Single-arm DB overhead extension", "EZ-bar skullcrusher", "DB overhead extension (two-hand)"], s: 3, r: 12, top: 15, load: null, step: 2.5, rest: 90, rir: 1, partial: 1, cue: "Elbows by head, lower behind head." },
@@ -92,8 +106,11 @@
      (load null), or a zero load. Assisted lifts (N15) still warm up: their
      logged number is help, so a heavier (larger) help number is EASIER — one
      set at 1.5× the help, at fewer reps, which is what Khang actually does
-     (N21-follow-up). Loads snap to the lift's step. (app.js only ever passes
-     a lift's real working load, so a starting guess never earns a ramp.)    */
+     (N21-follow-up). An assisted AND bodyweight lift (Sunday's assisted
+     pull-up, Nov 15) hits the `e.bw` guard first and earns no ramp — that is
+     deliberate, and it is why `dayMins("sun")` does not move. Loads snap to
+     the lift's step. (app.js only ever passes a lift's real working load, so a
+     starting guess never earns a ramp.)                                     */
   function rampFor(e, load, isFirst) {
     if (!e || e.bw || typeof load !== "number" || !(load > 0)) return null;
     if (e.assist) {
@@ -113,13 +130,14 @@
   }
 
   /* N8: starting-load guesses for lifts whose programme load is blank. One
-     hand-checked anchor only — the Sunday cable fly from Friday's pec deck
-     (same movement family; cables read lighter, factor 0.7, the plan's
-     flagged lowest-confidence entry). Deliberately NOT a ratio table:
-     machine loads do not transfer, so everything else stays blank.         */
-  var LOAD_GUESS_FACTOR = { "sun-cable-fly": 0.7 };
+     hand-checked anchor only — the Sunday incline DB fly from Friday's
+     incline DB press (same dumbbells, so the loads do transfer; a fly moves
+     roughly half the press per hand, the plan's flagged lowest-confidence
+     entry). Deliberately NOT a ratio table: machine loads do not transfer,
+     so everything else stays blank.                                          */
+  var LOAD_GUESS_FACTOR = { "sun-incline-db-fly": 0.5 };
   /* Which lift anchors each guess (the factor's input), by stable lift id. */
-  var LOAD_GUESS_FROM = { "sun-cable-fly": "fri-pec-deck" };
+  var LOAD_GUESS_FROM = { "sun-incline-db-fly": "fri-incline-db" };
   function guessLoad(e, anchorLoad) {
     if (!e || typeof anchorLoad !== "number" || !(anchorLoad > 0)) return null;
     var f = LOAD_GUESS_FACTOR[e.id];

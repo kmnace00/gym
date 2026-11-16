@@ -73,12 +73,12 @@ test("an unloaded lift gets no ramp line; a loaded isolation gets its N21 warm-u
   await expect(page.locator("#rampLine")).toHaveText("Warm-up: 50×4");
 });
 
-test("the Sunday cable fly starts from the marked pec-deck guess", async ({ page }) => {
+test("the Sunday incline DB fly starts from the marked incline-press guess", async ({ page }) => {
   await page.goto(url);
   await seedDay(page, "sun", {}); // N12: the day tabs are gone; the seed opens Sunday
-  await page.locator(".liftrow").nth(3).click(); // Cable fly
+  await page.locator(".liftrow").nth(3).click(); // Incline DB fly
   await expect(page.locator("#exPres")).toContainText("starting guess");
-  await expect(page.locator("#loadVal")).toHaveText("70"); // pec deck 100 x 0.7
+  await expect(page.locator("#loadVal")).toHaveText("27.5"); // incline DB press 52.5 × 0.5 per hand
   await page.locator("#backBtn").click();
   await expect(page.locator(".liftrow").nth(3).locator(".liftmeta")).toContainText("(guess)");
   // and a null-load lift with no anchor still starts light

@@ -174,6 +174,16 @@ test("toCsv escapes formula-leading cells", () => {
   assert.ok(csv.indexOf("'=cmd") !== -1);
 });
 
+test("toCsv exports an assisted lift's help as the positive number it stores", () => {
+  /* Nov 15: the UI shows help as "-45"; the CSV must keep the number the
+     model uses (positive help), never the display negation. */
+  const DAYS = { sun: { ex: [{ n: "Assisted pull-up", assist: true, bw: true }] } };
+  const csv = S.toCsv({ liftHistory: { "sun:0": [{ date: "2026-11-08", exId: "sun-pullups", assist: true, sets: [{ load: 45, reps: 6, rir: 2 }] }] } }, DAYS);
+  const row = csv.split("\n")[1];
+  assert.equal(row.split(",")[4], "45");
+  assert.ok(!csv.includes("-45"), "no negative display value leaks into the CSV");
+});
+
 test("sessionDrift needs three completed sessions before it reports", () => {
   assert.deepEqual(S.sessionDrift({}, "fri", 60), { n: 0, insufficient: true });
   assert.deepEqual(S.sessionDrift({ sessionLog: [{ day: "fri", status: "complete", durationSec: 3600 }] }, "fri", 60), { n: 1, insufficient: true });
@@ -316,8 +326,11 @@ test("workoutDates / trainingDays are null-prototype maps — a __proto__ date c
 });
 
 test("topMovers forwards bodyweight options to the metric", () => {
-  const i = P.DAYS.sun.ex.findIndex((e) => e.bw); // pull-ups — Friday's dip is assisted since N15
-  const key = "sun:" + i;
+  /* a synthetic program: since Nov 15 both real bodyweight lifts are assisted
+     (pull-ups) or assisted-and-loaded (the dip), and this test is about the
+     opts object, not that programme data. */
+  const DAYS = { fri: { ex: [{ id: "t-bw", n: "Dip", bw: true }] } };
+  const key = "fri:0";
   const p = {
     bodyweight: 90,
     liftHistory: {
@@ -327,20 +340,20 @@ test("topMovers forwards bodyweight options to the metric", () => {
       ]
     }
   };
-  const m = S.topMovers(p, P.DAYS, P.progressMetric);
+  const m = S.topMovers(p, DAYS, P.progressMetric);
   assert.equal(m.length, 1);
-  assert.equal(m[0].name, P.DAYS.sun.ex[i].n);
+  assert.equal(m[0].name, "Dip");
   assert.equal(m[0].delta, 12);   // 90 -> 100 bodyweight-adjusted
   assert.equal(m[0].pct, 11.1);   // 90 x 1.2 = 108 -> 100 x 1.2 = 120
   // the opts ride through as the metric's third argument
-  const bw = S.topMovers(p, P.DAYS, (l, r, o) => l + (o && o.bw ? (o.bodyweight || 0) : 0));
+  const bw = S.topMovers(p, DAYS, (l, r, o) => l + (o && o.bw ? (o.bodyweight || 0) : 0));
   assert.equal(bw.length, 1);
   assert.equal(bw[0].delta, 10);
   assert.equal(bw[0].pct, 11.1);
   // a load-only metric scores the first entry 0, and topMovers skips a lift
   // whose first metric is falsy, so the bodyweight lift drops out entirely.
-  assert.deepEqual(S.topMovers(p, P.DAYS, (l, r) => l * (1 + r / 30)), []);
-  assert.deepEqual(S.topMovers(p, P.DAYS, P.epley1rm), []);
+  assert.deepEqual(S.topMovers(p, DAYS, (l, r) => l * (1 + r / 30)), []);
+  assert.deepEqual(S.topMovers(p, DAYS, P.epley1rm), []);
 });
 
 test("bodyweight history is valued at the weight in force", () => {
@@ -365,6 +378,24 @@ test("bodyweight history is valued at the weight in force", () => {
     { date: "2026-11-01", load: 0, reps: 6, setsDone: 3, bw: true, bwKg: 75 }
   ] } };
   assert.equal(S.personalRecords(q, P.DAYS, P.progressMetric)[0].metric, 120);
+});
+
+test("an assisted lift with help set is valued as bodyweight minus help", () => {
+  /* Nov 15: Sunday's pull-up is the first lift that is BOTH bodyweight and
+     assisted, so this is the case where the two branches diverge (bw + help vs
+     bw − help). Entries stamp `assist` (bankLift) and the lift carries it. */
+  const i = P.DAYS.sun.ex.findIndex((x) => x.id === "sun-pullups");
+  const help = { date: "2026-11-08", load: 45, reps: 6, setsDone: 3, assist: true, bw: true, bwKg: 165 };
+  const none = { date: "2026-11-15", load: 0, reps: 6, setsDone: 3, assist: true, bw: true, bwKg: 165 };
+  // 165 bodyweight − 45 help = 120 effective; × 6 reps × 3 sets
+  assert.equal(S.entryVolume(help, 165), 2160);
+  assert.equal(S.entryVolume(none, 165), 2970); // 165 × 6 × 3
+  assert.ok(S.entryVolume(none, 165) > S.entryVolume(help, 165), "less help is more work");
+  const p = { bodyweight: 165, liftHistory: { ["sun:" + i]: [help, none] } };
+  assert.equal(S.personalRecords(p, P.DAYS, P.progressMetric)[0].metric, 198); // bodyweight pull-up = 165 × 1.2
+  const mv = S.topMovers(p, P.DAYS, P.progressMetric);
+  assert.equal(mv.length, 1);
+  assert.ok(mv[0].delta > 0, "dropping 45 lb of help is an improvement");
 });
 
 test("progressSnapshot assembles the dashboard from one payload", () => {

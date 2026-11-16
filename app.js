@@ -416,8 +416,9 @@
     var rows = "";
     list.forEach(function (e, i) {
       var s = st(cur, i), done = s.done >= effSets(e);
-      var loadTxt = e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
-        : e.load === 0 ? "bodyweight" : "Load " + s.load;
+      var loadTxt = e.assist ? (s.load > 0 ? "Help " + s.load + " lb" : "bodyweight")
+        : e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
+          : e.load === 0 ? "bodyweight" : "Load " + s.load;
       var restTxt = fmt(e.rest + (s.rir <= 1 ? 30 : 0));
       rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
         + '<span class="liftstatus">' + (done ? "✓" : "") + '</span>'
@@ -497,8 +498,8 @@
       if (dp && typeof dp.load === "number" && dp.load > 0) {
         var dl = deloadLoad(ex(), dp.load);
         var dwhen = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
-        var dbase = "Last " + dwhen + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
-        txt.innerHTML = "Deload week → " + dbase + " · try <b>" + esc(dl) + "</b>";
+        var dbase = "Last " + dwhen + ": " + esc(loadNum(su.last.load, ex())) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
+        txt.innerHTML = "Deload week → " + dbase + " · try <b>" + esc(loadNum(dl, ex())) + "</b>";
         applyBtn.hidden = false;
         applyBtn.setAttribute("data-load", String(dl));
         line.hidden = false;
@@ -506,22 +507,22 @@
       }
     }
     var when = fmtDate(su.last.date) || DAY_LABEL[cur] || "";
-    var base = "Last " + when + ": " + esc(su.last.load) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
+    var base = "Last " + when + ": " + esc(loadNum(su.last.load, ex())) + " × " + esc(su.last.reps) + " @" + esc(su.last.rir) + " RIR";
     if (stall) {
       /* a plateau — double progression can't help, so recommend the stall reset */
-      txt.innerHTML = base + " · 3 sessions stalled → reset to <b>" + esc(stall.load) + "</b>";
+      txt.innerHTML = base + " · 3 sessions stalled → reset to <b>" + esc(loadNum(stall.load, ex())) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(stall.load));
     } else if (su.qualified === 2 && su.suggest !== su.last.load) {
-      txt.innerHTML = base + " (hit top twice) → try <b>" + esc(su.suggest) + "</b>";
+      txt.innerHTML = base + " (hit top twice) → try <b>" + esc(loadNum(su.suggest, ex())) + "</b>";
       applyBtn.hidden = false;
       applyBtn.setAttribute("data-load", String(su.suggest));
     } else if (su.qualified === 1 && qualifies(ex(), last)) {
       /* latest session cleared the bar, but it takes two in a row */
-      txt.textContent = base + " → keep " + su.last.load + " · one more top session to go up";
+      txt.textContent = base + " → keep " + loadNum(su.last.load, ex()) + " · one more top session to go up";
       applyBtn.hidden = true;
     } else {
-      txt.textContent = base + " → keep " + su.last.load;
+      txt.textContent = base + " → keep " + loadNum(su.last.load, ex());
       applyBtn.hidden = true;
     }
     line.hidden = false;
@@ -548,7 +549,16 @@
     svg.innerHTML = '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
     wrap.hidden = !appEl.classList.contains("show-trend");
   }
+  /* N15/N26: an assisted lift's stored number is the machine's HELP, not a
+     load. It is displayed as a negative load — "-45", 0 = bodyweight — so a
+     lower number reads as harder, and any prose calls it what it is: help. */
+  function assistLabel(load) { return load > 0 ? "-" + load : "BW"; }
+  function assistWord(load) { return load > 0 ? "help " + load + " lb" : "bodyweight"; }
+  /* a bare number for prose: assisted lifts read as negative help, the rest
+     exactly as they always have */
+  function loadNum(load, e) { return e && e.assist ? assistLabel(load) : String(load); }
   function loadLabel(load, e) {
+    if (e.assist) return assistLabel(load);
     if (e.load === null) return load > 0 ? String(load) : "light";
     if (e.load === 0) return load > 0 ? "BW+" + load : "BW";
     return load > 0 ? String(load) : "—";
@@ -608,15 +618,18 @@
     var wl = workingLoad(s);
     document.getElementById("loadVal").textContent = s.swapAlt
       ? swLoadLabel(wl)
-      : ((e.load === null && s.load === 0) ? "—" : s.load);
+      : e.assist ? (s.load > 0 ? "-" + s.load : "0")
+        : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     var loadBig = s.swapAlt
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
-      : (e.load === null
-        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
-        : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
+      : e.assist
+        ? (s.load > 0 ? "help <b>" + s.load + "</b> lb" : "bodyweight")
+        : (e.load === null
+          ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+          : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
       + " · " + rirTxt + " · Rest " + fmt(effRest);
@@ -678,9 +691,11 @@
     var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
     var loadBig = sw
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
-      : (e.load === null
-        ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" + (s.guess && !setsLogged ? " · starting guess" : "") : "start light")
-        : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
+      : e.assist
+        ? (s.load > 0 ? "help <b>" + s.load + "</b> lb" : "bodyweight")
+        : (e.load === null
+          ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" + (s.guess && !setsLogged ? " · starting guess" : "") : "start light")
+          : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
@@ -712,7 +727,12 @@
           var ne = list[idx + 1], ns = st(cur, idx + 1);
           var nName = ns.swapAlt ? ns.swapAlt : ne.n;
           var nLoadTxt = "";
-          if (!ns.swapAlt && ne.load === 0) nLoadTxt = "bodyweight";
+          /* N26: an assisted next lift reports the help it will actually use —
+             "bodyweight" only when there is none stored (its programme load is
+             0, so the old `ne.load === 0` branch read as bodyweight even at
+             45 lb of help). */
+          if (!ns.swapAlt && ne.assist) nLoadTxt = ns.load > 0 ? "help " + ns.load : "bodyweight";
+          else if (!ns.swapAlt && ne.load === 0) nLoadTxt = "bodyweight";
           else {
             var nLoad = ns.swapAlt ? workingLoad(ns) : (ns.load > 0 ? ns.load : ne.load);
             if (nLoad != null && nLoad > 0) nLoadTxt = String(nLoad);
@@ -739,7 +759,8 @@
 
     document.getElementById("loadVal").textContent = sw
       ? swLoadLabel(wl)
-      : ((e.load === null && s.load === 0) ? "—" : s.load);
+      : e.assist ? (s.load > 0 ? "-" + s.load : "0")
+        : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     rirRow.querySelectorAll(".rir").forEach(function (b) {
       var on = s.rir === parseInt(b.getAttribute("data-rir"), 10);
@@ -1274,7 +1295,11 @@
     var s = st(cur, tIdx), e = DAYS[cur].ex[tIdx];
     /* the working load field follows the swap mode (B6-07) */
     var wl = workingLoad(s);
-    setWorkingLoad(s, clampLoad(d < 0 ? Math.max(0, Math.round((wl - e.step) * 100) / 100) : Math.round((wl + e.step) * 100) / 100));
+    /* N26: an assisted lift's number is displayed as negative help, so ▲ adds
+       strength (LESS help) and ▼ adds help — the visible number always moves
+       toward "harder" when it rises. */
+    var dir = (!s.swapAlt && e.assist) ? -d : d;
+    setWorkingLoad(s, clampLoad(Math.round((wl + dir * e.step) * 100) / 100));
     if (editSet >= 0) applySetEdit();
     scheduleSave();
     if (view === "lift") updateLiftReadouts();
@@ -1343,9 +1368,15 @@
     inp.addEventListener("blur", function () { finish(true); });
   }
   function editLoad() {
-    var s = curSt();
-    editValue(document.getElementById("loadVal"), workingLoad(s), ex().step, function (v) {
-      setWorkingLoad(s, clampLoad(Gym.round2(v))); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+    var s = curSt(), cur_ex = ex(), wl = workingLoad(s);
+    /* the field prefills the same signed number it displays ("-45" of help) */
+    var shown = (!s.swapAlt && cur_ex.assist && wl > 0) ? -wl : wl;
+    editValue(document.getElementById("loadVal"), shown, cur_ex.step, function (v) {
+      /* N26: on an assisted lift the field shows negative help ("-45"); typing
+         either -45 or 45 means 45 lb of help, and the stored value stays the
+         positive help number every rule in program.js expects. */
+      var typed = (!s.swapAlt && cur_ex.assist) ? Math.abs(v) : v;
+      setWorkingLoad(s, clampLoad(Gym.round2(typed))); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
   function editReps() {
@@ -1406,7 +1437,7 @@
     /* a PR beats the progression nudge — celebrate it first */
     if (prevBest > -Infinity && newMetric > prevBest) {
       hintText = "New PR — " + (wl > 0
-        ? (s.swapAlt ? swLoadLabel(wl) : loadLabel(wl, e)) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
+        ? (s.swapAlt ? swLoadLabel(wl) : e.assist ? "help " + wl : loadLabel(wl, e)) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
         : s.reps + " reps");
       hintGood = true;
     }
@@ -1426,14 +1457,17 @@
     var list = DAYS[cur].ex, nextText = "";
     if (s.done >= effSets(e)) {
       var nx = list[idx + 1];
-      var nxLoad = !nx ? "" : nx.load === null
-        ? (st(cur, idx + 1).load > 0 ? " · Load " + st(cur, idx + 1).load : " · start light")
-        : nx.load === 0 ? " · bodyweight" : " · Load " + st(cur, idx + 1).load;
+      var nxLoad = !nx ? "" : nx.assist
+        ? (st(cur, idx + 1).load > 0 ? " · help " + st(cur, idx + 1).load : " · bodyweight")
+        : nx.load === null
+          ? (st(cur, idx + 1).load > 0 ? " · Load " + st(cur, idx + 1).load : " · start light")
+          : nx.load === 0 ? " · bodyweight" : " · Load " + st(cur, idx + 1).load;
       nextText = nx ? "Up next — " + nx.n + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
       nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " reps" +
         (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
-          : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
+          : e.assist ? " · " + assistWord(s.load)
+            : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
     }
 
     commit();

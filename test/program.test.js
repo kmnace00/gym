@@ -68,9 +68,9 @@ test("rampFor: assisted lifts still warm up — heavier help at lower reps (N21-
   assert.deepEqual(P.rampFor(P.DAYS.fri.ex[7], 45, false), { kind: "warm", secs: 40, steps: [{ load: 67.5, reps: 3 }] });
 });
 
-test("guessLoad: only the Sunday cable fly has an anchor", () => {
-  const fly = P.DAYS.sun.ex.find((e) => e.id === "sun-cable-fly");
-  assert.equal(P.guessLoad(fly, 100), 70);   // pec deck 100 x 0.7, snapped to 2.5
+test("guessLoad: only the Sunday incline DB fly has an anchor", () => {
+  const fly = P.DAYS.sun.ex.find((e) => e.id === "sun-incline-db-fly");
+  assert.equal(P.guessLoad(fly, 52.5), 27.5); // half the incline DB press per hand, snapped to 2.5
   assert.equal(P.guessLoad(fly, 0), null);
   assert.equal(P.guessLoad(fly, null), null);
   const ohExt = P.DAYS.sun.ex.find((e) => e.id === "sun-oh-ext");
@@ -81,14 +81,53 @@ test("guessLoad: only the Sunday cable fly has an anchor", () => {
    `Gym.LOAD_GUESS_FROM[e.id]` on every null-load lift, and a missing export
    threw inside renderLift (blank prescription) while the whole unit suite
    stayed green. Pin the map, its single entry, and both ids being real.     */
-test("LOAD_GUESS_FROM: the cable fly is anchored to Friday's pec deck", () => {
+test("LOAD_GUESS_FROM: the incline DB fly is anchored to Friday's incline DB press", () => {
   assert.equal(typeof P.LOAD_GUESS_FROM, "object");
-  assert.deepEqual(Object.keys(P.LOAD_GUESS_FROM), ["sun-cable-fly"]);
-  assert.equal(P.LOAD_GUESS_FROM["sun-cable-fly"], "fri-pec-deck");
+  assert.deepEqual(Object.keys(P.LOAD_GUESS_FROM), ["sun-incline-db-fly"]);
+  assert.equal(P.LOAD_GUESS_FROM["sun-incline-db-fly"], "fri-incline-db");
   const ids = new Set();
   Object.keys(P.DAYS).forEach((d) => P.DAYS[d].ex.forEach((e) => ids.add(e.id)));
-  assert.ok(ids.has("sun-cable-fly"), "the guess target must be a program lift id");
-  assert.ok(ids.has(P.LOAD_GUESS_FROM["sun-cable-fly"]), "the anchor must be a program lift id");
+  assert.ok(ids.has("sun-incline-db-fly"), "the guess target must be a program lift id");
+  assert.ok(ids.has(P.LOAD_GUESS_FROM["sun-incline-db-fly"]), "the anchor must be a program lift id");
+});
+
+/* Nov 15 (Khang's three Sunday corrections). These are programme data, so the
+   pins live here: the row names the leg press and the hack squat is its own
+   alternate (different machines, different numbers, 0 load on the hack squat),
+   pull-ups are assisted (the number may be 0 = bodyweight, less help = harder),
+   and the cable fly is retired for an incline DB fly with a new id. */
+test("Sunday: leg press and hack squat are not interchangeable", () => {
+  const row = P.DAYS.sun.ex.find((e) => e.id === "sun-leg-press");
+  assert.equal(row.n, "Leg press");
+  assert.equal(row.load, 180); // his leg press, nothing to do with the hack squat
+  assert.ok(row.alts.includes("Hack squat"), "the hack squat is an alternate with its own load");
+  assert.ok(!/hack squat/i.test(row.n), "the row must not claim both machines");
+});
+
+test("Sunday: pull-ups are assisted and cap out at bodyweight", () => {
+  const pull = P.DAYS.sun.ex.find((e) => e.id === "sun-pullups");
+  assert.equal(pull.assist, true);
+  assert.equal(pull.bw, true);      // zero help still values at bodyweight
+  assert.equal(pull.load, 0);       // bodyweight until he sets his help
+  // less help is the PR; the help can reach 0 but never goes below it
+  assert.equal(P.progressMetric(0, 6, { assist: true, bodyweight: 165 }), 198);
+  assert.ok(P.progressMetric(20, 6, { assist: true, bodyweight: 165 }) < 198);
+  assert.equal(P.suggestLoad(pull, { load: 20, reps: 8, rir: 2, hitTop: true }, { load: 20, reps: 8, rir: 2, hitTop: true }).suggest, 17.5);
+  assert.equal(P.suggestLoad(pull, { load: 0, reps: 8, rir: 2, hitTop: true }, { load: 0, reps: 8, rir: 2, hitTop: true }).suggest, 0);
+  // bodyweight stays bodyweight: no ramp-up line to show, even with help set
+  // (the `bw` guard fires before the assisted branch — pinning it stops a
+  // future "fix" from silently adding a warm-up and moving dayMins("sun"))
+  assert.equal(P.rampFor(pull, 0, false), null);
+  assert.equal(P.rampFor(pull, 45, false), null);
+});
+
+test("Sunday: the cable fly is retired for an incline DB fly", () => {
+  const ids = P.DAYS.sun.ex.map((e) => e.id);
+  assert.ok(!ids.includes("sun-cable-fly"), "the cable stack is gone from Sunday");
+  const fly = P.DAYS.sun.ex.find((e) => e.id === "sun-incline-db-fly");
+  assert.equal(fly.n, "Incline DB fly");
+  assert.equal(fly.alts[0], "Flat DB fly");
+  assert.equal(fly.load, null); // dumbbell load is per hand and starts light/guessed
 });
 
 test("dayMinsLeft: nothing done equals the full day", () => {
