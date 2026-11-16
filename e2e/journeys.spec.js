@@ -85,7 +85,7 @@ test("the summary reports the day's tonnage and PRs", async ({ page }) => {
   await page.evaluate(({ day, date }) => {
     const state = {};
     Gym.DAYS[day].ex.forEach((e, i) => {
-      state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+      state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [0, 1, 2].map(() => ({ load: 100, reps: 6, rir: 2 })) };
     });
     const sets = [0, 1, 2].map(() => ({ load: 100, reps: 6, rir: 2 }));
     localStorage.setItem("gym-tool-v2", JSON.stringify({
@@ -99,8 +99,10 @@ test("the summary reports the day's tonnage and PRs", async ({ page }) => {
   await page.locator("#finishBtn").click();
   await expect(page.locator("#summary")).toBeVisible();
   await expect(page.locator("#sumTitle")).toContainText("workout complete");
-  await expect(page.locator("#sumSets")).toHaveText("24");
-  await expect(page.locator("#sumVol")).toHaveText("1.8k lb"); // 100 lb × 6 reps × 3 sets
+  await expect(page.locator("#sumSets")).toHaveText("24"); // 8 lifts × 3 sets done in full
+  // 7 non-assist lifts × (100 lb × 6 reps × 3 sets = 1800) = 12600, plus
+  // the assisted dip at (165 − 100) × 6 × 3 = 1170 → 13770 lb (13.8k).
+  await expect(page.locator("#sumVol")).toHaveText("13.8k lb");
   await expect(page.locator("#sumPrs")).toHaveText("1 new");
   await expect(page.locator("#sumNext")).toContainText("Next");
 });
@@ -113,7 +115,7 @@ test("a time-boxed session can finish partial, and the summary says so", async (
   await page.evaluate(({ day, date }) => {
     const state = {};
     Gym.DAYS[day].ex.forEach((e, i) => {
-      if (i < 6) state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+      if (i < 6) state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [0, 1, 2].map(() => ({ load: 100, reps: 6, rir: 2 })) };
     });
     localStorage.setItem("gym-tool-v2", JSON.stringify({
       v: 5, cur: day, idx: 0, bodyweight: 165, bodyweightSet: true, state, sessionLog: [], liftHistory: {},
@@ -132,6 +134,9 @@ test("a time-boxed session can finish partial, and the summary says so", async (
   await fin.click();
   await expect(page.locator("#summary")).toBeVisible();
   await expect(page.locator("#sumTitle")).toHaveText("Fri — partial, 6 of 8 lifts");
+  // 6 in-progress non-assist lifts × (100 lb × 6 reps × 3 sets = 1800) = 10800 lb.
+  await expect(page.locator("#sumVol")).toHaveText("10.8k lb");
+  await expect(page.locator("#sumSets")).toHaveText("18"); // 6 lifts × 3 sets done
   const log = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).sessionLog);
   expect(log.length, "the partial session banks an entry").toBe(1);
   expect(log[0].day).toBe(day);

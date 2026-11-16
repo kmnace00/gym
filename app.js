@@ -1601,9 +1601,17 @@
   function showSummary(entry) {
     if (!summary) return;
     sumFocus = document.activeElement;
-    var list = DAYS[cur].ex, sets = 0, i;
-    for (i = 0; i < list.length; i++) sets += Math.min(st(cur, i).done, effSets(list[i]));
-    var vol = Math.round((Stats.volumeByDay(payload, DAYS) || {})[cur] || 0);
+    var list = DAYS[cur].ex, sets = 0, vol = 0, i;
+    for (i = 0; i < list.length; i++) {
+      var s = st(cur, i);
+      /* volumes by the same rule bankLift/stats use for history: the live set
+         array valued in place, so extra-set sessions (sets > s) count the same
+         tonnage here as they will in CSV. A dormant lift has done 0 and no
+         sets, so it contributes 0 — and can never read a stale prior load. */
+      sets += s.done;
+      vol += Stats.entryVolume({ sets: s.sets || [], load: s.load, reps: s.reps, setsDone: s.done || 0, bw: !!list[i].bw, assist: !!list[i].assist }, payload.bodyweight);
+    }
+    vol = Math.round(vol);
     /* the session's own date, not the wall clock: a workout that started
        before midnight banks its PRs on the day it began (B3-11).          */
     var sessionDay = Gym.sessionDate(payload);
