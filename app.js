@@ -2106,13 +2106,19 @@
     var h = window.innerHeight;
     var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
       /** @type {any} */ (window.navigator).standalone === true;
-    /* In Home-Screen mode the window IS the whole screen, so the screen height
-       is the honest upper bound even when the engine under-reports the
-       viewport. The 200px guard keeps a stale/odd value from overshooting. */
+    /* In Home-Screen mode the shell must paint to the physical screen edge (the
+       dock sits there), so the screen height is the box height even though the
+       engine reports a shorter viewport. But the *usable* area is innerHeight:
+       the difference (measured 59px on a 15 Pro: 852 screen vs 793 viewport) is
+       system chrome the app must not put content under. Reserve it at the
+       bottom — env(safe-area-inset-bottom) alone under-reports it. */
+    var gap = 0;
     if (standalone && window.screen && window.screen.height > h && window.screen.height - h <= 200) {
+      gap = window.screen.height - h;
       h = window.screen.height;
     }
     document.documentElement.style.setProperty("--app-h", h + "px");
+    document.documentElement.style.setProperty("--app-b", gap + "px");
   }
   syncViewportHeight();
   window.addEventListener("resize", syncViewportHeight);

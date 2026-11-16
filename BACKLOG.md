@@ -29,6 +29,12 @@ Khang reported the bottom still being cut off after v140, so the shell numbers u
 
 Follow-up in the same push (v142): the dock's bottom padding is now `max(14px, calc(8px + env(safe-area-inset-bottom)))`, because if a Home-Screen webview reports a zero bottom inset, the old `calc(8px + env(...))` would put the Zone 2 line 8px from the edge — inside the home-indicator zone, which reads as the bottom being cut off. The floor guarantees the text clears the indicator even when `env()` gives nothing. CACHE-HASH `14b1c1e05b20ac74`.
 
+### Nov 15 — v144: the dock paints to the edge, but content stops at the usable bottom
+
+The menu's screen line settled it: on Khang's iPhone 15 Pro standalone, `Screen 393×852 · app 852 · vp 793/793 · safe 59/34 · standalone`. The engine reports a **793px** usable viewport inside an 852px screen — the bottom 59px is system chrome, and `env(safe-area-inset-bottom)` (34) under-reports it. v140/v141 painted the dock to 852 with only 42px of bottom padding, so the Zone 2 line sat at ~810 — 17px *below* the usable 793 — which is exactly the "bottom cut off" he saw.
+
+FIX: `syncViewportHeight()` now also writes `--app-b` = `screen.height − innerHeight` (standalone only, guarded ≤200px). `.app`'s bottom padding and the dock's bleed/inset both use `max(env(safe-area-inset-bottom), var(--app-b, 0px))`, so the shell still paints to the physical edge while **all content stays above the usable line**: verified against his exact numbers (app 852, usable 793, insets 59/34) — dock bottom 852 (flush), Zone 2 text bottom 783 (10px above the usable edge), tally 741–759, last row 710, rows 55.2px, no list scroll. The same rule is inert in a browser (`--app-b` 0, `env` governs). NOTE: the parallel session released v143 (Sunday corrections) and tracked `icon.svg` while this was in flight; this commit stages only its own hunks of `app.js` and tags `gym-v144` so the two releases don't collide. `GYM_VERSION` `gym-v144`, CACHE-HASH `17cfbba9483312b8`.
+
 ### Nov 15 — v143: Sunday corrections (Khang's three comments)
 
 Khang's comments on the Sunday session, and what changed for each:
