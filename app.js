@@ -1924,6 +1924,11 @@
         var snapOk = Gym.snapshot(payload, "pre-restore");
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
         payload = restored;
+        /* a restored backup may carry an `active.date` from an earlier day —
+           roll it forward exactly as boot does (B3-11), or the next workout
+           would bank under the stale backup date and could overwrite a real
+           past history entry for that lift. */
+        Gym.rollSession(payload, Gym.todayDay());
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;

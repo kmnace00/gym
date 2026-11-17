@@ -99,6 +99,43 @@ test("Restore (replace) swaps the whole payload after a two-tap arm", async ({ p
   await expect(page.locator("#loadVal")).toHaveText("88");
 });
 
+test("restoring an old-dated backup does not stamp history with the stale date (rolls to today)", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  /* A backup whose active session is on an OLD date and which already holds a
+     fri:0 history entry on that same old date. After restore the takeover path
+     must roll the active session forward to today (the pinned Friday); otherwise
+     the next logged set banks under the stale date and overwrites the real old
+     entry. Pinning the clock keeps the first lift fri:0 on any run day. */
+  const OLD = "2020-01-01";
+  const backup = JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: true,
+    state: { "fri:0": { done: 0, load: 88, reps: 6, rir: 2, topHits: 0, lastRir: 2 } },
+    sessionLog: [],
+    liftHistory: { "fri:0": [{ date: OLD, load: 50, reps: 6, rir: 2, setsDone: 3 }] },
+    active: { id: "ses_old", date: OLD, day: "fri", startedAt: 0, endedAt: null, accSec: 0, runningSince: null, status: "active" }
+  });
+  await page.locator("#menuBtn").click();
+  await page.locator("#replaceBtn").click();
+  await page.setInputFiles("#replaceFile", { name: "old.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("restored");
+  await page.locator("#modalClose").click();
+  // complete fri:0 (3 sets) so bankLift writes a new history entry today
+  await page.locator(".liftrow").first().click();
+  for (let i = 0; i < 3; i++) {
+    await page.locator("#doneBtn").click();
+    if (await page.locator("#skipRest").count()) await page.locator("#skipRest").click();
+  }
+  const hist = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["fri:0"]);
+  expect(hist.length).toBe(2); // the old 2020 entry is PRESERVED, not overwritten
+  expect(hist[0].date).toBe(OLD);
+  expect(hist[1].date).not.toBe(OLD); // the new set banks under today, not the stale date
+  expect(errors).toEqual([]);
+});
+
 test("restore uses the shared two-tap arm: arm, second tap opens the picker, timeout resets (B3-22)", async ({ page }) => {
   await page.goto(url);
   await page.locator("#menuBtn").click();
