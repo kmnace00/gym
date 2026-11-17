@@ -1086,7 +1086,6 @@
     CURRENT: CURRENT, STORE: STORE, LEGACY: LEGACY, THEME_KEY: THEME_KEY,
     HISTORY_MAX: HISTORY_MAX, SESSION_MAX: SESSION_MAX,
     SETS_MAX: SETS_MAX, DONE_MAX: DONE_MAX, ACC_SEC_MAX: ACC_SEC_MAX,
-    QUARANTINE: QUARANTINE, SNAPSHOT: SNAPSHOT,
     emptyPayload: emptyPayload, emptySession: emptySession, migrate: migrate, load: load, save: save,
     lastLoadError: lastLoadError, quarantineRaw: quarantineRaw, futureRaw: futureRaw, salvage: salvage, snapshot: snapshot, readSnapshot: readSnapshot,
     exportPayload: exportPayload, importRaw: importRaw,

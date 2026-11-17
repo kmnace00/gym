@@ -1864,10 +1864,6 @@
   });
   function hideMsg() { document.getElementById("modalMsg").textContent = ""; }
   function setMsg(t) { document.getElementById("modalMsg").textContent = t; }
-  function historyCount() {
-    var n = 0; for (var k in payload.liftHistory) { if (payload.liftHistory.hasOwnProperty(k)) n += payload.liftHistory[k].length; }
-    return n;
-  }
   function updateFoot() {
     var age = Gym.backupAgeDays(payload);
     var b = age === null ? "never backed up" : (age === 0 ? "backed up today" : "backed up " + age + "d ago");

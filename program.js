@@ -358,7 +358,7 @@
   }
 
   return {
-    DAYS: DAYS, SET_SECS: SET_SECS, TRANSITION_SECS: TRANSITION_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
+    DAYS: DAYS, SET_SECS: SET_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
     STRETCH_SECS: STRETCH_SECS, SETUP_SECS: SETUP_SECS,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,
