@@ -93,7 +93,10 @@
     var c = cal || {};
     return {
       stretch: typeof c.stretch === "number" ? c.stretch : STRETCH_SECS,
-      setup: typeof c.setup === "number" ? c.setup : SETUP_SECS
+      setup: typeof c.setup === "number" ? c.setup : SETUP_SECS,
+      /* B6-09: during a deload week the estimate uses the reduced set count,
+         mirroring `effSets` in the rendering. Purely opt-in via the cal. */
+      deload: c.deload === true
     };
   }
   function snapStep(v, step) { return step > 0 ? round2(Math.round(v / step) * step) : round2(v); }
@@ -162,8 +165,8 @@
   function dayMins(d, cal) {
     var c = calOf(cal), t = c.stretch, list = DAYS[d].ex;
     for (var i = 0; i < list.length; i++) {
-      var e = list[i];
-      t += e.s * (SET_SECS + c.setup) + e.s * e.rest;
+      var e = list[i], n = c.deload ? deloadSets(e) : e.s;
+      t += n * (SET_SECS + c.setup) + n * e.rest;
       var ramp = rampFor(e, e.load, i === 0);
       if (ramp) t += ramp.secs;
     }
@@ -182,10 +185,10 @@
     /* the stretch block is spent as soon as any set is logged */
     var t = anyDone ? 0 : c.stretch, liftsLeft = 0;
     for (i = 0; i < list.length; i++) {
-      var e = list[i];
+      var e = list[i], n = c.deload ? deloadSets(e) : e.s;
       rec = state && state[d + ":" + i];
       var done = rec && typeof rec.done === "number" ? rec.done : 0;
-      var rem = e.s - Math.min(done, e.s);
+      var rem = n - Math.min(done, n);
       if (rem > 0) {
         t += rem * (SET_SECS + c.setup) + rem * e.rest;
         /* an untouched lift still has its ramp-up ahead of it */

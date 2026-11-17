@@ -36,7 +36,10 @@
     var c = learnedCal();
     return {
       stretch: c && typeof c.warmupSec === "number" ? c.warmupSec : Gym.STRETCH_SECS,
-      setup: c && typeof c.overheadSec === "number" ? c.overheadSec : Gym.SETUP_SECS
+      setup: c && typeof c.overheadSec === "number" ? c.overheadSec : Gym.SETUP_SECS,
+      /* B6-09: during a deload week the day one is viewing is cut to the
+         deload set count — let the estimate agree with the rendered sets. */
+      deload: deloadActive(payload)
     };
   }
   function refreshCalibration() {

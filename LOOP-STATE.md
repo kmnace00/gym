@@ -1,23 +1,44 @@
 # LOOP-STATE — session state (Nov 17, continuing the loop)
 
-Gate last green (v159): unit 248, typecheck clean, e2e 215, sw-cache OK digest 07a298cb0d8af4db.
+Gate last green (v175): unit 241, typecheck clean, e2e 219, sw-cache OK digest 40626f620d4eef49.
+
+## Lock
+- STARTED 2026-11-17 07:03 local by this manual session. Queue empty of a held lock before this; working tree clean; no STOPPED/PAUSED/EXHAUSTED.
+- Restarter: **disarmed** — schedules inject into live sessions; do not re-arm. Confirmed no `loop-restarter-gym` schedule exists in `opencode.db` (only file-butler, wardrobe, productivity-timer — left untouched). Deleted schedule ID: none found.
 
 ## Queue (priority order, refill from survey when <3)
 1. ~~survey tile 2: switchDay mis-dating — block set-logging on a non-active day~~ DONE (v159, critic-flash GO + hoist hardening applied).
-2. survey tile 3 (display polish, Tier 0): deload day-row meta shows `e.s×e.r` instead of the `deloadSets` cut (`app.js:448`), so a 3-set lift's row reads "3×6" mid-deload while the view counts "Set 1 of 2".
-3. survey tile 4 (tidiness): `Stats.sessionDrift` is dead code — the finish screen re-implements a simpler estimate inline (`app.js:1679`); wire up or remove.
-4. survey tile 5 (tidiness): dead exports `timer.js sessionElapsed` and `store.js daysUntil` (zero production callers) — delete or `/* keep in sync */`.
-- **Khang request (from this session, NOT started):** spacing between the first set container and the Swap/Undo/Restart buttons is uneven (`.sethead` margin / `.setacts` arrangement, style.css ~178-208); user asked to even it out. Pending — was not started per the "stop cleanly" directive. Next session: screenshot 390×844 + 390×667 first.
+2. ~~survey tile 3 (display polish, Tier 0): deload day-row meta shows `deloadSets` cut~~ DONE (v161) — day row now uses `effSets(e)` so it matches the lift view mid-deload; + regression assertion in deload.spec.
+3. ~~survey tile 4 (tidiness): Stats.sessionDrift dead code~~ DONE (v162) — removed the function, its export, and its 5 tests (unit 248→243). Not wired up: the finish screen's inline estimate is a different (current-session) concept, and wiring the drift into the UI would add an unapproved feature.
+4. ~~survey tile 5 (tidiness): dead exports sessionElapsed/daysUntil~~ DONE (v163) — removed `timer.js sessionElapsed`, `store.js daysUntil`, their exports, and their tests (unit 245→241). Both were exported+tested but had zero production callers.
+5. survey (v164 done, display bug, Tier 0): rest screen's "Up next" and prep-stepper named the ORIGINAL lift + load for a swapped next lift while the lift view named the alternate. FIXED v164 — `nextText` and `prep()` now derive name/load swap-aware (`st(cur,idx+1).swapAlt`/`workingLoad`), matching `nextLine`; + regression e2e (alts.spec). critic-flash GO.
+6. survey (v165 done, Tier 0): the 0–1 RIR "+30s" penalty was re-derived inline at `app.js:444,667,741,45` instead of the single source `restDuration` (timer.js:21). FIXED v165 — all four now call `restDuration(e.rest, s.rir)` (calibration passes `prev ? prev.rir : 2`); byte-identical values. Left `rest.js:94` "+30s" copy as text (display only).
+7. ~~survey (dead code, Tier 1): remove dead store.js history-helper exports~~ DECLINED (v166) — the five (`pushHistory`, `hasTodayEntry`, `removeTodayEntry`, `lastEntry`, `popHistory`) have zero PRODUCTION callers but are used as seeding/read helpers across ~20 test call sites of OTHER functions (resetLift, resetDay, mergePayload, importMerge, sessionDate, backupDue), plus one test (`pushHistory caps at HISTORY_MAX`) validating the cap. Removing them = a sprawling, coverage-weakening test refactor for a tidiness item — violates "smallest change"; matches BACKLOG precedent ("leave — exported surface used by tests"). store.js left untouched (v165 state). Do NOT re-attempt without Khang.
+8. survey (v166 done, dead code, Tier 1): removed dead `stats.js` exports `setsLogged` and `sessionsLast7` (zero production callers; `app.js:687`'s `setsLogged` is an unrelated local var) + their tests (stats.test.js, enhancements.test.js unit 241→240). Also dropped the unread `timer.js RIR_PENALTY` export (kept the module-local var used by `restDuration`). Note: removing `sessionsLast7` left an orphaned JSDoc that mis-typed `mostRecentFriday` — cleaned up. Do NOT remove store.js's five history helpers (item 7) without Khang.
+9. survey (v167 done, Tier 0, latent coupling): "8 weeks"/"12 recent" were hardcoded at `stats.js:299,515,531` + copy `app.js:883`; `renderDayWeek` computed `weekStatus` twice. FIXED v167 — hoisted to `HEAT_WEEKS`/`RECENT_SESSIONS` constants, exposed `snap.heatWeeks` so the footer copy can't drift, and compute `weekStatus` once in `renderDayWeek`. (The `stats.js:364` `: 8` is the dayLens lift-count default, different semantic — left alone.)
+10. survey (v175 done, Tier 1, display inconsistency): the deload "~min" estimate (`program.js` `dayMins`/`dayMinsLeft`) used full `e.s` while `app.js` renders the deload-cut `effSets`, over-stating the day mid-deload (e.g. Fri 105 → ~71). FIXED v175 — threaded a `deload` flag through the existing `cal` object: `calOf` carries `deload: c.deload === true`, `dayMins`/`dayMinsLeft` swap `e.s` → `deloadSets(e)` on the set-count arithmetic, and `calOpts()` (the single caller at all 5 estimate sites) passes `deload: deloadActive(payload)`. No signature changes; absent/false cal is byte-identical (existing totals pinned). + 2 unit tests (deload day smaller with exact saved-seconds delta; dayMinsLeft counts remaining vs the reduced target). critic-flash GO.
+11. ~~survey (NEW, Tier 0, dead code): `app.js:1867` `historyCount()`~~ DONE (v168) — zero references; updateFoot uses `Stats.sessionCount`. Removed.
+12. ~~survey (NEW, Tier 0, dead export): `program.js:361` `TRANSITION_SECS`~~ DONE (v168) — used only internally; dropped the export, kept the internal var + uses.
+13. ~~survey (NEW, Tier 0, dead exports): `store.js:1089` `QUARANTINE`, `SNAPSHOT`~~ DONE (v168) — string constants used only internally (accessors `quarantineRaw`/`snapshot`/`readSnapshot` kept); dropped both exports. Export-list-only, no behavior change.
+14. ~~survey (NEW, Tier 0, stale comment): `app.js:299-302` N12 claims "day tabs are gone"~~ DONE (v169) — rewrote to reflect the header `#dayCluster` tabs (back in N24) plus the chevrons.
+15. ~~survey (NEW, Tier 0, latent coupling): duplicate `DAY_LABEL`/`WEEK_DAY_NAME`~~ DONE (v169) — dropped `WEEK_DAY_NAME`; `renderDayWeek` now uses `DAY_LABEL`.
+16. survey (v170 done, Tier 0, display consistency, lowest value): the lift-view "Next:" line (`nextLine`) omitted the "start light" load fallback for a swapped/`load===null` next lift at 0, while doneBtn ("· start light") and rest-prep ("light") showed it. FIXED v170 — `nextLine` now renders "start light" for those branches; all three surfaces agree. + regression e2e (alts.spec); critic-flash GO.
+17. ~~survey #4 (v171, Tier 0, orphan JSDoc): `stats.js:52-56` orphaned JSDoc left by v166 `setsLogged` removal~~ DONE (v171) — deleted the 5 dead doc lines; live `setsRecorded` doc now sits directly above its function.
+18. ~~survey #4 (v171, Tier 0/1, duplicate export): `Stats.uniqueDays` byte-identical to `sessionCount`~~ DONE (v171) — removed `uniqueDays` + export + redundant test (`stats.test.js`); `app.js:1947` now uses `Stats.sessionCount`. Mirrors the accepted v166 removals (real prod caller, not the declined test-helper pattern).
+19. survey #4 (v172, Tier 0, copy inconsistency): assisted-load read as "Help 45 lb" / "help 45 lb" / "help 45" / "-45 lb" across surfaces. FIXED v172 — `prep()` (app.js:976) now uses `assistLabel(wl)` for non-swapped assisted lifts, so the rest-prep card shows "-45" (no stray unit), matching the stepper readout; swapped keys still route through `swLoadText`. + e2e pinning `#restPrepLoad` "-45" (sunday.spec). The remaining "help 45 lb"↔"help 45" wording gap across other surfaces is acceptable prose; left.
+20. ~~survey #4 (v172, Tier 0, dead branch): `app.js:1673` `if (gap === 0) gap = 7;` unreachable~~ DONE (v172) — `nextTrainingGap`'s `day` is always the next training day (or fri on Mon–Thu), so `orderDow[day] !== dow` and gap ∈ {1..5}; deleted the dead line.
+21. survey #4 (v173, Tier 0, display consistency): the SR summary line always reported full-day `dayMins` while the visible summary/band switched to `dayMinsLeft` once any set was logged. FIXED v173 — `renderDayWeek` now computes the day's done-total and switches the spoken line to "— about X minutes left." mirroring `:397`/`:410`. + e2e pinning the "left" switch (dayweek.spec).
+22. survey #4 (NOTE ONLY, latent coupling): `BODYWEIGHT_LB` 165 triplicated (`program.js:150`, `store.js:81`, `stats.js:113` fallback). Left alone — coupling pure modules for a by-design fixed default isn't worth it. Recorded; not buildable as-is.
+- **Khang request (spacing):** DONE (v160). The concrete unevenness was in the wrapped/swapped lift view: `.sethead` used `gap:10px` between the "Set X of Y" line and the Swap/Undo/Restart row, while the pill-to-pill and pill-to-set-row gaps were the 6px beat. Set `.sethead` gap to 6px so the vertical rhythm around the buttons is uniform (normal single-line layout unaffected — space-between keeps it spread; verified 390×844 geometry before/after). Reversible if this isn't what was meant.
 - survey tile 6 (not queued, design-aware session UX): the session clock never auto-pauses on hide — an abandoned workout banks `durationSec` to the 8 h cap. Bounded already; needs a deliberate auto-pause design, not a drive-by.
 - (queue below 3 → survey + refill to 10)
 
 ## Doing now
-none (session stopping cleanly after v159).
+survey #5 manual — subagent down on provider balance. Built v175 (deload `~min` estimate now deload-aware via the `cal` object — item 10 un-deferred). Manual scan is otherwise exhausted again (no dead code, no new stale comments). Survey #6 next: keep scanning for fresh Tier-0/1 candidates; if none, the queue needs a refill or Khang's named item.
 
 ## Critic reviews waiting (batch Pro for Tier 2)
-- **PENDING (batch):** v154 `sanitizeRecord` swapLoads unsafeKey guard. Committed during peak.
-- **PENDING (batch):** v158 `sanitizeRecord`/`sanitizeEntry`/`swapLoads` load bound at SET_LOAD_MAX. Committed during peak.
-- v159 (switchDay guard) ran critic-flash GO → **no Pro needed** (Tier 1). Next off-peak Pro batch: v154 + v158 (3–5 per batch; 2 owed, accumulate more).
+- **GO (Nov 17, off-peak):** v154 `sanitizeRecord` swapLoads unsafeKey guard AND v158 load-bound at SET_LOAD_MAX, reviewed together in one Pro batch. No bypass, no regression, both pinned by discriminating tests.
+- - **Follow-ups flagged (NEEDS_DESIGN-class, not blockers, no action now):** (1) `swapLoads` key screening covers only `__proto__`/`constructor`/`prototype` — keys like `hasOwnProperty`/`toString`/`valueOf` still become own numeric props (inert via current direct-key consumers, but a future `Object.keys` consumer could trip); (2) record-level `reps`/`rir` are coerced (`coerceNum`) but not clamped (only `load`/`swapLoad` are) — same hand-edited-backup threat, out of scope for the load commit.
 
 ## Choices waiting for Khang
 - NEEDS DECISION: partial-workout sets never reach history (product contract).
@@ -26,4 +47,4 @@ none (session stopping cleanly after v159).
 - (from handoff) — do not decide myself.
 
 ## Baseline failing checks
-- none (gate green at v159).
+- none (gate green at v170).

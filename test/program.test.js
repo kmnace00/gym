@@ -33,6 +33,29 @@ test("dayMins: zeroing the calibration leaves base + ramps + finisher only", () 
   assert.ok(P.dayMins("fri", { setup: 0 }) < P.dayMins("fri"));
 });
 
+test("dayMins: a deload week estimates with the reduced set count (B6-09)", () => {
+  // During a deload each lift is cut to deloadSets(e) (2 for s=3), so the whole
+  // day's "~min" must drop — mirroring effSets in the rendering. Non-deload
+  // (flag absent or false) stays exactly on the published totals.
+  assert.equal(P.dayMins("fri"), 105);
+  assert.ok(P.dayMins("fri", { deload: true }) < P.dayMins("fri"));
+  assert.equal(P.dayMins("fri", { deload: false }), P.dayMins("fri"));
+  // Every Friday lift is s:3 (deloadSets → 2, one set saved per lift), so the
+  // drop is the exact sum of one saved set+rest across all 8 lifts — no ramps
+  // change (a ramp is per-lift, not per-set). Setup is 0 below, matching the cal.
+  const saved = P.DAYS.fri.ex.reduce((sum, e) => sum + (P.SET_SECS + e.rest), 0);
+  assert.equal(P.dayMins("fri", { deload: true, stretch: 0, setup: 0 }),
+    Math.max(0, P.dayMins("fri", { stretch: 0, setup: 0 }) - Math.round(saved / 60)));
+});
+
+test("dayMinsLeft: a deload week counts remaining against the reduced target (B6-09)", () => {
+  // Full fri:0 is s:3; on a deload it needs only 2. 1 done → 1 left under deload,
+  // but 2 left on a normal day — so the deload estimate is strictly smaller.
+  const st = { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } };
+  assert.ok(P.dayMinsLeft("fri", st, { deload: true }) < P.dayMinsLeft("fri", st));
+  assert.equal(P.dayMinsLeft("fri", st, { deload: false }), P.dayMinsLeft("fri", st));
+});
+
 test("dayMinsLeft: the stretch block drops once any set is logged", () => {
   const st = { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } };
   // one set done removes its own ~4 min AND the 5 min stretch block
