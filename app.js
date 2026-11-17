@@ -1437,8 +1437,24 @@
 
   /* ── set done ──────────────────────────────────────────────────────────── */
   document.getElementById("doneBtn").onclick = function () {
-    if (editSet >= 0) { finishEdit(); return; }
     var e = ex(), s = curSt();
+    /* B6 / day-switch guard: the app keeps ONE active session (a single
+       day + date) and bankLift keys history by `cur` but dates by
+       active.date. Logging a set on a switched-to (non-active) day would
+       bank that day's lift under the active session's date — mis-dating it.
+       Block it: the ‹ › chevrons stay a review/completion tool for the
+       active day, never a second off-day log target. Placed before the
+       inline-edit finish so editing or undoing (both re-bank) on an
+       off-day is blocked too. */
+    var actDay = payload.active && payload.active.day;
+    if (actDay && actDay !== cur) {
+      hintText = "This is " + (DAY_LABEL[cur] || "another day") + "'s lift, but the session is " +
+        (DAY_LABEL[actDay] || actDay) + " — switch back to log sets.";
+      hintGood = false;
+      render();
+      return;
+    }
+    if (editSet >= 0) { finishEdit(); return; }
     if (s.done >= Gym.SETS_MAX) {
       hintText = "Set limit reached — " + Gym.SETS_MAX + " per lift.";
       hintGood = false;
