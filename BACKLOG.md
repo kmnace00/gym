@@ -1,5 +1,13 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v151: the New PR hint values a swapped-in machine at its real load
+
+v148's overlap. v148 fixed tonnage/PR-history mis-valuation of a swapped bodyweight/assist lift but missed the **live** `doneBtn` "New PR" hint, which still called `metricFor(e, …)` with the ORIGINAL exercise's `assist`/`bw` flags. On Friday's Assisted dip swapped to Close-grip bench at 135, the hint showed `(165−135)×1.2 = 36` instead of the real `135×1.2 = 162`, and since 36 < the prior 144 (a 45-lb-assisted session), a genuine swap-weight gain never announced "New PR".
+
+BUILT: `metricForLive(e,s,load,reps)` routes live-set metric through `liftValuation` (`bw:false, assist:false` while swapped); the two live-set reads in `doneBtn` (today's banked sets + the new set) now use it. The prior-history loop stays on `metricForEntry` (`priorEntries` already strips swap/deload). Unswapped paths byte-for-byte identical. Regression e2e (seed swapped dip at 135 with prior assisted 45×6, log one set → `#hint` shows "New PR", "135 × 6", "est. 1RM 162"): **discriminating**, fails pre-fix. Gate: unit **245 pass**, typecheck clean, e2e **207 passed**. `GYM_VERSION` `gym-v151`, CACHE-HASH `3ef1cd4adb67da95`. `critic-flash` **GO** (Tier 1).
+
+**Candidate (pre-existing, from critic, low):** `bankLift` (`app.js:127`) calls `topSetOf(e, s.sets)` with **no entry**, so it falls back to a metric using the ORIGINAL assist flag — for a swapped assisted lift that metric inverts, so a *descending*-load swapped session (135 then 125) banks `entry.load = 125` as "top". Affects the representative `entry.load/reps` only (volume/CSV read the full `sets`); single-set sessions and the hint are unaffected.
+
 ## Nov 16 — v150: restore rolls the active session forward so old backups don't corrupt history
 
 Survey finding #1 (destructive, invisible data corruption). The "Restore (replace)" handler assigned `payload` from `importRaw`/`reconcile` but — unlike boot (`app.js:2159`) — never called `rollSession`. `sanitizeSession` keeps a valid `active.date` verbatim, so a restored backup with an old `active.date` kept that stale date as the session date; the next workout `bankLift`'d under it (`sessionDate` = `active.date`) and `upsertHistory` replaced any history entry on that date — silently overwriting a real past session (corrupting PRs/CSV/tonnage). The merge/import path was already safe.
