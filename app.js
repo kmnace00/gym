@@ -42,7 +42,7 @@
   function refreshCalibration() {
     var c = Stats.calibration(payload, DAYS, {
       setSecs: Gym.SET_SECS, setupSeed: Gym.SETUP_SECS,
-      restSecs: function (e, prev) { return e.rest + ((prev && prev.rir <= 1) ? 30 : 0); },
+      restSecs: function (e, prev) { return restDuration(e.rest, prev ? prev.rir : 2); },
       rampSecs: function (e, load, isFirst) { var r = Gym.rampFor(e, load, isFirst); return r ? r.secs : 0; }
     });
     try {
@@ -441,7 +441,7 @@
         : e.assist ? (s.load > 0 ? "Help " + s.load + " lb" : "bodyweight")
           : e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
             : e.load === 0 ? "bodyweight" : "Load " + s.load;
-      var restTxt = fmt(e.rest + (s.rir <= 1 ? 30 : 0));
+      var restTxt = fmt(restDuration(e.rest, s.rir));
       rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
         + '<span class="liftstatus">' + (done ? "✓" : "") + '</span>'
         + '<span class="liftmain"><span class="liftname">' + esc(e.n) + '</span>'
@@ -664,7 +664,7 @@
         : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
     var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
-    var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
+    var effRest = restDuration(e.rest, s.rir);
     var loadBig = s.swapAlt
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
       : e.assist
@@ -738,7 +738,7 @@
         : (e.load === null
           ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" + (s.guess && !setsLogged ? " · starting guess" : "") : "start light")
           : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
-    var effRest = e.rest + (s.rir <= 1 ? 30 : 0);
+    var effRest = restDuration(e.rest, s.rir);
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig
       + " · " + rirTxt + " · Rest " + fmt(effRest);
