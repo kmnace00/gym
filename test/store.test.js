@@ -1188,6 +1188,25 @@ test("migrate clamps an imported record's own load, swapLoad and swapLoads to SE
   assert.equal(e.liftHistory["fri:0"][0].sets[0].load, 2000, "the entry's set load is capped");
 });
 
+/* same ceilings the set-level sanitizer applies (SET_REPS_MAX / RIR_MAX) bind
+   the state record's own working reps and rir, so a hand-edited/foreign backup
+   can't push a bogus reps:1e999 into the suggestion/readout math via the record
+   that set-level clamping never sees. Absent reps/rir stay absent. */
+test("migrate clamps a record's own reps and rir like its sets", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 1, load: 100, reps: 5000, rir: 99,
+      sets: [{ load: 122.5, reps: 6, rir: 2 }] } }
+  }));
+  assert.equal(p.state["fri:0"].reps, 999, "record reps capped at SET_REPS_MAX");
+  assert.equal(p.state["fri:0"].rir, 4, "record rir capped at RIR_MAX");
+  assert.deepEqual(p.state["fri:0"].sets[0], { load: 122.5, reps: 6, rir: 2 },
+    "in-range logged set untouched");
+  const fresh = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: { "fri:0": { done: 0 } } }));
+  assert.ok(!("reps" in fresh.state["fri:0"]), "absent reps stays absent");
+  assert.ok(!("rir" in fresh.state["fri:0"]), "absent rir stays absent");
+});
+
 /* B5-16 — a bad-dated sessionLog entry is dropped, not re-dated to today */
 test("migrate drops sessionLog entries with malformed dates and keeps valid ones", () => {
   const p = S.migrate(JSON.stringify({
@@ -1285,9 +1304,13 @@ test("swapLoads keeps sane per-alternate loads and drops junk (N14)", () => {
      and "__proto__" must never collide with the map's prototype. (They come
      from storage/import through the sanitizer — the same unsafeKey rule the
      record/entry sanitizers apply at their boundaries.) Pre-fix "constructor"
-     shadowed as an own numeric property and survived. */
-  const hostile = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: { "__proto__": 5, "constructor": 3, "prototype": 1, "Leg press": 180 } } } }));
+     shadowed as an own numeric property and survived; likewise any other
+     Object.prototype member ("hasOwnProperty", "toString", "valueOf", …) that
+     would shadow an inherited method and trip an Object.keys walk. */
+  const hostile = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: { "__proto__": 5, "constructor": 3, "prototype": 1, "hasOwnProperty": 4, "toString": 2, "valueOf": 9, "Leg press": 180 } } } }));
   assert.deepEqual(hostile.state["fri:0"].swapLoads, { "Leg press": 180 });
+  assert.deepEqual(Object.keys(hostile.state["fri:0"].swapLoads), ["Leg press"],
+    "no Object.prototype-member key survives the boundary");
   assert.equal(Object.getPrototypeOf(hostile.state["fri:0"].swapLoads), Object.prototype);
 });
 

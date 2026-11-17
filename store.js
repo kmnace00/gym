@@ -102,7 +102,13 @@
   }
   /** True for the prototype-poisoning key names. */
   function unsafeKey(k) {
-    return k === "__proto__" || k === "constructor" || k === "prototype";
+    if (k === "__proto__" || k === "constructor" || k === "prototype") return true;
+    /* Any other key that is already an Object.prototype member (hasOwnProperty,
+       toString, valueOf, …) would land as a phantom own pair that shadows the
+       inherited method and surfaces as a bogus entry if the recovered object is
+       ever walked with Object.keys — screen it too. Own-value props are inert to
+       the current direct-key consumers, but the keys-loop must not trip on them. */
+    return k in Object.prototype;
   }
   /* a record / entry / session must be a real object: null, arrays, strings
      and numbers are not data the app can read, so they are dropped at the
@@ -175,6 +181,8 @@
        and the "start light" guess is untouched).                              */
     if (own(r, "load")) r.load = clampCount(r.load, SET_LOAD_MAX);
     if (own(r, "swapLoad")) r.swapLoad = clampCount(r.swapLoad, SET_LOAD_MAX);
+    if (own(r, "reps")) r.reps = clampCount(r.reps, SET_REPS_MAX); // mirror sanitizeSets: a record's working reps/rir obey the same ceilings as its logged sets
+    if (own(r, "rir")) r.rir = clampCount(r.rir, RIR_MAX);
     if (own(r, "done")) r.done = clampCount(r.done, DONE_MAX);
     if (own(r, "topHits")) r.topHits = clampCount(r.topHits, DONE_MAX);
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
