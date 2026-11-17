@@ -375,8 +375,13 @@
       var spoken = wk.map(function (w) {
         return DAY_LABEL[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
       }).join(", ");
+      /* N41: mirror the on-screen summary — once any set of the day is logged,
+         the spoken estimate switches from the full-day plan to time left. */
+      var list = DAYS[cur].ex, dDone = 0, di;
+      for (di = 0; di < list.length; di++) dDone += Math.min(st(cur, di).done, effSets(list[di]));
       sr.textContent = "This week: " + spoken + ". Viewing " + DAY_LABEL[cur] +
-        " — about " + dayMins(cur, calOpts()) + " minutes.";
+        " — about " + (dDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " minutes" +
+        (dDone > 0 ? " left" : "") + ".";
     }
   }
 

@@ -71,6 +71,27 @@ test("three header day buttons, states match Stats.weekStatus, ≥44px", async (
   expect(sr).toContain("minutes");
 });
 
+test("the spoken week line reports time left once a set is logged (v172)", async ({ page }) => {
+  /* N41: the SR sentence must tell the same story as the on-screen summary —
+     full-day plan before any set, remaining-time once the day has started. */
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    const day = Gym.todayDay();
+    const state = {};
+    state[day + ":0"] = { done: 1, load: 60, reps: 6, rir: 2, sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 1, bodyweight: 165, bodyweightSet: false, state,
+      sessionLog: [], liftHistory: {}
+    }));
+  });
+  await page.reload();
+
+  const sr = await page.locator("#dayWeekSummary").textContent();
+  expect(sr).toContain("left");
+  expect(sr).toBeTruthy();
+});
+
 test("the selected marker follows the chevrons; a header tab switches the same way", async ({ page }) => {
   await page.goto(url);
   await page.evaluate(() => localStorage.clear());
