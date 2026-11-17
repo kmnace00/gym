@@ -23,7 +23,6 @@
   /* The countdown / pause / extend math now lives in machine.js; keeping a
      second copy here was a trap for a future caller. */
   return {
-    RIR_PENALTY: RIR_PENALTY,
     restDuration: restDuration
   };
 });

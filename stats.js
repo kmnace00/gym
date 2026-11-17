@@ -49,11 +49,6 @@
    * @param {any} payload
    * @returns {number}
    */
-  function setsLogged(payload) {
-    var n = 0, st = (payload && payload.state) || {}, k;
-    for (k in st) if (Object.prototype.hasOwnProperty.call(st, k)) n += Math.max(0, st[k].done || 0);
-    return n;
-  }
 
   /**
    * Total sets recorded across all history entries.
@@ -259,17 +254,6 @@
     var lw = volumeInRange(payload, lastStart, lastEnd, volumes);
     var pct = lw > 0 ? Math.round(((tw - lw) / lw) * 100) : (tw > 0 ? 100 : 0);
     return { thisWeek: tw, lastWeek: lw, deltaPct: pct, hasPrev: lw > 0 };
-  }
-  /**
-   * Distinct session dates inside the last 7 days.
-   * @param {any} payload @param {string} nowKey @returns {number}
-   */
-  function sessionsLast7(payload, nowKey) {
-    var start = shiftKey(nowKey, -6);
-    if (!start) return 0;
-    var s = sessionVolumes(payload), n = 0, i;
-    for (i = 0; i < s.length; i++) if (s[i].date >= start && s[i].date <= nowKey) n++;
-    return n;
   }
   /* ── consistency heatmap: the last `weeks` Fri/Sat/Sun blocks ──────────── */
   function mostRecentFriday(today) {
@@ -635,14 +619,14 @@
   }
 
   return {
-    sessionCount: sessionCount, setsLogged: setsLogged,
+    sessionCount: sessionCount,
     setsRecorded: setsRecorded, entrySets: entrySets, topSet: topSet,
     resolveBodyweight: resolveBodyweight,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     countsForProgression: countsForProgression,
     recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
     workoutDates: workoutDates, weekStatus: weekStatus,
-    weekOverWeek: weekOverWeek, sessionsLast7: sessionsLast7, personalRecords: personalRecords,
+    weekOverWeek: weekOverWeek, personalRecords: personalRecords,
     compactVol: compactVol, topMovers: topMovers,
     trainingDays: trainingDays, toCsv: toCsv, calibration: calibration,
     progressSnapshot: progressSnapshot

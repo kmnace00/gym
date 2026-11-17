@@ -84,10 +84,6 @@ test("weekOverWeek compares the last 7 days to the prior 7", () => {
   assert.strictEqual(w.hasPrev, true);
 });
 
-test("sessionsLast7 counts distinct session dates in the window", () => {
-  assert.strictEqual(A.sessionsLast7(windowed(), "2026-11-08"), 1); // 11-01 is too old
-});
-
 test("personalRecords ranks the best entry per lift", () => {
   const DAYS = { fri: { ex: [{ n: "Smith squat" }] }, sat: { ex: [] }, sun: { ex: [] } };
   const p = {

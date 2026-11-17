@@ -16,12 +16,10 @@ function sample() {
   };
 }
 
-test("sessionCount and setsLogged", () => {
+test("sessionCount", () => {
   const p = sample();
   assert.equal(S.sessionCount(p), 2); // two distinct workout dates, not three lifts
-  assert.equal(S.setsLogged(p), 4);
   assert.equal(S.sessionCount({}), 0);
-  assert.equal(S.setsLogged({}), 0);
 });
 
 test("setsRecorded sums sets across history entries", () => {
@@ -415,14 +413,12 @@ test("the helper leaves tonnage and PR numbers exactly as the inlined rule did",
 });
 
 /* B6-01: parseKey is internal, so the impossible-date guard is proven through
-   the public consumers that call it (weekStatus, trainingDays, weekOverWeek,
-   sessionsLast7). */
+   the public consumers that call it (weekStatus, trainingDays, weekOverWeek). */
 test("parseKey rejects impossible dates instead of rolling them", () => {
   for (const bad of ["2026-02-30", "2026-04-31", "2026-13-01", "0000-01-01"]) {
     assert.deepEqual(S.weekStatus({}, bad), [], `${bad} must not parse into a week`);
     assert.deepEqual(S.trainingDays({}, 2, bad), [], `${bad} must not parse into a week strip`);
     assert.deepEqual(S.weekOverWeek({}, bad), { thisWeek: 0, lastWeek: 0, deltaPct: 0, hasPrev: false }, `${bad} must not parse into a window`);
-    assert.equal(S.sessionsLast7({}, bad), 0, `${bad} must not parse into a window`);
   }
   // a real leap date still round-trips: 2024-02-29 is a Thursday
   const rows = S.weekStatus({}, "2024-02-29");
@@ -439,7 +435,6 @@ test("an impossible date in the payload is never attributed to Mar 2", () => {
   const vols = S.sessionVolumes(payload);
   assert.equal(vols.length, 1);
   assert.equal(vols[0].date, "2026-02-30"); // kept verbatim, never rewritten
-  assert.equal(S.sessionsLast7(payload, "2026-02-30"), 0); // no window, no phantom session
   assert.equal(S.trainingDays(payload, 2, "2026-02-30").length, 0);
   const strip = S.trainingDays(payload, 2, "2026-03-02"); // the week Fri 27 – Sun 1
   assert.equal(strip.length, 2);
