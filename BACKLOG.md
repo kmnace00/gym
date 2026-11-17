@@ -1,5 +1,13 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — test: pin that a swap choice and load survive rollover to a new day
+
+Survey finding #5 (unstated per-day swap invariant). `startSession`/`rollSession` clear set progress (`done`/`topHits`/`lastRir`/`sets`) but keep the working load **and** the `swapAlt`/`swapLoad`/`swapLoads` map unchanged — the intended per-lift persistence (a machine swapped in on Friday stays swapped next Friday, its load carrying over beside the original's). No test guarded it. New `test/store.test.js` case seeds a swapped `fri:0` (Barbell back squat @40) and asserts it survives both a same-day `startSession` (sets cleared, swap intact) and a `rollSession` across a day boundary (banked, load 50 + swap @40 kept). Pins current behavior — a future reset that silently drops the swap across days is now caught. Gate: unit **245 pass**, typecheck clean, e2e **205 passed**. Test-only, production code byte-identical (no version bump).
+
+## NEEDS DECISION — partial-workout sets never reach history (#4, product contract)
+
+`bankLift` (`app.js:117`) bails unless `s.done >= effSets(e)`, so an in-progress lift's logged sets are never written to `liftHistory`. `finalizeSession` (`store.js:764-794`) snapshots live `lifts` into `sessionLog`, but that feeds only duration/coverage — **not** tonnage, CSV, or PRs (all read `liftHistory`). So a *partial* finish (e.g. 2 of 3 squat sets) reports true sets/tonnage in the finish summary yet permanently under-counts Progress tonnage + CSV. Current behavior may be intentional ("only complete lifts bank"), but it's unstated. **Khang decision:** should `finalizeSession` bank each lift's live sets on finish, or is "only complete lifts bank" the contract? Implementation would add a `bankAll`/per-lift bank in `finalizeSession` + unit/e2e. Not building while unflagged.
+
 ## Nov 16 — v149: topMovers and PRs exclude swapped and deload sessions at their boundaries
 
 Survey findings #2 + #3 (per-lift progression-reader consistency). `topMovers` compared filterless `arr[0]` to `arr[arr.length-1]`, so a deload week (intentionally ~10% light) sitting last dragged the top-mover delta into a false decline, and a swapped-boundary session compared a different exercise's 1RM. Every other per-lift progression read (`progressionEntry` = `countsForProgression && !e.deload`) already excluded both; `topMovers` excluded neither and `personalRecords` excluded only swap.
