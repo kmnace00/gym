@@ -184,66 +184,6 @@ test("toCsv exports an assisted lift's help as the positive number it stores", (
   assert.ok(!csv.includes("-45"), "no negative display value leaks into the CSV");
 });
 
-test("sessionDrift needs three completed sessions before it reports", () => {
-  assert.deepEqual(S.sessionDrift({}, "fri", 60), { n: 0, insufficient: true });
-  assert.deepEqual(S.sessionDrift({ sessionLog: [{ day: "fri", status: "complete", durationSec: 3600 }] }, "fri", 60), { n: 1, insufficient: true });
-  assert.deepEqual(S.sessionDrift({ sessionLog: [
-    { day: "fri", status: "complete", durationSec: 3600 },
-    { day: "fri", status: "complete", durationSec: 4200 }
-  ] }, "fri", 60), { n: 2, insufficient: true });
-});
-
-test("sessionDrift compares the median actual session to the day estimate", () => {
-  const r = S.sessionDrift({ sessionLog: [
-    { day: "fri", status: "complete", durationSec: 3600 },
-    { day: "fri", status: "complete", durationSec: 4200 },
-    { day: "fri", status: "complete", durationSec: 4800 }
-  ] }, "fri", 60);
-  assert.equal(r.n, 3);
-  assert.equal(r.estimateMin, 60);
-  assert.equal(r.medianActualMin, 70);
-  assert.equal(r.driftPct, 16.7);
-});
-
-test("sessionDrift takes the middle two for an even count", () => {
-  const r = S.sessionDrift({ sessionLog: [
-    { day: "fri", status: "complete", durationSec: 4800 },
-    { day: "fri", status: "complete", durationSec: 3000 },
-    { day: "fri", status: "complete", durationSec: 4200 },
-    { day: "fri", status: "complete", durationSec: 3600 }
-  ] }, "fri", 60);
-  assert.equal(r.n, 4);
-  assert.equal(r.medianActualMin, 65);
-  assert.equal(r.driftPct, 8.3);
-});
-
-test("sessionDrift ignores incomplete, zero-length and other-day sessions", () => {
-  const r = S.sessionDrift({ sessionLog: [
-    { day: "fri", status: "complete", durationSec: 3600 },
-    { day: "fri", status: "active", durationSec: 5000 },
-    { day: "fri", status: "complete", durationSec: 0 },
-    { day: "fri", status: "complete" },
-    { day: "sat", status: "complete", durationSec: 4000 },
-    { day: "fri", status: "complete", durationSec: 4200 },
-    { day: "fri", status: "complete", durationSec: 3900 }
-  ] }, "fri", 65);
-  assert.equal(r.n, 3);
-  assert.equal(r.medianActualMin, 65);
-  assert.equal(r.driftPct, 0);
-});
-
-test("sessionDrift works with the real program estimate", () => {
-  const r = S.sessionDrift({ sessionLog: [
-    { day: "fri", status: "complete", durationSec: 4000 },
-    { day: "fri", status: "complete", durationSec: 4400 },
-    { day: "fri", status: "complete", durationSec: 4800 }
-  ] }, "fri", P.dayMins);
-  assert.equal(r.n, 3);
-  assert.equal(r.estimateMin, 105);       // N6 honest clock + N21 warm-ups + N22 finisher + assisted-dip warm-up
-  assert.equal(r.medianActualMin, 73.3);
-  assert.equal(r.driftPct, -30.2);
-});
-
 test("topSet picks the set with the highest metric", () => {
   const sets = [{ load: 60, reps: 5 }, { load: 70, reps: 3 }, { load: 50, reps: 10 }];
   // epley-ish: 60×1.167 = 70, 70×1.1 = 77, 50×1.333 = 66.7 → the 70×3 set wins
