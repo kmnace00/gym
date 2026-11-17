@@ -142,6 +142,39 @@ test("a swapped-in machine on an assisted lift is valued at its real weight", as
   expect(errors).toEqual([]);
 });
 
+test("the New PR hint values a swapped-in machine at its real load, not the original's assist rule", async ({ page }) => {
+  /* Same slice as v148 but on the LIVE doneBtn PR path, which v148 missed:
+     the hint's est. 1RM for a swapped assisted lift must value the alternate's
+     135 lb as PLAIN load (135×1.2 = 162), not as bodyweight-minus-help
+     ((165−135)×1.2 = 36). Friday dip's prior assisted session was 45 lb help
+     → (165−45)×1.2 = 144, so 162 is a real gain that fires "New PR"; the assist
+     mis-value 36 is BELOW 144 and would never fire. */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 667 });
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  await page.goto(url);
+  await page.evaluate(() => {
+    const state = {};
+    state["fri:7"] = { done: 0, load: 45, reps: 6, rir: 2, swapAlt: "Close-grip bench press", swapLoad: 135 };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, state,
+      sessionLog: [],
+      liftHistory: { "fri:7": [{ date: "2026-10-30", load: 45, reps: 6, rir: 2, setsDone: 3, assist: true }] },
+      active: { id: "ses_prswap", date: "2026-11-06", day: "fri", startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").nth(7).click(); // open fri:7 (the assisted dip)
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click(); // end rest, back to the lift
+  const hint = await page.locator("#hint").textContent();
+  expect(hint).toContain("New PR");
+  expect(hint).toContain("135 × 6"); // plain load label, not "help 135"
+  expect(hint).toContain("est. 1RM 162"); // 135×1.2, NOT (165−135)×1.2=36
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);

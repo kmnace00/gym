@@ -94,6 +94,15 @@
   function metricFor(e, load, reps) {
     return progressMetric(load, reps, { bw: !!(e && e.bw), assist: !!(e && e.assist), bodyweight: payload && payload.bodyweight });
   }
+  /* swap-aware metric for LIVE sets: while a lift is swapped its sets carry the
+     alternate's own external load, so they must be valued as plain weight
+     (bw:false, assist:false) — same rule liftValuation/bankLift use — never as
+     the original lift's bodyweight-minus-help. The doneBtn PR hint reads live
+     sets, so it must agree with how those sets are banked and valued elsewhere. */
+  function metricForLive(e, s, load, reps) {
+    var val = liftValuation(e, s);
+    return progressMetric(load, reps, { bw: val.bw, assist: val.assist, bodyweight: payload && payload.bodyweight });
+  }
   /* bodyweight work is valued at the weight in force when that session was
      banked, so editing today's weight never rewrites past PRs. */
   function bwFor(entry) {
@@ -1433,7 +1442,7 @@
     /* sets already banked today are today's PR: an extra set at a lighter
        load must not announce a new PR (B5-08) */
     for (hj = 0; hj < (s.sets || []).length; hj++) {
-      prevBest = Math.max(prevBest, metricFor(e, s.sets[hj].load || 0, s.sets[hj].reps || 0));
+      prevBest = Math.max(prevBest, metricForLive(e, s, s.sets[hj].load || 0, s.sets[hj].reps || 0));
     }
 
     s.sets = s.sets || [];
@@ -1446,7 +1455,7 @@
     hintText = ""; hintGood = false;
     var finished = !wasComplete && s.done >= effSets(e);
     var restNote = "";
-    var newMetric = metricFor(e, wl, s.reps);
+    var newMetric = metricForLive(e, s, wl, s.reps);
 
     /* a PR beats the progression nudge — celebrate it first */
     if (prevBest > -Infinity && newMetric > prevBest) {
