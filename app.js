@@ -296,10 +296,10 @@
     rPrevBtn.disabled = first;
     rNextBtn.disabled = last;
   }
-  /* N12: the day tabs are gone (Khang: not needed) — day switching lives on
-     the day view's ‹ › chevrons (switchDay, below) and week visibility lives
-     in Progress. Stats.weekStatus itself stays; only its tab rendering,
-     added in N3 after the week strip went, was removed again here. */
+  /* N12 (updated): day switching lives on the header day tabs (#dayCluster of
+     Fri/Sat/Sun buttons, added back in N24) AND the day view's ‹ › chevrons —
+     both route through switchDay. Stats.weekStatus stays; its original N12
+     tab-rendering lifecycle note is obsolete since the tabs are back. */
   /* ── B6-10: deload follow-through nudge ────────────────────────────────────
      Pure date math on fields that already exist: the anchor is the most recent
      deload start + 7 days, or, when a deload has never been started, the
@@ -355,7 +355,6 @@
      reset (B5-05). The visual dots are knit into the labels; screen readers
      get the same week facts as one sentence.                              */
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
-  var WEEK_DAY_NAME = { fri: "Fri", sat: "Sat", sun: "Sun" };
   function renderDayWeek() {
     var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
     var cluster = document.getElementById("dayCluster");
@@ -363,8 +362,8 @@
       cluster.innerHTML = wk.map(function (w) {
         return '<button type="button" class="daytab ' + w.state + (w.day === cur ? " on" : "") + '"' +
           ' data-day="' + w.day + '" aria-pressed="' + (w.day === cur) + '"' +
-          ' aria-label="' + WEEK_DAY_NAME[w.day] + ' — ' + (WEEK_STATE_WORD[w.state] || w.state) + '">' +
-          '<i class="dwdot" aria-hidden="true"></i>' + WEEK_DAY_NAME[w.day] + "</button>";
+          ' aria-label="' + DAY_LABEL[w.day] + ' — ' + (WEEK_STATE_WORD[w.state] || w.state) + '">' +
+          '<i class="dwdot" aria-hidden="true"></i>' + DAY_LABEL[w.day] + "</button>";
       }).join("");
       var btns = cluster.querySelectorAll(".daytab");
       for (var b = 0; b < btns.length && b < wk.length; b++) {
@@ -374,9 +373,9 @@
     var sr = document.getElementById("dayWeekSummary");
     if (sr) {
       var spoken = wk.map(function (w) {
-        return WEEK_DAY_NAME[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
+        return DAY_LABEL[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
       }).join(", ");
-      sr.textContent = "This week: " + spoken + ". Viewing " + WEEK_DAY_NAME[cur] +
+      sr.textContent = "This week: " + spoken + ". Viewing " + DAY_LABEL[cur] +
         " — about " + dayMins(cur, calOpts()) + " minutes.";
     }
   }
