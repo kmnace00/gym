@@ -775,7 +775,11 @@
           else if (!ns.swapAlt && ne.load === 0) nLoadTxt = "bodyweight";
           else {
             var nLoad = ns.swapAlt ? workingLoad(ns) : (ns.load > 0 ? ns.load : ne.load);
+            /* when the next lift has no load yet (a swapped start-light or a
+               load===null lift at 0), say so like the rest screen does — the
+               three surfaces must not disagree. */
             if (nLoad != null && nLoad > 0) nLoadTxt = String(nLoad);
+            else nLoadTxt = "start light";
           }
           nextLine.innerHTML = "Next: <b>" + esc(nName) + "</b>" + (nLoadTxt ? " · " + esc(nLoadTxt) : "");
         }

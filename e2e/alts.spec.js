@@ -150,6 +150,32 @@ test("the rest screen names a swapped next lift by its alternate (v164)", async 
   expect(errors).toEqual([]);
 });
 
+test("the lift view's Next line shows start light for a swapped 0-load next lift (v170)", async ({ page }) => {
+  /* When lift idx+1 is swapped with no working load yet (workingLoad 0), the
+     lift-view "Next:" preview must say "start light" — matching the rest screen
+     ("· start light") and the rest-prep card ("light"), not silently omit it. */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay();
+    const state = {};
+    state[day + ":0"] = { done: 2, load: 60, reps: 6, rir: 2, sets: [] }; // one set left
+    state[day + ":1"] = { done: 0, load: 50, reps: 6, rir: 2, swapAlt: "Barbell incline press", swapLoad: 0, sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, bodyweightSet: false, state,
+      sessionLog: [], liftHistory: {}
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#exName")).not.toHaveText("");
+  await expect(page.locator("#nextLine")).toContainText("Next: Barbell incline press");
+  await expect(page.locator("#nextLine")).toContainText("start light");
+  expect(errors).toEqual([]);
+});
+
 test("a swapped-in machine on an assisted lift is valued at its real weight", async ({ page }) => {
   /* Friday lift 7 is the Assisted dip (assist:true). Swapped to the plain
      "Close-grip bench press" alternate at 135 lb, its 3 done sets must sum as
