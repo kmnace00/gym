@@ -5,18 +5,18 @@ typecheck clean, e2e 208. Tree clean, `main` ahead 1 of `origin/main` (v152 +
 backlog notes), nothing pushed.
 
 ## Queue (priority order, refill from survey when <3)
-1. ~~#3 correctness: priorEntries() off-by-one~~ DONE (v153, critics GO).
-2. **[NOW]** **#4 Tier 2 security:** `sanitizeRecord` missing `unsafeKey` guard for `swapLoads` (`store.js:189-198`). Partially investigated read-only: values coerced to finite numbers so `cleanLoads` proto-pollution via value is unlikely, but key names (`__proto__`, `constructor`) aren't screened. Needs a discriminating test + OFF-PEAK Pro critic (batch). Check `stripUnsafeKeys`/`unsafeKey` (store.js:110-128) precedent.
-3. **#5 low:** `toCsv` legacy multi-set emits 1 row vs `entrySets` synthesizes `setsDone`.
+1. ~~#3 correctness: priorEntries() off-by-one~~ DONE (v153, critic-flash GO).
+2. ~~#4 Tier 2 security: sanitizeRecord swapLoads unsafeKey guard~~ DONE (v154, discriminating test). CRITIQUE_PENDING for the off-peak Pro critic (see below).
+3. **[NOW]** **#5 low:** `toCsv` legacy multi-set emits 1 row vs `entrySets` synthesizes `setsDone`.
 4. **#topSetOf low:** `bankLift` calls `topSetOf(e,s.sets)` with no entry → swapped descending-load session banks wrong "top". (`app.js:124-127 + PR hint path`)
 5. **deferred low:** hide `applyLoad`/`suggestLine` while swapped (display-consistency).
 6. planBtn-into-dormant-load (out of scope unless Khang wants).
 
 ## Doing now
-#4 sanitizeRecord swapLoads unsafeKey guard (Tier 2 security; will need off-peak Pro critic).
+#5 toCsv legacy multi-set single-row comparison.
 
 ## Critic reviews waiting (batch Pro for Tier 2)
-- none yet (first Pro batch will hold #4's review). critic-flash GO for #3 recorded above.
+- **PENDING (batch):** v154 `sanitizeRecord` `swapLoads` `unsafeKey` guard (`store.js:189-198`). Change: skip `unsafeKey(k)` when copying per-alternate loads into `cleanLoads`. Verified: pre-fix a hostile `constructor`/`prototype`/`__proto__` key survived as a phantom own property; post-fix only real alternate names survive; all 245 unit + 209 e2e green. Committed during peak (03:37 UTC Tue) — flag for the next off-peak Pro batch (batch 3–5 together).
 
 ## Choices waiting for Khang
 - NEEDS DECISION: partial-workout sets never reach history (product contract).

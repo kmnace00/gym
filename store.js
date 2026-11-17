@@ -191,7 +191,7 @@
         var cleanLoads = {};
         Object.keys(r.swapLoads).forEach(function (k) {
           var v = Number(r.swapLoads[k]);
-          if (k.length > 0 && k.length <= SWAP_ALT_MAX && isFinite(v) && v >= 0) cleanLoads[k] = v;
+          if (k.length > 0 && k.length <= SWAP_ALT_MAX && isFinite(v) && v >= 0 && !unsafeKey(k)) cleanLoads[k] = v;
         });
         r.swapLoads = cleanLoads;
       } else r.swapLoads = {};

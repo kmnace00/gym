@@ -1260,6 +1260,15 @@ test("swapLoads keeps sane per-alternate loads and drops junk (N14)", () => {
   assert.deepEqual(junk.state["fri:0"].swapLoads, {});
   const notObj = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: 7 } } }));
   assert.deepEqual(notObj.state["fri:0"].swapLoads, {});
+  /* hostile key names must not survive into the recovered per-alternate map:
+     "constructor"/"prototype" would otherwise land as phantom own properties,
+     and "__proto__" must never collide with the map's prototype. (They come
+     from storage/import through the sanitizer — the same unsafeKey rule the
+     record/entry sanitizers apply at their boundaries.) Pre-fix "constructor"
+     shadowed as an own numeric property and survived. */
+  const hostile = S.migrate(JSON.stringify({ v: 5, state: { "fri:0": { done: 0, swapLoads: { "__proto__": 5, "constructor": 3, "prototype": 1, "Leg press": 180 } } } }));
+  assert.deepEqual(hostile.state["fri:0"].swapLoads, { "Leg press": 180 });
+  assert.equal(Object.getPrototypeOf(hostile.state["fri:0"].swapLoads), Object.prototype);
 });
 
 /* B6-09 — deload week: a 7-day mode carried additively on the v5 payload */
