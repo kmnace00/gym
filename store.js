@@ -174,6 +174,13 @@
     if (!isObj(r)) return r;
     stripUnsafeKeys(r);               // nested `__proto__` must not survive the boundary
     coerceNum(r, "load"); coerceNum(r, "reps"); coerceNum(r, "rir"); coerceNum(r, "swapLoad"); // B6-07: the alternate's working load coerces like load
+    /* cap the record's own loads at the same ceiling the sets clamp to, so a
+       hand-edited or foreign backup can't inject a huge working load into the
+       suggestion / PR / tonnage reads (B5-15's intent, applied to the record —
+       clampCount only on an existing key, so a fresh lift keeps its absent load
+       and the "start light" guess is untouched).                              */
+    if (own(r, "load")) r.load = clampCount(r.load, SET_LOAD_MAX);
+    if (own(r, "swapLoad")) r.swapLoad = clampCount(r.swapLoad, SET_LOAD_MAX);
     if (own(r, "done")) r.done = clampCount(r.done, DONE_MAX);
     if (own(r, "topHits")) r.topHits = clampCount(r.topHits, DONE_MAX);
     if (r.lastRir !== null && Object.prototype.hasOwnProperty.call(r, "lastRir")) coerceNum(r, "lastRir");
@@ -191,7 +198,8 @@
         var cleanLoads = {};
         Object.keys(r.swapLoads).forEach(function (k) {
           var v = Number(r.swapLoads[k]);
-          if (k.length > 0 && k.length <= SWAP_ALT_MAX && isFinite(v) && v >= 0 && !unsafeKey(k)) cleanLoads[k] = v;
+          if (k.length > 0 && k.length <= SWAP_ALT_MAX && isFinite(v) && v >= 0 && !unsafeKey(k))
+            cleanLoads[k] = v > SET_LOAD_MAX ? SET_LOAD_MAX : v; // B5-15: cap at the same ceiling as a set load
         });
         r.swapLoads = cleanLoads;
       } else r.swapLoads = {};
@@ -211,6 +219,9 @@
        (older than Pass 3) are kept: the merge key has a value fallback.      */
     if (own(e, "date") && !validDate(e.date)) return null;
     coerceNum(e, "load"); coerceNum(e, "reps"); coerceNum(e, "rir");
+    /* same ceiling as the set clamp: a foreign/hand-edited entry's representative
+       load feeds the next-load suggestion and PR baseline, so it is bounded too. */
+    if (own(e, "load")) e.load = clampCount(e.load, SET_LOAD_MAX);
     if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;

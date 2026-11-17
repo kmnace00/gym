@@ -1168,6 +1168,36 @@ test("in-range set values pass through the clamps unchanged", () => {
   assert.deepEqual(p.state["fri:0"].sets, [{ load: 122.5, reps: 6, rir: 2 }, { load: 0, reps: 1, rir: 0 }]);
 });
 
+/* B5-15 extension — the record's OWN load (working load, swapLoad, and the
+   per-alternate swapLoads map) is bounded at the same ceiling the sets clamp
+   to, so a foreign/hand-edited backup can't inject a huge load into the
+   suggestion, PR baseline or tonnage reads. A fresh lift with an ABSENT load
+   stays absent (must not turn into load:0, which would break start-light). */
+test("migrate clamps an imported record's own load, swapLoad and swapLoads to SET_LOAD_MAX", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 1, load: 1000000000, swapLoad: 500000000,
+      swapLoads: { "Leg press": 3000, "Hack squat": 120 }, sets: [{ load: 122.5, reps: 6, rir: 2 }] } }
+  }));
+  assert.equal(p.state["fri:0"].load, 2000, "the working load is capped");
+  assert.equal(p.state["fri:0"].swapLoad, 2000, "the swap working load is capped");
+  assert.deepEqual(p.state["fri:0"].swapLoads, { "Leg press": 2000, "Hack squat": 120 },
+    "the per-alternate map is capped, in-range entries kept");
+
+  /* a fresh lift with an absent load must NOT gain a load:0 (start-light guess). */
+  const fresh = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: { "fri:0": { done: 0 } } }));
+  assert.ok(!("load" in fresh.state["fri:0"]), "absent load stays absent after clamping");
+
+  /* the history entry's representative load is capped too (feeds the suggestion). */
+  const e = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 987654321, reps: 6, rir: 2, setsDone: 3,
+      sets: [{ load: 2500, reps: 6, rir: 2 }] }] }
+  }));
+  assert.equal(e.liftHistory["fri:0"][0].load, 2000, "the entry's representative load is capped");
+  assert.equal(e.liftHistory["fri:0"][0].sets[0].load, 2000, "the entry's set load is capped");
+});
+
 /* B5-16 — a bad-dated sessionLog entry is dropped, not re-dated to today */
 test("migrate drops sessionLog entries with malformed dates and keeps valid ones", () => {
   const p = S.migrate(JSON.stringify({
