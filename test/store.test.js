@@ -573,16 +573,6 @@ test("validDay and validDate reject junk", () => {
   assert.equal(S.validDate(null), false);
 });
 
-test("daysUntil counts whole days to a training day and returns null for the rest", () => {
-  const g = new Date().getDay();
-  const target = { sun: 0, fri: 5, sat: 6 };
-  for (const d of ["sun", "fri", "sat"]) {
-    assert.equal(S.daysUntil(d), (target[d] - g + 7) % 7, `daysUntil(${d})`);
-  }
-  assert.equal(S.daysUntil("mon"), null);
-  assert.equal(S.daysUntil(undefined), null);
-});
-
 test("actualDay names a training day only on Fri/Sat/Sun", () => {
   const g = new Date().getDay();
   const expected = g === 5 ? "fri" : g === 6 ? "sat" : g === 0 ? "sun" : null;

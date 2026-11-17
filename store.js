@@ -53,12 +53,6 @@
   function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
   /* the actual weekday when it is a training day, else null (Mon–Thu) */
   function actualDay() { var d = new Date().getDay(); return d === 5 ? "fri" : d === 6 ? "sat" : d === 0 ? "sun" : null; }
-  /* whole days until the next occurrence of a training day (0 = today) */
-  function daysUntil(day) {
-    var order = { sun: 0, fri: 5, sat: 6 }, target = order[day];
-    if (target == null) return null;
-    return (target - new Date().getDay() + 7) % 7;
-  }
   /** True only for the three training days. */
   function validDay(d) { return d === "fri" || d === "sat" || d === "sun"; }
   /** True only for a strict "YYYY-MM-DD" string that is a real calendar
@@ -1105,7 +1099,7 @@
     markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue, hasData: hasData,
     mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
     deloadActive: deloadActive,
-    todayDay: todayDay, actualDay: actualDay, daysUntil: daysUntil, validDay: validDay, validDate: validDate,
+    todayDay: todayDay, actualDay: actualDay, validDay: validDay, validDate: validDate,
     dateKey: dateKey, sessionDate: sessionDate
   };
 });
