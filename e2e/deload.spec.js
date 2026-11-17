@@ -48,6 +48,9 @@ for (const size of sizes) {
       await expect(page.locator("#deloadBar")).toContainText("Deload week — fewer sets, ~10% lighter, stop ~2 reps earlier.");
       await noOverflow(page);
 
+      /* the day row must show the deload cut, not the planned 3 sets (v160) */
+      await expect(page.locator(".liftrow").first().locator(".liftmeta")).toContainText("2×");
+
       /* the 3-set lift now completes at 2 sets, and the suggestion is 10% lighter */
       await page.locator(".liftrow").first().click();
       await expect(page.locator("#setCount")).toHaveText("Set 1 of 2");
