@@ -872,7 +872,7 @@
     var max = Math.max(1, byDay.fri, byDay.sat, byDay.sun);
     var labels = { fri: "Friday", sat: "Saturday", sun: "Sunday" };
     var bars = "";
-    ["fri", "sat", "sun"].forEach(function (d) {
+    DAY_KEYS.forEach(function (d) {
       var v = byDay[d], pct = Math.round((v / max) * 100);
       bars += '<div class="pdayrow"><span class="pdname">' + labels[d] + '</span>'
         + '<span class="pdbar"><i style="width:' + pct + '%"></i></span>'
@@ -881,7 +881,7 @@
     document.getElementById("pDayBars").innerHTML = bars;
 
     document.getElementById("heatmap").innerHTML = snap.weeks.map(function (w) {
-      return '<span class="hweek">' + ["fri", "sat", "sun"].map(function (d) {
+      return '<span class="hweek">' + DAY_KEYS.map(function (d) {
         return '<i class="hday' + (w[d] ? " on" : "") + '"></i>';
       }).join("") + "</span>";
     }).join("");
@@ -1666,7 +1666,7 @@
 
   /* ── finish workout + one-screen summary ───────────────────────────────── */
   function nextTrainingGap() {
-    var order = ["fri", "sat", "sun"], orderDow = { fri: 5, sat: 6, sun: 0 };
+    var order = DAY_KEYS, orderDow = { fri: 5, sat: 6, sun: 0 };
     var now = new Date(), dow = now.getDay(), t = Gym.actualDay();
     var day;
     if (!t) day = Gym.todayDay();
@@ -1826,8 +1826,9 @@
   document.getElementById("nextLift").onclick = function () { navigateLift(1); };
   rPrevBtn.onclick = function () { navigateLift(-1); };
   rNextBtn.onclick = function () { navigateLift(1); };
-  /* N12: day switching — the ‹ › chevrons beside the day title cycle the
-     three training days (the header tab row is gone at Khang's word). */
+  /* N12 (updated): day switching — the ‹ › chevrons beside the day title
+     cycle the three training days, sharing switchDay with the header day
+     tabs (#dayCluster, back in N24). */
   var DAY_KEYS = ["fri", "sat", "sun"];
   function switchDay(d) {
     /* reset the in-progress set edit BEFORE switching days: the backup
