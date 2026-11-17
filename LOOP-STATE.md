@@ -1,6 +1,6 @@
 # LOOP-STATE — session state (Nov 17, continuing the loop)
 
-Gate last green (v175): unit 241, typecheck clean, e2e 219, sw-cache OK digest 40626f620d4eef49.
+Gate last green (v176): unit 242, typecheck clean, e2e 219, sw-cache OK digest 9c3a53212f077aca.
 
 ## Lock
 - STARTED 2026-11-17 07:03 local by this manual session. Queue empty of a held lock before this; working tree clean; no STOPPED/PAUSED/EXHAUSTED.
@@ -31,14 +31,17 @@ Gate last green (v175): unit 241, typecheck clean, e2e 219, sw-cache OK digest 4
 22. survey #4 (NOTE ONLY, latent coupling): `BODYWEIGHT_LB` 165 triplicated (`program.js:150`, `store.js:81`, `stats.js:113` fallback). Left alone — coupling pure modules for a by-design fixed default isn't worth it. Recorded; not buildable as-is.
 - **Khang request (spacing):** DONE (v160). The concrete unevenness was in the wrapped/swapped lift view: `.sethead` used `gap:10px` between the "Set X of Y" line and the Swap/Undo/Restart row, while the pill-to-pill and pill-to-set-row gaps were the 6px beat. Set `.sethead` gap to 6px so the vertical rhythm around the buttons is uniform (normal single-line layout unaffected — space-between keeps it spread; verified 390×844 geometry before/after). Reversible if this isn't what was meant.
 - survey tile 6 (not queued, design-aware session UX): the session clock never auto-pauses on hide — an abandoned workout banks `durationSec` to the 8 h cap. Bounded already; needs a deliberate auto-pause design, not a drive-by.
+- 23. survey (v176 done, Tier 2, data-integrity, Pro-critic follow-up #1 un-deferred): `unsafeKey` screened only `__proto__`/`constructor`/`prototype`, so other `Object.prototype` members (`hasOwnProperty`/`toString`/`valueOf`) could still land as phantom own pairs on the recovered `swapLoads` map. FIXED v176 — `unsafeKey` now also returns `k in Object.prototype`. Pro critic confirmed it deletes no legitimate key at any call site. + discriminating test (hostile seed asserts `Object.keys` clean).
+- 24. survey (v176 done, Tier 2, data-integrity, Pro-critic follow-up #2 un-deferred): a record's own `reps`/`rir` were coerced but not clamped (only `load`/`swapLoad`), so a hand-edited backup could push a huge finite reps/rir into the live readout and the `program.js:245` legacy backfill that set-level clamping never sees. FIXED v176 — `sanitizeRecord` clamps `reps`→`SET_REPS_MAX` (999), `rir`→`RIR_MAX` (4), mirroring `sanitizeSets`; presence-guarded so absent stays absent. + discriminating test.
 - (queue below 3 → survey + refill to 10)
 
 ## Doing now
-survey #5 manual — subagent down on provider balance. Built v175 (deload `~min` estimate now deload-aware via the `cal` object — item 10 un-deferred). Manual scan is otherwise exhausted again (no dead code, no new stale comments). Survey #6 next: keep scanning for fresh Tier-0/1 candidates; if none, the queue needs a refill or Khang's named item.
+survey #6 manual — subagent still down on provider balance. Built v176 (both Pro-critic data-integrity follow-ups un-deferred: broadened `unsafeKey` + record-level reps/rir clamping; Pro critic GO). Manual scan otherwise exhausted for fresh Tier-0/1 candidates — the refill has now consumed the two strongest deferred items. Next: continue survey for new candidates; if none, the queue needs a refill or Khang's named item.
 
 ## Critic reviews waiting (batch Pro for Tier 2)
+- **GO (Nov 17, off-peak):** v176 — the two previously-flagged follow-ups (broadened `unsafeKey` + record-level `reps`/`rir` clamping), reviewed by the Pro critic in one run. Confirmed the clamp closes the `program.js:245` record→set backfill threat and `unsafeKey` deletes no legitimate key. No blockers; only non-blocking wording suggestions left as-is.
 - **GO (Nov 17, off-peak):** v154 `sanitizeRecord` swapLoads unsafeKey guard AND v158 load-bound at SET_LOAD_MAX, reviewed together in one Pro batch. No bypass, no regression, both pinned by discriminating tests.
-- - **Follow-ups flagged (NEEDS_DESIGN-class, not blockers, no action now):** (1) `swapLoads` key screening covers only `__proto__`/`constructor`/`prototype` — keys like `hasOwnProperty`/`toString`/`valueOf` still become own numeric props (inert via current direct-key consumers, but a future `Object.keys` consumer could trip); (2) record-level `reps`/`rir` are coerced (`coerceNum`) but not clamped (only `load`/`swapLoad` are) — same hand-edited-backup threat, out of scope for the load commit.
+- - **Follow-ups (both RESOLVED in v176):** (1) `swapLoads` key screening covered only `__proto__`/`constructor`/`prototype` — fixed, screens all `Object.prototype` members; (2) record-level `reps`/`rir` coerced but not clamped — fixed, clamped to `SET_REPS_MAX`/`RIR_MAX`.
 
 ## Choices waiting for Khang
 - NEEDS DECISION: partial-workout sets never reach history (product contract).
