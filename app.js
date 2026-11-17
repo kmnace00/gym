@@ -970,7 +970,7 @@
       var wl = workingLoad(s);
       return {
         name: tIdx === idx ? "Set " + (s.done + 1) + " of " + effSets(e)
-                           : "Next — " + e.n + ", Set " + (s.done + 1) + " of " + effSets(e),
+                           : "Next — " + (s.swapAlt ? s.swapAlt : e.n) + ", Set " + (s.done + 1) + " of " + effSets(e),
         load: s.swapAlt ? swLoadText(wl) : loadText(wl, e), reps: String(s.reps)
       };
     }
@@ -1515,12 +1515,28 @@
     var list = DAYS[cur].ex, nextText = "";
     if (s.done >= effSets(e)) {
       var nx = list[idx + 1];
-      var nxLoad = !nx ? "" : nx.assist
-        ? (st(cur, idx + 1).load > 0 ? " · help " + st(cur, idx + 1).load : " · bodyweight")
-        : nx.load === null
-          ? (st(cur, idx + 1).load > 0 ? " · Load " + st(cur, idx + 1).load : " · start light")
-          : nx.load === 0 ? " · bodyweight" : " · Load " + st(cur, idx + 1).load;
-      nextText = nx ? "Up next — " + nx.n + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
+      var nxLoad = "";
+      var nxName = nx ? nx.n : "";
+      if (nx) {
+        var nsx = st(cur, idx + 1);
+        nxName = nsx.swapAlt ? nsx.swapAlt : nx.n;
+        /* N26/swap-consistent: a swapped next lift reports the ALTERNATE's
+           name and plain working load, exactly like the lift view's Next line
+           (nextLine) and the rest-prep card. */
+        if (nsx.swapAlt) {
+          var nsw = workingLoad(nsx);
+          nxLoad = nsw > 0 ? " · Load " + nsw : " · start light";
+        } else if (nx.assist) {
+          nxLoad = nsx.load > 0 ? " · help " + nsx.load : " · bodyweight";
+        } else if (nx.load === null) {
+          nxLoad = nsx.load > 0 ? " · Load " + nsx.load : " · start light";
+        } else if (nx.load === 0) {
+          nxLoad = " · bodyweight";
+        } else {
+          nxLoad = " · Load " + nsx.load;
+        }
+      }
+      nextText = nx ? "Up next — " + nxName + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
       nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " reps" +
         (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")

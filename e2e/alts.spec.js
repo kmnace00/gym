@@ -114,6 +114,42 @@ test("the day overview shows a swapped lift's working load, not the original's",
   expect(errors).toEqual([]);
 });
 
+test("the rest screen names a swapped next lift by its alternate (v164)", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay();
+    const state = {};
+    /* lift 0 (Smith squat) nearly done; lift 1 (Smith incline press) swapped to
+       the Barbell incline press alternate at 120 lb. */
+    state[day + ":0"] = { done: 2, load: 60, reps: 6, rir: 2, sets: [] };
+    state[day + ":1"] = { done: 0, load: 50, reps: 6, rir: 2, swapAlt: "Barbell incline press", swapLoad: 120,
+      sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, bodyweightSet: false, state,
+      sessionLog: [], liftHistory: {},
+      active: { id: "ses_swapnext", date: "", day: day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+
+  // finish lift 0's last set -> inter-lift rest
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+
+  // rest screen must name the ALTERNATE and its plain load, not the original lift
+  await expect(page.locator("#restNext")).toContainText("Up next — Barbell incline press");
+  await expect(page.locator("#restNext")).toContainText("Load 120");
+  await expect(page.locator("#restNext")).not.toContainText("Smith incline press");
+  await expect(page.locator("#restPrepName")).toHaveText("Next — Barbell incline press, Set 1 of 3");
+  await expect(page.locator("#restPrepLoad")).toHaveText("120 lb");
+
+  expect(errors).toEqual([]);
+});
+
 test("a swapped-in machine on an assisted lift is valued at its real weight", async ({ page }) => {
   /* Friday lift 7 is the Assisted dip (assist:true). Swapped to the plain
      "Close-grip bench press" alternate at 135 lb, its 3 done sets must sum as
