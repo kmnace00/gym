@@ -1944,7 +1944,7 @@
   };
   function summaryText() {
     var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
-    var days = Stats.uniqueDays(payload), vol = Math.round(Stats.totalVolume(payload));
+    var days = Stats.sessionCount(payload), vol = Math.round(Stats.totalVolume(payload));
     return "Gym — " + sessions + " workouts · " + sets + " sets · " + days + " training days · " + vol + " lb tonnage";
   }
   document.getElementById("shareSummary").onclick = function () {

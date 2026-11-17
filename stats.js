@@ -50,12 +50,6 @@
   }
 
   /**
-   * Total sets marked done across every lift's current state.
-   * @param {any} payload
-   * @returns {number}
-   */
-
-  /**
    * Total sets recorded across all history entries.
    * @param {any} payload
    * @returns {number}
@@ -203,15 +197,6 @@
       res[d] = total;
     }
     return res;
-  }
-
-  /**
-   * Distinct calendar days with at least one recorded session.
-   * @param {any} payload
-   * @returns {number}
-   */
-  function uniqueDays(payload) {
-    return workoutDates(payload).length;
   }
 
   /* ── time-window analytics (deterministic: the caller passes `nowKey`) ─── */
@@ -630,7 +615,7 @@
     resolveBodyweight: resolveBodyweight,
     entryVolume: entryVolume, totalVolume: totalVolume, sessionVolumes: sessionVolumes,
     countsForProgression: countsForProgression,
-    recentVolume: recentVolume, volumeByDay: volumeByDay, uniqueDays: uniqueDays,
+    recentVolume: recentVolume, volumeByDay: volumeByDay,
     workoutDates: workoutDates, weekStatus: weekStatus,
     weekOverWeek: weekOverWeek, personalRecords: personalRecords,
     compactVol: compactVol, topMovers: topMovers,

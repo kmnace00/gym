@@ -61,10 +61,6 @@ test("volumeByDay uses each lift's latest entry", () => {
   assert.equal(out.sun, 0);
 });
 
-test("uniqueDays counts distinct calendar dates", () => {
-  assert.equal(S.uniqueDays(sample()), 2);
-});
-
 test("entrySets expands legacy scalar entries into rows", () => {
   const sets = S.entrySets({ load: 50, reps: 6, rir: 2, setsDone: 3 });
   assert.equal(sets.length, 3);
