@@ -223,6 +223,39 @@ test("a completed SWAPPED session is not counted as 'this session' when building
   expect(errors).toEqual([]);
 });
 
+test("a swapped descending session banks the HEAVIER set as the representative top", async ({ page }) => {
+  /* bankLift picks the representative top set with the ORIGINAL lift's metric,
+     but a swapped assisted lift's sets carry the ALTERNATE's plain load, so an
+     assist metric (bodyweight−help) inverts the pick and crowns the LIGHTER of
+     a descending run. Under the shared liftValuation rule (plain load while
+     swapped), 135 must win over 125. Friday lift 7 is the Assisted dip. */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  await page.goto(url);
+  await page.evaluate(() => {
+    const s2 = (ld) => ({ load: ld, reps: 6, rir: 2 });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+      state: { "fri:7": { done: 2, load: 45, reps: 6, rir: 2,
+        swapAlt: "Close-grip bench press", swapLoad: 125,
+        sets: [s2(135), s2(135)] } },
+      liftHistory: {}, sessionLog: [],
+      active: { id: "ses_topswap", date: "2026-11-06", day: "fri", startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").nth(7).click(); // open fri:7, the swapped dip
+  await page.locator("#doneBtn").click(); // 3rd set at the working 125 → bank [135,135,125]
+  await page.locator("#skipRest").click(); // end rest, back to the lift
+  const entry = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2"))
+    .liftHistory["fri:7"].slice(-1)[0]);
+  expect(entry.load, "the heavier swapped set banks as the representative top").toBe(135);
+  expect(entry.reps).toBe(6);
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);

@@ -7,17 +7,16 @@ backlog notes), nothing pushed.
 ## Queue (priority order, refill from survey when <3)
 1. ~~#3 correctness: priorEntries() off-by-one~~ DONE (v153, critic-flash GO).
 2. ~~#4 Tier 2 security: sanitizeRecord swapLoads unsafeKey guard~~ DONE (v154, discriminating test). CRITIQUE_PENDING for off-peak Pro batch (see below).
-3. ~~#5 toCsv legacy multi-set single-row~~ DONE (v155, discriminating tests; critic-flash running). Awaiting critic before commit.
-4. **[NOW]** **#topSetOf low:** `bankLift` calls `topSetOf(e, s.sets)` with no entry → swapped descending-load session banks wrong "top". (`app.js:124-127 + PR hint path`)
-5. **deferred low:** hide `applyLoad`/`suggestLine` while swapped (display-consistency).
-6. planBtn-into-dormant-load (out of scope unless Khang wants).
-- (refill later if below 3)
+3. ~~#5 toCsv legacy multi-set single-row~~ DONE (v155, critic-flash GO).
+4. ~~#topSetOf low~~ DONE (v156; critic-flash running). Awaiting critic before commit.
+5. **[NOW]** **deferred low:** hide `applyLoad`/`suggestLine` while swapped (display-consistency). Survey refill may supersede.
+- (queue below 3 → survey + refill to 10)
 
 ## Doing now
-#topSetOf: bankLift passes no entry to topSetOf; rank higher if survey refill.
+deferred: hide Apply suggestion while swapped.
 
 ## Critic reviews waiting (batch Pro for Tier 2)
-- **PENDING (batch):** v154 `sanitizeRecord` swapLoads unsafeKey guard. Changed during peak (03:37 UTC Tue); need off-peak Pro review. (Also v155 toCsv committed pending critic-flash.)
+- **PENDING (batch):** v154 `sanitizeRecord` swapLoads unsafeKey guard. Committed during peak; need off-peak Pro review. (Batches 3–5 with future Tier 2.)
 
 ## Choices waiting for Khang
 - NEEDS DECISION: partial-workout sets never reach history (product contract).

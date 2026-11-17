@@ -124,8 +124,15 @@
   function bankLift(d, i) {
     var e = DAYS[d].ex[i], s = st(d, i);
     if (!s.sets || !s.sets.length || s.done < effSets(e)) return;
-    var top = topSetOf(e, s.sets) || s.sets[s.sets.length - 1];
     var val = liftValuation(e, s);
+    /* the representative top set is valued exactly like the sets are banked
+       (B6-07 / v148): while swapped they carry the alternate's plain external
+       load, so an original bodyweight/assist flag must not invert the pick —
+       for an assisted lift, bodyweight-minus-help would crown the LIGHTER of a
+       descending run. This matches the shared rule volume/PR already use. */
+    var top = Stats.topSet(s.sets, function (l, r) {
+      return progressMetric(l, r, { bw: val.bw, assist: val.assist, bodyweight: payload && payload.bodyweight });
+    }) || s.sets[s.sets.length - 1];
     var hit = false;
     for (var j = 0; j < s.sets.length; j++) {
       if (s.sets[j].reps >= e.top && s.sets[j].rir >= e.rir) hit = true;

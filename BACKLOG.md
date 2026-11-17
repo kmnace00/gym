@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v156: a swapped descending session banks the right top set
+
+`bankLift` picked its representative top set with the ORIGINAL lift's metric, but while a lift is swapped its sets carry the ALTERNATE's plain external load — so on an originally-*assisted* lift the assist metric (bodyweight−help) inverted the pick and crowned the *lighter* of a descending run (e.g. 135 then 125 banked 125 as the entry's `load/reps`). It now picks the top with the same shared `liftValuation` rule (plain load while swapped; `v148/v151`) it already uses to stamp the banked flags and value volume/PR, so a descending run banks the heavier set. Non-swapped lifts are byte-equivalent (`liftValuation` returns the original's flags there). Regression e2e (`e2e/alts.spec.js`): seeds the swapped Assisted dip with two 135 sets, completes a 125 third set, asserts the banked entry shows **135** — **fails pre-fix** (banked 125). Gate: unit **247 pass**, typecheck clean, e2e **210 passed**. `GYM_VERSION` `gym-v156`, CACHE-HASH `f2d09d38f1c66596`. critic-flash **GO** (Tier 1).
+
+## Critique pending
+
 ## Nov 16 — v155: the CSV export counts a legacy multi-set session's real sets, not one
 
 `Stats.toCsv` fell back to a single flat row whenever a history entry had no `sets` array, but every other history reader (`entrySets` — volume, PRs, top movers) synthesizes `setsDone` copies for such legacy entries. So a legacy "3×50" session exported as one row while the app counted three — an under-reporting inconsistency in the export (the user's record). Fixed: `toCsv` now routes through `entrySets`, so its per-set row count agrees with every other reader; an entry that still carries a flat set field but no count keeps that one row rather than vanishing. Two unit tests (`test/pass3.test.js`): the legacy multi-set case asserts 3 synthesized rows (**fails pre-fix**, emitted 1) and the lone-flat-row case is preserved. Gate: unit **247 pass** (245 + 2), typecheck clean, e2e **209 passed**. `GYM_VERSION` `gym-v155`, CACHE-HASH `700868f9eb803781`. critic-flash **GO** (Tier 1).
