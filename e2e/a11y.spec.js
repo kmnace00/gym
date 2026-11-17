@@ -447,6 +447,52 @@ test("the menu is reachable on a short phone", async ({ page }) => {
   expect(clear.h).toBeGreaterThanOrEqual(44);
 });
 
+/* N25 — Home-Screen mode makes the overlay the *physical* screen (852px tall)
+   while only 793px is usable: 59px of status bar on top and 59px of system
+   chrome reserved at the bottom (--app-b). The card used to take its height
+   from --app-h and centre itself on the physical screen, so its head sat 43px
+   under the status bar and its foot 43px under the home indicator — and since
+   the content fit, there was nothing to scroll back to; the head was simply
+   unreachable. The card now sizes from the overlay's padded box and that box
+   reserves the chrome. */
+test("the menu card keeps its head clear of the system chrome in standalone (N25)", async ({ page }) => {
+  const cases = [
+    // standalone reports the physical screen as the layout viewport
+    { width: 393, height: 852, appH: 852, appB: 59 },
+    // and if the engine reports only the usable viewport, the card still must
+    // not size itself from the taller pinned screen
+    { width: 393, height: 793, appH: 852, appB: 59 }
+  ];
+  for (const c of cases) {
+    await page.setViewportSize({ width: c.width, height: c.height });
+    await page.goto(url);
+    await page.addStyleTag({ content: `:root{--app-h:${c.appH}px!important;--app-b:${c.appB}px!important}` });
+    await page.locator("#menuBtn").click();
+
+    const m = await page.evaluate(() => {
+      const overlay = document.querySelector(".modal");
+      const card = document.querySelector(".modal-card");
+      const cr = card.getBoundingClientRect();
+      const cs = getComputedStyle(overlay);
+      const head = document.querySelector(".modal-head").getBoundingClientRect();
+      return {
+        cardTop: cr.top, cardBottom: cr.bottom, headTop: head.top,
+        padTop: parseFloat(cs.paddingTop), padBottom: parseFloat(cs.paddingBottom),
+        inner: window.innerHeight
+      };
+    });
+
+    const at = `${c.width}x${c.height}, --app-h ${c.appH}, --app-b ${c.appB}`;
+    // the real system chrome is reserved, not just the safe-area inset
+    expect(m.padBottom, "bottom chrome reserved at " + at).toBeGreaterThanOrEqual(20 + c.appB - 0.5);
+    // the card lives inside the padded box: nothing hangs under the chrome
+    expect(m.cardTop, "card top inside the usable area at " + at).toBeGreaterThanOrEqual(m.padTop - 0.5);
+    expect(m.cardBottom, "card bottom inside the usable area at " + at).toBeLessThanOrEqual(m.inner - m.padBottom + 0.5);
+    // at scrollTop 0 the head is visible — the regression was it hanging above
+    expect(m.headTop, "menu head reachable at " + at).toBeGreaterThanOrEqual(m.cardTop - 0.5);
+  }
+});
+
 /* B3-24 — adherence is drawn with symbols and colour, so a screen reader needs
    the states in words. N12 removed the week strip and with it B3-24's per-day
    naming (Friday, done / Saturday, missed) — Khang retired that row outright —
