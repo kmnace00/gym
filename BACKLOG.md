@@ -14,6 +14,20 @@ BUILT: `metricForLive(e,s,load,reps)` routes live-set metric through `liftValuat
 
 **Candidate (pre-existing, from critic, low):** `bankLift` (`app.js:127`) calls `topSetOf(e, s.sets)` with **no entry**, so it falls back to a metric using the ORIGINAL assist flag — for a swapped assisted lift that metric inverts, so a *descending*-load swapped session (135 then 125) banks `entry.load = 125` as "top". Affects the representative `entry.load/reps` only (volume/CSV read the full `sets`); single-set sessions and the hint are unaffected.
 
+## HANDOFF — end of session (Nov 16) → for the next session
+
+Gate last confirmed **green**: check/unit **245 pass**, typecheck clean, e2e **207 passed**, `check-sw-cache OK` digest `3ef1cd4adb67da95`. `main` ahead of `origin/main` (v145–v151 from this loop + tests + backlog notes), **nothing pushed** (stop instruction preserved this from pushing; never push without Khang). **Note:** a parallel session landed **v152** at the tail of this session (the Home-Screen `.modal`/`.summary` usable-area fix — sheets now pad to `--app-b`/safe area, cards `max-height:100%; gates 245 unit / 208 e2e) — see the release note above.
+
+**Survey candidates recorded for next session** (in priority order; #3 investigated read-only this session — NOT edited, nothing half-done to finish):
+- **#3 (NEXT head candidate, correctness):** `priorEntries()` off-by-one (`app.js:467-472`). It filters via `progressionEntry(e)`, then **unconditionally** `slice(0,-1)` even when the newest *unfiltered* raw entry was already stripped (a swap/deload entry), so the `skip` drops a *real* prior session. Fix must gate `skip` on the newest entry actually being today's progression entry. Needs a discriminating test (`git stash`-verified) + gate.
+- **#4 (Tier 2 security):** `sanitizeRecord` missing `unsafeKey` guard for `swapLoads` (`store.js:189-198`). Off-peak-only `critic` for this one.
+- **#5 (low):** `toCsv` legacy multi-set emits 1 row vs `entrySets` synthesizes `setsDone`.
+- **#topSetOf candidate (low, recorded above):** `bankLift` calls `topSetOf(e, s.sets)` with no entry → swapped descending-load session banks the wrong "top".
+
+**Deferred / open (see below):** swap+`applyLoad`-while-swapped; swap+`planBtn`-into-dormant-load (out of scope); NEEDS DECISION partial-workout sets never reach history; bodyweight-alternate valuation decision for Khang.
+
+**Tree state (IMPORTANT):** working tree had an uncommitted `style.css` in-progress edit (N25 Home-Screen modal usable-area fix) that appeared during the session; a **parallel session has since committed it as v152**, so the tree's non-doc contents are clean. Work only in files you own and re-verify `git status` after this because the parallel session is committing concurrently (`one writer per file`), and never force-push or overwrite.
+
 ## Nov 16 — v150: restore rolls the active session forward so old backups don't corrupt history
 
 Survey finding #1 (destructive, invisible data corruption). The "Restore (replace)" handler assigned `payload` from `importRaw`/`reconcile` but — unlike boot (`app.js:2159`) — never called `rollSession`. `sanitizeSession` keeps a valid `active.date` verbatim, so a restored backup with an old `active.date` kept that stale date as the session date; the next workout `bankLift`'d under it (`sessionDate` = `active.date`) and `upsertHistory` replaced any history entry on that date — silently overwriting a real past session (corrupting PRs/CSV/tonnage). The merge/import path was already safe.
