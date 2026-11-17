@@ -616,6 +616,39 @@ test("startSession resets set progress but keeps the working load", () => {
   assert.equal(payload.state["fri:0"].sets.length, 0);
 });
 
+test("startSession and rollSession preserve a swap across days (N14 B6-06)", () => {
+  /* The swap choice is deliberately per-lift persistent: swapAlt/swapLoad live
+     in the state record and must survive both startSession (new workout) and
+     rollSession (new calendar day), next to the carried working load. Only the
+     set-progress fields reset. This pins the invariant so a future "clean" that
+     drops the swap across days is caught. */
+  const p = S.emptyPayload();
+  const fri = new Date(2026, 10, 6, 10).getTime();
+  const sat = new Date(2026, 10, 7, 10).getTime();
+  S.startSessionClock(p, fri);
+  p.active.date = "2026-11-06";
+  p.active.day = "fri";
+  p.state["fri:0"] = { done: 2, load: 50, reps: 6, rir: 2, topHits: 1,
+    swapAlt: "Barbell back squat", swapLoad: 40,
+    swapLoads: { "Barbell back squat": 40 },
+    sets: [{ load: 40, reps: 6, rir: 2 }, { load: 40, reps: 6, rir: 2 }] };
+  /* same-day startSession: set progress clears, the swap choice and load stay */
+  S.startSession(p, "fri", fri);
+  assert.equal(p.state["fri:0"].done, 0);
+  assert.equal(p.state["fri:0"].sets.length, 0);
+  assert.equal(p.state["fri:0"].swapAlt, "Barbell back squat");
+  assert.equal(p.state["fri:0"].swapLoad, 40);
+  assert.equal(p.state["fri:0"].swapLoads["Barbell back squat"], 40);
+  /* rollSession across a day boundary banks Friday and keeps the swap */
+  p.state["fri:0"].done = 3;
+  S.rollSession(p, "sat", sat);
+  assert.equal(p.active.day, "sat");
+  assert.equal(p.state["fri:0"].done, 0);
+  assert.equal(p.state["fri:0"].load, 50);
+  assert.equal(p.state["fri:0"].swapAlt, "Barbell back squat");
+  assert.equal(p.state["fri:0"].swapLoad, 40);
+});
+
 test("the session clock accrues only while running", () => {
   const p = S.emptyPayload();
   S.startSessionClock(p, 1000);
