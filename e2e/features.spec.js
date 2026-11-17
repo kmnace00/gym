@@ -416,8 +416,9 @@ test("a swap day's Prev line reads the swap entry; the suggestion ignores it (B6
   });
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#prevLine")).toHaveText("Prev (swap): Barbell back squat 70×8");
-  /* the suggestion reads the last non-swap entry (60 lb, Oct 25) */
-  await expect(page.locator("#suggestText")).toContainText("keep 60");
+  /* the suggestion is the ORIGINAL lift's next load — while swapped the alternate
+     carries its own, so the nudge and its Apply button are hidden (B6-07). */
+  await expect(page.locator("#suggestLine")).toBeHidden();
   await expect(page.locator("#applyLoad")).toBeHidden();
 });
 

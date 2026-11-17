@@ -518,6 +518,12 @@
     var stall = stallLoad(ex(), pri);
     var su = suggestLoad(ex(), last, prior);
     renderPrev(su);
+    /* B6-07: the suggestion is the ORIGINAL lift's next load, computed from its
+       own progression (swapped entries are excluded from suggestions / P11).
+       While a lift is swapped, the alternate's load lives in swapLoad/swapLoads,
+       so the original's nudge is noise and Apply would write a dormant field —
+       hide the line (the Prev read above is still shown). */
+    if (curSt().swapAlt) { line.hidden = true; applyBtn.hidden = true; return; }
     if (!su.last) { line.hidden = true; applyBtn.hidden = true; return; }
     /* B6-09: while a deload week runs, the suggestion is planFor's load taken
        10% lighter (snapped to the step), and the line says why. */

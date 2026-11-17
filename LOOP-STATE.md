@@ -8,12 +8,12 @@ backlog notes), nothing pushed.
 1. ~~#3 correctness: priorEntries() off-by-one~~ DONE (v153, critic-flash GO).
 2. ~~#4 Tier 2 security: sanitizeRecord swapLoads unsafeKey guard~~ DONE (v154, discriminating test). CRITIQUE_PENDING for off-peak Pro batch (see below).
 3. ~~#5 toCsv legacy multi-set single-row~~ DONE (v155, critic-flash GO).
-4. ~~#topSetOf low~~ DONE (v156; critic-flash running). Awaiting critic before commit.
-5. **[NOW]** **deferred low:** hide `applyLoad`/`suggestLine` while swapped (display-consistency). Survey refill may supersede.
+4. ~~#topSetOf low~~ DONE (v156, critic-flash GO).
+5. ~~deferred low: hide applyLoad/suggestLine while swapped~~ DONE (v157, critic-flash GO; a B6-10 spec asserted the line showed on swap days → updated to assert hidden; added a discriminating deload-path test so the v153 skip regression stays covered now that the swap path is hidden).
 - (queue below 3 → survey + refill to 10)
 
 ## Doing now
-deferred: hide Apply suggestion while swapped.
+(need to survey/refill the queue — below 3)
 
 ## Critic reviews waiting (batch Pro for Tier 2)
 - **PENDING (batch):** v154 `sanitizeRecord` swapLoads unsafeKey guard. Committed during peak; need off-peak Pro review. (Batches 3–5 with future Tier 2.)

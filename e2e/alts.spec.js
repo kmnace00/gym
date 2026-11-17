@@ -175,14 +175,15 @@ test("the New PR hint values a swapped-in machine at its real load, not the orig
   expect(errors).toEqual([]);
 });
 
-test("a completed SWAPPED session is not counted as 'this session' when building the next suggestion", async ({ page }) => {
+test("a completed SWAPPED session is not counted as 'this session' for the original's reads", async ({ page }) => {
   /* priorEntries() drops the newest history entry when the current lift is
      complete — but only when that entry IS today's session. A swap doesn't feed
      progression, so today's swapped entry is filtered out BEFORE the skip, and
-     the old code still dropped the newest real prior session, making the
-     suggestion read TWO sessions back. Seed two consecutive qualifying sessions
-     (50×8@2) then a today swap-complete; the suggestion must use the newest real
-     prior (50 → 52.5 "hit top twice"), NOT the two-back one. */
+     the old code still dropped the newest real prior session, making the read
+     use a session TWO back. Seed two consecutive qualifying sessions (50×8@2)
+     then a today swap-complete; the swap-aware Prev must still read today's
+     swap entry, and the swapped lift must NOT offer the original lift's nudge
+     (v153 regression read two sessions back; B6-07 hides the nudge while swapped). */
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.setViewportSize({ width: 390, height: 844 });
@@ -214,12 +215,12 @@ test("a completed SWAPPED session is not counted as 'this session' when building
   await page.locator(".liftrow").first().click(); // open fri:0, the swapped Smith squat
   await expect(page.locator("#exName")).toHaveText("Barbell back squat"); // swapped
   await expect(page.locator("#loadVal")).toHaveText("50");
-  // the suggestion must treat the newest REAL prior (Oct 30) as "last", so two
-  // qualifying sessions in a row fire the 2-for-2 → try 52.5. Pre-fix it read
-  // two-back and offered "one more top session to go up".
-  await expect(page.locator("#suggestText")).toContainText("hit top twice");
-  await expect(page.locator("#suggestText")).toContainText("52.5");
-  await expect(page.locator("#suggestText")).not.toContainText("one more top session to go up");
+  // Prev reads the newest RAW entry (today's swap) — the swap-aware read (B6-07).
+  await expect(page.locator("#prevLine")).toHaveText("Prev (swap): Barbell back squat 50×6");
+  // ...while the original lift's next-load nudge is hidden (the alternate's load
+  // lives in swapLoad, and Apply would write a dormant field).
+  await expect(page.locator("#suggestLine")).toBeHidden();
+  await expect(page.locator("#applyLoad")).toBeHidden();
   expect(errors).toEqual([]);
 });
 
@@ -253,6 +254,57 @@ test("a swapped descending session banks the HEAVIER set as the representative t
     .liftHistory["fri:7"].slice(-1)[0]);
   expect(entry.load, "the heavier swapped set banks as the representative top").toBe(135);
   expect(entry.reps).toBe(6);
+  expect(errors).toEqual([]);
+});
+
+test("a swapped lift points to an alternate, so the original's suggestion line is hidden", async ({ page }) => {
+  /* B6-07: the suggestion is the ORIGINAL lift's next load. While swapped the
+     alternate's load lives in swapLoad/swapLoads, so the original's nudge and
+     its Apply button are noise — hide both. Seed fri:0 swapped AND with a prior
+     history that WOULD draw a suggestion; pre-fix the line shows (fails), post-fix
+     it is hidden (discriminating). */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 1, load: 60, reps: 6, rir: 2,
+      swapAlt: "Leg press", swapLoad: 50,
+      sets: [{ load: 50, reps: 6, rir: 2 }] } },
+    liftHistory: { "fri:0": [{ date: "2026-10-30", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 }] },
+    sessionLog: []
+  })));
+  await page.reload();
+  await page.locator(".liftrow").first().click(); // open fri:0, swapped
+  await expect(page.locator("#exName")).toHaveText("Leg press");
+  await expect(page.locator("#suggestLine")).toBeHidden();
+  await expect(page.locator("#applyLoad")).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test("a non-swapped lift with history keeps its suggestion line and Apply button", async ({ page }) => {
+  /* Sanity guard for B6-07: the hide must ONLY fire while swapped. A plain,
+     unswapped lift whose last two sessions qualified still shows the "hit top
+     twice → try 52.5" nudge with an ENABLED Apply (so applyBtn is visible). */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const priors = (date) => ({ date, load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+      state: { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } },
+      liftHistory: { "fri:0": [priors("2026-10-23"), priors("2026-10-30")] },
+      sessionLog: []
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click(); // open fri:0, NOT swapped
+  await expect(page.locator("#exName")).toHaveText("Smith squat");
+  await expect(page.locator("#suggestLine")).toBeVisible();
+  await expect(page.locator("#applyLoad")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
