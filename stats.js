@@ -18,6 +18,11 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /* single sources for the Progress view window sizes: the heatmap depth and
+     the recent-sessions length. Keep the footer copy and the call sites on
+     these so they can't drift. */
+  var HEAT_WEEKS = 8, RECENT_SESSIONS = 12;
+
   /**
    * Distinct calendar dates with a completed lift or a logged session.
    * This is the "workouts" metric: one Friday is one workout, not eight.
@@ -280,7 +285,7 @@
     var covered = sessionCoverage(payload), ck = Object.keys(covered);
     for (i = 0; i < ck.length; i++) have[ck[i]] = 1;
     var fri0 = mostRecentFriday(today), out = [], w;
-    for (w = (weeks || 8) - 1; w >= 0; w--) {
+    for (w = (weeks || HEAT_WEEKS) - 1; w >= 0; w--) {
       var fri = new Date(fri0); fri.setDate(fri0.getDate() - w * 7);
       var sat = new Date(fri); sat.setDate(fri.getDate() + 1);
       var sun = new Date(fri); sun.setDate(fri.getDate() + 2);
@@ -507,12 +512,12 @@
    * @param {{fri:number,sat:number,sun:number}} [dayLens]
    * @returns {{workouts:number, sets:number, weekDone:number, weekTotal:number,
    *            volume:number, byDay:object, weeks:any[], heatCount:number,
-   *            heatTotal:number, recent:any[], wow:object, pr:any, movers:any[]}}
+   *            heatTotal:number, heatWeeks:number, recent:any[], wow:object, pr:any, movers:any[]}}
    */
   function progressSnapshot(payload, DAYS, metric, nowKey, dayLens) {
     var wk = weekStatus(payload, nowKey, dayLens), weekDone = 0, i, d;
     for (i = 0; i < wk.length; i++) if (wk[i].state === "done") weekDone++;
-    var weeks = trainingDays(payload, 8, nowKey), days = Object.keys(DAYS || {}), heatCount = 0, j, w;
+    var weeks = trainingDays(payload, HEAT_WEEKS, nowKey), days = Object.keys(DAYS || {}), heatCount = 0, j, w;
     for (i = 0; i < weeks.length; i++) {
       w = weeks[i];
       for (j = 0; j < days.length; j++) if (w[days[j]]) heatCount++;
@@ -528,7 +533,8 @@
       weeks: weeks,
       heatCount: heatCount,
       heatTotal: weeks.length * days.length,
-      recent: recentVolume(payload, 12, vols),
+      heatWeeks: HEAT_WEEKS,
+      recent: recentVolume(payload, RECENT_SESSIONS, vols),
       wow: weekOverWeek(payload, nowKey, vols),
       pr: personalRecords(payload, DAYS, metric)[0] || null,
       movers: topMovers(payload, DAYS, metric)

@@ -357,9 +357,9 @@
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
   var WEEK_DAY_NAME = { fri: "Fri", sat: "Sat", sun: "Sun" };
   function renderDayWeek() {
+    var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
     var cluster = document.getElementById("dayCluster");
     if (cluster) {
-      var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
       cluster.innerHTML = wk.map(function (w) {
         return '<button type="button" class="daytab ' + w.state + (w.day === cur ? " on" : "") + '"' +
           ' data-day="' + w.day + '" aria-pressed="' + (w.day === cur) + '"' +
@@ -373,8 +373,7 @@
     }
     var sr = document.getElementById("dayWeekSummary");
     if (sr) {
-      var wk2 = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
-      var spoken = wk2.map(function (w) {
+      var spoken = wk.map(function (w) {
         return WEEK_DAY_NAME[w.day] + " " + (WEEK_STATE_WORD[w.state] || w.state);
       }).join(", ");
       sr.textContent = "This week: " + spoken + ". Viewing " + WEEK_DAY_NAME[cur] +
@@ -880,7 +879,7 @@
     }).join("");
     document.getElementById("pHeatCount").textContent = snap.heatCount + "/" + snap.heatTotal;
     var heatSum = document.getElementById("heatSummary");
-    if (heatSum) heatSum.textContent = snap.heatCount + " of " + snap.heatTotal + " training days in the last 8 weeks";
+    if (heatSum) heatSum.textContent = snap.heatCount + " of " + snap.heatTotal + " training days in the last " + snap.heatWeeks + " weeks";
 
     var recent = snap.recent, svg = document.getElementById("pSpark");
     if (recent.length < 2) { svg.innerHTML = ""; }
