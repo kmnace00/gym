@@ -167,3 +167,30 @@ test("toCsv writes one row per set with the lift name", () => {
   assert.match(lines[1], /2026-11-01,fri,Smith squat,1,50,6,2/);
   assert.match(lines[2], /2026-11-01,fri,Smith squat,2,52.5,5,1/);
 });
+
+test("toCsv counts a legacy multi-set entry's setsDone rows, like entrySets does", () => {
+  /* A pre-set-array entry stores flat load/reps/rir + setsDone. Every other
+     history reader synthesizes setsDone copies (entrySets), so the export must
+     too — not a single flat row (which under-reported a 3-set session as one). */
+  const p = {
+    liftHistory: {
+      "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 }]
+    }
+  };
+  const csv = A.toCsv(p, { fri: { ex: [{ n: "Smith squat" }] }, sat: { ex: [] }, sun: { ex: [] } });
+  const lines = csv.split("\n");
+  assert.equal(lines.length, 4); // header + three synthesized sets
+  assert.match(lines[1], /2026-11-01,fri,Smith squat,1,50,6,2/);
+  assert.match(lines[2], /2026-11-01,fri,Smith squat,2,50,6,2/);
+  assert.match(lines[3], /2026-11-01,fri,Smith squat,3,50,6,2/);
+});
+
+test("toCsv keeps a lone flat row for an entry with no sets and no count", () => {
+  const p = {
+    liftHistory: {
+      "fri:0": [{ date: "2026-11-01", load: 50, reps: 6, rir: 2 }]
+    }
+  };
+  const csv = A.toCsv(p, { fri: { ex: [{ n: "Smith squat" }] }, sat: { ex: [] }, sun: { ex: [] } });
+  assert.equal(csv.split("\n").length, 2); // header + one row, nothing dropped
+});

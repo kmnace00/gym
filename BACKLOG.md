@@ -1,5 +1,11 @@
 # BACKLOG — ranked improvement ideas
 
+## Nov 16 — v155: the CSV export counts a legacy multi-set session's real sets, not one
+
+`Stats.toCsv` fell back to a single flat row whenever a history entry had no `sets` array, but every other history reader (`entrySets` — volume, PRs, top movers) synthesizes `setsDone` copies for such legacy entries. So a legacy "3×50" session exported as one row while the app counted three — an under-reporting inconsistency in the export (the user's record). Fixed: `toCsv` now routes through `entrySets`, so its per-set row count agrees with every other reader; an entry that still carries a flat set field but no count keeps that one row rather than vanishing. Two unit tests (`test/pass3.test.js`): the legacy multi-set case asserts 3 synthesized rows (**fails pre-fix**, emitted 1) and the lone-flat-row case is preserved. Gate: unit **247 pass** (245 + 2), typecheck clean, e2e **209 passed**. `GYM_VERSION` `gym-v155`, CACHE-HASH `700868f9eb803781`. critic-flash **GO** (Tier 1).
+
+## Critique pending
+
 ## Nov 16 — v154: the swap-load memory can't be seeded with prototype-poisoning key names
 
 The `swapLoads` sanitizer rebuilt the per-alternate name→load map from storage but, unlike every other record/entry boundary, did not screen the inner key names (`stripUnsafeKeys`/`unsafeKey` strip `__proto__`/`constructor`/`prototype` from the record and entry objects — the map keys were the gap). A hostile storage/import could land `constructor`/`prototype` as phantom own properties of the recovered map. Fixed: the copy now skips `unsafeKey(k)`, matching the rule applied at every other map consumer. Unit test (`test/store.test.js`, same N14 case): seeds `{"__proto__":5, "constructor":3, "prototype":1, "Leg press":180}` and asserts the recovered map is exactly `{"Leg press":180}` with a clean prototype — **fails pre-fix** (the `constructor` shadow survived). Gate: unit **245 pass**, typecheck clean, e2e **209 passed**. `GYM_VERSION` `gym-v154`, CACHE-HASH `d07814c9aa28e7fe`. Review: defense-in-depth security hardening (committed during peak per the off-peak rule) — **CRITIQUE_PENDING** for the next off-peak Pro batch.

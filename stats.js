@@ -410,7 +410,13 @@
         : (arr.length && arr[0] && typeof arr[0].exId === "string" ? arr[0].exId : k);
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; if (!e) continue;
-        sets = Array.isArray(e.sets) && e.sets.length ? e.sets : [{ load: e.load, reps: e.reps, rir: e.rir }];
+        /* per-set rows agree with every other history reader (volume/PR/top
+           mover all use entrySets): a legacy entry without a set array counts
+           its setsDone copies, not a single flat row. An entry with no sets and
+           no known count but a flat set field keeps that one row rather than
+           vanishing; a truly empty entry exports nothing, like every reader. */
+        sets = entrySets(e);
+        if (!sets.length && (e.load !== undefined || e.reps !== undefined || e.rir !== undefined)) sets = [{ load: e.load, reps: e.reps, rir: e.rir }];
         for (j = 0; j < sets.length; j++) rows.push([e.date || "", d, name, j + 1, sets[j].load, sets[j].reps, sets[j].rir]);
       }
     }
