@@ -973,7 +973,7 @@
       return {
         name: tIdx === idx ? "Set " + (s.done + 1) + " of " + effSets(e)
                            : "Next — " + (s.swapAlt ? s.swapAlt : e.n) + ", Set " + (s.done + 1) + " of " + effSets(e),
-        load: s.swapAlt ? swLoadText(wl) : loadText(wl, e), reps: String(s.reps)
+        load: s.swapAlt ? swLoadText(wl) : (e.assist ? assistLabel(wl) : loadText(wl, e)), reps: String(s.reps)
       };
     }
   });
@@ -1670,7 +1670,6 @@
       day = order[(i + 1) % 3];
     }
     var gap = (orderDow[day] - dow + 7) % 7;
-    if (gap === 0) gap = 7;
     return { day: day, gap: gap };
   }
   var sumFocus = null;

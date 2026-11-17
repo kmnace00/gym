@@ -72,6 +72,34 @@ test("an assisted pull-up logs HELP: it displays as a negative load and ▲ is h
   await expect(page.locator(".liftrow").nth(1).locator(".liftmeta")).toContainText("Help 45 lb");
 });
 
+test("the rest-prep card shows an assisted lift's load as negative help, no unit (v172)", async ({ page }) => {
+  /* Non-swapped assisted lift (sun:1 = Assisted pull-up) stored at 45 lb of help.
+     Its load reads as a negative number with no unit ("-45") in the rest-prep
+     card — the same form the lift-view stepper readout uses — not "-45 lb" (the
+     only place a negative number otherwise carried a unit). */
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    const state = {};
+    state["sun:0"] = { done: 2, load: 180, reps: 10, rir: 2, sets: [] };        // one set left on the leg press
+    state["sun:1"] = { done: 0, load: 45, reps: 8, rir: 2, sets: [] };          // assisted pull-up, 45 lb help
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: "sun", idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_assistprep", date: "", day: "sun", startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+
+  // finish the leg press's last set -> inter-lift rest naming the assisted pull-up
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+
+  await expect(page.locator("#restPrepName")).toHaveText("Next — Assisted pull-up, Set 1 of 3");
+  await expect(page.locator("#restPrepLoad")).toHaveText("-45");
+  await expect(page.locator("#restPrepLoad")).not.toHaveText("-45 lb");
+});
+
 test("the retired cable fly is an incline DB fly now", async ({ page }) => {
   await seedSunday(page);
   const fly = page.locator(".liftrow").nth(3);
