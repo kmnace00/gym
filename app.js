@@ -467,7 +467,13 @@
   function priorEntries() {
     var entries = Gym.series(payload, cur, idx).filter(progressionEntry); // swaps and deload weeks don't feed progression
     var s = curSt();
-    var skip = (s.done >= effSets(ex()) && entries.length > 0) ? 1 : 0;
+    /* only drop the newest filtered entry when it IS this session's banked
+       entry (dated today). If the lift was completed via a swap or during a
+       deload week, today's raw entry is filtered out here, so the last filtered
+       entry is a REAL prior session and must be kept — otherwise skip would
+       throw away genuine history and the suggestion would read two sessions back. */
+    var last = entries.length ? entries[entries.length - 1] : null;
+    var skip = last && s.done >= effSets(ex()) && last.date === Gym.sessionDate(payload);
     return skip ? entries.slice(0, entries.length - 1) : entries;
   }
   function fmtDate(key) {

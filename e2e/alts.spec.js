@@ -175,6 +175,54 @@ test("the New PR hint values a swapped-in machine at its real load, not the orig
   expect(errors).toEqual([]);
 });
 
+test("a completed SWAPPED session is not counted as 'this session' when building the next suggestion", async ({ page }) => {
+  /* priorEntries() drops the newest history entry when the current lift is
+     complete — but only when that entry IS today's session. A swap doesn't feed
+     progression, so today's swapped entry is filtered out BEFORE the skip, and
+     the old code still dropped the newest real prior session, making the
+     suggestion read TWO sessions back. Seed two consecutive qualifying sessions
+     (50×8@2) then a today swap-complete; the suggestion must use the newest real
+     prior (50 → 52.5 "hit top twice"), NOT the two-back one. */
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // a Friday
+  await page.goto(url);
+  await page.evaluate(() => {
+    const priors = (date) => ({
+      date, load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3,
+      sets: [{ load: 50, reps: 8, rir: 2 }, { load: 50, reps: 8, rir: 2 }, { load: 50, reps: 8, rir: 2 }]
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+      state: { "fri:0": { done: 3, load: 60, reps: 6, rir: 2,
+        swapAlt: "Barbell back squat", swapLoad: 50,
+        sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }] } },
+      liftHistory: {
+        "fri:0": [
+          priors("2026-10-23"),
+          priors("2026-10-30"),
+          { date: "2026-11-06", swap: "Barbell back squat", load: 50, reps: 6, rir: 2, setsDone: 3,
+            sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }] }
+        ]
+      },
+      sessionLog: [],
+      active: { id: "ses_perswap", date: "2026-11-06", day: "fri", startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click(); // open fri:0, the swapped Smith squat
+  await expect(page.locator("#exName")).toHaveText("Barbell back squat"); // swapped
+  await expect(page.locator("#loadVal")).toHaveText("50");
+  // the suggestion must treat the newest REAL prior (Oct 30) as "last", so two
+  // qualifying sessions in a row fire the 2-for-2 → try 52.5. Pre-fix it read
+  // two-back and offered "one more top session to go up".
+  await expect(page.locator("#suggestText")).toContainText("hit top twice");
+  await expect(page.locator("#suggestText")).toContainText("52.5");
+  await expect(page.locator("#suggestText")).not.toContainText("one more top session to go up");
+  expect(errors).toEqual([]);
+});
+
 test("an alternate with a banked session starts from that session's load", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url);
