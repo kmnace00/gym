@@ -181,3 +181,22 @@ for (const size of sizes) {
     });
   });
 }
+
+test("Prev names the deload session actually done last, not the older full one (v185)", async ({ page }) => {
+  /* renderPrev is the actual-last-session read (its swap branch reads the
+     newest raw entry); a deload newest entry fell through to the older
+     progression session, so after a deload week the reference line showed
+     the heavier, longer session he did NOT do last. */
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-10-30", load: 50, reps: 6, rir: 2, setsDone: 3, sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }] },
+        { date: "2026-11-06", load: 45, reps: 6, rir: 2, setsDone: 2, deload: true, sets: [{ load: 45, reps: 6, rir: 2 }, { load: 45, reps: 6, rir: 2 }] }
+      ]
+    }
+  }, "2026-11-13T10:00:00");
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#prevLine")).toContainText("Prev (deload): 45×6 · 45×6");
+  await expect(page.locator("#prevLine")).not.toContainText("50×6");
+});

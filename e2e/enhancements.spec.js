@@ -248,6 +248,51 @@ test("the undo/restore button is hidden until a snapshot exists (B5-12)", async 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
+test("restoring an old snapshot rolls its session forward to today (v193)", async ({ page }) => {
+  /* the pinned clock makes today 2026-11-06; the snapshot was taken a week
+     earlier, mid-workout. Boot and backup-restore roll a stale active.date
+     forward (v150) — the snapshot path must too, or the next workout banks
+     under 2026-10-30 and overwrites that day's real entry. */
+  await seed(page, { v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  await page.evaluate(() => {
+    localStorage.setItem("gym-tool-v2-snapshot", JSON.stringify({
+      at: 1761800000000, label: "pre-clear",
+      payload: {
+        v: 5, cur: "fri", idx: 0, state: { "fri:0": { done: 1, load: 50, reps: 6, rir: 2, sets: [{ load: 50, reps: 6, rir: 2 }] } },
+        liftHistory: { "fri:0": [{ date: "2026-10-30", load: 50, reps: 6, rir: 2, setsDone: 3 }] },
+        sessionLog: [],
+        active: { id: "ses_old", date: "2026-10-30", day: "fri", startedAt: 1761800000000, endedAt: null, accSec: 300, runningSince: null, status: "active" }
+      }
+    }));
+  });
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await page.locator("#restoreSnapshot").click();
+  await expect(page.locator("#modalMsg")).toContainText("Snapshot restored");
+  const activeDate = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).active.date);
+  expect(activeDate, "the restored session belongs to today, not the snapshot's day").toBe("2026-11-06");
+});
+
+test("the undo button dates an evening snapshot by the local day, not UTC (v197)", async ({ browser }) => {
+  /* a snapshot taken at 8 PM local is already tomorrow in UTC; the label
+     must name the day the user actually took it, as every other date in
+     the app does. The context pins the user's timezone so the test
+     discriminates on any host (on a UTC host it would pass vacuously). */
+  const context = await browser.newContext({ timezoneId: "America/Chicago" });
+  const page = await context.newPage();
+  await seed(page, { v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  await page.evaluate(() => {
+    localStorage.setItem("gym-tool-v2-snapshot", JSON.stringify({
+      at: new Date(2026, 10, 18, 20, 0, 0).getTime(), label: "pre-reset-day",
+      payload: { v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [], active: null }
+    }));
+  });
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#restoreSnapshot")).toContainText("Undo Reset day (Nov 18)");
+  await context.close();
+});
+
 test("arming a second destructive button restores the first one's label (B5-10)", async ({ page }) => {
   const errors = [];
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });

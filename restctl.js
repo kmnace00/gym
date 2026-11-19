@@ -62,7 +62,7 @@
       var armed = Rest.finishArmed(now, ctx.finishUntil);
       var label = "", msg = "", nextText = "", skipLabel = "End rest";
       if (phase === "go") {
-        var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, true);
+        var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, deps.done() >= deps.sets());
         label = "GO";
         msg = Rest.goLabel(adv, lastLift());
         nextText = ctx.nextText.replace("Up next —", "Up now —");
@@ -149,12 +149,6 @@
       return out([]);
     }
 
-    function finish() {
-      if (rest.phase !== "active") return out([]);
-      rest = { phase: Machine.GO, endMs: 0, left: 0, total: rest.total };
-      return go(deps.now());
-    }
-
     function pause() {
       if (rest.phase !== "active") return out([]);
       rest = Machine.pause(rest, deps.now());
@@ -217,7 +211,7 @@
     }
 
     return {
-      start: start, tick: tick, finish: finish, idle: idle,
+      start: start, tick: tick, idle: idle,
       pause: pause, resume: resume, extend15: extend15, skip: skip,
       finishReset: finishReset, cancelPendingAdvance: cancelPendingAdvance,
       view: view

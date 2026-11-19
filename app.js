@@ -34,9 +34,10 @@
   }
   function calOpts() {
     var c = learnedCal();
+    /* only calibration()'s own contract (0–1200 / 5–40, finite) is accepted */
     return {
-      stretch: c && typeof c.warmupSec === "number" ? c.warmupSec : Gym.STRETCH_SECS,
-      setup: c && typeof c.overheadSec === "number" ? c.overheadSec : Gym.SETUP_SECS,
+      stretch: c && typeof c.warmupSec === "number" && isFinite(c.warmupSec) && c.warmupSec >= 0 && c.warmupSec <= 1200 ? c.warmupSec : Gym.STRETCH_SECS,
+      setup: c && typeof c.overheadSec === "number" && isFinite(c.overheadSec) && c.overheadSec >= 5 && c.overheadSec <= 40 ? c.overheadSec : Gym.SETUP_SECS,
       /* B6-09: during a deload week the day one is viewing is cut to the
          deload set count — let the estimate agree with the rendered sets. */
       deload: deloadActive(payload)
@@ -262,8 +263,7 @@
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
     document.documentElement.setAttribute("data-theme", t);
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", t === "light" ? "#f4f6f8" : "#0b0e12");
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute("content", t === "light" ? "#fdebd2" : "#17100b"); });
     var b = document.getElementById("themeToggle");
     if (b) b.textContent = t === "light" ? "Theme: Light" : "Theme: Dark";
   }
@@ -506,6 +506,14 @@
       el.hidden = false;
       return;
     }
+    if (newest && newest.deload) {
+      var de = ex(), dtxt;
+      if (newest.sets && newest.sets.length) dtxt = newest.sets.map(function (st) { return loadLabel(st.load, de) + "×" + st.reps; }).join(" · ");
+      else dtxt = loadLabel(newest.load, de) + "×" + newest.reps + " × " + (newest.setsDone || 1) + ((newest.setsDone || 1) === 1 ? " set" : " sets");
+      el.textContent = "Prev (deload): " + dtxt;
+      el.hidden = false;
+      return;
+    }
     if (!su || !su.last) { el.hidden = true; return; }
     var e = ex(), txt;
     if (su.last.sets && su.last.sets.length) {
@@ -568,7 +576,9 @@
     line.hidden = false;
   }
   function renderSpark() {
-    var entries = Gym.series(payload, cur, idx, 12).filter(progressionEntry); // the original lift's trend
+    /* filter first, window second (as priorEntries does): windowing raw
+       history first lets swapped/deload sessions eat the trend window.    */
+    var entries = Gym.series(payload, cur, idx).filter(progressionEntry).slice(-12); // the original lift's trend
     var wrap = document.getElementById("sparkWrap"), svg = document.getElementById("sparkline");
     var toggle = document.getElementById("trendToggle");
     var has = entries.length >= 2;
@@ -878,7 +888,7 @@
     DAY_KEYS.forEach(function (d) {
       var v = byDay[d], pct = Math.round((v / max) * 100);
       bars += '<div class="pdayrow"><span class="pdname">' + labels[d] + '</span>'
-        + '<span class="pdbar"><i style="width:' + pct + '%"></i></span>'
+        + '<span class="pdbar' + (v ? "" : " zero") + '"><i style="width:' + pct + '%"></i></span>'
         + '<span class="pdval">' + (v ? Stats.compactVol(v) + " lb" : "—") + '</span></div>';
     });
     document.getElementById("pDayBars").innerHTML = bars;
@@ -889,6 +899,7 @@
       }).join("") + "</span>";
     }).join("");
     document.getElementById("pHeatCount").textContent = snap.heatCount + "/" + snap.heatTotal;
+    document.getElementById("pHeatTitle").textContent = "Training days · " + snap.heatWeeks + " weeks"; // HEAT_WEEKS via the snapshot, not a hardcoded copy
     var heatSum = document.getElementById("heatSummary");
     if (heatSum) heatSum.textContent = snap.heatCount + " of " + snap.heatTotal + " training days in the last " + snap.heatWeeks + " weeks";
 
@@ -1003,7 +1014,6 @@
           renderRestView(restCtl.finishReset().view);
         }, e.ms);
       }
-      else if (e.type === "clearSchedule") { if (rArmT) { clearTimeout(rArmT); rArmT = null; } }
       else if (e.type === "closeDetails") setRestDetails(false);
       else if (e.type === "blurIfOutside") { if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur(); }
     }
@@ -1546,7 +1556,7 @@
           nxLoad = " · Load " + nsx.load;
         }
       }
-      nextText = nx ? "Up next — " + nxName + " · " + nx.s + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
+      nextText = nx ? "Up next — " + nxName + " · " + effSets(nx) + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
       nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " reps" +
         (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
@@ -1729,6 +1739,7 @@
     if (b) b.focus();
   }
   function finishWorkout() {
+    timerIdle("", "Workout complete — nice work."); // a live rest must not outlive the workout
     if (sInt) pauseSession();
     var entry = Gym.finalizeSession(payload);
     commit();
@@ -1790,6 +1801,7 @@
   }
   function showDay() {
     var left = idx;
+    cancelPendingAdvance();
     resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render();
     /* focus back to the row the user just left — otherwise Tab restarts from
        the top of the document (the element they were on is now hidden).     */
@@ -1797,6 +1809,7 @@
     if (row) row.focus();
   }
   function showProgress() {
+    cancelPendingAdvance();
     resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render();
     var head = document.getElementById("progTitle");
     if (head) head.focus();
@@ -1837,6 +1850,7 @@
     /* reset the in-progress set edit BEFORE switching days: the backup
        restores into curSt(), so switching first writes it into the wrong
        day's lift (B5-05, matching openLift's order) */
+    cancelPendingAdvance();
     resetEdit(); clearUndo(); swapOpen = false;
     cur = d;
     idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
@@ -1908,7 +1922,7 @@
         // name the snapshot: what it was and when it was taken (B3-20)
         var label = String(snap.label || "last change").replace(/^pre-/, "").replace(/-/g, " ");
         label = label.charAt(0).toUpperCase() + label.slice(1);
-        var when = fmtDate(new Date(snap.at || 0).toISOString().slice(0, 10));
+        var when = snap.at ? fmtDate(Gym.dateKey(new Date(snap.at))) : "";
         snapBtn.textContent = "Undo " + label + (when ? " (" + when + ")" : "");
       }
     }
@@ -1952,8 +1966,8 @@
   };
   function summaryText() {
     var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
-    var days = Stats.sessionCount(payload), vol = Math.round(Stats.totalVolume(payload));
-    return "Gym — " + sessions + " workouts · " + sets + " sets · " + days + " training days · " + vol + " lb tonnage";
+    var vol = Math.round(Stats.totalVolume(payload));
+    return "Gym — " + sessions + " workouts · " + sets + " sets · " + vol + " lb tonnage";
   }
   document.getElementById("shareSummary").onclick = function () {
     var text = summaryText();
@@ -2165,6 +2179,7 @@
     if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
     var snapOk = Gym.snapshot(payload, "pre-snapshot-restore");
     payload = Gym.reconcile(restored, DAYS);
+    Gym.rollSession(payload, Gym.todayDay()); // v150's roll, as boot/backup-restore do
     cur = payload.cur; idx = payload.idx;
     if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;

@@ -1,8 +1,11 @@
-# LOOP-STATE — session state (Nov 17, continuing the loop)
+# LOOP-STATE — session state (Nov 18, continuing the loop)
 
-Gate last green (v176): unit 242, typecheck clean, e2e 219, sw-cache OK digest 9c3a53212f077aca.
+Gate last green (final code, v198 + test commits): unit 257, typecheck clean, sw-cache OK digest c497ad0d6d16ac3d. **Full e2e clean run Nov 19 (13:30 CST, after the fault cleared): 228 passed, 0 failed** (temp no-channel config, final committed code) — the batch-end run owed since v197/v198 is DONE; nothing from the fault remains outstanding.
+
+**VM FAULT — CLEARED Nov 19 ~06:45 CST** (it ran from ~21:19 CST Nov 18, the Nov 13 fault from AGENTS.md: intermittent EPERM on shell/node/python/git writes and Chromium launches; muse.write/edit stayed reliable throughout, and every edit went through them). Recovery completed Nov 19: the go/no-go probe (`git hash-object -w app.js`) passes; **v193, v194+v195, v196 committed** (each intermediate tree's CACHE-HASH recomputed at commit time and checker-verified — v193 648a5bc5be6376ed, v194+v195 2aa1bbfb64387cae — because the fault-era digests were taken on transient trees; the final v196 digest matches the recorded be2cf840bdadc01e exactly). fsck clean. The v193 e2e and both v196 e2e tests **run and pass**; each v196 test was also verified to fail with its fix reverted (the tests first needed the rest screen's real "Show workout" peek step to reach the day view). **Pro critic batch (Nov 19, off-peak): v177–v181 GO; v193–v195 GO with two non-blocking nits on record** (see BACKLOG "Critique resolved"). Nothing from the fault remains outstanding: the clean full e2e run finished Nov 19 — **227 passed, 0 failed**.
 
 ## Lock
+- STARTED 2026-11-18 20:55 America/Chicago (2026-11-19 02:55 UTC) by Muse in this side-chat session, at Khang's request. Previous batch started 2026-11-17 07:03 local, finished at v176 — more than 90 minutes ago, not a held lock. Working tree clean at 600f2ef, authors Khang only, Studio clone at /Users/khang/Projects/dev/gym matches GitHub HEAD.
 - STARTED 2026-11-17 07:03 local by this manual session. Queue empty of a held lock before this; working tree clean; no STOPPED/PAUSED/EXHAUSTED.
 - Restarter: **disarmed** — schedules inject into live sessions; do not re-arm. Confirmed no `loop-restarter-gym` schedule exists in `opencode.db` (only file-butler, wardrobe, productivity-timer — left untouched). Deleted schedule ID: none found.
 
@@ -35,10 +38,55 @@ Gate last green (v176): unit 242, typecheck clean, e2e 219, sw-cache OK digest 9
 - 24. survey (v176 done, Tier 2, data-integrity, Pro-critic follow-up #2 un-deferred): a record's own `reps`/`rir` were coerced but not clamped (only `load`/`swapLoad`), so a hand-edited backup could push a huge finite reps/rir into the live readout and the `program.js:245` legacy backfill that set-level clamping never sees. FIXED v176 — `sanitizeRecord` clamps `reps`→`SET_REPS_MAX` (999), `rir`→`RIR_MAX` (4), mirroring `sanitizeSets`; presence-guarded so absent stays absent. + discriminating test.
 - (queue below 3 → survey + refill to 10)
 
+## Queue — Nov 18 survey (Muse session, 3-angle survey, every item verified in code/Node before queueing) — ALL DONE
+1. [Tier 2, data] entry reps/rir clamp — DONE v177.
+2. [Tier 2, broken] snapshot `at` validation — DONE v178.
+3. [Tier 2, broken] non-integer idx — DONE v179.
+4. [Tier 2, data-loss risk] imported-history HISTORY_MAX cap — DONE v180.
+5. [Tier 2, data] entry deload coercion (`=== true`, not `!!` — the survey's shape was verified wrong for the string case) — DONE v181.
+6. [Tier 0/1, broken display] sparkline filter-before-window — DONE v182 (also condensed v177–v181 comments: the batch had crossed the 300 KB asset gate).
+7. [Tier 0, display] rest-screen Up next effSets — DONE v183.
+8. [Tier 1, reader consistency] personalRecords flat fallback — DONE v184.
+9. [Tier 1, display] renderPrev deload branch — DONE v185.
+10. [Tier 1, export] CSV swap attribution — DONE v186.
+
+## Queue — refill (Nov 18, continued; from the survey refill pool) — ALL DONE
+R1. Share-summary duplicate count — DONE v187.
+R2. Dead `restctl.finish` — DONE v188.
+R3. Third stale N12 comment (style.css) — DONE v189.
+R4. Learned-calibration contract check — DONE v190.
+R5. Dateless recentVolume phantom — DONE v191.
+R6. Stale headers + heat heading — DONE v192.
+
+## Queue — second survey (Nov 18, 3 fresh angles: store write/merge paths, rest machinery, boot/SW) — ALL BUILT
+S1. [Tier 2, data loss] Snapshot restore never rolled the session forward (the v150 gap) — DONE v193 (e2e run Nov 19: passes).
+S2. [Tier 2, data loss] reconcile same-date dedupe last-wins vs merge fuller-wins — DONE v194.
+S3. [Tier 2, data] reconcile state collision compared only `done` — DONE v194 (progressScore now).
+S4. [Tier 2, data] Merge zero-progress tie clobbered a local swap choice — DONE v195.
+S5. [Tier 1, broken] GO screen label hardcoded completeness — DONE v196.
+S6. [Tier 1, broken] Day-view finish left a live rest running — DONE v196 (e2e run Nov 19: passes, discriminates).
+S7. [Tier 1, broken] showDay/showProgress/switchDay never cancelled the pending advance — DONE v196 (e2e run Nov 19: passes, discriminates).
+S8. [Tier 0, tidiness] Dead `clearSchedule` effect branch — DONE v196.
+Parked as design decisions (see Choices): rest-state persistence across a page reload; controllerchange update delivery. Both surveys report their remaining angles clean — the queue is honestly empty unless a third angle appears.
+
+## Queue — UI phase (Nov 19, Khang's instruction; surveyed by screenshot in both themes, settled state)
+The app is in strong shape visually (warm palette, clear hierarchy in both themes — the washed-out first screenshots were the 180 ms view fade caught mid-animation, verified not a contrast bug). Honest queue, 3 items:
+U1. [broken] `applyTheme` overwrites index.html's correct theme-color metas (`#17100b`/`#fdebd2`, matching the tokens) with stale cool-palette values (`#0b0e12`/`#f4f6f8`) — the phone's chrome tint clashes with the app background once JS runs. Fix: write the token color to both metas.
+U2. [display] Progress "Volume by day": a zero-volume day draws a full-width track bar that reads as a filled bar; only the "—" gives it away. Dim/empty the track for zero days.
+U3. [feel] the 180 ms view fade makes the high-frequency lift→rest path feel a beat slow and washes content mid-transition; shorten the workout-path fade (.view/.timer) to 100 ms, keep 180 ms for modal/summary.
+UI progress: **U1 DONE (v199)**, **U2 DONE (v200)**, **U3 DONE (v201)** — the UI queue is empty. Nov 19 13:37: Khang said "Push and sync after" — but a true history push from this VM is blocked (no HTTPS credentials here, SSH is proxy-blocked, `gh auth login` is off-limits per the connector rules). The connector's snapshot push works and the net tree diff is snapshot-safe (21 modified files, no adds/deletes), but it flattens the 35 local commits into one. Khang was given the choice (combined update now vs bundle transfer via the Studio preserving full history) — **awaiting his pick**. Everything through v201 is committed locally; nothing pushed yet.
+
 ## Doing now
-survey #6 manual — subagent still down on provider balance. Built v176 (both Pro-critic data-integrity follow-ups un-deferred: broadened `unsafeKey` + record-level reps/rir clamping; Pro critic GO). Manual scan otherwise exhausted for fresh Tier-0/1 candidates — the refill has now consumed the two strongest deferred items. Next: continue survey for new candidates; if none, the queue needs a refill or Khang's named item.
+Nov 19: fault cleared; v193–v196 + this state file committed locally (see the fault note at the top). Critics all resolved: Pro batch GO / GO-with-nits (below), v182–v192 GO, v196 GO. Clean full e2e: 227 passed. Nothing pushed — sync happens when Khang says stop.
+Nov 19 (later): third survey (date/time boundaries — the one angle the first two surveys had not covered) found the rest of that surface clean (both 2026 DST transitions verified) plus two items, both built and committed: **v197** — the snapshot Undo button dated an evening snapshot by UTC instead of the local day (discriminating e2e, fails pre-fix); **v198** — a corrupt `runningSince` predating its session is dropped at sanitize instead of inflating the workout clock to the 8 h cap (discriminating unit test, fails pre-fix). **Pro review Nov 19: v197 GO with nits, v198 GO with nits** — both nits actioned (v197's e2e now pins America/Chicago in its own context and discriminates on any host, re-verified both ways; v198's test gained the equality and no-`startedAt` cases; the clock-corrected-backward edge is on record in BACKLOG as accepted). **Batch-end full e2e could not complete: the VM write fault flapped back** — Chromium launches die intermittently (`browserType.launch: Target page, context or browser has been closed`, EPERM on teardown writes), so full-suite runs abort or garble their summaries. Standing in its place: the clean 227-pass run on v196 code (Nov 19) plus per-test verification of everything that changed after it (v197 e2e and both v196 tests verified pass-post-fix / fail-pre-fix in healthy windows; unit 257 + typecheck green on the final code). A future healthy window can re-run the full suite with `pw.tmp.config.js` recreated as: testDir ./e2e, timeout 60000, headless, no `channel` (the documented config expects /opt/google/chrome/chrome, absent on this VM). **The queue is honestly empty — three surveys, all angles covered. BATCH FINISHED Nov 19; 29 commits ahead of origin, nothing pushed — sync (push → Studio pull → Pages) happens when Khang says stop.**
+Nov 19 (09:11, Khang: "keep looping"): fault STILL active — git object writes and Chromium launches still EPERM, node/unit tests fine. Fourth survey angle checked: storage-failure handling (localStorage write errors) — already complete (`write()` catches, `Gym.save` returns the result, app tracks `saveFailed`, shows the save bar, and routes Export through a warning modal when writes fail). No new queue items; nothing invented. Still owed when the fault clears: (1) commit this state file, (2) the batch-end full e2e run. Loop remains open at Khang's instruction.
+Nov 19 (13:27, Khang: "Continue"): **fault cleared.** This state file committed, and the batch-end full e2e ran clean on the final code — **228 passed, 0 failed**. Every owed item is now closed. The only remaining step in the whole loop is the sync, which waits for Khang's stop word.
+
+- **GO (Nov 18, this session):** v196 rest-lifecycle batch (GO label honesty, finish idles the rest, navigation cancels pending, dead clearSchedule branch) — critic traced the controller's own finish path (the added idle is idempotent there), the peek flow (does not route through the three navigation functions), and the arm-timeout lifecycle; no regressions. One should-fix, in a test not the code: the navigation-cancel e2e's `runFor(180000)` landed exactly on the GO boundary where the 400 ms same-tap guard could swallow the bar click in both versions — fixed in the test (extra 1 s past GO, click lands on `#restTime`).
 
 ## Critic reviews waiting (batch Pro for Tier 2)
+- **GO / GO with nits (Nov 19, off-peak Pro batch):** v177–v181 **GO** — every claim verified in code and by a 23-probe reproduction run against store.js (string "1e6" reps clamps, hostile snapshot `at` zeroed, 50k-entry import migrates in ≤481 ms — no freeze risk). v193–v195 **GO with two nits on record**, no code change recommended: (1) v194's exact-fullness tie keeps the first copy where pre-v194 kept the last — byte-identical to mergePayload's rule, the change's stated goal; (2) the fuller-entry measure ignores the sets array when `setsDone` is nonzero — inherited verbatim from merge, and real banked entries keep the two in sync. Also recorded under BACKLOG.md '## Critique resolved'.
+- **GO (Nov 18, this session):** v182–v192 batch (sparkline, effSets Up-next, PR flat fallback, renderPrev deload, CSV swap, share summary, dead restctl.finish, N12 comment, calOpts contract, recentVolume filter, stale headers/heat heading) — critic verified every change against its BACKLOG entry, empirically re-ran the new stats unit tests against pre-fix code (all discriminate), and confirmed no behavior change beyond intent. One nit, no action: v184's fallback set omits `rir` (the PR metric never reads it), and a count-less entry with reps but no load now yields a load-0 PR — which matches topMovers' valuation of the same entry, i.e. the fix's stated intent.
 - **GO (Nov 17, off-peak):** v176 — the two previously-flagged follow-ups (broadened `unsafeKey` + record-level `reps`/`rir` clamping), reviewed by the Pro critic in one run. Confirmed the clamp closes the `program.js:245` record→set backfill threat and `unsafeKey` deletes no legitimate key. No blockers; only non-blocking wording suggestions left as-is.
 - **GO (Nov 17, off-peak):** v154 `sanitizeRecord` swapLoads unsafeKey guard AND v158 load-bound at SET_LOAD_MAX, reviewed together in one Pro batch. No bypass, no regression, both pinned by discriminating tests.
 - - **Follow-ups (both RESOLVED in v176):** (1) `swapLoads` key screening covered only `__proto__`/`constructor`/`prototype` — fixed, screens all `Object.prototype` members; (2) record-level `reps`/`rir` coerced but not clamped — fixed, clamped to `SET_REPS_MAX`/`RIR_MAX`.
@@ -47,7 +95,10 @@ survey #6 manual — subagent still down on provider balance. Built v176 (both P
 - NEEDS DECISION: partial-workout sets never reach history (product contract).
 - NEEDS DECISION: off-day / missed-day logging (P9) — **v159 hard-blocks it**: a session only starts for today, so catching up a missed day is now impossible; the guard and the P9 decision interact. Khang decides.
 - bodyweight-alternate valuation decision.
+- NEEDS DESIGN (Nov 18 survey, parked — not drive-by buildable): a live rest does not survive a page reload (iOS evicts the home-screen webview mid-rest; logged sets are safe, the countdown/GO cue are gone). Persisting the rest (a `gym-rest`-style key on the gym-calibration pattern) is a behaviour change with restore semantics to decide.
+- NEEDS DESIGN (Nov 18 survey, parked): a deployed update never reaches a long-lived home-screen page — the SW updates and purges old caches, but with no `controllerchange` listener the open page runs the old build until a manual relaunch. A one-time reload deferred to the next visibility return would close it; the reload timing is Khang's call.
 - (from handoff) — do not decide myself.
 
 ## Baseline failing checks
 - none (gate green at v170).
+- Nov 18 baseline (this session, fresh clone at 600f2ef): `npm run check` — unit 242 pass, 0 fail; `npm run typecheck` — clean; `npm run e2e` — 219 passed. No failures to note.

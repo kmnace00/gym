@@ -1,4 +1,4 @@
-/* ── timer math (pure) — the rest/session state machines stay in app.js ──────
+/* ── timer math (pure) — durations, the RIR penalty, session elapsed ────────
    Browser global (window.Gym) + Node module.                                 */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();

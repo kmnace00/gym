@@ -176,7 +176,7 @@
    * @returns {{date:string, volume:number}[]}
    */
   function recentVolume(payload, n, volumes) {
-    var s = volumes || sessionVolumes(payload);
+    var s = (volumes || sessionVolumes(payload)).filter(function (v) { return !!v.date; }); // the dateless "" group is no session
     return n ? s.slice(Math.max(0, s.length - n)) : s;
   }
 
@@ -376,7 +376,7 @@
    */
   function toCsv(payload, DAYS) {
     var rows = [["date", "day", "lift", "set", "load", "reps", "rir"]];
-    var lh = (payload && payload.liftHistory) || {}, k, arr, i, j, e, p, d, idx, name, sets;
+    var lh = (payload && payload.liftHistory) || {}, k, arr, i, j, e, p, d, idx, name, sets, rowName;
     for (k in lh) if (Object.prototype.hasOwnProperty.call(lh, k)) {
       arr = lh[k] || [];
       p = k.split(":"); d = p[0]; idx = parseInt(p[1], 10);
@@ -391,7 +391,8 @@
            vanishing; a truly empty entry exports nothing, like every reader. */
         sets = entrySets(e);
         if (!sets.length && (e.load !== undefined || e.reps !== undefined || e.rir !== undefined)) sets = [{ load: e.load, reps: e.reps, rir: e.rir }];
-        for (j = 0; j < sets.length; j++) rows.push([e.date || "", d, name, j + 1, sets[j].load, sets[j].reps, sets[j].rir]);
+        rowName = typeof e.swap === "string" && e.swap ? e.swap : name; // a swapped session exports under the lift actually performed
+        for (j = 0; j < sets.length; j++) rows.push([e.date || "", d, rowName, j + 1, sets[j].load, sets[j].reps, sets[j].rir]);
       }
     }
     return rows.map(function (r) { return r.map(csvCell).join(","); }).join("\n");
@@ -421,6 +422,7 @@
       for (i = 0; i < arr.length; i++) {
         e = arr[i]; if (!e || !countsForProgression(e) || e.deload) continue; // B6-06/B6-09: neither a swap nor a deload week can be a PR
         sets = entrySets(e);
+        if (!sets.length && (e.load !== undefined || e.reps !== undefined)) sets = [{ load: e.load, reps: e.reps }]; // flat fallback (toCsv's)
         for (j = 0; j < sets.length; j++) {
           set = sets[j] || {};
           opts = { bw: isBw || e.bw === true, assist: isAssist || e.assist === true, bodyweight: resolveBodyweight(e, bwKg) };

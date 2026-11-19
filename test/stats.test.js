@@ -53,6 +53,21 @@ test("recentVolume keeps the newest n", () => {
   assert.equal(out[0].date, "2026-11-01");
 });
 
+/* sessionVolumes groups dateless (legacy) entries under "" — not a session.
+   Every other consumer guards on the date; recentVolume must too, or the
+   phantom group takes a slot in the recent-sessions trend. */
+test("recentVolume excludes the dateless phantom group", () => {
+  const p = { liftHistory: { "fri:0": [
+    { load: 100, reps: 6, setsDone: 3 },
+    { date: "2026-11-01", load: 50, reps: 6, setsDone: 3 },
+    { date: "2026-11-08", load: 55, reps: 6, setsDone: 3 }
+  ] } };
+  const out = S.recentVolume(p, 12);
+  assert.equal(out.length, 2, "only the two dated sessions appear");
+  assert.ok(out.every((v) => v.date), "no empty-date group in the trend");
+  assert.equal(S.recentVolume(p).length, 2, "the unwindowed read agrees");
+});
+
 test("volumeByDay uses each lift's latest entry", () => {
   const DAYS = { fri: { ex: [{}, {}] }, sat: { ex: [{}] }, sun: { ex: [] } };
   const out = S.volumeByDay(sample(), DAYS);
@@ -92,6 +107,27 @@ test("personalRecords picks the best set and rewards added bodyweight", () => {
   assert.equal(prs.length, 1);
   assert.equal(prs[0].date, "2026-11-08");
   assert.ok(prs[0].metric > P.progressMetric(0, 6, { bw: true, bodyweight: 75 }));
+});
+
+/* a legacy entry with a flat load/reps but no sets array and no setsDone
+   counts in topMovers, CSV and the live PR hint — personalRecords must
+   count it too, or Progress reports a lighter PR than the same screen's
+   mover measured from. A truly empty entry still yields no PR. */
+test("personalRecords counts a count-less legacy entry's flat set", () => {
+  const payload = {
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-10-02", load: 100, reps: 6, rir: 2 },
+        { date: "2026-10-09", load: 50, reps: 6, rir: 2, setsDone: 3 }
+      ]
+    }
+  };
+  const prs = S.personalRecords(payload, P.DAYS, P.progressMetric);
+  assert.equal(prs.length, 1);
+  assert.equal(prs[0].load, 100, "the 100 lb legacy session is the PR, not the 50 lb one");
+  assert.equal(prs[0].metric, 120);
+  const empty = S.personalRecords({ liftHistory: { "fri:0": [{ date: "2026-10-02" }] } }, P.DAYS, P.progressMetric);
+  assert.equal(empty.length, 0, "a truly empty entry yields no PR");
 });
 
 test("weekStatus marks done / partial / missed in the current week", () => {
@@ -166,6 +202,21 @@ test("B6-02: a covered day counts once and needs a complete session with work", 
 test("toCsv escapes formula-leading cells", () => {
   const csv = S.toCsv({ liftHistory: { "fri:0": [{ date: "2026-11-08", sets: [{ load: 0, reps: 1, rir: 0 }] }] } }, { fri: { ex: [{ n: "=cmd" }] } });
   assert.ok(csv.indexOf("'=cmd") !== -1);
+});
+
+/* a swapped session exports under the lift actually performed (the entry's
+   swap stamp, the same label Prev and the Plan header use), not the slot's
+   original lift — otherwise the spreadsheet credits the wrong exercise. */
+test("toCsv names a swapped session's rows after the alternate performed", () => {
+  const DAYS = { fri: { ex: [{ n: "Assisted dip" }] } };
+  const csv = S.toCsv({ liftHistory: { "fri:0": [
+    { date: "2026-11-01", load: 100, reps: 6, rir: 2, setsDone: 2 },
+    { date: "2026-11-08", load: 135, reps: 6, rir: 2, setsDone: 2, swap: "Close-grip bench press" }
+  ] } }, DAYS);
+  const rows = csv.split("\n");
+  assert.equal(rows[1].split(",")[2], "Assisted dip", "a normal session keeps the slot's name");
+  assert.equal(rows[3].split(",")[2], "Close-grip bench press", "the swapped session is credited to the alternate");
+  assert.ok(!rows.slice(3).join("\n").includes("Assisted dip"), "no swapped row carries the original name");
 });
 
 test("toCsv exports an assisted lift's help as the positive number it stores", () => {

@@ -31,6 +31,24 @@ function mk(over) {
   return { ctl: C.createRestController(deps), clock, data };
 }
 
+test("the GO screen promises only what skip() will do when the lift is incomplete (v196)", () => {
+  /* done/sets can change mid-rest (the peek's menu actions): with 2 of 3
+     sets done the label must offer the next set, not the next lift.        */
+  const s = mk({ done: 2, sets: 3 });
+  toGo(s);
+  const v = s.ctl.view();
+  assert.equal(v.msg, "Next set — go.");
+  assert.equal(v.skipLabel, "Start next set");
+});
+
+test("the GO screen still promises the next lift when the lift is complete (v196)", () => {
+  const s = mk({ done: 3, sets: 3 });
+  toGo(s);
+  const v = s.ctl.view();
+  assert.equal(v.msg, "Lift done — next up.");
+  assert.equal(v.skipLabel, "Next lift");
+});
+
 /** start a 90 s rest and run the frozen clock to GO */
 function toGo(s, lastSet) {
   s.ctl.start(90, "Fri — set 1 done", lastSet !== false, "", "Up next — Set 2 of 3");

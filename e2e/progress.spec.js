@@ -32,6 +32,19 @@ test("progress view opens, shows stats, and Back returns to the day", async ({ p
   await expect(page.locator("#dayView")).toBeVisible();
 });
 
+test("a zero-volume day's bar is dimmed so it does not read as filled (v200)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [{ date: "2026-11-13", load: 60, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+  });
+  await page.locator("#progressBtn").click();
+  const bars = page.locator("#pDayBars .pdbar");
+  await expect(bars).toHaveCount(3);
+  await expect(bars.nth(0)).not.toHaveClass(/zero/);
+  await expect(bars.nth(1)).toHaveClass(/zero/);
+  await expect(bars.nth(2)).toHaveClass(/zero/);
+});
+
 test("progress view fits the screen with no vertical scroll", async ({ page }) => {
   await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
   await page.locator("#progressBtn").click();
@@ -234,4 +247,66 @@ test("trend sparkline is opt-in via the Trend pill", async ({ page }) => {
   await expect(page.locator("#sparkWrap")).toBeHidden();
   await page.locator("#trendToggle").click();
   await expect(page.locator("#sparkWrap")).toBeVisible();
+});
+
+test("the share summary states the workout count once (v187)", async ({ page }) => {
+  /* summaryText computed sessionCount twice and printed it as both
+     "N workouts" and "N training days" — the same number stated twice. */
+  await page.addInitScript(() => {
+    window.__copied = null;
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: (t) => { window.__copied = t; return Promise.resolve(); } }, configurable: true });
+  });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: {
+      "fri:0": [
+        { date: "2026-11-01", load: 50, reps: 6, rir: 2, setsDone: 3 },
+        { date: "2026-11-08", load: 55, reps: 6, rir: 2, setsDone: 3 }
+      ]
+    }
+  });
+  await page.locator("#menuBtn").click();
+  await page.locator("#shareSummary").click();
+  const text = await page.evaluate(() => window.__copied);
+  expect(text).toContain("2 workouts");
+  expect(text).not.toContain("training days");
+});
+
+test("a poisoned learned calibration falls back to the seed estimate (v190)", async ({ page }) => {
+  /* the gym-calibration key sits outside the payload's sanitize path:
+     warmupSec 100000 (or Infinity via 1e999) must not reach the day
+     estimate — calOpts accepts only calibration()'s own output contract. */
+  await seed(page, { v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {} });
+  await page.evaluate(() => localStorage.setItem("gym-calibration", JSON.stringify({ warmupSec: 100000, overheadSec: 15 })));
+  await page.reload();
+  const mins = await page.evaluate(() => {
+    const m = /~(\d+) min/.exec(document.getElementById("daySummary").textContent || "");
+    return m ? parseInt(m[1], 10) : null;
+  });
+  expect(mins, "the day estimate stays in a sane range").not.toBeNull();
+  expect(mins).toBeLessThan(200);
+});
+
+test("the trend windows progression sessions, not raw history (v182)", async ({ page }) => {
+  /* 13 real sessions, then 11 swapped ones, then 1 more real session: the
+     last 12 RAW entries hold only 1 progression session, so a window-first
+     read hides the trend entirely; the filter-first read keeps 12 points. */
+  const hist = [];
+  for (let i = 0; i < 13; i++) hist.push({ date: "2026-08-" + String(1 + i).padStart(2, "0"), load: 50 + i, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  for (let i = 0; i < 11; i++) hist.push({ date: "2026-09-" + String(1 + i).padStart(2, "0"), load: 135, reps: 6, rir: 2, setsDone: 3, swap: "Close-grip bench press" });
+  hist.push({ date: "2026-10-01", load: 63, reps: 6, rir: 2, hitTop: true, setsDone: 3 });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 0, load: 55, reps: 6, rir: 2, topHits: 0, lastRir: null } },
+    liftHistory: { "fri:0": hist }
+  });
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#trendToggle")).toBeVisible();
+  await page.locator("#trendToggle").click();
+  await expect(page.locator("#sparkWrap")).toBeVisible();
+  const pts = await page.evaluate(() => {
+    const d = document.querySelector("#sparkline path").getAttribute("d");
+    return d.split(" L").length;
+  });
+  expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });

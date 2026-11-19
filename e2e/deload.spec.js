@@ -93,3 +93,23 @@ for (const size of sizes) {
     });
   });
 }
+
+test("the rest screen's Up next counts the deload sets, not the programme's (v183)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await seed(page);
+  await page.locator("#menuBtn").click();
+  await page.locator("#deloadStart").click();
+  await page.locator("#modalClose").click();
+  await expect(page.locator("#deloadBar")).toBeVisible();
+
+  /* complete lift 0 at its deload target (2 sets) → inter-lift rest */
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").click();
+  await page.locator("#doneBtn").click();
+
+  /* the headline must agree with the day row / lift view / prep card: the
+     next lift is a 2-set deload lift, not the programme's 3 sets. */
+  await expect(page.locator("#restNext")).toContainText("Up next — Smith incline press · 2 × 6");
+  await expect(page.locator("#restPrepName")).toContainText("Set 1 of 2");
+});

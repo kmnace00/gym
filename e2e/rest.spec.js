@@ -167,3 +167,76 @@ test("rest prep targets the next lift between lifts (B5-02)", async ({ page }) =
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
+
+test("finishing the workout from the day view idles a live rest (v196)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const ex = Gym.DAYS[day].ex;
+    const state = {};
+    state[day + ":0"] = { done: 1, load: ex[0].load || 0, reps: ex[0].r, rir: ex[0].rir, sets: [{ load: ex[0].load || 0, reps: ex[0].r, rir: ex[0].rir }] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_fin", date, day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: Date.now(), status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // set 2 logged -> rest is live
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+
+  await page.locator("#detailsBtn").click(); // peek: the views show under the rest bar
+  await page.locator("#backBtn").click(); // to the day list, rest still live
+  await page.locator("#finishBtn").click(); // finish from the day view
+  await expect(page.locator("#summary")).toBeVisible();
+  await page.locator("#sumDone").click();
+
+  await page.clock.runFor(5000);
+  await expect(page.locator("#timerBar"), "no countdown may outlive the finished workout").not.toHaveClass(/active|go/);
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
+
+test("navigating to the day view cancels the pending GO advance (v196)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const ex = Gym.DAYS[day].ex;
+    const state = {};
+    state[day + ":0"] = { done: ex[0].s - 1, load: ex[0].load || 0, reps: ex[0].r, rir: ex[0].rir, sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_nav", date, day, startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: Date.now(), status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // final set -> rest with a pending advance
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+
+  await page.locator("#detailsBtn").click(); // peek: the views show under the rest bar
+  await page.locator("#backBtn").click(); // manual navigation clears pending
+  await expect(page.locator("#dayView")).toBeVisible();
+  await page.clock.runFor(180000); // the rest runs out on the day view -> GO
+  await expect(page.locator("#timerBar")).toHaveClass(/go/);
+  await page.clock.runFor(1000); // past the 400 ms same-tap guard at GO
+  await page.locator("#restTime").click(); // GO tap (on a non-button child) must not jump lifts now
+
+  const idx = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).idx);
+  expect(idx, "the GO tap idles instead of advancing under the day list").toBe(0);
+  await expect(page.locator("#dayView")).toBeVisible();
+
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});

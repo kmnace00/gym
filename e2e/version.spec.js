@@ -27,6 +27,20 @@ test("the menu's screen line reports the layout numbers used on this device", as
   expect(line, "the reported app box matches the live viewport").toContain("app " + vp + " · vp " + vp);
 });
 
+test("the theme-color metas carry the app's own background in both themes (v199)", async ({ page }) => {
+  /* the phone's chrome tint must match the app background (--bg); stale
+     cool-palette values here made the status bar clash with the warm UI. */
+  const contents = () => page.evaluate(() =>
+    Array.from(document.querySelectorAll('meta[name="theme-color"]')).map((m) => m.getAttribute("content")));
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-theme", "dark"));
+  await page.reload();
+  expect(await contents()).toEqual(["#17100b", "#17100b"]);
+  await page.locator("#menuBtn").click();
+  await page.locator("#themeToggle").click();
+  expect(await contents()).toEqual(["#fdebd2", "#fdebd2"]);
+});
+
 test("the service worker takes its cache name from version.js, not a second literal", () => {
   const sw = fs.readFileSync(path.resolve(__dirname, "..", "sw.js"), "utf8");
   expect(sw).toMatch(/importScripts\("\.\/version\.js"\);/);

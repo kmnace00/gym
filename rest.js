@@ -1,7 +1,7 @@
 /* ── rest orchestration helpers (pure) ──────────────────────────────────────
-   The DOM controller still lives in app.js; the *decisions* it makes at GO
-   (advance vs stay, next-lift index, two-tap finish arming) are pure and
-   unit-tested here, mirroring machine.js. No DOM, no timers, no globals.
+   The controller is restctl.js (over machine.js); the *decisions* it makes
+   at GO (advance vs stay, next-lift index, two-tap finish arming) are pure
+   and unit-tested here. No DOM, no timers, no globals.
    Browser global (window.Gym) + Node module (module.exports).               */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();

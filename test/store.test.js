@@ -200,6 +200,51 @@ test("mergePayload unions history by date and keeps the fuller state record", ()
   assert.equal(m.liftHistory["fri:0"][1].date, "2026-11-08");
 });
 
+test("reconcile keeps the fuller same-date entry when two keys route together (v194)", () => {
+  const DAYS = { fri: { ex: [{ id: "squat" }, { id: "bench" }] } };
+  const p = S.emptyPayload();
+  /* the completed session sits under the lift's current key; a partial copy
+     of the same session (same exId, same date) routes in from the old key —
+     last-wins dedupe used to keep the partial one.                        */
+  p.liftHistory["fri:0"] = [{ exId: "squat", date: "2026-11-06", load: 100, reps: 6, rir: 2, setsDone: 3, sets: [{ load: 100, reps: 6, rir: 2 }, { load: 100, reps: 6, rir: 2 }, { load: 100, reps: 6, rir: 2 }] }];
+  p.liftHistory["fri:1"] = [{ exId: "squat", date: "2026-11-06", load: 95, reps: 6, rir: 2, setsDone: 1, sets: [{ load: 95, reps: 6, rir: 2 }] }];
+  const out = S.reconcile(p, DAYS);
+  assert.equal(out.liftHistory["fri:0"].length, 1);
+  assert.equal(out.liftHistory["fri:0"][0].load, 100);
+  assert.equal(out.liftHistory["fri:0"][0].setsDone, 3);
+});
+
+test("reconcile scores a state collision like mergePayload — logged sets beat an equal-done tie (v194)", () => {
+  const DAYS = { fri: { ex: [{ id: "squat" }, { id: "bench" }] } };
+  const p = S.emptyPayload();
+  /* legacy record (no exId) already at the slot vs the exId-stamped record
+     routing in: same done, but only the routed one carries real sets.     */
+  p.state["fri:0"] = { done: 2, load: 50, reps: 6, rir: 2, sets: [] };
+  p.state["fri:1"] = { exId: "squat", done: 2, load: 55, reps: 6, rir: 2, sets: [{ load: 55, reps: 6, rir: 2 }, { load: 55, reps: 6, rir: 2 }, { load: 55, reps: 5, rir: 2 }] };
+  const out = S.reconcile(p, DAYS);
+  assert.equal(out.state["fri:0"].sets.length, 3);
+  assert.equal(out.state["fri:0"].load, 55);
+});
+
+test("mergePayload's zero-progress tie no longer clobbers a local swap choice (v195)", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 0, load: 55, reps: 6, rir: 2, sets: [], swapAlt: "Leg press", swapLoad: 180 };
+  const inc = S.emptyPayload();
+  inc.state["fri:0"] = { done: 0, load: 55, reps: 6, rir: 2, sets: [] };
+  const m = S.mergePayload(base, inc);
+  assert.equal(m.state["fri:0"].swapAlt, "Leg press");
+  assert.equal(m.state["fri:0"].swapLoad, 180);
+});
+
+test("mergePayload's zero-progress tie still adopts the incoming record when the local one is a bare default (v195)", () => {
+  const base = S.emptyPayload();
+  base.state["fri:0"] = { done: 0, load: 55, reps: 6, rir: 2, sets: [] };
+  const inc = S.emptyPayload();
+  inc.state["fri:0"] = { done: 0, load: 70, reps: 6, rir: 2, sets: [] };
+  const m = S.mergePayload(base, inc);
+  assert.equal(m.state["fri:0"].load, 70);
+});
+
 test("mergePayload keeps the device cursor instead of adopting the incoming one", () => {
   const base = S.emptyPayload();
   base.cur = "fri";
@@ -304,6 +349,28 @@ test("snapshot round-trips the current payload", () => {
   assert.equal(snap.label, "test");
   assert.equal(snap.payload.bodyweight, 82.5);
   assert.ok(snap.at);
+});
+
+/* a parsed-but-hostile snapshot must not crash the boot footer: its `at`
+   feeds new Date(at).toISOString(), which throws RangeError on an invalid
+   time value — and readSnapshot is the boundary every other field passes. */
+test("readSnapshot validates its metadata at the boundary", () => {
+  const KEY = "gym-tool-v2-snapshot";
+  global.localStorage.setItem(KEY, JSON.stringify({ at: "garbage", label: "pre-clear", payload: { v: 5 } }));
+  let snap = S.readSnapshot();
+  assert.ok(snap, "a snapshot with a junk date is still usable");
+  assert.equal(snap.at, 0, "a non-numeric at is zeroed, not passed through");
+  assert.doesNotThrow(() => new Date(snap.at).toISOString());
+
+  global.localStorage.setItem(KEY, JSON.stringify({ at: 1e16, label: "pre-clear", payload: { v: 5 } }));
+  snap = S.readSnapshot();
+  assert.equal(snap.at, 0, "an out-of-Date-range at is zeroed");
+
+  global.localStorage.setItem(KEY, JSON.stringify({ at: 1762000000000, label: 7, payload: "oops" }));
+  assert.equal(S.readSnapshot(), null, "a non-object payload drops the snapshot");
+
+  global.localStorage.setItem(KEY, JSON.stringify(["not", "an", "object"]));
+  assert.equal(S.readSnapshot(), null, "a non-object snapshot is dropped");
 });
 
 const HOSTILE_RAW = '{"v":3,"state":{"__proto__":{"done":5,"evil":1},"constructor":{"done":4},"fri:0":{"done":3,"sets":"oops"}},"liftHistory":{"__proto__":[{"date":"2026-11-09","load":1,"reps":1,"rir":1}],"constructor":[{"date":"2026-11-10","load":"1e999","reps":2,"rir":2}],"fri:0":[{"date":"2026-11-08","load":"1e999","reps":"six","rir":"high","sets":"oops"}]},"sessionLog":[{"id":"__proto__","status":"complete","durationSec":1e999,"lifts":{"__proto__":{"bad":1},"fri:0":{"done":3,"sets":"oops"}}},{"id":"constructor","status":"complete","durationSec":99999999999999999999999999999999999,"lifts":null}]}';
@@ -648,6 +715,23 @@ test("the session clock accrues only while running", () => {
   S.startSessionClock(p, 10000);
   assert.equal(p.active.runningSince, 10000);
   assert.equal(S.sessionElapsedSec(p, 12000), 6);
+});
+
+test("a corrupt runningSince that predates the session is dropped at sanitize (v198)", () => {
+  const T = 1700000000000;
+  const seed = (runningSince) => S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [],
+    active: { id: "ses_x", date: "2026-11-06", day: "fri", startedAt: T, endedAt: null, accSec: 0, runningSince, status: "active" }
+  }));
+  assert.equal(seed(-5000).active.runningSince, null, "a negative stamp is not a stamp");
+  assert.equal(seed(1000).active.runningSince, null, "a stamp from before the session started is corrupt");
+  assert.equal(seed(T + 5000).active.runningSince, T + 5000, "a real running stamp is kept");
+  assert.equal(seed(T).active.runningSince, T, "a stamp exactly at the session start is kept");
+  const noStart = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {}, liftHistory: {}, sessionLog: [],
+    active: { id: "ses_y", date: "2026-11-06", day: "fri", startedAt: null, endedAt: null, accSec: 0, runningSince: T + 5000, status: "active" }
+  }));
+  assert.equal(noStart.active.runningSince, T + 5000, "with no startedAt, a positive stamp is kept");
 });
 
 test("finalizeSession logs the session and reopenSession re-arms the same id", () => {
@@ -1205,6 +1289,83 @@ test("migrate clamps a record's own reps and rir like its sets", () => {
   const fresh = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: { "fri:0": { done: 0 } } }));
   assert.ok(!("reps" in fresh.state["fri:0"]), "absent reps stays absent");
   assert.ok(!("rir" in fresh.state["fri:0"]), "absent rir stays absent");
+});
+
+/* the same ceilings bind a history ENTRY's own flat reps/rir: a sets-less
+   legacy entry's reps/rir are synthesized into sets by entrySets, so an
+   unclamped reps:1000000 would mint absurd tonnage and a bogus PR/suggestion
+   baseline. Entries carrying a sets array were already safe (sanitizeSets). */
+test("migrate clamps a history entry's own reps and rir like its sets", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [
+      { date: "2026-11-01", load: 100, reps: 1000000, rir: 99, setsDone: 3 },
+      { date: "2026-11-08", load: 100, reps: 6, rir: 2, setsDone: 3 }
+    ] }
+  }));
+  assert.equal(p.liftHistory["fri:0"][0].reps, 999, "entry reps capped at SET_REPS_MAX");
+  assert.equal(p.liftHistory["fri:0"][0].rir, 4, "entry rir capped at RIR_MAX");
+  assert.deepEqual(
+    { reps: p.liftHistory["fri:0"][1].reps, rir: p.liftHistory["fri:0"][1].rir },
+    { reps: 6, rir: 2 }, "in-range entry reps/rir untouched");
+  const bare = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 100, setsDone: 3 }] }
+  }));
+  assert.ok(!("reps" in bare.liftHistory["fri:0"][0]), "absent entry reps stays absent");
+  assert.ok(!("rir" in bare.liftHistory["fri:0"][0]), "absent entry rir stays absent");
+});
+
+/* idx indexes the day's exercise list directly: a fractional, NaN or
+   infinite idx passes every range guard in app.js yet indexes nothing, so
+   the lift view dereferences undefined. normalize requires a whole number;
+   a valid idx is untouched and the upper bound stays with app.js. */
+test("migrate rejects a non-integer idx", () => {
+  const frac = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 1.5, state: {} }));
+  assert.equal(frac.idx, 0, "a fractional idx falls back to the first lift");
+  const inf = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 1e999, state: {} }));
+  assert.equal(inf.idx, 0, "an infinite idx (1e999 parses to Infinity) falls back too");
+  const neg = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: -2, state: {} }));
+  assert.equal(neg.idx, 0, "a negative idx still falls back");
+  const ok = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 2, state: {} }));
+  assert.equal(ok.idx, 2, "a valid whole idx is untouched");
+  const v2 = S.migrate(JSON.stringify({ v: 2, cur: "fri", idx: 0.5, state: {}, liftHistory: {} }));
+  assert.equal(v2.idx, 0, "the v1/v2 path funnels through the same check");
+});
+
+/* every writer caps a lift's history at HISTORY_MAX, shifting the oldest —
+   the load/import path must too, or one foreign backup can freeze Progress
+   renders and outgrow the storage quota so new workouts stop saving. */
+test("migrate caps an imported lift history at HISTORY_MAX, keeping the newest", () => {
+  const entries = [];
+  for (let i = 0; i < 600; i++) {
+    const d = new Date(Date.UTC(2016, 0, 1) + i * 7 * 86400000).toISOString().slice(0, 10);
+    entries.push({ date: d, load: 50 + i, reps: 6, rir: 2, setsDone: 3 });
+  }
+  const p = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: {}, liftHistory: { "fri:0": entries } }));
+  assert.equal(p.liftHistory["fri:0"].length, 520, "history capped at HISTORY_MAX");
+  assert.equal(p.liftHistory["fri:0"][0].load, 130, "the oldest 80 are dropped, none of the newest");
+  assert.equal(p.liftHistory["fri:0"][519].load, 649, "the newest entry survives");
+  const small = S.migrate(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: {}, liftHistory: { "fri:0": entries.slice(0, 3) } }));
+  assert.equal(small.liftHistory["fri:0"].length, 3, "a short history is untouched");
+});
+
+/* an entry's deload flag is boolean-coerced like hitTop/bw/assist beside it:
+   banked only ever as true, so a foreign backup's string "false" must not
+   survive as a truthy value that permanently excludes a real, non-deload
+   session from progression and PR reads. */
+test("migrate boolean-coerces a history entry's deload flag", () => {
+  const p = S.migrate(JSON.stringify({
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [
+      { date: "2026-11-01", load: 100, reps: 6, rir: 2, setsDone: 3, deload: "false" },
+      { date: "2026-11-08", load: 100, reps: 6, rir: 2, setsDone: 3, deload: true },
+      { date: "2026-11-15", load: 100, reps: 6, rir: 2, setsDone: 3 }
+    ] }
+  }));
+  assert.equal(p.liftHistory["fri:0"][0].deload, false, "the string \"false\" becomes boolean false");
+  assert.equal(p.liftHistory["fri:0"][1].deload, true, "a real deload stays true");
+  assert.ok(!("deload" in p.liftHistory["fri:0"][2]), "an absent deload stays absent");
 });
 
 /* B5-16 — a bad-dated sessionLog entry is dropped, not re-dated to today */

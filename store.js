@@ -110,16 +110,15 @@
        the current direct-key consumers, but the keys-loop must not trip on them. */
     return k in Object.prototype;
   }
-  /* a record / entry / session must be a real object: null, arrays, strings
-     and numbers are not data the app can read, so they are dropped at the
-     boundary instead of reaching a consumer that dereferences them.          */
+  /* only a real object is data the app can read; the rest drops at the boundary */
   function isObj(v) { return v !== null && typeof v === "object" && !Array.isArray(v); }
-  /* how much real progress a record carries, used to break merge ties:
-     a record with no sets and no done count is just a program default, so an
-     imported record with the same done count must win over it. */
+  /* real progress carried, for merge ties: zero progress is a default — unless it carries a swap */
   function progressScore(r) {
     if (!isObj(r)) return -1;
     return (r.done || 0) * 1000 + (Array.isArray(r.sets) ? r.sets.length : 0) * 10 + (r.topHits || 0);
+  }
+  function swapIntent(r) {
+    return isObj(r) && ((typeof r.swapAlt === "string" && !!r.swapAlt) || (isObj(r.swapLoads) && Object.keys(r.swapLoads).length > 0));
   }
   /** Delete `__proto__` / `constructor` / `prototype` keys from an object. */
   function stripUnsafeKeys(obj) {
@@ -224,8 +223,11 @@
     /* same ceiling as the set clamp: a foreign/hand-edited entry's representative
        load feeds the next-load suggestion and PR baseline, so it is bounded too. */
     if (own(e, "load")) e.load = clampCount(e.load, SET_LOAD_MAX);
+    if (own(e, "reps")) e.reps = clampCount(e.reps, SET_REPS_MAX); // entrySets synthesizes a sets-less entry's flat reps/rir into sets
+    if (own(e, "rir")) e.rir = clampCount(e.rir, RIR_MAX);
     if (own(e, "setsDone")) e.setsDone = clampCount(e.setsDone, SETS_MAX);
     if (Object.prototype.hasOwnProperty.call(e, "hitTop")) e.hitTop = !!e.hitTop;
+    if (Object.prototype.hasOwnProperty.call(e, "deload")) e.deload = e.deload === true; // literal true only — a foreign "false" string is truthy
     if (Object.prototype.hasOwnProperty.call(e, "bw")) e.bw = !!e.bw;
     if (Object.prototype.hasOwnProperty.call(e, "assist")) e.assist = !!e.assist; // N15: banked assistance marker
     if (own(e, "bwKg")) {
@@ -251,7 +253,8 @@
     s.startedAt = typeof s.startedAt === "number" && isFinite(s.startedAt) ? s.startedAt : null;
     s.endedAt = typeof s.endedAt === "number" && isFinite(s.endedAt) ? s.endedAt : null;
     s.accSec = typeof s.accSec === "number" && isFinite(s.accSec) && s.accSec > 0 ? Math.min(s.accSec, ACC_SEC_MAX) : 0;
-    s.runningSince = typeof s.runningSince === "number" && isFinite(s.runningSince) ? s.runningSince : null;
+    /* a stamp predating startedAt is corrupt */
+    s.runningSince = typeof s.runningSince === "number" && isFinite(s.runningSince) && s.runningSince > 0 && (s.startedAt == null || s.runningSince >= s.startedAt) ? s.runningSince : null;
     if (own(s, "durationSec")) s.durationSec = clampCount(s.durationSec, ACC_SEC_MAX);
     if (!isObj(s.lifts)) s.lifts = {};
     stripUnsafeKeys(s.lifts);
@@ -280,6 +283,7 @@
         else p.liftHistory[k][i] = sanitizeEntry(p.liftHistory[k][i]);
       }
       p.liftHistory[k] = p.liftHistory[k].filter(function (e) { return e !== null; });
+      while (p.liftHistory[k].length > HISTORY_MAX) p.liftHistory[k].shift(); // cap like every writer — an uncapped import could outgrow the quota
     }
     if (Array.isArray(p.sessionLog)) {
       for (i = 0; i < p.sessionLog.length; i++) {
@@ -301,7 +305,7 @@
     if (!isObj(p.liftHistory)) p.liftHistory = {};
     stripUnsafeKeys(p.state);
     stripUnsafeKeys(p.liftHistory);
-    if (typeof p.idx !== "number" || p.idx < 0) p.idx = 0;
+    if (typeof p.idx !== "number" || !isFinite(p.idx) || Math.floor(p.idx) !== p.idx || p.idx < 0) p.idx = 0; // whole numbers only — a fractional idx indexes nothing and crashes the lift view
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
     p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 165;
@@ -640,9 +644,15 @@
   function snapshot(p, label) {
     return write(SNAPSHOT, JSON.stringify({ at: Date.now(), label: label || "pre-destructive", payload: p }));
   }
-  /** Parse the snapshot written by snapshot(); null when absent or corrupt. */
+  /** Parse the snapshot written by snapshot(); null when absent or corrupt.
+      Metadata is validated here: a junk `at` would throw in the boot
+      footer's toISOString() and blank the app, so it is zeroed instead.    */
   function readSnapshot() {
-    try { return JSON.parse(read(SNAPSHOT)); } catch (e) { return null; }
+    var s;
+    try { s = JSON.parse(read(SNAPSHOT)); } catch (e) { return null; }
+    if (!isObj(s) || !isObj(s.payload)) return null;
+    if (typeof s.at !== "number" || !isFinite(s.at) || isNaN(new Date(s.at).getTime())) s.at = 0;
+    return s;
   }
   /** The raw bytes quarantined by the last failed load, or null. */
   function quarantineRaw() { return read(QUARANTINE); }
@@ -890,7 +900,7 @@
       var mine = own(out.state, k) ? out.state[k] : null, theirs = incState[k];
       if (!isObj(theirs)) continue;            // a null record carries nothing
       var mineScore = progressScore(mine), theirsScore = progressScore(theirs);
-      if (!mine || theirsScore > mineScore || (theirsScore === mineScore && mineScore === 0)) {
+      if (!mine || theirsScore > mineScore || (theirsScore === mineScore && mineScore === 0 && !swapIntent(mine))) {
         out.state[k] = JSON.parse(JSON.stringify(theirs));
       }
     }
@@ -997,7 +1007,7 @@
       target = rec && rec.exId ? (idKey[rec.exId] || "old:" + rec.exId) : k;
       if (newState[target]) {
         var a = newState[target], b = rec;
-        newState[target] = (b && (b.done || 0) > (a.done || 0)) ? b : a;
+        newState[target] = progressScore(b) > progressScore(a) ? b : a; // fuller record wins, as mergePayload scores it
       } else newState[target] = rec;
     }
     p.state = newState;
@@ -1023,7 +1033,8 @@
         if (!en) return;
         var dk = en.date || (en.load + ":" + en.reps + ":" + en.rir + ":" + en.setsDone);
         if (unsafeKey(dk)) return;
-        seen[dk] = en;
+        var prev = seen[dk]; // fuller session wins a same-date collision
+        if (!prev || (en.setsDone || (en.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = en;
       });
       var merged = Object.keys(seen).map(function (dk) { return seen[dk]; });
       merged.sort(function (x, y) { return String(x.date || "").localeCompare(String(y.date || "")); });
