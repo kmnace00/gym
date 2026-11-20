@@ -201,10 +201,11 @@ h1{
 #swapBtn{max-width:56vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* B6-07: the swap mode's one-line sub under the lift title */
 .swapsub{margin:-2px 0 4px;font-size:12px;color:var(--muted)}
-/* per-set log — the log fills its region and the rows grow with it, so the
-   void below the last set row is gone by construction (min 44px tap target) */
-.setlog{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
-.setrow{box-shadow:var(--shadow-md);flex:1 1 auto;min-height:44px;display:grid;grid-template-columns:32px 1fr auto 22px;align-items:center;gap:10px;padding:0 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-variant-numeric:tabular-nums;transition:background .2s ease,border-color .2s ease,opacity .25s ease}
+/* per-set log — the log fills its region, but rows keep their natural compact
+   height (min 44px tap target) and sit at the top: spare height reads as empty
+   space after the last row, never as stretched cards. Long logs still scroll. */
+.setlog{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;overflow-y:auto}
+.setrow{box-shadow:var(--shadow-md);flex:none;min-height:44px;display:grid;grid-template-columns:32px 1fr auto 22px;align-items:center;gap:10px;padding:0 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-variant-numeric:tabular-nums;transition:background .2s ease,border-color .2s ease,opacity .25s ease}
 .setrow .sn{font-weight:800;font-size:13px;color:var(--faint);text-align:center;background:var(--surface-2);border-radius:8px;padding:4px 0}
 .setrow.now .sn{background:var(--accent);color:var(--accent-ink)}
 .setrow .sr{font-weight:800;font-size:16.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -767,7 +768,6 @@ input{caret-color:var(--accent)}
   .liftrow{flex:none;min-height:44px}
   #liftView{overflow-y:auto}
   .setlog{flex:none;overflow:visible}
-  .setrow{flex:none}
   .app.resting .timer{overflow-y:auto;justify-content:flex-start;min-height:0}
 }
 .setlog:has(.setrow.editing) .setrow.now:not(.editing){background:var(--surface);border-color:var(--line);box-shadow:var(--shadow-sm)}
@@ -781,11 +781,11 @@ input{caret-color:var(--accent)}
 .daytop .planbtn{flex:none}
 
 /* ── tall Home-Screen canvas (>=880px standalone, Pro/Pro-Max class phones ──
-   Here the app has real spare height, so stretch-to-fill turns the day rows
-   and set-log rows into tall, sparse cards. Instead we keep those cards
-   compact and let the extra height read as calm breathing room above the
-   bottom dock. The dock itself (tally + finisher, bleeding into the home
-   indicator) shows from 720px up.                                          */
+   Here the app has real spare height, so the day rows get their own compact
+   cap (the set log is compact in every layout — see the base rule above) and
+   the extra height reads as calm breathing room above the bottom dock. The
+   dock itself (tally + finisher, bleeding into the home indicator) shows
+   from 720px up.                                                          */
 .dayband{
   display:none;font-variant-numeric:tabular-nums;
 }
@@ -814,7 +814,7 @@ input{caret-color:var(--accent)}
   /* lift view: compact set rows, more air above the pinned adjust + Set Done
      so the action cluster stays put at the base */
   .setlog{overflow-y:auto}
-  .setrow{flex:none;min-height:54px}
+  .setrow{min-height:54px}
   .sethead{margin-top:16px}
   .pres{font-size:14px}
   .guide{margin-top:12px;font-size:15px}

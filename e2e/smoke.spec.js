@@ -42,7 +42,7 @@ for (const size of sizes) {
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });
 
-    test("the set log fills its region: rows grow, no void before Set Done", async ({ page }) => {
+    test("the set log keeps compact rows and leaves slack as empty space", async ({ page }) => {
       await page.goto(url);
       await page.locator(".liftrow").first().click();
       await expect(page.locator("#setLog .setrow")).toHaveCount(3);
@@ -51,26 +51,65 @@ for (const size of sizes) {
         const rowH = rows.map((r) => r.getBoundingClientRect().height);
         const hs = rowH.map((h) => Math.round(h));
         const log = document.getElementById("setLog").getBoundingClientRect();
+        const lastBottom = rows[rows.length - 1].getBoundingClientRect().bottom;
         const pillBottom = Math.max(
           ...[document.getElementById("undoSetBtn"), document.getElementById("resetLiftBtn")]
             .map((b) => b.getBoundingClientRect().bottom)
         );
-        const rowTop = rows[0].getBoundingClientRect().top;
-        const gap = document.querySelector(".adjust").getBoundingClientRect().top
-          - rows[rows.length - 1].getBoundingClientRect().bottom;
         return {
           hs, rowsSum: rowH.reduce((a, b) => a + b, 0), logRaw: log.height,
-          gap: +gap.toFixed(1),
-          clear: +(rowTop - pillBottom).toFixed(1)
+          topInset: +(rows[0].getBoundingClientRect().top - log.top).toFixed(1),
+          afterLast: +(log.bottom - lastBottom).toFixed(1),
+          clear: +(rows[0].getBoundingClientRect().top - pillBottom).toFixed(1)
         };
       });
       const tallest = Math.max(...m.hs);
       const shortest = Math.min(...m.hs);
       expect(shortest, "rows must keep the 44px tap target").toBeGreaterThanOrEqual(44);
-      expect(m.gap, "the log absorbs the slack: no void above the adjust cluster").toBeLessThanOrEqual(8);
-      expect(m.logRaw, "the log fills its region, rows grow with it").toBeGreaterThanOrEqual(m.rowsSum + 2 * 4 - 1);
-      expect(tallest, "a set row is still one line of content").toBeLessThanOrEqual(120);
+      expect(tallest, "a set row stays one compact line of content").toBeLessThanOrEqual(68);
+      expect(m.topInset, "rows are top-aligned in the log").toBeLessThanOrEqual(2);
+      expect(m.afterLast, "spare height is empty space after the last row").toBeGreaterThan(8);
+      expect(m.logRaw, "the log still fills its region").toBeGreaterThanOrEqual(m.rowsSum + 2 * 4 - 1);
       expect(m.clear, "Undo/Restart (44px pills, in flow) must not touch the first set row").toBeGreaterThanOrEqual(1);
+    });
+
+    test("a long set log scrolls without stretching rows", async ({ page }) => {
+      await page.goto(url);
+      await page.evaluate(() => {
+        const day = Gym.todayDay();
+        localStorage.setItem("gym-tool-v2", JSON.stringify({
+          v: 4, cur: day, idx: 0, state: {
+            [day + ":0"]: {
+              done: 12, load: 50, reps: 8, rir: 2,
+              sets: Array.from({ length: 12 }, () => ({ load: 50, reps: 8, rir: 2 }))
+            }
+          }, liftHistory: {}
+        }));
+      });
+      await page.reload();
+      await page.locator(".liftrow").first().click();
+      await expect(page.locator("#setLog .setrow")).toHaveCount(12);
+
+      const m = await page.evaluate(() => {
+        const log = document.getElementById("setLog");
+        const rows = [...log.querySelectorAll(".setrow")];
+        return {
+          scrollH: log.scrollHeight,
+          clientH: log.clientHeight,
+          topInset: +(rows[0].getBoundingClientRect().top - log.getBoundingClientRect().top).toFixed(1),
+          tallest: Math.max(...rows.map((r) => r.getBoundingClientRect().height))
+        };
+      });
+      expect(m.scrollH, "a 12-set log must scroll").toBeGreaterThan(m.clientH);
+      expect(m.topInset, "the first row stays at the top").toBeLessThanOrEqual(2);
+      expect(m.tallest, "extra sets never stretch rows").toBeLessThanOrEqual(68);
+
+      await page.locator("#setLog .setrow").last().scrollIntoViewIfNeeded();
+      const lastVisible = await page.locator("#setLog .setrow").last().evaluate((el) => {
+        const r = el.getBoundingClientRect(), lr = el.parentElement.getBoundingClientRect();
+        return r.top >= lr.top - 1 && r.bottom <= lr.bottom + 1;
+      });
+      expect(lastVisible, "the last set must be reachable by scrolling the log").toBe(true);
     });
 
     test("no overflow with suggestion + sparkline + RIR hint (worst case)", async ({ page }) => {

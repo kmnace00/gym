@@ -638,7 +638,8 @@
   function swLoadLabel(load) { return load > 0 ? String(load) : "light"; }
   function swLoadText(load) { return load > 0 ? load + " lb" : "light"; }
   /* the set log: one row per prescribed set, completed sets checked, the next
-     set highlighted — rows flex to fill the vertical space (as in Hevy/Strong) */
+     set highlighted — rows stay compact and top-aligned; the log scrolls
+     when a lift has more sets than fit */
   function renderSetLog(e, s) {
     var rows = Math.max(effSets(e), s.done);
     var html = "";

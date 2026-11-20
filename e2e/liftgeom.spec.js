@@ -2,8 +2,9 @@
    lift 1, default state — suggestion / Prev / sparkline hidden):
    topStack (nav-row bottom -> first setrow top) 217.8 at 390x844, 177.1 at
    390x667; setlog bottom -> .adjust top gap 141.9 / 47.3; set rows 44px.
-   The new contract: top stack >=20% shorter, gap <=8px, rows grow to fill
-   the log, nothing scrolls, nothing clips. N1 (Nov 13) then put the 44px
+   The new contract: top stack >=20% shorter, compact top-aligned rows with
+   spare height left empty after the last one, nothing scrolls or clips.
+   N1 (Nov 13) then put the 44px
    action pills fully in flow (+14px, no negative margins) and N7 added the
    ramp guide to the first lift's view, so the budget allows for exactly
    those two blocks and everything else must still meet the 20% cut.        */
@@ -59,7 +60,7 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       }
     });
 
-    test("the top stack is cut and the set log absorbs the slack", async ({ page }) => {
+    test("the top stack is cut and the set log leaves slack below the rows", async ({ page }) => {
       const errors = [];
       page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
       page.on("pageerror", (e) => errors.push(String(e)));
@@ -77,10 +78,12 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
         const adj = document.querySelector(".adjust").getBoundingClientRect();
         const h = (el) => +el.getBoundingClientRect().height.toFixed(1);
         const rampEl = document.getElementById("rampLine");
+        const lastBottom = rows[rows.length - 1].getBoundingClientRect().bottom;
         return {
           topStack: +(rows[0].getBoundingClientRect().top - nav.bottom).toFixed(1),
           ramp: rampEl.getBoundingClientRect().height ? +(rampEl.getBoundingClientRect().height + 8).toFixed(1) : 0, // + its 8px top margin
           gap: +(adj.top - log.bottom).toFixed(1),
+          slack: +(adj.top - lastBottom).toFixed(1),
           rows: rows.map(h),
           rir: Math.min(...[...document.querySelectorAll(".rir")].map(h)),
           done: h(document.getElementById("doneBtn")),
@@ -98,8 +101,10 @@ for (const size of [{ width: 390, height: 844 }, { width: 390, height: 667 }]) {
       const N1_PILL_INFLOW = 14, ROUNDING = 2;
       expect(m.topStack - m.ramp, "the top stack must be >=20% shorter than the baseline (plus N1's in-flow pills)")
         .toBeLessThanOrEqual(0.8 * BASE[size.height] + N1_PILL_INFLOW + ROUNDING);
-      expect(m.gap, "no void between the last set row and the adjust cluster").toBeLessThanOrEqual(8);
+      expect(m.gap, "the log stays adjacent to the adjust cluster").toBeLessThanOrEqual(8);
+      expect(m.slack, "spare height sits after the last row, not inside it").toBeGreaterThan(8);
       expect(Math.min(...m.rows), "set rows keep the 44px tap target").toBeGreaterThanOrEqual(44);
+      expect(Math.max(...m.rows), "set rows stay compact on a tall phone").toBeLessThanOrEqual(68);
       expect(m.rir, "RIR pills stay 44px").toBeGreaterThanOrEqual(44);
       expect(m.done, "Set Done stays >=44px").toBeGreaterThanOrEqual(44);
       expect(m.scrollH, "one screen, no scroll").toBeLessThanOrEqual(m.innerH + 1);
