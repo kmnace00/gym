@@ -7,12 +7,16 @@
 - **survey**: done once (very thorough, explore agent) — only 2 genuine items found across all 5 buckets; everything else already fixed or not reproducible. Queue honestly short. Re-survey required when queue < 3 (triggered now).
 - **queue** (priority order):
   1. ~~v202 — PR card shows a plain load-0 lift's rep count as "lb" (bucket 3, user-visible correctness)~~ DONE (v202; critic-local GO; check/typecheck green; e2e 231 pass + 1 pre-existing env failure noted below).
-  2. Remove vestigial `daynav` class token on the two day-nav buttons (bucket 4, tidiness, trivial).
+  2. ~~Remove vestigial `daynav` class token on the two day-nav buttons (bucket 4, tidiness, trivial)~~ DONE (v203; Tier 0, no critic; gate green).
   3. e2e "share summary states the workout count once (v187)" is environment-fragile: stubs `navigator.clipboard` but not `navigator.share`, which exists on file:// here, so the clipboard path is never exercised (discovered during item 1 verification — test-only fix).
-- **finished this loop**: v202 (PR reps-vs-lb) — gate green, critic GO, committing now.
+- **finished this loop**: v202 (PR reps-vs-lb, critic GO), v203 (dead `daynav` token). Both committed locally; nothing pushed. Round 2 re-survey running in background.
 - **known baseline e2e failure (pre-existing, environmental)**: `progress.spec.js:275` "share summary states the workout count once (v187)" stubs `navigator.clipboard` but not `navigator.share`, which is a function on file:// in this Chrome, so the clipboard stub is never exercised. Confirmed unrelated to any loop change. Queued as item 3 (test-only).
 - **decisions / parked (waiting on Khang)**: none new; existing NEEDS DECISION items below still stand.
 - **CRITIQUE_PENDING**: none.
+
+## Nov 20 — v203: dead `daynav` class token removed from the day-nav buttons
+
+The ‹ › day buttons still carried `class="mini daynav"`, but no `.daynav` CSS rule, JS toggle, or test selector remained — the rules were removed back at N24, and v189/v192 already cleaned the stale comments that referred to them. This was the last residue. Dropped the token from `index.html:79,81`; the buttons render identically via `.mini`. Gate: unit **257 pass**, typecheck clean, e2e dayheader + viewportpin + dayswitch **6 passed** (390×667 / 390×844 / 430×932). `GYM_VERSION` `gym-v203`, CACHE-HASH `1c4e359ac61b343f`. Tier 0 (mechanical) — no critic.
 
 ## Nov 20 — v202: a load-less lift's PR reads as reps, not pounds
 
