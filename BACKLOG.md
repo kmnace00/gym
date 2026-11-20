@@ -1,5 +1,23 @@
 # BACKLOG — ranked improvement ideas
 
+## LOOP STATE — improvement loop (single source of truth; re-read every round)
+
+- **lock**: STARTED 2026-11-20T05:26:52Z (Fri 05:26 UTC) — batch in progress.
+- **baseline check**: PASS at 2026-11-20T05:26:52Z — `npm run check` green (check-assets/ids/sw OK, 257 unit tests pass). No failures.
+- **survey**: done once (very thorough, explore agent) — only 2 genuine items found across all 5 buckets; everything else already fixed or not reproducible. Queue honestly short. Re-survey required when queue < 3 (triggered now).
+- **queue** (priority order):
+  1. ~~v202 — PR card shows a plain load-0 lift's rep count as "lb" (bucket 3, user-visible correctness)~~ DONE (v202; critic-local GO; check/typecheck green; e2e 231 pass + 1 pre-existing env failure noted below).
+  2. Remove vestigial `daynav` class token on the two day-nav buttons (bucket 4, tidiness, trivial).
+  3. e2e "share summary states the workout count once (v187)" is environment-fragile: stubs `navigator.clipboard` but not `navigator.share`, which exists on file:// here, so the clipboard path is never exercised (discovered during item 1 verification — test-only fix).
+- **finished this loop**: v202 (PR reps-vs-lb) — gate green, critic GO, committing now.
+- **known baseline e2e failure (pre-existing, environmental)**: `progress.spec.js:275` "share summary states the workout count once (v187)" stubs `navigator.clipboard` but not `navigator.share`, which is a function on file:// in this Chrome, so the clipboard stub is never exercised. Confirmed unrelated to any loop change. Queued as item 3 (test-only).
+- **decisions / parked (waiting on Khang)**: none new; existing NEEDS DECISION items below still stand.
+- **CRITIQUE_PENDING**: none.
+
+## Nov 20 — v202: a load-less lift's PR reads as reps, not pounds
+
+The Progress PR card printed `Math.round(pr.metric) + " lb"` unconditionally, but `progressMetric` falls back to the raw rep count when a plain (non-bodyweight, non-assisted) lift has no load to estimate a 1RM from — so a first session on Leg extension (a `load: null` lift) logged at 0 showed "PR Leg extension · 12 lb" instead of 12 reps. Fixed (`stats.js` surfaces `assist` on the PR record; `app.js` shows "reps" only when the lift is plain and the winning set carried no load). Bodyweight and assisted lifts at 0 logged load still yield pounds and are unchanged. Discriminating e2e (`progress.spec.js`): a load-0 plain lift reads "12 reps" — **fails pre-fix**; a second test pins that an assisted lift at 0 help still reads lb. To stay under the 300 KB precache ceiling, the v159 day-switch guard comment was condensed (reasoning kept here; code untouched). Gate: unit **257 pass**, typecheck clean, e2e **231 passed / 1 pre-existing env failure** (the v187 share-summary test stubs clipboard but not `navigator.share`, which exists on file:// here — unrelated to this change; queued as a test fix). `GYM_VERSION` `gym-v202`, CACHE-HASH `b05036b2e5adbb08`. Tier 1 — `critic-local` **GO** (peak-time review): condition verified correct for every reachable PR shape; additive field safe for all consumers; comment-only change confirmed behavior-neutral. One non-blocking, pre-existing note on record: an assisted lift logged with help ≥ bodyweight makes `progressMetric` return reps while the card still reads lb (atypical input; unchanged by this fix).
+
 ## Nov 19 — v201: the workout-path view fade is snappier (UI phase U3)
 
 Every view faded in over 180 ms (`viewIn`), so on the path tapped dozens of times per workout — day → lift → rest — each screen spent a visible beat half-transparent (the UI survey's first screenshots caught views mid-fade, washed out). The workout-path fades (`.view`, the rest `.timer`) are now 100 ms: still a soft landing, noticeably less lag. Deliberate surfaces keep 180 ms (modal card, summary card, hint). CSS-only (`style.css`); no test pins the duration. Gate: unit **257 pass**, typecheck clean, smoke + rest specs 12/12. `GYM_VERSION` `gym-v201`, CACHE-HASH `423cd26312b80f0d`. Tier 0 (looks) — no critic.

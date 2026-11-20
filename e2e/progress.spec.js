@@ -45,6 +45,29 @@ test("a zero-volume day's bar is dimmed so it does not read as filled (v200)", a
   await expect(bars.nth(2)).toHaveClass(/zero/);
 });
 
+test("a plain lift logged at 0 load shows its PR in reps, not pounds (v202)", async ({ page }) => {
+  // Leg extension (fri:5) is a plain load:null lift. Logging 0 is allowed, and
+  // progressMetric falls back to the rep count for a load-less plain lift — so
+  // the PR card must say "12 reps", not the nonsense "12 lb".
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:5": [{ date: "2026-11-13", load: 0, reps: 12, rir: 1, hitTop: false, setsDone: 3 }] }
+  });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pPr")).toHaveText("PR Leg extension · 12 reps");
+});
+
+test("an assisted lift at 0 help still shows its PR in pounds (v202)", async ({ page }) => {
+  // Assisted dip (fri:7) valued at 0 help is still a full-bodyweight 1RM in lb,
+  // so the reps branch must not swallow it (guards the v202 formatter).
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:7": [{ date: "2026-11-13", load: 0, reps: 6, rir: 2, hitTop: false, setsDone: 3 }] }
+  });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pPr")).toHaveText(/^PR Assisted dip · \d+ lb$/);
+});
+
 test("progress view fits the screen with no vertical scroll", async ({ page }) => {
   await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
   await page.locator("#progressBtn").click();

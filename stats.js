@@ -403,7 +403,7 @@
    * @param {any} payload
    * @param {Record<string, {ex: any[]}>} DAYS
    * @param {(load:number, reps:number, opts?:{bw?:boolean, assist?:boolean, bodyweight?:number}) => number} metric
-   * @returns {{key:string,name:string,load:number,reps:number,date:string,metric:number}[]}
+   * @returns {{key:string,name:string,load:number,reps:number,date:string,metric:number,bw:boolean,assist:boolean}[]}
    */
   function personalRecords(payload, DAYS, metric) {
     var lh = (payload && payload.liftHistory) || {}, bwKg = payload && payload.bodyweight;
@@ -431,7 +431,7 @@
         }
       }
       if (!best) continue;
-      out.push({ key: k, name: name, load: best.load, reps: best.reps, date: best.date, metric: bestM, bw: isBw });
+      out.push({ key: k, name: name, load: best.load, reps: best.reps, date: best.date, metric: bestM, bw: isBw, assist: isAssist });
     }
     out.sort(function (a, b) { return b.metric - a.metric; });
     return out;

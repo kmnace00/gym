@@ -930,7 +930,10 @@
       : "Log a full lift to see the trend";
 
     var pr = snap.pr;
-    document.getElementById("pPr").textContent = pr ? "PR " + pr.name + " · " + Math.round(pr.metric) + " lb" : "";
+    /* v202: a plain load-less lift's PR metric is a rep count, not a 1RM. */
+    var prTxt = !pr ? "" : "PR " + pr.name + " · " + (pr.bw || pr.assist || pr.load > 0
+      ? Math.round(pr.metric) + " lb" : pr.reps + " reps");
+    document.getElementById("pPr").textContent = prTxt;
 
     var movers = snap.movers;
     document.getElementById("pMovers").innerHTML = movers.length
@@ -1458,14 +1461,9 @@
   /* ── set done ──────────────────────────────────────────────────────────── */
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
-    /* B6 / day-switch guard: the app keeps ONE active session (a single
-       day + date) and bankLift keys history by `cur` but dates by
-       active.date. Logging a set on a switched-to (non-active) day would
-       bank that day's lift under the active session's date — mis-dating it.
-       Block it: the ‹ › chevrons stay a review/completion tool for the
-       active day, never a second off-day log target. Placed before the
-       inline-edit finish so editing or undoing (both re-bank) on an
-       off-day is blocked too. */
+    /* Day-switch guard (v159): one active session, keyed by `cur` but dated by
+       active.date — logging on a switched-to day mis-dates the entry. Placed
+       before the edit early-return so re-banks (edit/undo) are blocked too. */
     var actDay = payload.active && payload.active.day;
     if (actDay && actDay !== cur) {
       hintText = "This is " + (DAY_LABEL[cur] || "another day") + "'s lift, but the session is " +
