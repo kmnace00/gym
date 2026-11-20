@@ -20,6 +20,9 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
+  /* One silent heads-up per rest, this many seconds before GO (v204).       */
+  var PRE_NOTIFY_SEC = 10;
+
   /**
    * @typedef {{phase: string, secs: number, progress: number, label: string,
    *            msg: string, nextText: string, skipLabel: string,
@@ -51,6 +54,7 @@
     var ctx = {
       pending: false, pIdx: -1, pDay: "",
       note: "", nextText: "", msg: "", goAtMs: 0, finishUntil: 0, frozen: false,
+      preNotified: false,
       startLabel: "", idleLabel: "", idleMsg: "", hint: ""
     };
 
@@ -113,7 +117,7 @@
     function toIdle(label, msg) {
       rest = Machine.idle();
       ctx.pending = false; ctx.pIdx = -1; ctx.pDay = "";
-      ctx.finishUntil = 0; ctx.frozen = false;
+      ctx.finishUntil = 0; ctx.frozen = false; ctx.preNotified = false;
       ctx.idleLabel = label || ""; ctx.idleMsg = msg || "";
     }
 
@@ -132,7 +136,7 @@
       ctx.startLabel = label;
       ctx.note = note || ""; ctx.nextText = nextText || "";
       ctx.hint = hint || "";
-      ctx.finishUntil = 0; ctx.frozen = false;
+      ctx.finishUntil = 0; ctx.frozen = false; ctx.preNotified = false;
       ctx.msg = Rest.restMsg(note, sec, deps.exRest(), ctx.hint);
       return out([{ type: "closeDetails" }, { type: "blurIfOutside" }]);
     }
@@ -146,7 +150,9 @@
       if (rest.phase !== "active") return out([]);
       rest = Machine.tick(rest, nowMs);
       if (rest.phase === "go") return go(nowMs);
-      return out([]);
+      if (ctx.preNotified || Machine.remaining(rest, nowMs) > PRE_NOTIFY_SEC) return out([]);
+      ctx.preNotified = true; // one banner per rest — the 200 ms ticks must not repeat it
+      return out([{ type: "notifyPrep" }]);
     }
 
     function pause() {

@@ -304,10 +304,8 @@
      both route through switchDay. Stats.weekStatus stays; its original N12
      tab-rendering lifecycle note is obsolete since the tabs are back. */
   /* ── B6-10: deload follow-through nudge ────────────────────────────────────
-     Pure date math on fields that already exist: the anchor is the most recent
-     deload start + 7 days, or, when a deload has never been started, the
-     earliest logged session. Nothing is stored, nothing is auto-started, and
-     the line can only show while the Mon–Sun week is still empty.            */
+     Derived from existing dates only: last deload start + 7 d, else the first
+     logged session; never stored or auto-started, and only in an empty week. */
   function dayNum(key) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ""));
     return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
@@ -351,12 +349,9 @@
     return daysBetween(anchor, today) >= 35 && !loggedThisWeek(today);
   }
 
-  /* N24: the Fri/Sat/Sun switcher moved into the top header as real buttons —
-     each carries a status dot from Stats.weekStatus, the viewed day is the
-     selected one, today gets its own distinct mark. Buttons go through
-     switchDay so they share the chevrons' exact semantics incl. the mid-edit
-     reset (B5-05). The visual dots are knit into the labels; screen readers
-     get the same week facts as one sentence.                              */
+  /* N24: Fri/Sat/Sun tabs live in the header with weekStatus dots and a today
+     mark; switchDay keeps chevron semantics (incl. mid-edit reset, B5-05).
+     Dots are woven into the label; a11y gets one week sentence. */
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
   function renderDayWeek() {
     var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
@@ -1006,7 +1001,8 @@
       e = fx[i];
       if (e.type === "beep") beepGo();
       else if (e.type === "vibrate") { if (navigator.vibrate) navigator.vibrate(e.ms); }
-      else if (e.type === "notify") notifyRestDone();
+      else if (e.type === "notify") notifyRestDone("done");
+      else if (e.type === "notifyPrep") notifyRestDone("prep");
       else if (e.type === "advanceTo") { idx = e.idx; hintText = ""; hintGood = false; }
       else if (e.type === "finishWorkout") { clearUndo(); finishWorkout(); }
       else if (e.type === "commit") commit();
@@ -1022,11 +1018,9 @@
     }
     renderRestView(out.view);
   }
-  /* N11: while a rest is running or paused, the lift view under the peek
-     goes quiet (the .rest-quiet CSS hides the editor; the rest card — its
-     own prep steppers, Undo, countdown — is the working surface). Editing a
-     logged set is the deliberate exception: opening an edit restores the
-     editor until the edit is done. GO and idle always restore it. */
+  /* N11: active/paused rest hides the editor under the peek (.rest-quiet);
+     the rest card is the working surface. Editing a logged set is the one
+     exception; GO and idle always restore the editor. */
   function syncRestQuiet() {
     var v = restCtl.view();
     appEl.classList.toggle("rest-quiet", (v.phase === "active" || v.phase === "paused") && editSet < 0);
@@ -1260,10 +1254,8 @@
     var w = wakeLock; wakeLock = null;
     try { var p = w.release(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
   }
-  /* A page installed to the home screen can stay open for days without ever
-     reloading, so it never revalidates the deploy. Ask the service worker for
-     a newer sw.js whenever the app comes back into view (throttled, silent);
-     the existing network-first navigation then serves the new build. */
+  /* A home-screen tab can stay open for days; ask the SW to update silently
+     on each return (throttled to 10 min) so navigation fetch gets the build. */
   var swCheckAt = 0;
   function checkForDeploy() {
     if (!swReg || typeof swReg.update !== "function") return;
@@ -2063,27 +2055,47 @@
     renderCalib();
     setMsg("Clock learning reset — starter values until 3 new timed sessions.");
   };
-  /* N9 (Tier A): iOS throws on the Notification constructor ("Illegal
-     constructor. Use ServiceWorkerRegistration.showNotification()") — the
-     old call silently never fired on his iPhone. Route through the SW
-     registration, keeping the constructor as a fallback for engines that
-     allow it. Honest limit: this still only fires if the page's JS is alive
-     when GO lands — iOS suspends a locked/backgrounded web app, which is
-     what Tier B (Web Push) exists for. A stale fire is worse than none, so
-     a tick that runs >20s past the rest's scheduled end stays silent. */
-  var restEndEst = 0;
-  function notifyRestDone() {
+  /* iOS rejects the Notification constructor — use the SW registration, with
+     the constructor as fallback. The 10 s heads-up and GO share `gym-rest`
+     (GO replaces it) and each closes after 30 s. Only while JS is alive; a
+     tick >20 s past the rest's end stays silent. Full history: BACKLOG v204. */
+  var restEndEst = 0, notifyCloseT = null;
+  var NOTIFY_TTL_MS = 30000;
+  function closeRestNotification(handle) {
+    if (handle && handle.close) { try { handle.close(); } catch (e) {} return; }
+    if (!navigator.serviceWorker || !navigator.serviceWorker.ready) return;
+    navigator.serviceWorker.ready.then(function (reg) {
+      if (!reg || !reg.getNotifications) return;
+      return reg.getNotifications({ tag: "gym-rest" }).then(function (list) {
+        var i;
+        for (i = 0; i < list.length; i++) { try { list[i].close(); } catch (e) {} }
+      });
+    }).catch(function () {});
+  }
+  /* GO's timer replaces the heads-up's so the shared tag isn't closed early. */
+  function scheduleNotifyClose(handle) {
+    if (notifyCloseT) clearTimeout(notifyCloseT);
+    notifyCloseT = setTimeout(function () {
+      notifyCloseT = null;
+      closeRestNotification(handle);
+    }, NOTIFY_TTL_MS);
+  }
+  function notifyRestDone(kind) {
     if (!notifyOn() || !("Notification" in window)) return;
     if (Notification.permission !== "granted" || !document.hidden) return;
     if (restEndEst && Date.now() - restEndEst > 20000) return;
+    var title = kind === "prep" ? "Rest almost done — get ready" : "Rest done — GO";
     var opts = { body: restNextRaw || "Next set", tag: "gym-rest" };
     if (navigator.serviceWorker && navigator.serviceWorker.ready) {
       navigator.serviceWorker.ready.then(function (reg) {
-        if (reg && reg.showNotification) reg.showNotification("Rest done — GO", opts);
+        if (reg && reg.showNotification) {
+          reg.showNotification(title, opts);
+          scheduleNotifyClose();
+        }
       }).catch(function () {});
       return;
     }
-    try { new Notification("Rest done — GO", opts); } catch (e) {}
+    try { scheduleNotifyClose(new Notification(title, opts)); } catch (e) {}
   }
 
   /* two-tap confirm for destructive menu actions */
@@ -2118,13 +2130,8 @@
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
 
   /* ── bodyweight + snapshot recovery ───────────────────────────────────── */
-  /* N17: an edit must survive a render before the field blurs. The old
-     listener was `change`-only, and renderBw() refills the input from the
-     saved payload every time the menu opens, so a typed value could be
-     replaced by the default before the change event ever landed (iOS can
-     dismiss the numeric keypad — or the app can re-render / reload — without
-     firing it). Persist every legal value as it is typed, and never clobber a
-     field that still has focus.                                             */
+  /* N17: persist legal bodyweight values on every input event — a render or
+     dismissed keypad can swallow `change`. Never clobber a focused field. */
   function saveBw(raw) {
     var v = parseFloat(raw);
     if (!(isFinite(v) && v >= 66 && v <= 700)) return false;
@@ -2217,12 +2224,9 @@
     var h = window.innerHeight;
     var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
       /** @type {any} */ (window.navigator).standalone === true;
-    /* In Home-Screen mode the shell must paint to the physical screen edge (the
-       dock sits there), so the screen height is the box height even though the
-       engine reports a shorter viewport. But the *usable* area is innerHeight:
-       the difference (measured 59px on a 15 Pro: 852 screen vs 793 viewport) is
-       system chrome the app must not put content under. Reserve it at the
-       bottom — env(safe-area-inset-bottom) alone under-reports it. */
+    /* Standalone paints to the physical screen edge (852 px on a 15 Pro), but
+       the usable box is innerHeight (793 px); reserve the 59 px difference at
+       the bottom so content clears the system chrome. safe-area alone lies. */
     var gap = 0;
     if (standalone && window.screen && window.screen.height > h && window.screen.height - h <= 200) {
       gap = window.screen.height - h;

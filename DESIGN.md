@@ -237,8 +237,9 @@ registered on `window.Gym`, `module.exports` for tests). It owns:
   `setTimeout` injected via deps (`schedule` / `clearSchedule`) so tests
   can drive it with a fake clock. No real `setTimeout` in unit tests.
 - Audio / vibration / notification triggers as effects, not direct calls:
-  the controller emits `beep`, `vibrate`, `notify` effects; `app.js`
-  performs them (it already owns `beepGo`, `notifyRestDone`, `navigator.vibrate`).
+  the controller emits `beep`, `vibrate`, `notifyPrep` (10 s heads-up) and
+  `notify` (GO) effects; `app.js` performs them (it already owns `beepGo`,
+  `notifyRestDone`, `navigator.vibrate`).
 
 Stays in `app.js` (the DOM shell, unchanged in behaviour):
 - All `document.getElementById` / classList / textContent writes
@@ -264,7 +265,7 @@ Every controller method returns `{ state, view, effects }` where:
 - `state` is the new opaque controller state (for the next call only).
 - `view` is the render model above (phase, secs, progress, labels, prep).
 - `effects` is an ordered array of `{type, ...}`: `beep`, `vibrate(200)`,
-  `notify`, `advanceTo(idx)`, `finishWorkout`, `commit`, `render`,
+  `notifyPrep`, `notify`, `advanceTo(idx)`, `finishWorkout`, `commit`, `render`,
   `scheduleFinishReset(2600)`, `clearSchedule`.
 `app.js` applies effects in order and renders `view`. No effect is
 performed inside the controller, so unit tests can assert the exact
@@ -345,7 +346,7 @@ out  = { state, view, effects }   // state is a read-only snapshot for tests
 view = { phase, secs, progress, label, msg, nextText, skipLabel,
          ticking, showPrep, prepName, prepLoad, prepReps }
 effects = [] | ordered array of
-  {type:"beep"} · {type:"vibrate", ms:200} · {type:"notify"}
+  {type:"beep"} · {type:"vibrate", ms:200} · {type:"notifyPrep"} · {type:"notify"}
   {type:"advanceTo", idx} · {type:"finishWorkout"}
   {type:"commit"} · {type:"render"}
   {type:"scheduleFinishReset", ms:2600}
@@ -359,7 +360,10 @@ Rules (each one is today's app.js behaviour, preserved byte for byte):
   and `"Tap again to finish"` while armed. `nextText` at GO is `ctx.nextText.replace("Up next —", "Up now —")`.
 - `skip(true)` ignores a tap within 400 ms of `goAtMs` (the timer-surface shortcut);
   `skip(false)` is the button itself and is never guarded.
-- Effect order at GO: `vibrate(200)`, `beep`, `notify`. At next-lift: `advanceTo`, `commit`, `render`.
+- Once per rest at 10 s left: `notifyPrep` (silent heads-up, no buzz). Both
+  banners share the `gym-rest` tag (GO replaces the heads-up) and auto-close
+  after 30 s. Effect order at GO: `vibrate(200)`, `beep`, `notify`.
+  At next-lift: `advanceTo`, `commit`, `render`.
 - `cancelPendingAdvance()` never emits effects and its callers do not re-render.
 - `extend15()` at GO restarts a 15 s rest with `ctx.label` (which stays `""`, as today).
 - Interval stays in `app.js`: the shell starts it only while `view.ticking`

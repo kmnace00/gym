@@ -109,6 +109,39 @@ test("tick flips to GO with vibrate → beep → notify", () => {
   assert.deepEqual(out.effects, [{ type: "vibrate", ms: 200 }, { type: "beep" }, { type: "notify" }]);
 });
 
+test("tick fires one silent heads-up at 10 s left; GO still notifies", () => {
+  const s = mk();
+  s.ctl.start(90, "Fri — set 1 done", false, "", "Up next — Set 2 of 3");
+  s.clock.t = 80000; // ceil(10 s) — heads-up lands here
+  const prep = s.ctl.tick(s.clock.t);
+  assert.equal(prep.state.phase, "active");
+  assert.deepEqual(prep.effects, [{ type: "notifyPrep" }]);
+  s.clock.t = 80500;
+  assert.deepEqual(s.ctl.tick(s.clock.t).effects, []); // 200 ms ticks must not repeat it
+  s.clock.t = 90000;
+  const go = s.ctl.tick(s.clock.t);
+  assert.equal(go.state.phase, "go");
+  assert.deepEqual(go.effects, [{ type: "vibrate", ms: 200 }, { type: "beep" }, { type: "notify" }]);
+});
+
+test("an extended rest keeps its heads-up used; +15 at GO starts a fresh one", () => {
+  const s = mk();
+  s.ctl.start(90, "Fri — set 1 done", false, "", "");
+  s.clock.t = 80000;
+  assert.deepEqual(s.ctl.tick(s.clock.t).effects, [{ type: "notifyPrep" }]);
+  s.clock.t = 85000;
+  assert.deepEqual(s.ctl.extend15().effects, []);
+  s.clock.t = 100000; // +15 pushed GO out to 105 s; no second heads-up on the way
+  const late = s.ctl.tick(s.clock.t);
+  assert.equal(late.state.phase, "active");
+  assert.deepEqual(late.effects, []);
+  s.clock.t = 105000;
+  assert.equal(s.ctl.tick(s.clock.t).state.phase, "go");
+  s.ctl.extend15(); // a 15 s rest from GO resets the flag
+  s.clock.t = 110000; // 10 s left again
+  assert.deepEqual(s.ctl.tick(s.clock.t).effects, [{ type: "notifyPrep" }]);
+});
+
 test("GO rewrites nextText and the timer-surface guard ignores a tap within 400 ms", () => {
   const s = mk();
   const go = toGo(s, false);
