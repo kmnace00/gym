@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.khang.gym-autodeploy</string>
+
+    <!-- Plain code repo: keep fast-forwarded to origin/main, never restart an
+         app. Dirty or diverged trees are skipped and logged, never overwritten. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/khang/Projects/dev/gym/scripts/autodeploy.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/khang/Projects/dev/gym</string>
+
+    <key>StartInterval</key>
+    <integer>600</integer>
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/khang/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/khang/Library/Logs/gym-autodeploy.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/khang/Library/Logs/gym-autodeploy.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>LowPriorityIO</key>
+    <true/>
+</dict>
+</plist>
