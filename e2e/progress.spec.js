@@ -278,6 +278,9 @@ test("the share summary states the workout count once (v187)", async ({ page }) 
   await page.addInitScript(() => {
     window.__copied = null;
     Object.defineProperty(navigator, "clipboard", { value: { writeText: (t) => { window.__copied = t; return Promise.resolve(); } }, configurable: true });
+    /* Chrome exposes navigator.share on file:// too, so the app would take the
+       Web Share branch and never touch the clipboard stub (test-only fix). */
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
   });
   await seed(page, {
     v: 5, cur: "fri", idx: 0, state: {},
