@@ -645,7 +645,7 @@
     var html = "";
     for (var i = 0; i < rows; i++) {
       var done = i < s.done;
-      var rec = (done && s.sets && s.sets[i]) ? s.sets[i] : { load: s.load, reps: s.reps, rir: s.rir };
+      var rec = (done && s.sets && s.sets[i]) ? s.sets[i] : { load: workingLoad(s), reps: s.reps, rir: s.rir };
       var cls = "setrow" + (done ? " done" : (i === s.done ? " now" : ""))
         + (i === editSet ? " editing" : "");
       var mark = done ? "✓" : (i === s.done ? "●" : "");

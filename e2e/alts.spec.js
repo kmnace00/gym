@@ -114,6 +114,27 @@ test("the day overview shows a swapped lift's working load, not the original's",
   expect(errors).toEqual([]);
 });
 
+test("the set log shows the alternate's working load on a swapped lift", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, swapAlt: "Leg press", swapLoad: 180, sets: [] } },
+    liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+
+  // the big readout and the set row must agree: both name the alternate's 180,
+  // never the original Smith squat's dormant 60.
+  await expect(page.locator("#loadVal")).toHaveText("180");
+  await expect(page.locator("#setLog .setrow.now .sr")).toHaveText("180 × 6");
+  await expect(page.locator("#setLog .setrow.now .sr")).not.toContainText("60");
+  expect(errors).toEqual([]);
+});
+
 test("the rest screen names a swapped next lift by its alternate (v164)", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
