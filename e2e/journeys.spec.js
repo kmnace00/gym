@@ -80,6 +80,7 @@ test("a session that crosses midnight banks its sets on the start date", async (
 });
 
 test("the summary reports the day's tonnage and PRs", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") }); // Friday
   await page.goto(url);
   const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
   await page.evaluate(({ day, date }) => {
