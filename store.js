@@ -524,11 +524,13 @@
   }
   /** Position of the value that follows `"key":` in `s`, or -1. */
   function valueStart(s, key) {
-    var at = s.indexOf('"' + key + '"');
-    if (at < 0) return -1;
-    var i = skipWs(s, at + key.length + 2);
-    if (s[i] !== ":") return -1;
-    return skipWs(s, i + 1);
+    var needle = '"' + key + '"', at = s.indexOf(needle), i;
+    while (at >= 0) {
+      i = skipWs(s, at + needle.length);
+      if (s[i] === ":") return skipWs(s, i + 1);
+      at = s.indexOf(needle, at + 1);
+    }
+    return -1;
   }
   function safeParse(s) {
     try { return JSON.parse(s); } catch (e) { return undefined; }

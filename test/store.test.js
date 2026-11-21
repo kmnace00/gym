@@ -1054,6 +1054,14 @@ test("salvage finds liftHistory after a garbage prefix", () => {
   assert.equal(S.quarantineRaw(), raw);
 });
 
+test("salvage skips a string value that merely names liftHistory", () => {
+  const raw = '{"v":4,"notes":"liftHistory","liftHistory":{"fri:0":[' +
+    '{"date":"2026-11-01","load":50,"reps":6}]}'; // truncated → unparseable, real key present
+  const s = S.salvage(raw);
+  assert.equal(s.recovered, 1, "the real liftHistory key is found after the decoy string");
+  assert.equal(s.liftHistory["fri:0"][0].date, "2026-11-01");
+});
+
 test("salvage drops one corrupt entry and keeps the good entries around it", () => {
   const raw = '{"v":4,"cur":"fri","idx":0,"state":{},"liftHistory":{"fri:0":[' +
     '{"date":"2026-11-05","load":50,"reps":6},' +
