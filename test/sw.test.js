@@ -3,6 +3,7 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const C = require("../tools/check-sw-cache.js");
 
 /* Run the real service worker in a tiny sandbox so the fetch guard can be
    exercised without a browser. Only the globals the handler touches are stubbed. */
@@ -12,7 +13,11 @@ const ORIGIN = "http://localhost:4173";
 function fetchHandler(overrides) {
   const o = overrides || {};
   const listeners = {};
-  const cache = { match: () => Promise.resolve(o.hit || null), put: o.put || (() => {}) };
+  const cache = {
+    match: () => Promise.resolve(o.hit || null),
+    put: o.put || (() => {}),
+    addAll: o.addAll || (() => Promise.resolve())
+  };
   const sandbox = {
     URL: URL,
     importScripts: () => {},
@@ -20,19 +25,22 @@ function fetchHandler(overrides) {
     fetch: o.fetch || (() => Promise.resolve({ ok: true, clone: () => ({}) })),
     caches: {
       open: () => Promise.resolve(cache),
-      keys: () => Promise.resolve([]),
-      delete: () => Promise.resolve(true),
+      keys: o.keys || (() => Promise.resolve([])),
+      delete: o.delete || (() => Promise.resolve(true)),
       match: () => Promise.resolve(null)
     },
     self: {
       location: { origin: ORIGIN },
       addEventListener: (type, fn) => { listeners[type] = fn; },
-      skipWaiting: () => {},
-      clients: { claim: () => {} }
+      skipWaiting: o.skipWaiting || (() => {}),
+      clients: { claim: o.claim || (() => {}) }
     }
   };
   vm.runInNewContext(swSource, sandbox);
-  return listeners.fetch;
+  const handler = listeners.fetch;
+  handler.install = listeners.install;
+  handler.activate = listeners.activate;
+  return handler;
 }
 
 function dispatch(handler, url) {
@@ -100,4 +108,38 @@ test("a failed revalidation keeps serving the good cached copy", async () => {
   });
   const result = await respondedWith(handler, ORIGIN + "/app.js");
   assert.equal(result, cached, "the cached copy survives a network failure");
+});
+
+/* Install precaches the app; activate must evict older versions so a phone
+   doesn't accumulate a fresh ~300 KB copy on every update. */
+function lifecycleDone(handler, type) {
+  let done;
+  handler[type]({ waitUntil: (p) => { done = p; } });
+  return done;
+}
+
+test("install precaches the asset list and skips waiting", async () => {
+  const added = [];
+  let skipped = false;
+  const handler = fetchHandler({
+    addAll: (names) => { added.push(...names); return Promise.resolve(); },
+    skipWaiting: () => { skipped = true; }
+  });
+  await lifecycleDone(handler, "install");
+  const precached = added.map((a) => a.replace(/^\.\//, "")).filter(Boolean);
+  assert.deepEqual(precached, C.parseAssets(swSource), "the whole asset list is precached");
+  assert.equal(skipped, true, "a new worker takes over without a manual reload");
+});
+
+test("activate deletes stale caches, keeps the current one, then claims clients", async () => {
+  const deleted = [];
+  let claimed = false;
+  const handler = fetchHandler({
+    keys: () => Promise.resolve(["gym-v208", "gym-test", "gym-v209"]),
+    delete: (key) => { deleted.push(key); return Promise.resolve(true); },
+    claim: () => { claimed = true; }
+  });
+  await lifecycleDone(handler, "activate");
+  assert.deepEqual(deleted, ["gym-v208", "gym-v209"], "only older versions are evicted");
+  assert.equal(claimed, true, "the new worker takes control of the page");
 });
