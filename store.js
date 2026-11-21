@@ -135,12 +135,12 @@
   function coerceNum(obj, key) {
     if (obj && Object.prototype.hasOwnProperty.call(obj, key)) obj[key] = num(obj[key], 0);
   }
-  /** Coerce load/reps/rir on every set object in place; skip non-objects. */
+  /** Normalize non-object set items, then coerce load/reps/rir in place. */
   function sanitizeSets(arr) {
     if (!Array.isArray(arr)) return;
     for (var i = 0; i < arr.length; i++) {
-      var set = arr[i];
-      if (set && typeof set === "object") {
+      var set = isObj(arr[i]) ? arr[i] : (arr[i] = {});
+      if (set) {
         stripUnsafeKeys(set);
         coerceNum(set, "load"); coerceNum(set, "reps"); coerceNum(set, "rir");
         /* clamp at the store boundary so a hand-edited or foreign backup can

@@ -15,6 +15,7 @@ function mockLS() {
 global.localStorage = mockLS();
 const S = require("../store.js");
 const P = require("../program.js");
+const St = require("../stats.js");
 
 test.beforeEach(() => { global.localStorage.clear(); });
 
@@ -514,6 +515,41 @@ test("null records never make backupDue or hasData crash", () => {
   const p = S.importRaw('{"v":3,"cur":"fri","idx":0,"state":{"fri:0":null},"liftHistory":{"fri:0":[null]},"sessionLog":[null]}');
   assert.equal(S.backupDue(p), false);
   assert.equal(S.activeHasData(p), false);
+});
+
+/* A null WHERE A SET SHOULD BE is just as hostile as a null record. The
+   importer used to leave it inside `sets`, and every stats reader walks sets
+   without a guard — one bad item crashed Progress, CSV, Share and boot-time
+   calibration. The boundary must normalize it to an empty set object. */
+const NULL_SET_BODY = { date: "2026-11-08", load: 50, reps: 6, rir: 2, setsDone: 2,
+  sets: [{ load: 50, reps: 6, rir: 2 }, null] };
+
+test("a null set in an imported history entry cannot crash the stats readers", () => {
+  const p = S.importRaw(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: { "fri:0": [NULL_SET_BODY] }, sessionLog: [], active: null, bodyweight: 165 }));
+  assert.deepEqual(p.liftHistory["fri:0"][0].sets,
+    [{ load: 50, reps: 6, rir: 2 }, { load: 0, reps: 0, rir: 0 }], "the bad item becomes an empty set, not null");
+  assert.equal(St.totalVolume(p), 300, "only the real set counts toward tonnage");
+  assert.equal(St.sessionVolumes(p)[0].volume, 300);
+  const csv = St.toCsv(p, P.DAYS);
+  assert.equal(csv.trim().split("\n").length, 3, "one row per set, including the normalized one");
+  assert.ok(csv.includes(",1,50,6,2"), "the real set keeps its numbers in the export");
+});
+
+test("a null set in an imported session cannot crash boot-time calibration", () => {
+  const log = [];
+  for (let d = 1; d <= 3; d++) {
+    const day = "2026-11-0" + d;
+    log.push({ id: "s" + d, date: day, day: "fri", status: "complete",
+      startedAt: Date.parse(day + "T10:00:00Z"), durationSec: 600,
+      lifts: { "fri:0": { done: 2, sets: [{ t: Date.parse(day + "T10:01:00Z"), load: 50, reps: 6, rir: 2 }, null] } } });
+  }
+  const p = S.importRaw(JSON.stringify({ v: 5, cur: "fri", idx: 0, state: {},
+    liftHistory: {}, sessionLog: log, active: null, bodyweight: 165 }));
+  assert.deepEqual(p.sessionLog[0].lifts["fri:0"].sets[1], { load: 0, reps: 0, rir: 0 }, "the bad item is normalized too");
+  const learned = St.calibration(p, P.DAYS,
+    { setSecs: 60, setupSeed: 60, restSecs: () => 120, rampSecs: () => 30 });
+  assert.equal(learned.sessions, 3, "the timed sessions are still learned from");
 });
 
 /* ── B2: nested unsafe keys ──────────────────────────────────────────────────
