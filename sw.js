@@ -56,7 +56,7 @@ self.addEventListener("fetch", (e) => {
           });
         }
         /* stale-while-revalidate, but conditionally: an unchanged asset costs a
-           304 header instead of re-downloading ~183 KB of JS/CSS on every load. */
+           304 header instead of re-downloading ~286 KB of JS/CSS on every load. */
         const cond = {};
         const etag = hit.headers.get("etag");
         if (etag) cond["If-None-Match"] = etag;

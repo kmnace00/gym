@@ -55,6 +55,19 @@ test("the shared ASSETS parser rejects a truncated list and accepts both quotes"
   assert.equal(C.parseAssets("const ASSETS = [];"), null, "an empty list must fail closed");
 });
 
+/* The SWR comment quotes how many bytes conditional revalidation saves. Keep
+   that claim honest — it is the argument for keeping the optimization. */
+test("the offline refresh comment's byte estimate matches the real JS/CSS", () => {
+  const sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
+  const stated = /re-downloading ~(\d+) KB of JS\/CSS/.exec(sw);
+  assert.ok(stated, "sw.js must state the refresh cost in its comment");
+  const jsCss = C.parseAssets(sw).filter((a) => /\.(?:js|css)$/.test(a));
+  const bytes = jsCss.reduce((sum, a) => sum + fs.statSync(path.join(__dirname, "..", a)).size, 0);
+  const actual = Math.round(bytes / 1024);
+  assert.ok(Math.abs(Number(stated[1]) - actual) <= 10,
+    "comment says ~" + stated[1] + " KB but the JS/CSS assets are ~" + actual + " KB");
+});
+
 /* The cache guard must see the real bytes of the two binary icons. A UTF-8
    decode maps every invalid byte to U+FFFD, so two different PNGs can collapse
    to the same string and a changed icon ships without a version bump. */
