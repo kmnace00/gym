@@ -35,7 +35,7 @@
        session log, so a "__proto__" date must become a key, not a prototype write. */
     var seen = Object.create(null), s = volumes || sessionVolumes(payload), i, log = (payload && payload.sessionLog) || [];
     for (i = 0; i < s.length; i++) if (s[i].date) seen[s[i].date] = 1;
-    for (i = 0; i < log.length; i++) if (log[i] && log[i].date) seen[log[i].date] = 1;
+    for (i = 0; i < log.length; i++) if (log[i] && log[i].status === "complete" && log[i].date) seen[log[i].date] = 1;
     return Object.keys(seen).sort();
   }
 

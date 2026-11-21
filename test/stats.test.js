@@ -293,6 +293,16 @@ test("workoutDates unions history dates with the session log", () => {
   assert.deepEqual(S.workoutDates({ sessionLog: [null] }), []);
 });
 
+test("workoutDates ignores an unfinished session-log entry", () => {
+  const active = { liftHistory: {},
+    sessionLog: [{ id: "ses_live", date: "2026-11-19", day: "thu", status: "active", lifts: {} }] };
+  assert.deepEqual(S.workoutDates(active), [], "a live session is not a completed workout");
+  assert.equal(S.sessionCount(active), 0, "the workouts metric agrees with week status");
+  const done = { liftHistory: {},
+    sessionLog: [{ id: "ses_done", date: "2026-11-19", day: "thu", status: "complete", lifts: {} }] };
+  assert.deepEqual(S.workoutDates(done), ["2026-11-19"], "a finished session still counts");
+});
+
 test("workoutDates / trainingDays are null-prototype maps — a __proto__ date counts, it does not touch Object.prototype", () => {
   const p = {
     liftHistory: {
