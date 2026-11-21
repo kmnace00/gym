@@ -131,6 +131,48 @@ test("install precaches the asset list and skips waiting", async () => {
   assert.equal(skipped, true, "a new worker takes over without a manual reload");
 });
 
+/* A navigation refreshes the cached app shell. That write must be registered
+   with the worker event, or the worker can be terminated before it completes. */
+function navigateEvent(handler, url, waits) {
+  let respond;
+  handler({
+    request: { method: "GET", mode: "navigate", url: url },
+    respondWith: (p) => { respond = p; },
+    waitUntil: (p) => { waits.push(p); }
+  });
+  return respond;
+}
+
+test("a successful navigation keeps the worker alive until the shell is saved", async () => {
+  let releasePut;
+  const put = () => new Promise((resolve) => { releasePut = resolve; });
+  const handler = fetchHandler({
+    put: put,
+    fetch: () => Promise.resolve({ ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await navigateEvent(handler, ORIGIN + "/", waits);
+  assert.equal(waits.length, 1, "the shell write is registered with the navigation event");
+  let settled = false;
+  waits[0].then(() => { settled = true; });
+  await Promise.resolve();
+  assert.equal(settled, false, "the event stays alive while the write is still in flight");
+  releasePut();
+  await waits[0];
+  assert.equal(settled, true);
+});
+
+test("a failed shell write does not reject the navigation event", async () => {
+  const handler = fetchHandler({
+    put: () => Promise.reject(new Error("quota")),
+    fetch: () => Promise.resolve({ ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await navigateEvent(handler, ORIGIN + "/", waits);
+  assert.equal(waits.length, 1, "the failed write is still registered with the event");
+  await waits[0];
+});
+
 test("activate deletes stale caches, keeps the current one, then claims clients", async () => {
   const deleted = [];
   let claimed = false;

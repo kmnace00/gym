@@ -37,7 +37,7 @@ self.addEventListener("fetch", (e) => {
           /* a transient 500/404 must never replace the offline shell */
           if (res.ok) {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put("./index.html", copy));
+            e.waitUntil(caches.open(CACHE).then((c) => c.put("./index.html", copy)).catch(() => {}));
           }
           return res;
         })
