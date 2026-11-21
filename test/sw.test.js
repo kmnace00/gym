@@ -15,7 +15,7 @@ function fetchHandler(overrides) {
   const listeners = {};
   const cache = {
     match: () => Promise.resolve(o.hit || null),
-    put: o.put || (() => {}),
+    put: o.put || (() => Promise.resolve()),
     addAll: o.addAll || (() => Promise.resolve())
   };
   const sandbox = {
@@ -47,7 +47,8 @@ function dispatch(handler, url) {
   let handled = false;
   handler({
     request: { method: "GET", mode: "no-cors", url: url },
-    respondWith: () => { handled = true; }
+    respondWith: () => { handled = true; },
+    waitUntil: () => {}
   });
   return handled;
 }
@@ -68,11 +69,12 @@ test("SW still handles a genuine same-origin asset request", () => {
 
 /* A warm cache takes the stale-while-revalidate branch: revalidate with the
    cached validators, and keep serving the cached body if nothing changed. */
-function respondedWith(handler, url) {
+function respondedWith(handler, url, waits) {
   let promise;
   handler({
     request: { method: "GET", mode: "no-cors", url: url },
-    respondWith: (p) => { promise = p; }
+    respondWith: (p) => { promise = p; },
+    waitUntil: waits ? (p) => { waits.push(p); } : () => {}
   });
   return promise;
 }
@@ -108,6 +110,67 @@ test("a failed revalidation keeps serving the good cached copy", async () => {
   });
   const result = await respondedWith(handler, ORIGIN + "/app.js");
   assert.equal(result, cached, "the cached copy survives a network failure");
+});
+
+/* An asset write must keep the worker alive and must never reject the event
+   when storage is full — the same contract as the navigation shell. */
+async function assertWriteKeepsWorkerAlive(waits, release) {
+  assert.equal(waits.length, 1, "the cache write is registered with the fetch event");
+  let settled = false;
+  waits[0].then(() => { settled = true; });
+  await Promise.resolve();
+  assert.equal(settled, false, "the event stays alive while the write is in flight");
+  release();
+  await waits[0];
+  assert.equal(settled, true);
+}
+
+test("a first-time asset keeps the worker alive until it is cached", async () => {
+  let releasePut;
+  const handler = fetchHandler({
+    put: () => new Promise((resolve) => { releasePut = resolve; }),
+    fetch: () => Promise.resolve({ ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await respondedWith(handler, ORIGIN + "/app.js", waits);
+  await assertWriteKeepsWorkerAlive(waits, () => releasePut());
+});
+
+test("a refreshed asset keeps the worker alive until the new body is cached", async () => {
+  const cached = { headers: { get: () => null } };
+  let releasePut;
+  const handler = fetchHandler({
+    hit: cached,
+    put: () => new Promise((resolve) => { releasePut = resolve; }),
+    fetch: () => Promise.resolve({ status: 200, ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await respondedWith(handler, ORIGIN + "/app.js", waits);
+  await assertWriteKeepsWorkerAlive(waits, () => releasePut());
+});
+
+test("a full storage quota on the first save does not reject the event", async () => {
+  const handler = fetchHandler({
+    put: () => Promise.reject(new Error("quota")),
+    fetch: () => Promise.resolve({ ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await respondedWith(handler, ORIGIN + "/app.js", waits);
+  assert.equal(waits.length, 1, "the failed write is still registered with the event");
+  await waits[0];
+});
+
+test("a full storage quota on a refresh does not reject the event", async () => {
+  const cached = { headers: { get: () => null } };
+  const handler = fetchHandler({
+    hit: cached,
+    put: () => Promise.reject(new Error("quota")),
+    fetch: () => Promise.resolve({ status: 200, ok: true, clone: () => ({}) })
+  });
+  const waits = [];
+  await respondedWith(handler, ORIGIN + "/app.js", waits);
+  assert.equal(waits.length, 1, "the failed refresh write is still registered with the event");
+  await waits[0];
 });
 
 /* Install precaches the app; activate must evict older versions so a phone

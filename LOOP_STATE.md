@@ -1,6 +1,6 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-Baseline verified green at loop start; current gate after round 13: `npm run check` OK (276 unit tests, check-assets/ids/sw OK, digest 42f88b94df7f4a18), `npm run typecheck` clean, `npm run e2e` 236 passed. Precached assets are ~11 bytes under the 300 KB ceiling — keep runtime edits byte-neutral or raise the ceiling only with Khang's approval. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
+Baseline verified green at loop start; current gate after round 14: `npm run check` OK (280 unit tests, check-assets/ids/sw OK, digest 42f88b94df7f4a18), `npm run typecheck` clean, `npm run e2e` 236 passed. Precached assets are ~11 bytes under the 300 KB ceiling — keep runtime edits byte-neutral or raise the ceiling only with Khang's approval. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -25,6 +25,7 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 17. [Tier 0, test-only] Remaining SWR gaps at `sw.js:72-76`: a fresh 200 body being written to cache via `cache.put`, and the non-ok fallthrough to the cached copy. The `o.put` hook in `test/sw.test.js` already supports this.
 18. [Tier 1] `[DONE round 12]` Navigation shell refresh is a detached `caches.open().put()` (`sw.js:40`) — the worker can be terminated mid-write, and a quota failure becomes an unhandled rejection.
 19. [Tier 0] `[DONE round 13]` Stale `~183 KB` estimate in the SWR comment (`sw.js:59`) — current JS/CSS precache is ~286 KB.
+20. [Tier 1] `[DONE round 14]` The two asset cache writes (`sw.js:54` first fetch, `sw.js:73` refresh) are detached from the worker event — same lifetime/unhandled-rejection hole round 12 fixed for the navigation shell.
 
 ## Rounds
 
@@ -93,8 +94,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** corrected the comment in `sw.js:59` to ~286 KB, and added a test that reads the number out of the comment, adds up the real on-disk JS/CSS asset bytes, and fails if they drift apart by more than 10 KB. `sw.js` is not a precached asset, so no version/CACHE-HASH bump.
 - **Verified in plain terms:** the new test failed on the stale number and passed after the correction. Full gate green: 276 unit, typecheck clean, 236 e2e. Restored the old number and watched the test fail again, then restored the fix. Independent Big Pickle reviewer: see review log below.
 
+### Round 14 — `[DONE round 14]` File saves now keep the offline helper alive too
+- **Wrong:** round 12 fixed this for the main screen, but the two places that save individual files (on a first download and when a changed file is fetched again) still launched the save in the background. A phone could be shut down mid-save, or a full storage quota could fail silently and leave a stale saved file.
+- **Changed:** both writes are now registered with the offline event and quietly ignore storage errors, matching the main-screen fix. Four new tests check that the event stays alive until each write finishes and that a quota failure never rejects it. The test stub's default save now returns a promise, as a real browser's does. `sw.js` is not a precached asset, so no version/CACHE-HASH bump.
+- **Verified in plain terms:** all four tests failed before the fix and passed after. Full gate green: 280 unit, typecheck clean, 236 e2e. Reverted each line in turn: the first-line mutation failed only the two first-download tests, the second-line mutation failed only the two refresh tests; both restored. Independent Big Pickle reviewer: see review log below.
+
 ## Review log
 
+- **Round 14 — Big Pickle reviewer: GO**, no blockers. Verified from the spec that both nested `.then()` chains keep the event active so `waitUntil` cannot throw, that response objects and timing are unchanged, and that swallowing errors is right for best-effort fetch caching but not for install/activate. Confirmed the default `put` stub change is required and weakens no pre-existing test. Non-blocking notes on record: the vm stub cannot itself detect a spec-invalid `waitUntil` call, and the SWR branch's trailing `.catch(() => hit)` would mask such an error (moot since the call is valid). No version bump needed (`sw.js` is not in `ASSETS`).
 - **Round 13 — Big Pickle reviewer: GO**, no blockers. Confirmed the ten JS/CSS ASSETS are exactly the files every page loads, so summing them is the right measure of a full re-download; `parseAssets` strips `./` so the path join is correct; ±10 KB tolerates rounding but catches the original 103 KB drift; the regex is unique and a reword would fail loudly. No version bump needed (`sw.js` is not in `ASSETS`).
 - **Round 12 — Big Pickle reviewer: GO**, no blockers. Verified against the spec that `respondWith`'s pending promise keeps the event active, so calling `waitUntil` inside the fetch callback cannot throw `InvalidStateError`; the broad `.catch` is correct for a best-effort write and does not delay the response. Non-blocking notes on record only: the vm stub cannot itself catch a spec-invalid `waitUntil` call, and the broad catch also masks coding errors on that one line — both acceptable here. No version bump needed (`sw.js` is not in `ASSETS`).
 - **Round 11 — Big Pickle reviewer: GO**, no blockers. Confirmed the property-attach is safe and `lifecycleDone` awaits the full `waitUntil` chain, the activate contract is pinned exactly, and all pre-existing tests are unaffected by the new stubs. Applied the one non-blocking suggestion: the install test now asserts the exact precached list via the shared `parseAssets` helper instead of "at least 10"; gate re-run green after that change.

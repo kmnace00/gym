@@ -51,7 +51,7 @@ self.addEventListener("fetch", (e) => {
       cache.match(req).then((hit) => {
         if (!hit) {
           return fetch(req).then((res) => {
-            if (res && res.ok) cache.put(req, res.clone());
+            if (res && res.ok) e.waitUntil(cache.put(req, res.clone()).catch(() => {}));
             return res;
           });
         }
@@ -70,7 +70,7 @@ self.addEventListener("fetch", (e) => {
             /* a non-ok revalidation must not replace or be served over the
                good cached copy — the gym basement still gets the app */
             if (res.ok) {
-              cache.put(req, res.clone());
+              e.waitUntil(cache.put(req, res.clone()).catch(() => {}));
               return res;
             }
             return hit;
