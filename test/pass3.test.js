@@ -80,6 +80,17 @@ test("reconcile leaves legacy records (no exId) where they are", () => {
   assert.ok(p.liftHistory["fri:1"]);
 });
 
+test("reconcile retires a hostile exId to old:<id>, not an inherited function", () => {
+  const p = {
+    state: { "fri:0": { done: 2, exId: "toString" } },
+    liftHistory: { "fri:1": [{ date: "2026-11-01", load: 50, exId: "constructor" }] }
+  };
+  S.reconcile(p, DAYS);
+  assert.equal(p.state["old:toString"].done, 2, "the retired state uses the predictable old: key");
+  assert.equal(p.liftHistory["old:constructor"][0].load, 50, "retired history uses the old: key too");
+  assert.equal(Object.keys(p.state).length, 1, "no junk function-string key was created");
+});
+
 test("reconcile keeps the fuller record on a key collision", () => {
   const p = {
     state: { "fri:0": { done: 1, exId: "c" }, "sat:0": { done: 3, exId: "c" } },

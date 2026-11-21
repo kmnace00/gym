@@ -510,7 +510,7 @@
         else dropped += res.pieces.length;
         if (end < 0) break;
         i = skipWs(s, end);
-      } else if (s[i] === "{" || s[i] === "[") {
+      } else if (s[i] === "{") {
         end = balancedEnd(s, i);
         if (end < 0) break;
         i = skipWs(s, end);
@@ -991,7 +991,7 @@
      program (and for legacy records that never stored an exId).             */
   function reconcile(p, DAYS) {
     if (!p || !DAYS) return p;
-    var idKey = {}, d, i, list, e, k, hk, arr, j, target, en;
+    var idKey = Object.create(null), d, i, list, e, k, hk, arr, j, target, en;
     for (d in DAYS) if (Object.prototype.hasOwnProperty.call(DAYS, d)) {
       list = DAYS[d].ex;
       for (i = 0; i < list.length; i++) { e = list[i]; if (e && e.id) idKey[e.id] = d + ":" + i; }
