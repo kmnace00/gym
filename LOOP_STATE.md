@@ -1,6 +1,6 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-Baseline verified green at loop start; current gate after round 4: `npm run check` OK (261 unit tests, check-assets/ids/sw OK, digest 63a57136aa08a356), `npm run typecheck` clean, `npm run e2e` 236 passed. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
+Baseline verified green at loop start; current gate after round 5: `npm run check` OK (262 unit tests, check-assets/ids/sw OK, digest 37fa53290ce6901f), `npm run typecheck` clean, `npm run e2e` 236 passed. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -11,7 +11,7 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 3. [Tier 0/1] Two-tap guard's 2500 ms arm / 2600 ms reset duplicated in `rest.js`, `restctl.js` and `app.js`; a tap in the 100 ms gap re-arms instead of confirming.
 4. [Tier 0, low value] `"+30s for 0–1 RIR"` message literal duplicates the private `RIR_PENALTY` (`rest.js:94`) — derive from `sec - baseRest`.
 5. [Tier 0/1] `[DONE round 3]` An unfinished session-log entry inflates the dashboard's "Workouts" count (`stats.js:38`) — only `status === "complete"` should count.
-6. [Tier 0, tooling] SW-cache guard hashes PNGs as UTF-8 text, so a real icon change can go undetected (`tools/check-sw-cache.js:32`).
+6. [Tier 0, tooling] `[DONE round 5]` SW-cache guard hashes PNGs as UTF-8 text, so a real icon change can go undetected (`tools/check-sw-cache.js:32`).
 7. [Tier 0, low frequency] `[DONE round 4]` Salvage's `valueStart` finds the first string `"liftHistory"`, not the JSON key (`store.js:527`).
 8. [Tier 1, low real-world risk] SW same-origin guard is a URL prefix test, not an origin test (`sw.js:31`).
 
@@ -37,8 +37,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `valueStart` in `store.js:526` now keeps looking through later occurrences until it finds one followed by a colon — the marker of an actual JSON key. Normal payloads take the first match exactly as before. Bumped `GYM_VERSION` to `gym-v208` and `CACHE-HASH` to `63a57136aa08a356`.
 - **Verified in plain terms:** new unit test feeds a truncated backup with a decoy `"liftHistory"` value before the real key; it recovered 0 entries before the fix and 1 after. Full gate green: 261 unit, typecheck clean, 236 e2e. Undid the loop and watched recovery fall back to 0, then restored it. Independent Big Pickle reviewer: see review log below.
 
+### Round 5 — `[DONE round 5]` Cache guard now sees the real bytes of binary icons
+- **Wrong:** the check that promises "a changed asset can't ship without a version bump" read every asset as text. A PNG is binary, and decoding it to text replaces every invalid byte with the same placeholder character, so two genuinely different icons could produce the same fingerprint. A real icon change could then ship while offline phones kept the old one.
+- **Changed:** `tools/check-sw-cache.js` now exposes `assetDigest(names, readFile)` which hashes each asset's raw bytes; the command-line check uses it and only runs when invoked directly. No app asset changed, so `GYM_VERSION` stays `gym-v208`; only the recorded `CACHE-HASH` moved to `37fa53290ce6901f` to match the corrected fingerprint.
+- **Verified in plain terms:** new unit test feeds the digest two different byte sequences that decode to the identical placeholder string; before the fix it produced the same fingerprint for both, after the fix two different ones. Full gate green: 262 unit, typecheck clean, 236 e2e. Put the text conversion back and watched both fingerprints collapse to the same value again, then restored it. Independent Big Pickle reviewer: see review log below.
+
 ## Review log
 
+- **Round 5 — Big Pickle reviewer: GO**, no blockers. Confirmed the new digest stream is byte-for-byte identical to the old one for every text asset (only the two PNGs legitimately change), the `require.main === module` guard keeps the CLI behavior verbatim and side-effect-free on import, and the binary fixture is valid. No `GYM_VERSION` bump needed since no precached asset changed; `CACHE-HASH` correctly updated.
 - **Round 4 — Big Pickle reviewer: GO**, no blockers. Confirmed the retry loop preserves the common path byte-for-byte, handles JSON whitespace, and terminates; `valueStart` has only two callers (both corruption-path), so the new behavior can only recover more, always through the existing sanitizer. Test is genuine and existing salvage coverage holds. Version/CACHE-HASH correct and complete.
 - **Round 3 — Big Pickle reviewer: GO**, no blockers. Confirmed every consumer of the "workouts" metric wants finished sessions only; active sessions still contribute their banked lifts through the tonnage/heatmap path. Verified all production writers of the session log stamp `status:"complete"`, and every load/import/salvage path funnels through the sanitizer, so no legitimate older workout is lost. Test discriminates and guards against an over-broad fix.
 - **Round 2 — Big Pickle reviewer: GO**, no blockers. Confirmed `workingLoad(s)` is byte-identical for non-swapped lifts and correct for swapped 0-load ("light"); done rows keep their recorded sets, and the new test exercises the full-render path. Non-blocking note on record only: `program.js:245`'s legacy backfill seeds synthetic done sets with `s.load` even when swapped, so a hand-crafted swapped record with `done > 0` and a short `sets` array could still show the dormant load in done rows — pre-existing and unreachable via normal flow (swap is locked once sets exist). Out of scope; no code change.

@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const P = require("../program.js");
 const S = require("../store.js");
+const C = require("../tools/check-sw-cache.js");
 
 /* The durability story is a single localStorage key. Make the ceiling visible
    before it becomes a production surprise: ~10 years of per-set history
@@ -46,4 +47,16 @@ test("precached assets stay under 300 KB and every listed asset exists", () => {
     bytes += fs.statSync(path.join(__dirname, "..", a)).size;
   }
   assert.ok(bytes < 300 * 1024, "precached assets total " + bytes + " bytes; keep under 300 KB");
+});
+
+/* The cache guard must see the real bytes of the two binary icons. A UTF-8
+   decode maps every invalid byte to U+FFFD, so two different PNGs can collapse
+   to the same string and a changed icon ships without a version bump. */
+test("cache digest hashes raw bytes, not lossy UTF-8 text", () => {
+  const a = Buffer.from([0xff, 0xfe, 0x80, 0x81, 0x82]);
+  const b = Buffer.from([0xfd, 0xfc, 0x83, 0x84, 0x85]);
+  assert.equal(a.toString("utf8"), b.toString("utf8"), "fixture: both decode identically");
+  const da = C.assetDigest(["icon-192.png"], () => a);
+  const db = C.assetDigest(["icon-192.png"], () => b);
+  assert.notEqual(da, db, "different binary bytes must produce different digests");
 });
