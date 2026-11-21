@@ -56,7 +56,7 @@
    * @param {number} [windowMs]
    * @returns {number}
    */
-  function armFinish(nowMs, windowMs) { return nowMs + (typeof windowMs === "number" ? windowMs : 2500); }
+  function armFinish(nowMs, windowMs) { return nowMs + (typeof windowMs === "number" ? windowMs : 2600); }
 
   /**
    * True while the second tap is still valid.

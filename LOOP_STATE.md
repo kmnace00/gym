@@ -1,6 +1,6 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-Baseline verified green at loop start; current gate after round 5: `npm run check` OK (262 unit tests, check-assets/ids/sw OK, digest 37fa53290ce6901f), `npm run typecheck` clean, `npm run e2e` 236 passed. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
+Baseline verified green at loop start; current gate after round 6: `npm run check` OK (264 unit tests, check-assets/ids/sw OK, digest 41ba3ed5ca529a24), `npm run typecheck` clean, `npm run e2e` 236 passed. Precached assets are within ~12 bytes of the 300 KB ceiling — keep runtime edits byte-neutral or raise the ceiling only with Khang's approval. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -8,7 +8,7 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 
 1. [Tier 0] `[DONE round 1]` Summary-tonnage e2e read the real clock but asserted Friday-specific tonnage — failed every Saturday.
 2. [Tier 1] `[DONE round 2]` A swapped lift's set-log rows show the original's dormant load, not the alternate's working load (`app.js:648`).
-3. [Tier 0/1] Two-tap guard's 2500 ms arm / 2600 ms reset duplicated in `rest.js`, `restctl.js` and `app.js`; a tap in the 100 ms gap re-arms instead of confirming.
+3. [Tier 0/1] `[DONE round 6]` Two-tap guard's 2500 ms arm / 2600 ms reset duplicated in `rest.js`, `restctl.js` and `app.js`; a tap in the 100 ms gap re-arms instead of confirming.
 4. [Tier 0, low value] `"+30s for 0–1 RIR"` message literal duplicates the private `RIR_PENALTY` (`rest.js:94`) — derive from `sec - baseRest`.
 5. [Tier 0/1] `[DONE round 3]` An unfinished session-log entry inflates the dashboard's "Workouts" count (`stats.js:38`) — only `status === "complete"` should count.
 6. [Tier 0, tooling] `[DONE round 5]` SW-cache guard hashes PNGs as UTF-8 text, so a real icon change can go undetected (`tools/check-sw-cache.js:32`).
@@ -42,8 +42,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `tools/check-sw-cache.js` now exposes `assetDigest(names, readFile)` which hashes each asset's raw bytes; the command-line check uses it and only runs when invoked directly. No app asset changed, so `GYM_VERSION` stays `gym-v208`; only the recorded `CACHE-HASH` moved to `37fa53290ce6901f` to match the corrected fingerprint.
 - **Verified in plain terms:** new unit test feeds the digest two different byte sequences that decode to the identical placeholder string; before the fix it produced the same fingerprint for both, after the fix two different ones. Full gate green: 262 unit, typecheck clean, 236 e2e. Put the text conversion back and watched both fingerprints collapse to the same value again, then restored it. Independent Big Pickle reviewer: see review log below.
 
+### Round 6 — `[DONE round 6]` No dead gap in the two-tap finish window
+- **Wrong:** the first tap of "Tap again to finish" was only accepted for 2,500 ms, but the reset that forgets that tap fired at 2,600 ms. A confirm tap in that 100 ms gap was treated as a fresh first tap — and the earlier reset timer could then wipe the new arm shortly after, needing a third tap. The menu's destructive-action two-tap guard had the same mismatch.
+- **Changed:** aligned the arm to the reset's 2,600 ms in `rest.js` and `app.js` (`restctl.js` already used 2,600) — two same-length literal edits that add zero bytes to the precached app. A first attempt introduced a shared constant but pushed precached assets 272 bytes past the project's 300 KB ceiling, so it was replaced with the byte-neutral version. Tests now lock the arm/reset agreement. Bumped `GYM_VERSION` to `gym-v209` and `CACHE-HASH` to `41ba3ed5ca529a24`.
+- **Verified in plain terms:** new unit test taps at 2,550 ms and checks it still confirms; it failed before the fix and passed after. Full gate green: 264 unit, typecheck clean, 236 e2e, size under ceiling. Put the 2,500 ms window back and watched three tests fail, then restored it. Independent Big Pickle reviewer: see review log below.
+
 ## Review log
 
+- **Round 6 — Big Pickle reviewer: GO**, no blockers. Verified the gap is gone in both guard paths, the `restctl` handler clears its old timer so a re-arm can't be clobbered, and the 100 ms longer clock freeze is imperceptible. Tests lock both sides independently and still guard expiry. Non-blocking note on record only: `app.js twoTap` still schedules each reset timer without clearing a prior one, leaving a sub-millisecond boundary race (pre-existing, not reachable by a real tap; `restctl` clears its timer correctly). No code change.
 - **Round 5 — Big Pickle reviewer: GO**, no blockers. Confirmed the new digest stream is byte-for-byte identical to the old one for every text asset (only the two PNGs legitimately change), the `require.main === module` guard keeps the CLI behavior verbatim and side-effect-free on import, and the binary fixture is valid. No `GYM_VERSION` bump needed since no precached asset changed; `CACHE-HASH` correctly updated.
 - **Round 4 — Big Pickle reviewer: GO**, no blockers. Confirmed the retry loop preserves the common path byte-for-byte, handles JSON whitespace, and terminates; `valueStart` has only two callers (both corruption-path), so the new behavior can only recover more, always through the existing sanitizer. Test is genuine and existing salvage coverage holds. Version/CACHE-HASH correct and complete.
 - **Round 3 — Big Pickle reviewer: GO**, no blockers. Confirmed every consumer of the "workouts" metric wants finished sessions only; active sessions still contribute their banked lifts through the tonnage/heatmap path. Verified all production writers of the session log stamp `status:"complete"`, and every load/import/salvage path funnels through the sanitizer, so no legitimate older workout is lost. Test discriminates and guards against an over-broad fix.

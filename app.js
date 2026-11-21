@@ -2109,7 +2109,7 @@
        own timer only fires while it is still the armed action (B5-10) */
     if (armedBtn && armedBtn !== btn) armedBtn.textContent = armedBtn.getAttribute("data-label");
     armedBtn = btn;
-    armedFn = fn; armedUntil = Date.now() + 2500;
+    armedFn = fn; armedUntil = Date.now() + 2600;
     if (!btn.getAttribute("data-label")) btn.setAttribute("data-label", btn.textContent);
     btn.textContent = confirmText;
     setTimeout(function () {

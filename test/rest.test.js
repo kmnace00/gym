@@ -23,12 +23,20 @@ test("nextLift goes forward, wraps to the earliest open lift, and -1 only when t
 
 test("finish guard arms a window and expires", () => {
   const until = R.armFinish(1000);
-  assert.equal(until, 3500);
+  assert.equal(until, 3600);
   assert.equal(R.finishArmed(1000, until), true);
-  assert.equal(R.finishArmed(3500, until), true);
-  assert.equal(R.finishArmed(3501, until), false);
+  assert.equal(R.finishArmed(until, until), true);
+  assert.equal(R.finishArmed(until + 1, until), false);
   assert.equal(R.finishArmed(1000, 0), false); // never armed
   assert.equal(R.armFinish(1000, 1000), 2000);
+});
+
+test("finish tap window has no dead gap before its reset", () => {
+  const t0 = 1000;
+  const until = R.armFinish(t0);
+  assert.equal(until - t0, 2600, "the arm matches the 2600 ms reset timer");
+  assert.equal(R.finishArmed(t0 + 2550, until), true, "a confirm tap in the old 100 ms gap is still valid");
+  assert.equal(R.finishArmed(t0 + 2601, until), false);
 });
 
 test("advanceLabel matches the three GO states", () => {

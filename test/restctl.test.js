@@ -188,11 +188,18 @@ test("last lift needs two taps: arm, then finish inside the window", () => {
   assert.equal(done.view.msg, "Workout complete — nice work.");
 });
 
+test("the finish arm window and its reset timer stay the same length", () => {
+  assert.equal(R.armFinish(0), 2600, "arm window");
+  const s = mk({ idx: 2, done: 3 });
+  toGo(s);
+  assert.deepEqual(s.ctl.skip(false).effects, [{ type: "scheduleFinishReset", ms: 2600 }], "reset timer");
+});
+
 test("an expired two-tap window re-arms instead of finishing", () => {
   const s = mk({ idx: 2, done: 3 });
   toGo(s);
   s.ctl.skip(false);
-  s.clock.t = 90000 + 2600;
+  s.clock.t = 90000 + 2601;
   assert.equal(s.ctl.skip(false).view.skipLabel, "Tap again to finish"); // freshly re-armed
   const reset = s.ctl.finishReset();
   assert.equal(reset.view.skipLabel, "Finish"); // arm window lapsed: back to Finish
