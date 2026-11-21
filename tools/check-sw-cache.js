@@ -29,20 +29,32 @@ function assetDigest(names, readFile) {
   return h.digest("hex").slice(0, 16);
 }
 
-module.exports = { assetDigest };
+/**
+ * Parse the hand-maintained ASSETS list out of sw.js. Returns null when it is
+ * missing or looks truncated, so every gate using this fails closed instead of
+ * checking an empty list and reporting success.
+ * @param {string} sw
+ * @returns {string[]|null}
+ */
+function parseAssets(sw) {
+  const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
+  if (!listMatch) return null;
+  const assets = [...listMatch[1].matchAll(/(["'])([^"']+)\1/g)]
+    .map((m) => m[2].replace(/^\.\//, ""))
+    .filter((a) => a !== ""); // "./" is the document root, not a file
+  return assets.length >= 10 ? assets : null;
+}
+
+module.exports = { assetDigest, parseAssets };
 
 if (require.main === module) {
   const sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 
-  const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
-  if (!listMatch) {
-    console.error("check-sw-cache FAIL: could not find the ASSETS array in sw.js");
+  const assets = parseAssets(sw);
+  if (!assets) {
+    console.error("check-sw-cache FAIL: could not find a plausible ASSETS array in sw.js");
     process.exit(1);
   }
-
-  const assets = [...listMatch[1].matchAll(/"([^"]+)"/g)]
-    .map((m) => m[1].replace(/^\.\//, ""))
-    .filter((a) => a !== ""); // "./" is the document root, not a file
 
   const missing = assets.filter((a) => !fs.existsSync(path.join(root, a)));
   if (missing.length) {

@@ -35,18 +35,24 @@ test("ten years of per-set history stays under localStorage quota", () => {
    Recorded in DECISIONS.md. */
 test("precached assets stay under 300 KB and every listed asset exists", () => {
   const sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
-  const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
-  assert.ok(listMatch, "sw.js must still expose the ASSETS array");
-  const assets = [...listMatch[1].matchAll(/"([^"]+)"/g)]
-    .map((m) => m[1].replace(/^\.\//, ""))
-    .filter((a) => a !== "");
-  assert.ok(assets.length >= 10, "ASSETS list looks truncated: " + assets.length);
+  const assets = C.parseAssets(sw);
+  assert.ok(assets, "sw.js must still expose a plausible ASSETS array");
   let bytes = 0;
   for (const a of assets) {
     assert.ok(fs.existsSync(path.join(__dirname, "..", a)), "ASSETS lists a missing file: " + a);
     bytes += fs.statSync(path.join(__dirname, "..", a)).size;
   }
   assert.ok(bytes < 300 * 1024, "precached assets total " + bytes + " bytes; keep under 300 KB");
+});
+
+/* Every gate that reads sw.js must agree on what the ASSETS list is. If the
+   list is missing or truncated, two gates currently pass with zero assets —
+   so the shared parser must reject that instead of returning an empty list. */
+test("the shared ASSETS parser rejects a truncated list and accepts both quotes", () => {
+  const names = Array.from({ length: 14 }, (_, i) => "asset-" + i + ".js");
+  const singleQuoted = "const ASSETS = [\n" + names.map((n) => "  './" + n + "'").join(",\n") + "\n];";
+  assert.deepEqual(C.parseAssets(singleQuoted), names, "both quote styles parse");
+  assert.equal(C.parseAssets("const ASSETS = [];"), null, "an empty list must fail closed");
 });
 
 /* The cache guard must see the real bytes of the two binary icons. A UTF-8

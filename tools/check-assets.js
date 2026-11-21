@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
+const C = require("./check-sw-cache.js");
 
 function read(f) { return fs.readFileSync(path.join(root, f), "utf8"); }
 
@@ -16,14 +17,11 @@ const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
   .filter((u) => !/^(?:https?:|data:|#)/.test(u))
   .map((u) => u.replace(/^\.\//, ""));
 
-const listMatch = /const ASSETS\s*=\s*\[([\s\S]*?)\];/.exec(sw);
-if (!listMatch) {
-  console.error("check-assets FAIL: could not find the ASSETS array in sw.js");
+const assets = C.parseAssets(sw);
+if (!assets) {
+  console.error("check-assets FAIL: could not find a plausible ASSETS array in sw.js");
   process.exit(1);
 }
-const assets = [...listMatch[1].matchAll(/"([^"]+)"/g)]
-  .map((m) => m[1].replace(/^\.\//, ""))
-  .filter((a) => a !== ""); // "./" is the document root, not a file
 
 const problems = [];
 for (const r of refs) {
