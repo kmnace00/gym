@@ -249,7 +249,7 @@
   var saveBarAction = document.getElementById("saveBarAction");
   var saveBarDownload = document.getElementById("saveBarDownload");
   var summary = document.getElementById("summary");
-  var editSet = -1, editBackup = null;
+  var editSet = -1, editBackup = null, editSetOrig = null;
   var swapOpen = false; // N14
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
@@ -1293,10 +1293,8 @@
     var s = curSt(), e = ex();
     if (editSet < 0) return;
     if (!s.sets || !s.sets[editSet]) {
-      /* the edited set vanished (undo shrank the log): put the working values
-         back so the next set does not inherit the stale set's numbers. */
       if (editBackup) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
-      editSet = -1; editBackup = null;
+      editSet = -1; editBackup = null; editSetOrig = null;
       return;
     }
     /* N10: an edit keeps the set's original timestamp and earns the mark */
@@ -1309,7 +1307,7 @@
   function startEdit(i) {
     var s = curSt();
     if (!s.sets || !s.sets[i]) return;
-    if (editSet !== i) editBackup = { load: workingLoad(s), reps: s.reps, rir: s.rir };
+    if (editSet !== i) { editBackup = { load: workingLoad(s), reps: s.reps, rir: s.rir }; editSetOrig = JSON.parse(JSON.stringify(s.sets[i])); }
     editSet = i;
     setWorkingLoad(s, s.sets[i].load); s.reps = s.sets[i].reps; s.rir = s.sets[i].rir;
     hintText = ""; hintGood = false;
@@ -1321,7 +1319,7 @@
     if (editSet < 0) return;
     applySetEdit();
     if (editBackup) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
-    editSet = -1; editBackup = null;
+    editSet = -1; editBackup = null; editSetOrig = null;
     hintText = ""; hintGood = false;
     commit(); render();
   }
@@ -1763,12 +1761,9 @@
      reps/RIR back — the next set must not inherit the edited set's numbers. */
   function resetEdit() {
     var s = curSt();
-    /* editBackup.load was captured from workingLoad(s), so while the lift is
-       swapped it holds the alternate's swapLoad — restore it through
-       setWorkingLoad so it goes back into swapLoad, never the original lift's
-       dormant `load` field (which would otherwise be corrupted on navigate). */
+    if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) s.sets[editSet] = editSetOrig;
     if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
-    editSet = -1; editBackup = null;
+    editSet = -1; editBackup = null; editSetOrig = null;
   }
   function showDay() {
     var left = idx;
@@ -1981,7 +1976,6 @@
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
         resetEdit(); timerIdle("", "");
         payload = restored;
-        /* roll forward stale backup date like boot (B3-11) */
         Gym.rollSession(payload, Gym.todayDay());
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
@@ -2002,15 +1996,15 @@
       try {
         var snapOk = Gym.snapshot(payload, "pre-merge");
         var stats = { added: 0, collisions: 0 };
-        resetEdit(); timerIdle("", "");
         var merged = Gym.importMerge(payload, String(reader.result), stats);
+        resetEdit(); timerIdle("", "");
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); syncClock(); commit(); updateFoot();
         setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
-      } catch (e) { render(); setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
+      } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);
     ev.target.value = "";

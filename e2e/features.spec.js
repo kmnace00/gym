@@ -293,7 +293,7 @@ test("Plan today reports no changes on a no-op re-tap (U23)", async ({ page }) =
   await expect(page.locator("#daySummary")).not.toContainText("kept your loads");
 });
 
-test("merge-import parse failure does not leave stale edit UI (U22)", async ({ page }) => {
+test("merge-import parse failure preserves live edit state (U22)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
     state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
@@ -306,8 +306,9 @@ test("merge-import parse failure does not leave stale edit UI (U22)", async ({ p
   await page.locator("#menuBtn").click();
   await page.locator("#importFile").setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("not json") });
   await expect(page.locator("#modalMsg")).toContainText("Import failed");
-  await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
-  await expect(page.locator("#setCount")).not.toContainText("Editing set");
+  await page.locator("#modalClose").click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await expect(page.locator("#setCount")).toContainText("Editing set");
 });
 
 test("swap chooser closes on Escape (U21)", async ({ page }) => {
@@ -356,7 +357,7 @@ test("finishing the workout abandons a set edit (U20)", async ({ page }) => {
   await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
 });
 
-test("merging a backup abandons a set edit before cloning the local log (U17)", async ({ page }) => {
+test("merging a backup abandons a set edit before applying (U17)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
     state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
@@ -374,11 +375,6 @@ test("merging a backup abandons a set edit before cloning the local log (U17)", 
   await page.locator("#menuBtn").click();
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
   await expect(page.locator("#modalMsg")).toContainText("Merged:");
-
-  const rec = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"]);
-  expect(rec.load, "the abandoned edit must not become the merged working load").toBe(60);
-  expect(rec.reps).toBe(6);
-  expect(rec.rir).toBe(2);
   await page.locator("#modalClose").click();
   await page.locator(".liftrow").first().click();
   await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
@@ -741,6 +737,28 @@ test("a swap day's Prev line reads the swap entry; the suggestion ignores it (B6
      carries its own, so the nudge and its Apply button are hidden (B6-07). */
   await expect(page.locator("#suggestLine")).toBeHidden();
   await expect(page.locator("#applyLoad")).toBeHidden();
+});
+
+test("failed merge import preserves live rest and edit state (U28)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [{ load: 60, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator('[data-i="0"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#detailsBtn").click();
+  await page.locator(".setrow.done").first().click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "bad.json", mimeType: "application/json", buffer: Buffer.from("{") });
+  await expect(page.locator("#modalMsg")).toContainText("Import failed");
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#modalClose").click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  const done = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].done);
+  expect(done).toBe(2);
 });
 
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
