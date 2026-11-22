@@ -1,6 +1,6 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-**FINISHED — stopped by Khang after round 15. No more rounds; this file is now a record only.**
+**FINISHED — stopped by Khang after round 15. A literal restart was requested on Nov 21; the baseline was re-checked green (282 unit tests, check-assets/ids/sw OK) and a read-only survey was launched, but the stop word came before any new round began. No app code changed, no new rounds, nothing pushed from the loop. This file remains a record only.**
 
 Baseline verified green at loop start; current gate after round 15: `npm run check` OK (282 unit tests, check-assets/ids/sw OK, digest 74aa9bd667762878), `npm run typecheck` clean, `npm run e2e` 236 passed. `GYM_VERSION` is now `gym-v211`. Precached assets are ~7 bytes under the 300 KB ceiling — keep runtime edits byte-neutral or raise the ceiling only with Khang's approval. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
 
