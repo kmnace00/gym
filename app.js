@@ -1130,8 +1130,6 @@
     document.getElementById("restPrepName").textContent = v.prepName;
     document.getElementById("restPrepLoad").textContent = v.prepLoad;
     document.getElementById("restPrepReps").textContent = v.prepReps;
-    /* N7: the ramp rides the up-next block — the rest before a lift's first
-       set is when he is standing at the rack deciding warm-up weights. */
     var rampEl = document.getElementById("restPrepRamp");
     if (rampEl) {
       var tIdx = v.prepIdx, rRamp = null;
@@ -1264,10 +1262,6 @@
     checkForDeploy();
   });
 
-  /* ── RIR picker — built once; the line above it always says what the
-     selected number means in plain words (N13: the old one-time explainer
-     retired itself after his first-ever set, leaving a bare number he had
-     to translate mid-workout). Wording only — values and logic unchanged. */
   var RIR_TXT = [
     "0 in the tank — couldn't do another rep",
     "1 in the tank — one more rep if you had to",
@@ -1300,7 +1294,6 @@
       editSet = -1; editBackup = null; editSetOrig = null;
       return;
     }
-    /* N10: an edit keeps the set's original timestamp and earns the mark */
     var prevSet = s.sets[editSet];
     s.sets[editSet] = { load: workingLoad(s), reps: s.reps, rir: s.rir, edited: true };
     if (prevSet && typeof prevSet.t === "number") s.sets[editSet].t = prevSet.t;
@@ -1381,35 +1374,27 @@
   bindStepper("restRepDown", function () { if (restPrepIdx >= 0) stepReps(-1, restPrepIdx); });
   bindStepper("restRepUp", function () { if (restPrepIdx >= 0) stepReps(1, restPrepIdx); });
 
-  /* tap the number to type it — correcting "actually 67.5" shouldn't need
-     five taps or a sprint on the press-and-hold repeat. The +/- stay for
-     fine nudging; typing is for precision.                                  */
   var editingValue = false;
   function editValue(valueEl, current, step, apply) {
     if (editingValue) return;
     editingValue = true;
-    var mid = valueEl.parentNode;
+    var mid = valueEl.parentNode, prev = document.activeElement;
     var inp = document.createElement("input");
     inp.type = "number"; inp.inputMode = "decimal"; inp.step = String(step);
-    inp.className = "vin"; inp.value = String(current);
-    inp.setAttribute("aria-label", "Enter value");
-    valueEl.style.display = "none";
-    mid.appendChild(inp);
-    inp.focus(); inp.select();
+    inp.className = "vin"; inp.value = String(current); inp.setAttribute("aria-label","Enter value");
+    valueEl.style.display = "none"; mid.appendChild(inp); inp.focus(); inp.select();
     function finish(commit) {
       if (!editingValue) return;
       editingValue = false;
-      var v = parseFloat(inp.value);
-      inp.remove();
-      valueEl.style.display = "";
-      if (commit && isFinite(v)) apply(v);
-      else render();
+      var v = parseFloat(inp.value), vid = valueEl.id;
+      inp.remove(); valueEl.style.display = "";
+      if (commit && isFinite(v)) apply(v); else render();
+      var lmEl = vid && document.getElementById(vid) ? /** @type {HTMLElement|null} */ (document.getElementById(vid).parentElement) : null;
+      var ft = /** @type {HTMLElement|null} */ ((prev && prev instanceof HTMLElement && prev.isConnected && prev.getClientRects().length) ? prev : (lmEl && lmEl.querySelector(".step[aria-label]")) || lmEl);
+      if (ft) try { ft.focus(); } catch(e){}
     }
-    inp.addEventListener("keydown", function (ev) {
-      if (ev.key === "Enter") { ev.preventDefault(); finish(true); }
-      else if (ev.key === "Escape") { ev.preventDefault(); finish(false); }
-    });
-    inp.addEventListener("blur", function () { finish(true); });
+    inp.onkeydown = function (ev) { if (ev.key==="Enter"||ev.key==="Escape") { ev.preventDefault(); ev.stopPropagation(); finish(ev.key==="Enter"); } };
+    inp.onblur = function () { finish(true); };
   }
   function editLoad() {
     var s = curSt(), cur_ex = ex(), wl = workingLoad(s);
@@ -1428,8 +1413,11 @@
       curSt().reps = clampReps(Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
     });
   }
-  document.getElementById("loadVal").parentNode.addEventListener("click", editLoad);
-  document.getElementById("repVal").parentNode.addEventListener("click", editReps);
+  [{id:"loadVal",fn:editLoad,lab:"Edit load"},{id:"repVal",fn:editReps,lab:"Edit reps"}].forEach(function(x){
+    var m=/** @type {HTMLElement} */ (document.getElementById(x.id).parentNode);
+    m.tabIndex=0; m.setAttribute("role","button"); m.setAttribute("aria-label",x.lab);
+    m.onclick=x.fn; m.onkeydown=function(ev){ if(ev.key==="Enter"||ev.key===" "){ev.preventDefault(); x.fn();} };
+  });
 
   /* trend sparkline is opt-in — reclaims vertical space on short phones */
   document.getElementById("trendToggle").onclick = function () {
@@ -2016,11 +2004,9 @@
   /* ── rest-complete notifications (opt-in, best effort) ─────────────────── */
   var NOTIFY_KEY = "gym-notify";
   function notifyOn() { try { return localStorage.getItem(NOTIFY_KEY) === "1"; } catch (e) { return false; } }
-  function renderNotify() {
-    var b = document.getElementById("notifyToggle");
-    if (b) b.textContent = "Rest notifications: " + (notifyOn() ? "On" : "Off");
-  }
-  function initNotify() { renderNotify(); }
+  function notifyAllowed() { return !("Notification" in window) || Notification.permission !== "denied"; }
+  function renderNotify() { var b = document.getElementById("notifyToggle"); if (b) b.textContent = "Rest notifications: " + (notifyOn() && notifyAllowed() ? "On" : "Off"); }
+  function initNotify() { if (notifyOn() && !notifyAllowed()) { try { localStorage.setItem(NOTIFY_KEY, "0"); } catch (e) {} } renderNotify(); }
   document.getElementById("notifyToggle").onclick = function () {
     if (notifyOn()) { try { localStorage.setItem(NOTIFY_KEY, "0"); } catch (e) {} renderNotify(); return; }
     if (!("Notification" in window)) { setMsg("Notifications are not supported here"); return; }

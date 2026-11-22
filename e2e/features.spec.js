@@ -812,6 +812,42 @@ test("skip rest from day view keeps visible focus (U30)", async ({ page }) => {
   expect(focus.visible).toBe(true);
 });
 
+test("load/reps value can be keyboard-edited and focus restores (U31)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, { v:5, cur:"fri", idx:0, bodyweight:165, bodyweightSet:false,
+    state:{ "fri:0":{ load:60, reps:8, rir:2, done:1, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:60,reps:8,rir:2}] } },
+    liftHistory:{}, sessionLog:[], active:{ id:"s1", date, day:"fri", startedAt:Date.now()-600000, accSec:600, runningSince:null, status:"active" } });
+  await page.locator('[data-i="0"]').click();
+  const mid = page.locator("#loadVal").locator("..");
+  await expect(mid).toHaveAttribute("role","button");
+  await mid.focus();
+  await page.keyboard.press("Enter");
+  const vin = page.locator(".vin");
+  await expect(vin).toBeVisible();
+  await vin.fill("65");
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#loadVal")).toHaveText("65");
+  await expect(mid).toBeFocused();
+  const load = await page.evaluate(()=>JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].load);
+  expect(load).toBe(65);
+});
+
+test("notify toggle clears stale denied permission on init (U32)", async ({ page }) => {
+  await page.addInitScript(() => {
+    const Orig = window.Notification;
+    function N(){};
+    N.permission = "denied";
+    N.requestPermission = () => Promise.resolve("denied");
+    window.Notification = N;
+    try { localStorage.setItem("gym-notify", "1"); } catch(e) {}
+  });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#notifyToggle")).toHaveText("Rest notifications: Off");
+  const stored = await page.evaluate(()=>localStorage.getItem("gym-notify"));
+  expect(stored).toBe("0");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
