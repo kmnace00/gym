@@ -34,7 +34,8 @@ test("overdue backup banner backs up on tap and dismisses on ✕ (B5-04)", async
   const dl = await dlPromise;
   expect(dl.suggestedFilename()).toMatch(/^gym-backup-\d{4}-\d{2}-\d{2}\.json$/);
   await expect(page.locator("#modal"), "the modal never opens").toBeHidden();
-  await expect(page.locator("#backupBar")).toBeHidden();
+  await expect(page.locator("#backupBar")).toBeVisible();
+  await expect(page.locator("#backupBarText")).toContainText("Backup downloaded ✓");
 
   // the ✕ still dismisses without a download
   await seedOverdue();

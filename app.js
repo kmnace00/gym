@@ -243,7 +243,7 @@
   var resetLiftBtn = document.getElementById("resetLiftBtn");
   var backupBar = document.getElementById("backupBar");
   var backupBarText = document.getElementById("backupBarText");
-  var backupDismissed = false;
+  var backupDismissed = false, backupMsg = "";
   var saveBar = document.getElementById("saveBar");
   var saveBarText = document.getElementById("saveBarText");
   var saveBarAction = document.getElementById("saveBarAction");
@@ -450,15 +450,10 @@
     });
     document.getElementById("progressSegs").innerHTML = segs;
 
-    /* assertive backup nudge: localStorage is one Safari cleanup from gone */
     var due = !backupDismissed && Gym.backupDue(payload);
-    backupBar.hidden = !due;
-    if (due) {
-      var age = Gym.backupAgeDays(payload);
-      backupBarText.textContent = age === null
-        ? "Never backed up — this log lives only on this phone"
-        : "Backup " + age + " day" + (age === 1 ? "" : "s") + " old — keep your log safe";
-    }
+    backupBar.hidden = !due && !backupMsg;
+    if (due) { var age = Gym.backupAgeDays(payload); backupBarText.textContent = age === null ? "Never backed up — this log lives only on this phone" : "Backup " + age + " day" + (age===1?"":"s") + " old — keep your log safe"; }
+    else if (backupMsg) { backupBarText.textContent = backupMsg; backupMsg = ""; }
   }
 
   /* history entries *before* this session. If the current lift is already
@@ -1917,9 +1912,9 @@
     return json;
   }
   menuBtn.onclick = openModal;
-  /* banner backs up now — same download the menu offers (B5-04) */
+  /* B5-04 */
   document.getElementById("backupBarSave").onclick = downloadBackup;
-  document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; renderDay(); };
+  document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; backupMsg = ""; renderDay(); };
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
   document.getElementById("exportCopy").onclick = function () {
@@ -1937,8 +1932,8 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
   function downloadBackup() {
-    downloadText(exportWithFreshBackup(), "gym-backup-" + Gym.dateKey() + ".json", "application/json");
-    setMsg("Backup downloaded ✓");
+    downloadText(exportWithFreshBackup(),"gym-backup-"+Gym.dateKey()+".json","application/json");
+    setMsg("Backup downloaded ✓"); backupMsg = "Backup downloaded ✓"; renderDay();
   }
   document.getElementById("exportDownload").onclick = downloadBackup;
   document.getElementById("exportCsv").onclick = function () {

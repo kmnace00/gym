@@ -250,6 +250,19 @@ test("summary close restores focus to a sensible control (U24)", async ({ page }
   await expect(page.locator("#menuBtn")).toBeFocused();
 });
 
+test("backup bar save shows visible confirmation (U26)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-22T10:00:00Z") });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [{ load: 60, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: [], lastBackup: "2026-11-01"
+  });
+  await expect(page.locator("#backupBar")).toBeVisible();
+  await page.locator("#backupBarSave").click();
+  await expect(page.locator("#backupBar")).toBeVisible();
+  await expect(page.locator("#backupBarText")).toContainText("Backup downloaded ✓");
+});
+
 test("menu close falls back when opener is no longer focusable (U25)", async ({ page }) => {
   await page.goto(url);
   await page.locator("#menuBtn").click();
