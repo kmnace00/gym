@@ -11,7 +11,7 @@
 html[data-theme="light"]{
   --bg:#fdebd2; --surface:#fff9ef; --surface-2:#f7e3c2; --line:#dfc28f;
   --ink:#2e2a26; --muted:#7a5c3e; --faint:#7d6138;
-  --accent:#8f5c2b; --accent-ink:#ffffff; --accent-soft:rgba(143,92,43,.14);
+  --accent:#855126; --accent-ink:#ffffff; --accent-soft:rgba(133,81,38,.14);
   --good:#3e7531; --warn-bg:#fef3c7; --warn:#92400e;
   --danger:#b91c1c;
   --shadow-sm:0 1px 3px rgba(120,72,20,.12); --shadow-md:0 4px 14px rgba(120,72,20,.14);

@@ -556,6 +556,44 @@ test("destructive buttons meet 4.5:1 contrast in both themes (B5-18)", async ({ 
   expect(light, `light-theme danger text contrast ${light.toFixed(2)} must be >= 4.5`).toBeGreaterThanOrEqual(4.5);
 });
 
+test("accent text clears 4.5:1 on every themed surface (U4)", async ({ page }) => {
+  await page.goto(url);
+  const ratios = () => page.evaluate(() => {
+    const nums = (s) => (s.match(/[\d.]+/g) || []).map(Number);
+    const rgb = (v) => {
+      v = v.trim();
+      if (v[0] !== "#") return nums(v);
+      const n = parseInt(v.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    };
+    const lum = (c) => {
+      const ch = c.slice(0, 3).map((v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+    };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const css = getComputedStyle(document.documentElement);
+    const token = (name) => rgb(css.getPropertyValue(name));
+    const accent = token("--accent"), soft = token("--accent-soft");
+    const over = (base) => soft.slice(0, 3).map((v, i) => v * soft[3] + base[i] * (1 - soft[3]));
+    return {
+      onSoftOverBg: ratio(accent, over(token("--bg"))),
+      onSoftOverSurface: ratio(accent, over(token("--surface"))),
+      onSurface2: ratio(accent, token("--surface-2")),
+      inkOnAccent: ratio(token("--accent-ink"), accent)
+    };
+  });
+  for (const theme of ["dark", "light"]) {
+    await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+    const r = await ratios();
+    for (const [surface, value] of Object.entries(r)) {
+      expect(value, `${theme}-theme accent on ${surface} is ${value.toFixed(2)}, below 4.5`).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+});
+
 for (const size of sizes) {
   test.describe(`swap mode viewport 390x${size.height}`, () => {
     test.use({ viewport: size });
