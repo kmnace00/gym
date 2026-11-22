@@ -958,9 +958,8 @@
   }
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
-  /* The rest *orchestration* lives in restctl.js; this shell applies the
-     effects it returns and paints its view model. `rInt` drives the 200 ms
-     ticks and `rArmT` is the 2,600 ms two-tap finish window.                 */
+  /* restctl.js orchestrates; this shell paints its effects. `rInt` ticks every
+     200 ms; `rArmT` is the 2,600 ms two-tap finish window.                   */
   var rInt = null, rArmT = null, restNextRaw = "", restPrepIdx = -1;
 
   function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
@@ -1564,6 +1563,7 @@
     if (!sInt) startSessionTimer();
     keepAwake();
     render();
+    restClock.focus();
   };
 
   /* tap a completed set to correct it with the same adjusters */

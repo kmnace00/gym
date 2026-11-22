@@ -329,6 +329,19 @@ test("view changes place keyboard focus where the user is looking", async ({ pag
   expect(errors, "no console errors").toEqual([]);
 });
 
+test("Set Done moves keyboard focus into the rest screen (U5)", async ({ page }) => {
+  await page.goto(url);
+  const lift = page.locator('.liftrow[data-i="0"]');
+  await lift.focus();
+  await page.keyboard.press("Enter");
+  await page.locator("#doneBtn").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#timerBar")).toBeVisible();
+  expect(await page.evaluate(() => document.activeElement.id), "focus lands on the rest clock, not <body>").toBe("restTime");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement.id), "Tab then reaches the first rest control").toBe("plus15");
+});
+
 test("status messages are announced to screen readers", async ({ page }) => {
   await page.goto(url);
   const live = await page.evaluate(() => {
