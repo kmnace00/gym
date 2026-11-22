@@ -387,6 +387,28 @@ test("swap chooser returns focus to the Swap button when closed (U8)", async ({ 
   expect(await page.evaluate(() => document.activeElement.id), "choosing an alternate returns focus to Swap").toBe("swapBtn");
 });
 
+test("ending a rest returns focus to the lift heading (U9)", async ({ page }) => {
+  const base = { v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, liftHistory: {}, sessionLog: [] };
+
+  // End rest mid-lift: back to the same lift, focus returns to its heading.
+  await seed(page, { ...base, state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2 } } });
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#timerBar")).not.toHaveClass(/active/);
+  expect(await page.evaluate(() => document.activeElement.id), "focus returns to the heading after End rest").toBe("exName");
+
+  // End rest after the final set: the next lift opens with focus on its heading.
+  await seed(page, { ...base, state: { "fri:0": { done: 3, load: 60, reps: 6, rir: 2 } } });
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#skipRest").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#timerBar")).not.toHaveClass(/active/);
+  expect(await page.evaluate(() => document.activeElement.id), "focus follows the next lift's heading").toBe("exName");
+});
+
 test("Set Done moves keyboard focus into the rest screen (U5)", async ({ page }) => {
   await page.goto(url);
   const lift = page.locator('.liftrow[data-i="0"]');

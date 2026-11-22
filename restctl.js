@@ -30,7 +30,7 @@
    *            prepLoad: string, prepReps: string, elapsedSec: number | null}} RestView
    * @typedef {{type: string, [key: string]: any}} RestEffect
    * @typedef {{state: {phase: string, pending: boolean},
-   *            view: RestView, effects: RestEffect[]}} RestOut
+   *            view: RestView, effects: RestEffect[], focusLift?: boolean}} RestOut
    * @typedef {{Machine: any, Rest: any, now: () => number, cur: () => string,
    *            idx: () => number, dayLen: () => number, done: () => number,
    *            sets: () => number, exRest: () => number, editSet: () => number,
@@ -109,8 +109,8 @@
     }
 
     /** @param {RestEffect[]} effects @returns {RestOut} */
-    function out(effects) {
-      return { state: { phase: rest.phase, pending: ctx.pending }, view: view(), effects: effects };
+    function out(effects, focusLift = false) {
+      return { state: { phase: rest.phase, pending: ctx.pending }, view: view(), effects: effects, focusLift: !!focusLift };
     }
 
     /** Back to idle, clearing exactly what the old timerIdle cleared. */
@@ -188,7 +188,7 @@
         if (nx >= 0) {
           ctx.pending = false;
           toIdle("", "Next lift — go.");
-          return out([{ type: "advanceTo", idx: nx }, { type: "commit" }, { type: "render" }]);
+          return out([{ type: "advanceTo", idx: nx }, { type: "commit" }, { type: "render" }], true);
         }
         /* last lift done — require a second tap so a stray tap can't end the session */
         if (!Rest.finishArmed(deps.now(), ctx.finishUntil)) {
@@ -200,7 +200,7 @@
         return out([{ type: "finishWorkout" }]);
       }
       toIdle("", isGo ? "Next set — go." : "Skipped — next set, go.");
-      return out([]);
+      return out([], true);
     }
 
     /** The 2,600 ms two-tap window expired: forget the arm and thaw the clock. */

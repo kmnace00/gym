@@ -86,10 +86,8 @@
   function rampText(ramp) {
     return (ramp.kind === "full" ? "Ramp: " : ramp.kind === "feeler" ? "Feeler: " : "Warm-up: ") + ramp.steps.map(function (s2) { return s2.load + "×" + s2.reps; }).join(" · ");
   }
-  /* B6-10: the one filter every progression read goes through. A session feeds
-     the 2-for-2 / stall / trend maths only if it was neither logged under a
-     swap (B6-06) nor banked during a deload week (B6-09). Volume and
-     completion reads deliberately do not use it.                            */
+  /* B6-10: the one progression-read filter — excludes swaps (B6-06) and
+     deload sessions (B6-09); volume/completion reads deliberately skip it. */
   function progressionEntry(e) { return countsForProgression(e) && !e.deload; }
 
   /* bodyweight-aware metric: total system weight, so adding a plate to a dip
@@ -1016,10 +1014,10 @@
       else if (e.type === "blurIfOutside") { if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur(); }
     }
     renderRestView(out.view);
+    if (out.focusLift) document.getElementById("exName").focus();
   }
-  /* N11: active/paused rest hides the editor under the peek (.rest-quiet);
-     the rest card is the working surface. Editing a logged set is the one
-     exception; GO and idle always restore the editor. */
+  /* N11: active/paused rest hides the editor (.rest-quiet); editing a logged
+     set is the exception; GO and idle restore it. */
   function syncRestQuiet() {
     var v = restCtl.view();
     appEl.classList.toggle("rest-quiet", (v.phase === "active" || v.phase === "paused") && editSet < 0);
