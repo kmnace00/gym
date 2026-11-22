@@ -354,6 +354,39 @@ test("End rest's spoken name follows its visible label (U6)", async ({ page }) =
   await expect(page.locator("#skipRest")).toHaveAccessibleName("Tap again to finish");
 });
 
+test("day tabs keep keyboard focus after a switch (U7)", async ({ page }) => {
+  await page.goto(url);
+  const tab = page.locator('.daytab[data-day="sat"]');
+  await tab.focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.getAttribute("data-day")),
+    "focus follows the newly selected day tab").toBe("sat");
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement && document.activeElement.getAttribute("data-day")),
+    "Tab continues to the next day tab, not the top of the document").toBe("sun");
+});
+
+test("swap chooser returns focus to the Swap button when closed (U8)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2 } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+
+  await page.locator("#swapBtn").click();
+  await page.locator(".swapchoice.cancel").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#swapChoices")).toBeHidden();
+  expect(await page.evaluate(() => document.activeElement.id), "Cancel returns focus to Swap").toBe("swapBtn");
+
+  await page.locator("#swapBtn").click();
+  await page.locator(".swapchoice").first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#swapChoices")).toBeHidden();
+  expect(await page.evaluate(() => document.activeElement.id), "choosing an alternate returns focus to Swap").toBe("swapBtn");
+});
+
 test("Set Done moves keyboard focus into the rest screen (U5)", async ({ page }) => {
   await page.goto(url);
   const lift = page.locator('.liftrow[data-i="0"]');

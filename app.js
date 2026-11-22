@@ -18,9 +18,8 @@
   function st(d, i) { return getLift(payload.state, d, i, DAYS[d].ex[i]); }
   function ex() { return DAYS[cur].ex[idx]; }
   function curSt() { return st(cur, idx); }
-  /* B6-09: the one place a lift's effective set target is decided. During a
-     deload week every completion call uses the reduced count; otherwise it is
-     the programme's own `s`, exactly as before.                              */
+  /* B6-09: the one place effective set targets are decided — reduced during
+     a deload week, otherwise the programme's own `s`. */
   function effSets(e) { return deloadActive(payload) ? deloadSets(e) : e.s; }
   /** The first open lift of the current day for the effective (deload-aware) target. */
   function firstOpen(from) { return firstOpenLift(cur, payload.state, from, effSets); }
@@ -349,9 +348,8 @@
     return daysBetween(anchor, today) >= 35 && !loggedThisWeek(today);
   }
 
-  /* N24: Fri/Sat/Sun tabs live in the header with weekStatus dots and a today
-     mark; switchDay keeps chevron semantics (incl. mid-edit reset, B5-05).
-     Dots are woven into the label; a11y gets one week sentence. */
+  /* N24: header day tabs with weekStatus dots; switchDay keeps chevron
+     semantics (incl. mid-edit reset, B5-05). A11y gets one week sentence. */
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
   function renderDayWeek() {
     var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
@@ -365,7 +363,7 @@
       }).join("");
       var btns = cluster.querySelectorAll(".daytab");
       for (var b = 0; b < btns.length && b < wk.length; b++) {
-        btns[b].onclick = (function (d) { return function () { switchDay(d); }; })(wk[b].day);
+        btns[b].onclick = (function (d) { return function () { switchDay(d); var t = cluster.querySelector('.daytab[data-day="' + d + '"]'); if (t) t.focus(); }; })(wk[b].day);
       }
     }
     var sr = document.getElementById("dayWeekSummary");
@@ -718,6 +716,7 @@
     var scEl = document.getElementById("swapChoices");
     if (scEl) {
       var showChoices = swapOpen && !sw && !setsLogged;
+      if (!showChoices && scEl.contains(document.activeElement)) swapBtn.focus();
       scEl.hidden = !showChoices;
       if (showChoices) {
         scEl.innerHTML = "";
