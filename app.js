@@ -1735,7 +1735,7 @@
   document.getElementById("sumClose").onclick = afterSummaryClose;
   summary.addEventListener("click", function (ev) { if (ev.target === summary) afterSummaryClose(); });
   summary.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") { afterSummaryClose(); return; }
+    if (ev.key === "Escape") { ev.stopPropagation();afterSummaryClose(); return; }
     if (ev.key !== "Tab") return;
     var items = summary.querySelectorAll("button:not([hidden]), input:not([hidden]), [href]");
     if (!items.length) return;
@@ -1838,9 +1838,9 @@
     if (modal.contains(document.activeElement) && document.activeElement) document.activeElement.blur();
     modal.hidden = true;
   }
-  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&swapOpen&&modal.hidden&&summary.hidden){swapOpen=false;render();document.getElementById("swapBtn").focus()}});
+  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&modal.hidden&&summary.hidden){if(swapOpen){swapOpen=false;render();document.getElementById("swapBtn").focus()}else if(view==="progress")showDay()}});
   modal.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") { closeModal(); return; }
+    if (ev.key === "Escape") { ev.stopPropagation();closeModal(); return; }
     if (ev.key !== "Tab") return;
     var items = modal.querySelectorAll("button, label.modalbtn, input:not([hidden])");
     if (!items.length) return;

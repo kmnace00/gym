@@ -265,8 +265,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `finishEdit()` focuses visible `#doneBtn` or falls back to the edited set row (`app.js:1312-1323`). `undoSet()` restores focus to visible `#doneBtn` when active element is body/disabled/invisible after undo (`app.js:1184-1188`). U35/U36 e2e added. Byte funding: condensed section comments in app.js. `GYM_VERSION` `gym-v237` → `gym-v238`, CACHE-HASH → `4acc08696f5fd1a9`.
 - **Verified in plain terms:** U35 edits a set during rest peek, finishes edit, asserts focus returns to set row while rest-quiet remains. U36 undoes last set from lift view and asserts focus moves to Done while undo button is disabled. Full gate green: 286 unit, typecheck clean, 268 e2e. Independent critic-flash: see review log below.
 
+### Round 44 — `[DONE round 44]` Escape closes progress view
+- **Wrong:** Progress view had no Escape dismiss path; keyboard users could open it (focus moves to progTitle) but Escape left progress-mode active. Surveyed/reproduced Nov 22.
+- **Changed:** global Escape handler now closes progress via `showDay()` when no modal/summary/swap is active (`app.js:1841`). U37 e2e added. `GYM_VERSION` `gym-v238` → `gym-v239`, CACHE-HASH → `0d756bd52532fa5b`.
+- **Verified in plain terms:** U37 opens progress, asserts progTitle focused, presses Escape, asserts progress-mode removed and day view visible. Full gate green: 286 unit, typecheck clean, 269 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 44 — critic-flash reviewer: BLOCKER (fixed)**. Blocker: modal/summary Escape handlers hid overlays without stopPropagation, so global handler could also close progress. Fixed by adding stopPropagation in modal/summary Escape handlers (`app.js:1738,1844`); re-ran targeted Escape-over-progress+modal probe and full gate. No remaining blockers.
 - **Round 43 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified finishEdit fallback to visible doneBtn/set row and undoSet focus restore only when active element body/disabled/invisible.
 - **Round 42 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified startEdit focuses existing enabled doneBtn after render, guarded set presence, and call paths are set-row activation only.
 - **Round 41 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers. Non-blocking nit: rerendering rest view before nav state update could briefly stale prep — **applied** by rerendering rest view at end of render() when resting; gate re-green.

@@ -904,6 +904,15 @@ test("undoSet restores focus to Done when undo control loses focus (U36)", async
   await expect(page.locator('#undoSetBtn')).toBeDisabled();
 });
 
+test("Escape closes progress view and returns to day (U37)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#progTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#app")).not.toHaveClass(/progress-mode/);
+  await expect(page.locator("#dayView")).toBeVisible();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
