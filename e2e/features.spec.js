@@ -743,6 +743,38 @@ test("a swap day's Prev line reads the swap entry; the suggestion ignores it (B6
   await expect(page.locator("#applyLoad")).toBeHidden();
 });
 
+test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 0, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [] } },
+    liftHistory: {}, sessionLog: [],
+    active: { date, status: "active", startedAt: Date.now() - 60000, elapsedSec: 0, runningSince: Date.now() - 60000 }
+  });
+  await page.locator('[data-i="0"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  const backup = JSON.stringify({ v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, state: {}, liftHistory: {}, sessionLog: [], active: { date, status: "active", startedAt: Date.now() - 120000, accSec: 90, runningSince: null } });
+  await page.locator("#detailsBtn").click();
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#replaceFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#app")).not.toHaveClass(/resting/);
+  await expect(page.locator("#restLabel")).toHaveText("");
+  await expect(page.locator("#sessBtn")).toContainText("Resume");
+  await page.locator("#modalClose").click();
+
+  await page.locator('[data-i="0"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#detailsBtn").click();
+  await page.locator("#menuBtn").click();
+  await page.locator("#clearAll").click();
+  await page.locator("#clearAll").click();
+  await expect(page.locator("#app")).not.toHaveClass(/resting/);
+  await expect(page.locator("#sessBtn")).toContainText("Start");
+  await expect(page.locator("#sessBtn")).toContainText("0:00");
+});
+
 test("the Bulgarian split squat rests 2:30 after a set (B6-08)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 2, bodyweight: 165, bodyweightSet: false,

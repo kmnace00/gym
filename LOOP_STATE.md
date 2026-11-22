@@ -1,8 +1,8 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–36 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
+**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–37 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
 
-Baseline re-checked green at the restart; current gate after round 36: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest 389225aba5023c61), `npm run typecheck` clean, `npm run e2e` 258 passed. `GYM_VERSION` is now `gym-v231`. The fix left 42 bytes of headroom (precache total 307158 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
+Baseline re-checked green at the restart; current gate after round 37: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest b9624027974f0347), `npm run typecheck` clean, `npm run e2e` 259 passed. `GYM_VERSION` is now `gym-v232`. The fix left 61 bytes of headroom (precache total 307139 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -230,8 +230,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `downloadBackup()` now sets `backupMsg` and re-renders the day; `renderDay()` shows that message in the backup bar once when due banner is no longer needed, then clears it (`app.js:246,454-456,1936,1940-1943`). Dismiss clears `backupMsg`. `GYM_VERSION` `gym-v230` → `gym-v231`, CACHE-HASH → `389225aba5023c61`.
 - **Verified in plain terms:** new e2e "backup bar save shows visible confirmation (U26)" seeds overdue backup state, clicks Save, and asserts the backup bar remains visible with "Backup downloaded ✓". Existing enhancements e2e updated to expect visible confirmation. Full gate green: 286 unit, typecheck clean, 258 e2e. Independent Big Pickle reviewer: see review log below.
 
+### Round 37 — `[DONE round 37]` Destructive restores clear live rest and reconcile session clock
+- **Wrong:** Restore/replace, import merge, snapshot restore, and Clear all left active rest/timer UI running with stale lift context; restores also left the session pill/interval out of sync with the restored `payload.active` clock (running UI over paused restore, paused UI over running restore). Surveyed/reproduced Nov 22.
+- **Changed:** added `syncClock()` to reconcile `sInt`/wake lock/pill with `payload.active.runningSince` (`app.js:1208-1213`). Restore/merge/snapshot/clear-all now `resetEdit(); timerIdle("", "")` before applying, then `render(); syncClock(); commit(); updateFoot()` (`app.js:1981-1992,2001-2012,2169-2179,2108-2114`). `GYM_VERSION` `gym-v231` → `gym-v232`, CACHE-HASH → `b9624027974f0347`.
+- **Verified in plain terms:** new e2e "restore and clear-all clear live rest and reconcile session clock (U27)" starts rest, restores a paused-session backup, and asserts rest is cleared and pill shows Resume; then starts rest again, Clear all twice, and asserts rest cleared and pill shows Start/0:00. Failed before fix/pass after. Full gate green: 286 unit, typecheck clean, 259 e2e. Independent Big Pickle reviewer: see review log below.
+
 ## Review log
 
+- **Round 37 — Big Pickle reviewer: GO**, no blockers. Verified syncClock reconciles interval/wake/pill from payload.active.runningSince, covers all four destructive payload swaps with safe timerIdle+syncClock ordering, and no other payload-swap sites missed. Non-blocking nit: U27 could assert pause icon/aria-label explicitly — **declined**, covered by text/state assertions.
 - **Round 36 — Big Pickle reviewer: GO**, no blockers. Verified one-render backupMsg lifecycle is stale-free, renderDay from downloadBackup is benign (including menu/modal contexts), and banner-save gets visible confirmation while menu download remains sane. Non-blocking nits: U26 could await download event; extra renderDay in day view — **declined**, harmless/covered.
 - **Round 35 — Big Pickle reviewer: GO**, no blockers. Verified afterSummaryClose only falls back when focus was lost/body/inside-summary/invisible and all close paths use it; closeModal hides after focus repair and only acts on modal-contained focus. Non-blocking nits: backdrop click now renders (harmless/idempotent) — **accepted**; U25 asserts focus escaped modal, not a specific useful target — **accepted**, guarded case.
 - **Round 34 — Big Pickle reviewer: GO**, no blockers. Verified the change is message-only and truthful for all no-op/manual/planned-as-manual cases. Non-blocking nit: less specific than "kept your manual loads" for user-edited loads — **declined**, truthful and simpler.

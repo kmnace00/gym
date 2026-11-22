@@ -1157,7 +1157,7 @@
   });
   function clearUndo() { appEl.classList.remove("can-undo"); }
   skipBtn.onclick = function () { apply(restCtl.skip(false)); };
-  /* undo always acts on the lift you are looking at, so the change is visible */
+  /* undo acts on viewed lift */
   function undoSet() {
     resetEdit();
     var s = curSt();
@@ -1197,14 +1197,14 @@
       sessBtn.classList.add("on");
       sessBtn.innerHTML = "⏸ <span id='elapsed'>" + t + "</span>";
     } else {
-      /* "Start" only when nothing has elapsed yet — a paused clock is being
-         resumed, not restarted, and the pill must not imply otherwise.      */
+      /* "Start" only when nothing has elapsed yet; paused means Resume. */
       sessBtn.classList.remove("on");
       sessBtn.innerHTML = "▶ <span class='startlbl'>" + (secs > 0 ? "Resume" : "Start") + "</span><span id='elapsed'>" + t + "</span>";
     }
     sessBtn.classList.toggle("has-time", secs > 0);
     sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : (secs > 0 ? "Resume workout timer" : "Start workout timer"));
   }
+  function syncClock(){var run=!!(payload.active&&payload.active.runningSince);if(run&&!sInt){sInt=setInterval(tickSession,500);keepAwake();}if(!run&&sInt){clearInterval(sInt);sInt=null;if(!appEl.classList.contains("resting"))releaseAwake();}renderSessionPill();}
   function startSessionTimer() {
     if (sInt) return;
     Gym.startSessionClock(payload);
@@ -1241,8 +1241,7 @@
     var w = wakeLock; wakeLock = null;
     try { var p = w.release(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
   }
-  /* A home-screen tab can stay open for days; ask the SW to update silently
-     on each return (throttled to 10 min) so navigation fetch gets the build. */
+    /* throttle SW update checks on return */
   var swCheckAt = 0;
   function checkForDeploy() {
     if (!swReg || typeof swReg.update !== "function") return;
@@ -1505,7 +1504,7 @@
       hintGood = true;
     }
 
-    /* the set array is the truth: bank it on completion and on every extra set */
+    /* bank set array on completion/extra sets */
     bankLift(cur, idx);
 
     var list = DAYS[cur].ex, nextText = "";
@@ -1980,16 +1979,15 @@
       try {
         var snapOk = Gym.snapshot(payload, "pre-restore");
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
-        resetEdit();
+        resetEdit(); timerIdle("", "");
         payload = restored;
-        /* a backup may carry an older `active.date` — roll it forward as boot
-           does (B3-11), or the next workout banks under a stale date. */
+        /* roll forward stale backup date like boot (B3-11) */
         Gym.rollSession(payload, Gym.todayDay());
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
-        render(); commit(); updateFoot();
+        render(); syncClock(); commit(); updateFoot();
         setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Restore failed — not a Gym backup"); }
     };
@@ -2004,13 +2002,13 @@
       try {
         var snapOk = Gym.snapshot(payload, "pre-merge");
         var stats = { added: 0, collisions: 0 };
-        resetEdit();
+        resetEdit(); timerIdle("", "");
         var merged = Gym.importMerge(payload, String(reader.result), stats);
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
-        render(); commit(); updateFoot();
+        render(); syncClock(); commit(); updateFoot();
         setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
       } catch (e) { render(); setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
@@ -2110,9 +2108,9 @@
   }
   function doClearAll() {
     var snap = Gym.snapshot(payload, "pre-clear");
-    resetEdit();
+    resetEdit(); timerIdle("", "");
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
-    clearUndo(); commit(); render(); updateFoot();
+    clearUndo(); render(); syncClock(); commit(); updateFoot();
     setMsg(snap ? "All training data cleared." : "All training data cleared — no undo copy (storage full).");
   }
   document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
@@ -2173,12 +2171,12 @@
     if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
     var snapOk = Gym.snapshot(payload, "pre-snapshot-restore");
     payload = Gym.reconcile(restored, DAYS);
-    Gym.rollSession(payload, Gym.todayDay()); // v150's roll, as boot/backup-restore do
+    Gym.rollSession(payload, Gym.todayDay());
     cur = payload.cur; idx = payload.idx;
     if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
-    clearUndo(); resetEdit(); view = "day";
-    commit(); render(); updateFoot();
+    clearUndo(); resetEdit(); timerIdle("", ""); view = "day";
+    render(); syncClock(); commit(); updateFoot();
     setMsg(snapOk ? "Snapshot restored ✓" : "Snapshot restored ✓ — no undo copy (storage full)");
   };
 
