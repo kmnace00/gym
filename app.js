@@ -1992,11 +1992,10 @@
       try {
         var snapOk = Gym.snapshot(payload, "pre-restore");
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        resetEdit();
         payload = restored;
-        /* a restored backup may carry an `active.date` from an earlier day —
-           roll it forward exactly as boot does (B3-11), or the next workout
-           would bank under the stale backup date and could overwrite a real
-           past history entry for that lift. */
+        /* a backup may carry an older `active.date` — roll it forward as boot
+           does (B3-11), or the next workout banks under a stale date. */
         Gym.rollSession(payload, Gym.todayDay());
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
@@ -2018,6 +2017,7 @@
         var snapOk = Gym.snapshot(payload, "pre-merge");
         var stats = { added: 0, collisions: 0 };
         var merged = Gym.importMerge(payload, String(reader.result), stats);
+        resetEdit();
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;

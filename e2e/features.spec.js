@@ -227,6 +227,34 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("replacing the log abandons a set edit before loading the backup (U16)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [{ load: 77, reps: 8, rir: 1 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  const backup = JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 170, bodyweightSet: false,
+    state: { "fri:0": { load: 30, reps: 4, rir: 3, done: 0, topHits: 0, lastRir: null, exId: "fri-smith-squat" } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#replaceFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("Backup restored");
+  await page.locator("#modalClose").click();
+  await page.locator(".liftrow").first().click();
+
+  const rec = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"]);
+  expect(rec.load, "the imported working load must survive opening the lift").toBe(30);
+  expect(rec.reps).toBe(4);
+  expect(rec.rir).toBe(3);
+  await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
+});
+
 test("advancing to the next lift abandons a set edit (U15)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
