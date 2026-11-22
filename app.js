@@ -1917,22 +1917,24 @@
     renderBw();
     renderDeload();
   }
-  function noteBackup() {
-    Gym.markBackup(payload); commit(); updateFoot();
-    if (view === "day") renderDay(); // clear the overdue banner immediately
+  function exportWithFreshBackup() {
+    Gym.markBackup(payload);
+    var json = Gym.exportPayload(payload);
+    commit(); updateFoot();
+    if (view === "day") renderDay(); // clear overdue banner
+    return json;
   }
   menuBtn.onclick = openModal;
-  /* the banner button backs up now — the same download the menu offers —
-     instead of making the lifter take a two-trip detour through the modal (B5-04) */
+  /* banner backs up now — same download the menu offers (B5-04) */
   document.getElementById("backupBarSave").onclick = downloadBackup;
   document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; renderDay(); };
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
   document.getElementById("exportCopy").onclick = function () {
-    var json = Gym.exportPayload(payload);
+    var json = exportWithFreshBackup();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(json).then(function () { noteBackup(); setMsg("Backup copied to clipboard ✓"); }, function () { setMsg("Copy blocked — use Download JSON"); });
-    } else { downloadBackup(); }
+      navigator.clipboard.writeText(json).then(function () { setMsg("Backup copied to clipboard ✓"); }, function () { setMsg("Copy blocked — use Download JSON"); });
+    } else { downloadText(json, "gym-backup-" + Gym.dateKey() + ".json", "application/json"); setMsg("Backup downloaded ✓"); }
   };
   function downloadText(text, name, type) {
     var blob = new Blob([text], { type: type || "text/plain" });
@@ -1943,8 +1945,7 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
   }
   function downloadBackup() {
-    downloadText(Gym.exportPayload(payload), "gym-backup-" + Gym.dateKey() + ".json", "application/json");
-    noteBackup();
+    downloadText(exportWithFreshBackup(), "gym-backup-" + Gym.dateKey() + ".json", "application/json");
     setMsg("Backup downloaded ✓");
   }
   document.getElementById("exportDownload").onclick = downloadBackup;

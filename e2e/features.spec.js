@@ -255,6 +255,24 @@ test("merging a backup abandons a set edit before cloning the local log (U17)", 
   await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
 });
 
+test("backup export includes the fresh lastBackup it reports (U18)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-20T10:00:00") });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    lastBackup: "2026-11-01", state: {}, liftHistory: {}, sessionLog: []
+  });
+  await page.evaluate(() => {
+    window.__copied = "";
+    navigator.clipboard.writeText = async (t) => { window.__copied = t; };
+  });
+  await page.locator("#menuBtn").click();
+  await page.locator("#exportCopy").click();
+  await expect(page.locator("#modalMsg")).toContainText("Backup copied");
+  await expect(page.locator("#modalFoot")).toContainText("backed up today");
+  const exported = await page.evaluate(() => JSON.parse(window.__copied));
+  expect(exported.lastBackup, "the exported file must match the backup status it reports").toBe("2026-11-20");
+});
+
 test("replacing the log abandons a set edit before loading the backup (U16)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
