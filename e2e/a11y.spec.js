@@ -329,6 +329,31 @@ test("view changes place keyboard focus where the user is looking", async ({ pag
   expect(errors, "no console errors").toEqual([]);
 });
 
+test("End rest's spoken name follows its visible label (U6)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const ex = Gym.DAYS[day].ex, state = {};
+    ex.forEach((e, i) => {
+      state[day + ":" + i] = { done: i === ex.length - 1 ? e.s - 1 : e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets: [] };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: ex.length - 1, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "ses_last", date, day, startedAt: Date.now() - 1800000, endedAt: null, accSec: 1800, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+  await page.locator(".liftrow").nth(7).click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await expect(page.locator("#skipRest")).toHaveAccessibleName("End rest");
+
+  await page.locator("#skipRest").click(); // arms the two-tap finish
+  await expect(page.locator("#skipRest")).toHaveText("Tap again to finish");
+  await expect(page.locator("#skipRest")).toHaveAccessibleName("Tap again to finish");
+});
+
 test("Set Done moves keyboard focus into the rest screen (U5)", async ({ page }) => {
   await page.goto(url);
   const lift = page.locator('.liftrow[data-i="0"]');
