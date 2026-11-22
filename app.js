@@ -1170,6 +1170,7 @@
   skipBtn.onclick = function () { apply(restCtl.skip(false)); };
   /* undo always acts on the lift you are looking at, so the change is visible */
   function undoSet() {
+    resetEdit();
     var s = curSt();
     if (s.done <= 0) return;
     var wasComplete = s.done >= effSets(ex());

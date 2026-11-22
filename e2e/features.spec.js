@@ -227,6 +227,21 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("undo abandons a set edit so Done editing stops lying (U14)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 57.5, reps: 6, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [{ load: 57.5, reps: 6, rir: 2 }, { load: 57.5, reps: 6, rir: 2 }, { load: 57.5, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator('.setrow[data-set="2"]').click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#undoSetBtn").click();
+  await expect(page.locator("#doneBtn"), "undo removes the edited set, so edit mode must end").not.toHaveText("Done editing");
+  await expect(page.locator("#setCount")).not.toContainText("Editing set");
+});
+
 test("clear all data does not resurrect an in-progress set edit (U12)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
