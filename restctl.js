@@ -213,6 +213,7 @@
     /** Manual navigation cancels a pending auto-advance; callers never render. */
     function cancelPendingAdvance() {
       if (rest.phase !== Machine.IDLE) ctx.pending = false;
+      ctx.finishUntil = 0; ctx.frozen = false;
       return out([]);
     }
 

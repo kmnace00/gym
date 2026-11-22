@@ -941,6 +941,7 @@
     else if (view === "progress") renderProgress();
     else renderLift();
     syncUndo();
+    if (appEl.classList.contains("resting")) renderRestView(restCtl.view());
   }
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
@@ -1822,7 +1823,7 @@
   document.getElementById("dayPrev").onclick = function () { stepDay(-1); };
   document.getElementById("dayNext").onclick = function () { stepDay(1); };
 
-  /* ── backup modal (export / import) + focus management ─────────────────── */
+  /* backup modal */
   var lastFocus = null;
   function openModal() {
     lastFocus = document.activeElement;

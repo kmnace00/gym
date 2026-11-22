@@ -848,6 +848,26 @@ test("notify toggle clears stale denied permission on init (U32)", async ({ page
   expect(stored).toBe("0");
 });
 
+test("finish arm clears on navigation and does not skip-finish (U33)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  const state = {};
+  for (let i=0;i<8;i++) state["fri:"+i] = { load:60,reps:6,rir:2,done:i<7?3:2,topHits:0,lastRir:2,exId:["fri-smith-squat","fri-smith-incline","fri-bulgarian","fri-incline-db","fri-pec-deck","fri-leg-ext","fri-cable-lat","fri-weighted-dip"][i],sets:Array(i<7?3:2).fill({load:60,reps:6,rir:2}) };
+  await seed(page, { v:5, cur:"fri", idx:7, bodyweight:165, bodyweightSet:false, state, liftHistory:{}, sessionLog:[],
+    active:{ id:"s1", date, day:"fri", startedAt:Date.now()-600000, accSec:600, runningSince:null, status:"active" } });
+  await page.locator('[data-i="7"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#skipRest").click();
+  await expect(page.locator("#skipRest")).toHaveText("Tap again to finish");
+  await page.locator("#detailsBtn").click();
+  await page.locator("#backBtn").click();
+  await expect(page.locator("#skipRest")).toHaveText("End rest");
+  await page.locator("#skipRest").click();
+  await expect(page.locator("#summary")).toBeHidden();
+  await expect(page.locator("#restMsg")).toContainText(/Skipped|Next set/);
+  await expect(page.locator("#app")).not.toHaveClass(/resting/);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -1,8 +1,8 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–40 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
+**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–41 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
 
-Baseline re-checked green at the restart; current gate after round 40: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest ed4513619c3d4573), `npm run typecheck` clean, `npm run e2e` 264 passed. `GYM_VERSION` is now `gym-v235`. The fix left 36 bytes of headroom (precache total 307164 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
+Baseline re-checked green at the restart; current gate after round 41: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest f5341b7e7b816f39), `npm run typecheck` clean, `npm run e2e` 265 passed. `GYM_VERSION` is now `gym-v236`. The fix left 18 bytes of headroom (precache total 307186 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -250,8 +250,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** load/reps mids now keyboard-focusable buttons with Enter/Space to open editor (`app.js` wireVal around load/reps handlers). `editValue` restores focus to previous visible element or the live mid stepper after finish, and input keydown stops propagation to avoid re-opening (`app.js` editValue). `initNotify()` clears stale stored "1" when permission denied; `renderNotify()` reflects effective state (`app.js` notify init/render). U31/U32 e2e added. Byte funding: condensed verbose comments in `app.js`; reasoning preserved here. `GYM_VERSION` `gym-v234` → `gym-v235`, CACHE-HASH → `ed4513619c3d4573`.
 - **Verified in plain terms:** U31 tabs/focuses load mid, Enter opens input, typing+Enter commits 65 and returns focus to mid. U32 stubs denied Notification with stored notify=1 and asserts menu shows Off and storage cleared. Full gate green: 286 unit, typecheck clean, 264 e2e. Independent critic-flash: see review log below.
 
+### Round 41 — `[DONE round 41]` Finish arm clears on navigation; no misleading skip-finish
+- **Wrong:** after arming "Tap again to finish", navigating away left the finish-armed label visible; second tap could skip/idle rest instead of finishing (stale finish arm + pending/canAdvance mismatch). Surveyed/reproduced Nov 22.
+- **Changed:** `restctl.cancelPendingAdvance()` now also clears `finishUntil` and unfreezes (`restctl.js:216-220`). `app.js` `cancelPendingAdvance()` rerenders rest view while resting so label/state stay truthful (`app.js:1751`). E2E U33 added. Byte funding: condensed a few app.js comments. `GYM_VERSION` `gym-v235` → `gym-v236`, CACHE-HASH → `f5341b7e7b816f39`.
+- **Verified in plain terms:** U33 arms finish on last-lift GO, navigates back to day, asserts button returns to "End rest", then tapping skip idles rest with "Skipped/Next set" message and no summary/finish. Full gate green: 286 unit, typecheck clean, 265 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 41 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers. Non-blocking nit: rerendering rest view before nav state update could briefly stale prep — **applied** by rerendering rest view at end of render() when resting; gate re-green.
 - **Round 40 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified editValue focus restore/propagation guard, no keyup double-open, and notifyAllowed/init behavior when Notification missing or denied.
 - **Round 39 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified restPrep day gate/idx clear, stepper guards, no other rest-prep mutation path, and visible focus fallback after renderRestView.
 - **Round 38 — Big Pickle reviewer: GO**, no blockers. Verified failed merge is UI-side-effect free (snapshot write acceptable), successful merge still abandons edit before apply, and editSetOrig lifecycle covers edit/reset paths. Non-blocking nits: clear editSetOrig in applySetEdit bail — **applied**; U17 less directly asserts pre-edit storage preservation — **accepted**, semantics changed intentionally.
