@@ -227,6 +227,23 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("merge-import parse failure does not leave stale edit UI (U22)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [{ load: 77, reps: 8, rir: 1 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#menuBtn").click();
+  await page.locator("#importFile").setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("not json") });
+  await expect(page.locator("#modalMsg")).toContainText("Import failed");
+  await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
+  await expect(page.locator("#setCount")).not.toContainText("Editing set");
+});
+
 test("swap chooser closes on Escape (U21)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
