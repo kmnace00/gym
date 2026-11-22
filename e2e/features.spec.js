@@ -213,6 +213,40 @@ test("clear all data wipes history", async ({ page }) => {
   await expect(page.locator("#modalMsg")).toContainText("cleared");
 });
 
+test("resetting the day stops a running rest (U13)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await page.locator("#detailsBtn").click();
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await page.locator("#resetDay").click();
+  await page.locator("#modalClose").click();
+  await expect(page.locator("#timerBar"), "a reset day must not leave a rest counting down").not.toHaveClass(/active/);
+  await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
+});
+
+test("clear all data does not resurrect an in-progress set edit (U12)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 57.5, reps: 9, rir: 3, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [{ load: 57.5, reps: 6, rir: 2 }, { load: 57.5, reps: 6, rir: 2 }, { load: 57.5, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator(".setrow.editing")).toBeVisible();
+  await page.locator("#menuBtn").click();
+  await page.locator("#clearAll").click();
+  await page.locator("#clearAll").click();
+  await page.locator("#modalClose").click();
+
+  const rec = await page.evaluate(() => (JSON.parse(localStorage.getItem("gym-tool-v2")).state || {})["fri:0"]);
+  expect(!rec || rec.load !== 57.5, "cleared log must not inherit the edited set's load").toBe(true);
+  expect(!rec || rec.reps !== 9, "cleared log must not inherit the edited set's reps").toBe(true);
+});
+
 test("undo on the lift steps back one set (visible)", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

@@ -1450,9 +1450,8 @@
   /* ── set done ──────────────────────────────────────────────────────────── */
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
-    /* Day-switch guard (v159): one active session, keyed by `cur` but dated by
-       active.date — logging on a switched-to day mis-dates the entry. Placed
-       before the edit early-return so re-banks (edit/undo) are blocked too. */
+    /* Day-switch guard (v159): one active session keyed by `cur` but dated by
+       active.date — logging on another day mis-dates the entry; before edits. */
     var actDay = payload.active && payload.active.day;
     if (actDay && actDay !== cur) {
       hintText = "This is " + (DAY_LABEL[cur] || "another day") + "'s lift, but the session is " +
@@ -2116,13 +2115,15 @@
   }
   function doResetDay() {
     var snap = Gym.snapshot(payload, "pre-reset-day");
+    resetEdit(); timerIdle("", "");
     Gym.resetDay(payload, cur); commit(); render(); updateFoot();
     setMsg(snap ? "Day reset — sets cleared." : "Day reset — no undo copy (storage full).");
   }
   function doClearAll() {
     var snap = Gym.snapshot(payload, "pre-clear");
+    resetEdit();
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
-    clearUndo(); resetEdit(); commit(); render(); updateFoot();
+    clearUndo(); commit(); render(); updateFoot();
     setMsg(snap ? "All training data cleared." : "All training data cleared — no undo copy (storage full).");
   }
   document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
