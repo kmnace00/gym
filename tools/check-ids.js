@@ -5,51 +5,75 @@ const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
 
-const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const program = fs.readFileSync(path.join(root, "program.js"), "utf8");
-
-/* both quote styles count — a single-quoted ref is the same bug */
-const refs = [...new Set([...app.matchAll(/getElementById\(\s*(?:"([^"]+)"|'([^']+)')\s*\)/g)].map((m) => m[1] || m[2]))];
-const htmlIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
-/* ids the app builds itself, e.g. the session pill's `<span id='elapsed'>` */
-const dynamic = new Set([
-  ...[...app.matchAll(/\bid='([^']+)'/g)].map((m) => m[1]),
-  ...[...app.matchAll(/\bid=\\?"([^"\\]+)\\?"/g)].map((m) => m[1])
-]);
-
-const missing = refs.filter((id) => !htmlIds.has(id) && !dynamic.has(id));
-
-if (missing.length) {
-  console.error("check-ids FAIL — getElementById targets not in index.html or created at runtime:\n  " + missing.join("\n  "));
-  process.exit(1);
+/**
+ * The header's day tabs are rendered by app.js from Stats.weekStatus's day
+ * list — there is no data-day markup in index.html, so reading the HTML here
+ * finds zero tabs and the guard can never fire. Compare the real tab source
+ * with the program's DAYS keys instead.
+ * @param {string} programSrc
+ * @param {string} statsSrc
+ * @returns {{ days: string[], error: string|null }}
+ */
+function dayTabCheck(programSrc, statsSrc) {
+  const daysBlock = /var DAYS = \{([\s\S]*?)\n  \};/.exec(programSrc);
+  if (!daysBlock) return { days: [], error: "could not find the DAYS object in program.js" };
+  const dayKeys = new Set([...daysBlock[1].matchAll(/^\s{4}(\w+):\s*\{/gm)].map((m) => m[1]));
+  const namesBlock = /function weekStatus\([\s\S]*?var names = \[([^\]]*)\]/.exec(statsSrc);
+  if (!namesBlock) return { days: [], error: "could not find weekStatus's day list in stats.js" };
+  const days = [...namesBlock[1].matchAll(/"([^"]+)"|'([^']+)'/g)].map((m) => m[1] || m[2]);
+  const bad = days.filter((d) => !dayKeys.has(d));
+  const missing = [...dayKeys].filter((d) => !days.includes(d));
+  const dupes = [...new Set(days.filter((d, i) => days.indexOf(d) !== i))];
+  const problems = [];
+  if (bad.length) problems.push("day tabs not in program.js DAYS: " + bad.join(", "));
+  if (missing.length) problems.push("program days without a tab: " + missing.join(", "));
+  if (dupes.length) problems.push("duplicate day tabs: " + dupes.join(", "));
+  return { days: days, error: problems.length ? problems.join("; ") : null };
 }
 
-/* Every script the page loads must also be typechecked, or a module can ship
-   with a type error nobody sees. `sw.js` is deliberately out of scope (its
-   `self`/`caches` globals are not in this tsconfig's lib set). */
-const OUT_OF_SCOPE = new Set(["sw.js"]);
-const scripts = [...new Set([...html.matchAll(/<script src="([^"]+\.js)"/g)].map((m) => m[1]))];
-const included = new Set(JSON.parse(fs.readFileSync(path.join(root, "jsconfig.json"), "utf8")).include || []);
-const untyped = scripts.filter((s) => !OUT_OF_SCOPE.has(s) && !included.has(s));
+module.exports = { dayTabCheck };
 
-if (untyped.length) {
-  console.error("check-ids FAIL — index.html loads scripts that typecheck does not cover:\n  " + untyped.join("\n  "));
-  process.exit(1);
-}
+if (require.main === module) {
+  const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const program = fs.readFileSync(path.join(root, "program.js"), "utf8");
+  const stats = fs.readFileSync(path.join(root, "stats.js"), "utf8");
 
-/* the day tabs must match the program's day keys, or a tab renders an empty day */
-const daysBlock = /var DAYS = \{([\s\S]*?)\n  \};/.exec(program);
-if (!daysBlock) {
-  console.error("check-ids FAIL: could not find the DAYS object in program.js");
-  process.exit(1);
-}
-const dayKeys = new Set([...daysBlock[1].matchAll(/^\s{4}(\w+):\s*\{/gm)].map((m) => m[1]));
-const tabDays = [...new Set([...html.matchAll(/\bdata-day="([^"]+)"/g)].map((m) => m[1]))];
-const badDays = tabDays.filter((d) => !dayKeys.has(d));
-if (badDays.length) {
-  console.error("check-ids FAIL — data-day values not in program.js DAYS: " + badDays.join(", "));
-  process.exit(1);
-}
+  /* both quote styles count — a single-quoted ref is the same bug */
+  const refs = [...new Set([...app.matchAll(/getElementById\(\s*(?:"([^"]+)"|'([^']+)')\s*\)/g)].map((m) => m[1] || m[2]))];
+  const htmlIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
+  /* ids the app builds itself, e.g. the session pill's `<span id='elapsed'>` */
+  const dynamic = new Set([
+    ...[...app.matchAll(/\bid='([^']+)'/g)].map((m) => m[1]),
+    ...[...app.matchAll(/\bid=\\?"([^"\\]+)\\?"/g)].map((m) => m[1])
+  ]);
 
-console.log("check-ids OK — " + refs.length + " literal getElementById refs, " + htmlIds.size + " static ids, " + scripts.length + " scripts typechecked, " + tabDays.length + " day tabs");
+  const missingRefs = refs.filter((id) => !htmlIds.has(id) && !dynamic.has(id));
+
+  if (missingRefs.length) {
+    console.error("check-ids FAIL — getElementById targets not in index.html or created at runtime:\n  " + missingRefs.join("\n  "));
+    process.exit(1);
+  }
+
+  /* Every script the page loads must also be typechecked, or a module can ship
+     with a type error nobody sees. `sw.js` is deliberately out of scope (its
+     `self`/`caches` globals are not in this tsconfig's lib set). */
+  const OUT_OF_SCOPE = new Set(["sw.js"]);
+  const scripts = [...new Set([...html.matchAll(/<script src="([^"]+\.js)"/g)].map((m) => m[1]))];
+  const included = new Set(JSON.parse(fs.readFileSync(path.join(root, "jsconfig.json"), "utf8")).include || []);
+  const untyped = scripts.filter((s) => !OUT_OF_SCOPE.has(s) && !included.has(s));
+
+  if (untyped.length) {
+    console.error("check-ids FAIL — index.html loads scripts that typecheck does not cover:\n  " + untyped.join("\n  "));
+    process.exit(1);
+  }
+
+  /* the day tabs must match the program's day keys, or a tab renders an empty day */
+  const tabs = dayTabCheck(program, stats);
+  if (tabs.error) {
+    console.error("check-ids FAIL — " + tabs.error);
+    process.exit(1);
+  }
+
+  console.log("check-ids OK — " + refs.length + " literal getElementById refs, " + htmlIds.size + " static ids, " + scripts.length + " scripts typechecked, " + tabs.days.length + " day tabs");
+}

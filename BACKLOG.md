@@ -4,6 +4,7 @@
 
 - **lock**: FINISHED 2026-11-20T08:20:43Z (Fri 08:20 UTC). Started 2026-11-20T05:26:52Z. Queue honestly empty after two full surveys — stopped per loop rule (no stop word from Khang yet, but nothing genuinely useful left to build). Tree clean, three local commits, nothing pushed.
 - **baseline check**: PASS at 2026-11-20T05:26:52Z — `npm run check` green (check-assets/ids/sw OK, 257 unit tests pass). No failures.
+- **Nov 22 — round 16 (tooling guard):** `tools/check-ids.js` read day tabs from `index.html`, where none exist, so the guard could never fail; it now reads `Stats.weekStatus`'s day list from `stats.js` and checks both directions against `program.js` DAYS (CLI reports 3 day tabs, not 0). Tools/tests only — no version bump. Gate green: 286 unit, typecheck clean, 236 e2e; ships in the round-16 fleet-ship batch.
 - **survey**: two full surveys, both explore agents, verified in code. Round 1 (5 priority buckets): 2 genuine items. Round 2 (6 fresh angles — a11y/keyboard, responsive layout, SW update flow, notifications/vibration/audio, backup/export/import UX, large-payload performance): **0 genuine items** — every candidate disproven or already parked. Queue honestly empty.
 - **queue** (priority order):
   1. ~~v202 — PR card shows a plain load-0 lift's rep count as "lb" (bucket 3, user-visible correctness)~~ DONE (v202; critic-local GO; check/typecheck green; e2e 231 pass + 1 pre-existing env failure noted below).
