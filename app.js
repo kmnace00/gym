@@ -1755,7 +1755,7 @@
     var s = curSt();
     if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) s.sets[editSet] = editSetOrig;
     if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
-    editSet = -1; editBackup = null; editSetOrig = null;
+    editSet = -1; editBackup = null; editSetOrig = null; swapOpen = false;
   }
   function showDay() {
     var left = idx;
@@ -1774,14 +1774,14 @@
   }
   function openLift(i) {
     if (i < 0 || i >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance(); resetEdit(); swapOpen = false;
+    cancelPendingAdvance(); resetEdit();
     idx = i; view = "lift"; hintText = ""; hintGood = false; commit(); render();
     document.getElementById("exName").focus();
   }
   function navigateLift(delta) {
     var n = idx + delta;
     if (n < 0 || n >= DAYS[cur].ex.length) return;
-    cancelPendingAdvance(); resetEdit(); swapOpen = false;
+    cancelPendingAdvance(); resetEdit();
     idx = n; hintText = ""; hintGood = false; commit(); render();
     document.getElementById("exName").focus();
   }
@@ -1809,7 +1809,7 @@
        restores into curSt(), so switching first writes it into the wrong
        day's lift (B5-05, matching openLift's order) */
     cancelPendingAdvance();
-    resetEdit(); clearUndo(); swapOpen = false;
+    resetEdit(); clearUndo();
     cur = d;
     idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
     var open = firstOpen(0);

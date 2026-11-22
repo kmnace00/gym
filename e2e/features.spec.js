@@ -925,6 +925,22 @@ test("Escape closes progress even when swap chooser state is stale (U38)", async
   await expect(page.locator("#dayView")).toBeVisible();
 });
 
+test("stale swap state does not steal Escape/focus after progress closes (U39)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#swapBtn").click();
+  await expect(page.locator("#swapChoices")).toBeVisible();
+  await page.evaluate(() => document.getElementById("progressBtn").click());
+  await expect(page.locator("#progTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dayView")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#dayView")).toBeVisible();
+  await expect(page.locator("#app")).not.toHaveClass(/progress-mode/);
+  const active = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName || "");
+  expect(active).not.toBe("BODY");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

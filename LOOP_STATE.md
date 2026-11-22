@@ -275,8 +275,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** global Escape handler now prioritizes `view==="progress"` over stale `swapOpen` (`app.js:1841`), net -2 bytes. U38 e2e added. `GYM_VERSION` `gym-v239` → `gym-v240`, CACHE-HASH → `8b097273ffa2926c`.
 - **Verified in plain terms:** U38 opens swap, jumps to progress, presses Escape, asserts progress closes to day view. Normal swap Escape still closes chooser/focuses swapBtn (probe). Full gate green: 286 unit, typecheck clean, 270 e2e. Independent critic-flash: see review log below.
 
+### Round 46 — `[DONE round 46]` Clear stale swapOpen on navigation/reset
+- **Wrong:** after Progress Escape closed a view where swap chooser had been opened, stale `swapOpen` could consume a later Escape on Day view and drop focus to BODY because #swapBtn was hidden. Surveyed/reproduced Nov 22.
+- **Changed:** `resetEdit()` now clears `swapOpen` (`app.js:1754-1760`), and redundant `swapOpen=false` assignments removed from `openLift`/`navigateLift`/`switchDay` (net -36 bytes). U39 e2e added. `GYM_VERSION` `gym-v240` → `gym-v241`, CACHE-HASH → `dac2a8e5b1922d6c`.
+- **Verified in plain terms:** U39 opens swap, goes to progress, Escape closes progress, second Escape on day does not steal focus to BODY and day remains visible. Full gate green: 286 unit, typecheck clean, 271 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 46 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified resetEdit swapOpen clear is safe across all callers and normal swap behavior intact.
 - **Round 45 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified progress Escape precedence, modal/summary precedence preserved, normal swap Escape intact. Nit: stale swapOpen may persist until normal reset paths, but render-derived/hidden outside lift view — non-blocking.
 - **Round 44 — critic-flash reviewer: BLOCKER (fixed)**. Blocker: modal/summary Escape handlers hid overlays without stopPropagation, so global handler could also close progress. Fixed by adding stopPropagation in modal/summary Escape handlers (`app.js:1738,1844`); re-ran targeted Escape-over-progress+modal probe and full gate. No remaining blockers.
 - **Round 43 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified finishEdit fallback to visible doneBtn/set row and undoSet focus restore only when active element body/disabled/invisible.
