@@ -761,6 +761,57 @@ test("failed merge import preserves live rest and edit state (U28)", async ({ pa
   expect(done).toBe(2);
 });
 
+test("rest prep hidden when browsing another day during active rest (U29)", async ({ page }) => {
+  const now = Date.now();
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {
+      "fri:0": { load: 100, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [{ load: 100, reps: 6, rir: 2 }] }
+    },
+    liftHistory: {}, sessionLog: [],
+    active: { id: "s1", date, day: "fri", startedAt: now - 600000, accSec: 600, runningSince: null, status: "active" }
+  });
+  await page.locator('[data-i="0"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#detailsBtn").click();
+  await page.locator("#backBtn").click();
+  await page.locator('[data-day="sat"]').click();
+  await page.locator("#detailsBtn").click();
+  await expect(page.locator("#restPrep")).toBeHidden();
+  const p = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")));
+  expect(p.state["fri:0"].load).toBe(100);
+  expect(p.state["sat:0"]?.load ?? 90).toBe(90);
+});
+
+test("skip rest from day view keeps visible focus (U30)", async ({ page }) => {
+  const now = Date.now();
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {
+      "fri:0": { load: 100, reps: 6, rir: 2, done: 1, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [{ load: 100, reps: 6, rir: 2 }] }
+    },
+    liftHistory: {}, sessionLog: [],
+    active: { id: "s1", date, day: "fri", startedAt: now - 600000, accSec: 600, runningSince: null, status: "active" }
+  });
+  await page.locator('[data-i="0"]').click();
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#app")).toHaveClass(/resting/);
+  await page.locator("#detailsBtn").click();
+  await page.locator("#backBtn").click();
+  await page.locator('[data-day="sat"]').click();
+  await page.locator("#skipRest").click();
+  await expect(page.locator("#app")).not.toHaveClass(/resting/);
+  const focus = await page.evaluate(() => {
+    const el = document.activeElement;
+    return { tag: el?.tagName, cls: el?.className || "", visible: !!(el && el.getClientRects().length) };
+  });
+  expect(focus.tag).toBe("LI");
+  expect(focus.visible).toBe(true);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

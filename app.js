@@ -1003,7 +1003,10 @@
       else if (e.type === "blurIfOutside") { if (document.activeElement && !timerBar.contains(document.activeElement)) document.activeElement.blur(); }
     }
     renderRestView(out.view);
-    if (out.focusLift) document.getElementById("exName").focus();
+    if (out.focusLift) {
+      var ft = view === "lift" ? document.getElementById("exName") : liftList.querySelector('.liftrow[data-i="' + idx + '"]') || liftList.querySelector('.liftrow');
+      if (ft && ft.getClientRects().length) ft.focus();
+    }
   }
   /* N11: active/paused rest hides the editor (.rest-quiet); editing a logged
      set is the exception; GO and idle restore it. */
@@ -1116,13 +1119,13 @@
       });
     } catch (e) {}
   }
-  /* compact next-set controls on the rest screen — 60% of the session is
-     spent here, so preparing the next set should not require leaving it. */
+  /* next-set controls on the rest screen */
   function renderRestPrep(v) {
     var prep = document.getElementById("restPrep");
     if (!prep) return;
-    prep.hidden = !v.showPrep;
-    if (!v.showPrep) return;
+    var dayOk = !appEl.classList.contains("resting") || !payload.active || payload.active.day === cur;
+    prep.hidden = !v.showPrep || !dayOk;
+    if (prep.hidden) { restPrepIdx = -1; return; }
     restPrepIdx = v.prepIdx;
     document.getElementById("restPrepName").textContent = v.prepName;
     document.getElementById("restPrepLoad").textContent = v.prepLoad;
@@ -1373,10 +1376,10 @@
   bindStepper("loadUp", function () { stepLoad(1); });
   bindStepper("repDown", function () { stepReps(-1); });
   bindStepper("repUp", function () { stepReps(1); });
-  bindStepper("restLoadDown", function () { stepLoad(-1, restPrepIdx); });
-  bindStepper("restLoadUp", function () { stepLoad(1, restPrepIdx); });
-  bindStepper("restRepDown", function () { stepReps(-1, restPrepIdx); });
-  bindStepper("restRepUp", function () { stepReps(1, restPrepIdx); });
+  bindStepper("restLoadDown", function () { if (restPrepIdx >= 0) stepLoad(-1, restPrepIdx); });
+  bindStepper("restLoadUp", function () { if (restPrepIdx >= 0) stepLoad(1, restPrepIdx); });
+  bindStepper("restRepDown", function () { if (restPrepIdx >= 0) stepReps(-1, restPrepIdx); });
+  bindStepper("restRepUp", function () { if (restPrepIdx >= 0) stepReps(1, restPrepIdx); });
 
   /* tap the number to type it — correcting "actually 67.5" shouldn't need
      five taps or a sprint on the press-and-hold repeat. The +/- stay for
