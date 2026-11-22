@@ -227,6 +227,25 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("Plan today reports no changes on a no-op re-tap (U23)", async ({ page }) => {
+  const mk = (load, reps, rir) => ({ date: "2026-11-01", load, reps, rir, sets: [{ load, reps, rir }, { load, reps, rir }, { load, reps, rir }] });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, state: {},
+    liftHistory: {
+      "fri:0": [mk(50, 8, 2), mk(50, 8, 2)], "fri:1": [mk(40, 8, 2), mk(40, 8, 2)],
+      "fri:2": [mk(30, 8, 2), mk(30, 8, 2)], "fri:3": [mk(30, 10, 2), mk(30, 10, 2)],
+      "fri:4": [mk(35, 8, 2), mk(35, 8, 2)], "fri:5": [mk(40, 12, 2), mk(40, 12, 2)],
+      "fri:6": [mk(10, 10, 2), mk(10, 10, 2)], "fri:7": [mk(15, 12, 2), mk(15, 12, 2)]
+    },
+    sessionLog: []
+  });
+  await page.locator("#planBtn").click();
+  await expect(page.locator("#daySummary")).toContainText("Planned · all keep");
+  await page.locator("#planBtn").click();
+  await expect(page.locator("#daySummary")).toContainText("Planned · no changes");
+  await expect(page.locator("#daySummary")).not.toContainText("kept your loads");
+});
+
 test("merge-import parse failure does not leave stale edit UI (U22)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,

@@ -1655,7 +1655,7 @@
     });
     planMsg = (up || down)
       ? "Planned +" + up + (down ? " · reset " + down : "")
-      : (manual > 0 ? "Planned · kept your loads" : "Planned · all keep");
+      : (manual > 0 ? "Planned · no changes" : "Planned · all keep");
     commit(); render();
   };
 
