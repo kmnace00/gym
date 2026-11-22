@@ -134,6 +134,37 @@ test("import restores a backup", async ({ page }) => {
   await expect(page.locator("#loadVal")).toHaveText("77");
 });
 
+test("import and restore do not claim success when the write fails (U11)", async ({ page }) => {
+  const backup = JSON.stringify({
+    v: 2, cur: "fri", idx: 0, bodyweight: 165,
+    state: { "fri:0": { done: 0, load: 77, reps: 6, rir: 2 } },
+    liftHistory: {}, sessionLog: [{ date: "2026-11-01", status: "complete", durationSec: 1800 }]
+  });
+  const failMainWrite = () => page.evaluate(() => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (String(k) === "gym-tool-v2") throw new Error("QuotaExceededError");
+      return orig.call(this, k, v);
+    };
+  });
+
+  await page.goto(url);
+  await failMainWrite();
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
+  await expect(page.locator("#modalMsg")).not.toContainText("✓");
+  await expect(page.locator("#modalMsg")).toContainText("storage full");
+
+  await page.reload();
+  await failMainWrite();
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#replaceFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("Backup restored");
+  await expect(page.locator("#modalMsg")).not.toContainText("✓");
+  await expect(page.locator("#modalMsg")).toContainText("storage full");
+});
+
 test("back button reads Back and lift context shows the day", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();

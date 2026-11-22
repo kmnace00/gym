@@ -1983,6 +1983,7 @@
     setMsg("File too large — backups must be under 5 MB");
     ev.target.value = "";
   }
+  function saveResult(snapOk) { return saveFailed ? " — NOT saved — storage full; export now" : " ✓" + (snapOk ? "" : " (no undo copy — storage full)"); }
   replaceFile.addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
     if (f.size > MAX_IMPORT_SIZE) { rejectOversized(ev); return; }
@@ -2002,7 +2003,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
+        setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Restore failed — not a Gym backup"); }
     };
     reader.readAsText(f);
@@ -2022,7 +2023,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); commit(); updateFoot();
-        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy ✓" + (snapOk ? "" : " (no undo copy — storage full)"));
+        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new sessions, " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);
