@@ -227,6 +227,42 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("finishing the workout abandons a set edit (U20)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {
+      "fri:0": { load: 60, reps: 6, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+        sets: [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }] },
+      "fri:1": { load: 50, reps: 6, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-incline",
+        sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }] },
+      "fri:2": { load: 25, reps: 8, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-bulgarian",
+        sets: [{ load: 25, reps: 8, rir: 2 }, { load: 25, reps: 8, rir: 2 }, { load: 25, reps: 8, rir: 2 }] },
+      "fri:3": { load: 35, reps: 10, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-incline-db",
+        sets: [{ load: 35, reps: 10, rir: 2 }, { load: 35, reps: 10, rir: 2 }, { load: 35, reps: 10, rir: 2 }] },
+      "fri:4": { load: 45, reps: 8, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-pec-deck",
+        sets: [{ load: 45, reps: 8, rir: 2 }, { load: 45, reps: 8, rir: 2 }, { load: 45, reps: 8, rir: 2 }] },
+      "fri:5": { load: 40, reps: 10, rir: 1, done: 3, topHits: 0, lastRir: 1, exId: "fri-leg-ext",
+        sets: [{ load: 40, reps: 10, rir: 1 }, { load: 40, reps: 10, rir: 1 }, { load: 40, reps: 10, rir: 1 }] },
+      "fri:6": { load: 10, reps: 10, rir: 1, done: 3, topHits: 0, lastRir: 1, exId: "fri-cable-lat",
+        sets: [{ load: 10, reps: 10, rir: 1 }, { load: 10, reps: 10, rir: 1 }, { load: 10, reps: 10, rir: 1 }] },
+      "fri:7": { load: 15, reps: 12, rir: 2, done: 2, topHits: 0, lastRir: 2, exId: "fri-weighted-dip",
+        sets: [{ load: 15, reps: 12, rir: 2 }, { load: 15, reps: 12, rir: 2 }] }
+    },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").nth(7).click();
+  await page.locator("#doneBtn").click(); // final set -> rest / last lift done
+  await page.locator("#detailsBtn").click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#skipRest").click();
+  await page.locator("#skipRest").click(); // two-tap finish
+  await expect(page.locator("#summary")).toBeVisible();
+  await page.locator("#sumDone").click();
+  await expect(page.locator("#setCount")).not.toContainText("Editing set");
+  await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
+});
+
 test("merging a backup abandons a set edit before cloning the local log (U17)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,

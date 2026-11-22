@@ -1723,6 +1723,7 @@
     if (b) b.focus();
   }
   function finishWorkout() {
+    resetEdit();
     timerIdle("", "Workout complete — nice work."); // a live rest must not outlive the workout
     if (sInt) pauseSession();
     var entry = Gym.finalizeSession(payload);
