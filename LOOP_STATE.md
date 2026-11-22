@@ -270,8 +270,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** global Escape handler now closes progress via `showDay()` when no modal/summary/swap is active (`app.js:1841`). U37 e2e added. `GYM_VERSION` `gym-v238` → `gym-v239`, CACHE-HASH → `0d756bd52532fa5b`.
 - **Verified in plain terms:** U37 opens progress, asserts progTitle focused, presses Escape, asserts progress-mode removed and day view visible. Full gate green: 286 unit, typecheck clean, 269 e2e. Independent critic-flash: see review log below.
 
+### Round 45 — `[DONE round 45]` Progress Escape beats stale swap chooser state
+- **Wrong:** opening swap chooser in lift view, navigating to Progress, then pressing Escape was consumed by stale `swapOpen` state; Progress stayed open and swap DOM stayed stale. Surveyed/reproduced Nov 22.
+- **Changed:** global Escape handler now prioritizes `view==="progress"` over stale `swapOpen` (`app.js:1841`), net -2 bytes. U38 e2e added. `GYM_VERSION` `gym-v239` → `gym-v240`, CACHE-HASH → `8b097273ffa2926c`.
+- **Verified in plain terms:** U38 opens swap, jumps to progress, presses Escape, asserts progress closes to day view. Normal swap Escape still closes chooser/focuses swapBtn (probe). Full gate green: 286 unit, typecheck clean, 270 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 45 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified progress Escape precedence, modal/summary precedence preserved, normal swap Escape intact. Nit: stale swapOpen may persist until normal reset paths, but render-derived/hidden outside lift view — non-blocking.
 - **Round 44 — critic-flash reviewer: BLOCKER (fixed)**. Blocker: modal/summary Escape handlers hid overlays without stopPropagation, so global handler could also close progress. Fixed by adding stopPropagation in modal/summary Escape handlers (`app.js:1738,1844`); re-ran targeted Escape-over-progress+modal probe and full gate. No remaining blockers.
 - **Round 43 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified finishEdit fallback to visible doneBtn/set row and undoSet focus restore only when active element body/disabled/invisible.
 - **Round 42 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified startEdit focuses existing enabled doneBtn after render, guarded set presence, and call paths are set-row activation only.

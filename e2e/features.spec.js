@@ -913,6 +913,18 @@ test("Escape closes progress view and returns to day (U37)", async ({ page }) =>
   await expect(page.locator("#dayView")).toBeVisible();
 });
 
+test("Escape closes progress even when swap chooser state is stale (U38)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#swapBtn").click();
+  await expect(page.locator("#swapChoices")).toBeVisible();
+  await page.evaluate(() => document.getElementById("progressBtn").click());
+  await expect(page.locator("#progTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#app")).not.toHaveClass(/progress-mode/);
+  await expect(page.locator("#dayView")).toBeVisible();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
