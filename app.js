@@ -2016,8 +2016,8 @@
       try {
         var snapOk = Gym.snapshot(payload, "pre-merge");
         var stats = { added: 0, collisions: 0 };
-        var merged = Gym.importMerge(payload, String(reader.result), stats);
         resetEdit();
+        var merged = Gym.importMerge(payload, String(reader.result), stats);
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
