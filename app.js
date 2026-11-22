@@ -37,8 +37,7 @@
     return {
       stretch: c && typeof c.warmupSec === "number" && isFinite(c.warmupSec) && c.warmupSec >= 0 && c.warmupSec <= 1200 ? c.warmupSec : Gym.STRETCH_SECS,
       setup: c && typeof c.overheadSec === "number" && isFinite(c.overheadSec) && c.overheadSec >= 5 && c.overheadSec <= 40 ? c.overheadSec : Gym.SETUP_SECS,
-      /* B6-09: during a deload week the day one is viewing is cut to the
-         deload set count — let the estimate agree with the rendered sets. */
+      /* B6-09: deload week cuts sets — estimate must agree. */
       deload: deloadActive(payload)
     };
   }
@@ -251,7 +250,7 @@
   var saveBarDownload = document.getElementById("saveBarDownload");
   var summary = document.getElementById("summary");
   var editSet = -1, editBackup = null;
-  var swapOpen = false; // N14: the alternatives chooser is open
+  var swapOpen = false; // N14
 
   /* ── theme ─────────────────────────────────────────────────────────────── */
   function applyTheme(t) {
@@ -705,8 +704,7 @@
       swapBtn.textContent = sw ? "Using " + s.swapAlt + " — undo" : "Swap";
       swapBtn.setAttribute("aria-expanded", swapOpen && !sw && !setsLogged ? "true" : "false");
     }
-    /* N14: the alternatives chooser — one button per approved alternate,
-       plus Cancel. Only while unswapped, unlocked, and opened. */
+    /* N14: alternatives chooser */
     var scEl = document.getElementById("swapChoices");
     if (scEl) {
       var showChoices = swapOpen && !sw && !setsLogged;
@@ -1863,6 +1861,7 @@
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
     lastFocus = null;
   }
+  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&swapOpen&&modal.hidden&&summary.hidden){swapOpen=false;render();document.getElementById("swapBtn").focus()}});
   modal.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape") { closeModal(); return; }
     if (ev.key !== "Tab") return;

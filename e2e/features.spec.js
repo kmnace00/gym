@@ -227,6 +227,16 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("swap chooser closes on Escape (U21)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#swapBtn").click();
+  await expect(page.locator("#swapChoices")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#swapChoices")).toBeHidden();
+  await expect(page.locator("#swapBtn")).toHaveAttribute("aria-expanded", "false");
+});
+
 test("finishing the workout abandons a set edit (U20)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,

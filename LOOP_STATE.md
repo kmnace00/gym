@@ -1,8 +1,8 @@
 # LOOP_STATE — improvement loop (single short state file)
 
-**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–31 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
+**RESTARTED Nov 22 on Khang's instruction, with fleet-ship as the last step of every finished batch. Rounds 16–32 are shipped; keep surveying per Khang's "keep surveying if you run out of stuff".** Round 15's stop and the Nov 21 restart attempt are kept on record below.
 
-Baseline re-checked green at the restart; current gate after round 31: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest 24160f69c7b23568), `npm run typecheck` clean, `npm run e2e` 252 passed. `GYM_VERSION` is now `gym-v226`. The fix left 53 bytes of headroom (precache total 307147 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
+Baseline re-checked green at the restart; current gate after round 32: `npm run check` OK (286 unit tests, check-assets/ids/sw OK, digest b02bedd1e1e8be32), `npm run typecheck` clean, `npm run e2e` 253 passed. `GYM_VERSION` is now `gym-v227`. The fix left 106 bytes of headroom (precache total 307094 of 307200). `main` matched `origin/main` at the restart; fleet-ship publishes each finished batch. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
 
@@ -205,8 +205,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `finishWorkout()` now calls `resetEdit()` before idling the rest/session finalization (`app.js:1730`). `GYM_VERSION` `gym-v225` → `gym-v226`, CACHE-HASH → `24160f69c7b23568`.
 - **Verified in plain terms:** new e2e "finishing the workout abandons a set edit (U20)" completes the day on the last lift, edits a set from the rest peek, double-taps End rest to finish, closes the summary, and asserts the lift is no longer in edit mode. Failed pre-fix (still "Editing set 1 — tap Done"), passes after. Full gate green: 286 unit, typecheck clean, 252 e2e. Independent Big Pickle reviewer: see review log below.
 
+### Round 32 — `[DONE round 32]` Swap chooser closes on Escape
+- **Wrong:** the inline swap chooser (Swap → alternatives) had no Escape handler, unlike menu/summary modals; keyboard users had to click Cancel or toggle Swap. Surveyed/reproduced Nov 22.
+- **Changed:** a document-level Escape handler closes `swapOpen` when no modal/summary is open, then re-renders and restores focus to `#swapBtn` (`app.js:1864-1866`). `GYM_VERSION` `gym-v226` → `gym-v227`, CACHE-HASH → `b02bedd1e1e8be32`.
+- **Verified in plain terms:** new e2e "swap chooser closes on Escape (U21)" opens the swap chooser, presses Escape, and asserts the chooser is hidden and `#swapBtn` aria-expanded is false. Failed pre-fix, passes after. Full gate green: 286 unit, typecheck clean, 253 e2e. Independent Big Pickle reviewer: see review log below.
+
 ## Review log
 
+- **Round 32 — Big Pickle reviewer: GO**, no blockers. Verified Escape is scoped to swap-only/no-overlay state and render keeps `swapOpen`/`aria-expanded`/`swapChoices` consistent. Non-blocking nits: document handler can also close swap when another Escape consumer (inline value edit) doesn’t stop propagation — **declined**, unlikely interaction, no data loss; `#swapBtn.focus()` has no null guard and e2e doesn't assert focus — **declined**, cheap defensive follow-up if it ever bites.
 - **Round 31 — Big Pickle reviewer: GO**, no blockers. Verified `resetEdit()` is safe before `finalizeSession()` (it only restores working load/reps/rir, which the summary does not read) and covers both finish paths (direct button and restctl `finishWorkout` effect). Non-blocking nit: e2e covers the rest two-tap path, not the direct `#finishBtn` click — **declined**, fix is centralized in `finishWorkout()`.
 - **Round 30 — Big Pickle reviewer: GO**, no blockers. Verified field-range checks match `calOpts()` (0–1200/5–40/finite), edge cases handled, Reset always visible is safe (only removes `gym-calibration`), and bookkeeping consistent. Non-blocking nit: `renderCalib()` also requires `sessions >= 3` while `calOpts()` does not, so a manually corrupt key with valid ranges but `sessions < 3` could be used by estimate but shown as starter — **declined**, low-risk/manual-corruption edge case, showing starter is the safer UI.
 - **Round 29 — Big Pickle reviewer: GO**, no blockers. Verified stamp-before-serialize covers all export surfaces with no double-stamp, `exportPayload` is the only serializer and has no other app call sites, and stamping metadata before delivery is a safe trust tradeoff (no workout data at risk). Non-blocking nits: clipboard-reject still advances `lastBackup` and only shows a message — **declined for now**, honest enough and no data loss; test covers copy-success only — **declined**, it catches the reported defect.
