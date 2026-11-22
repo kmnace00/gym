@@ -1735,29 +1735,23 @@
     var first = firstOpen(0);
     if (first >= 0) openLift(first);
   };
-  /* the summary is a modal dialog like the menu: put focus back where it was
-     when it closes, so a keyboard user does not land in the page body. */
   function closeSummary() {
-    /* move focus before hiding: hiding the dialog first makes the browser
-       bounce the focused node to <body>, which would clobber the restore.   */
-    var back = sumFocus;
-    sumFocus = null;
-    if (back && document.contains(back) && back.getClientRects().length && typeof back.focus === "function") back.focus();
-    /* some openers (or <body>) cannot take focus; fall back to the header */
-    if (document.activeElement !== back && menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
+    var back = sumFocus; sumFocus = null;
+    if (back && document.contains(back) && back.getClientRects().length) back.focus();
     summary.hidden = true;
   }
-  document.getElementById("sumDone").onclick = function () {
-    closeSummary();
-    render();
-  };
-  document.getElementById("sumClose").onclick = function () {
-    closeSummary();
-    render();
-  };
-  summary.addEventListener("click", function (ev) { if (ev.target === summary) closeSummary(); });
+  function afterSummaryClose() {
+    closeSummary(); render();
+    var ae = document.activeElement;
+    if (ae && ae !== document.body && !summary.contains(ae) && ae.getClientRects().length) return;
+    var t = [document.getElementById("continueBtn"), document.getElementById("finishBtn"), menuBtn].find(function (b) { return b && !b.hidden && b.getClientRects().length; });
+    if (t) t.focus();
+  }
+  document.getElementById("sumDone").onclick = afterSummaryClose;
+  document.getElementById("sumClose").onclick = afterSummaryClose;
+  summary.addEventListener("click", function (ev) { if (ev.target === summary) afterSummaryClose(); });
   summary.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") { closeSummary(); return; }
+    if (ev.key === "Escape") { afterSummaryClose(); return; }
     if (ev.key !== "Tab") return;
     var items = summary.querySelectorAll("button:not([hidden]), input:not([hidden]), [href]");
     if (!items.length) return;
@@ -1857,9 +1851,11 @@
     if (first) first.focus();
   }
   function closeModal() {
+    var back = lastFocus; lastFocus = null;
+    if (back && document.contains(back) && back.getClientRects().length) back.focus();
+    if (modal.contains(document.activeElement) && menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
+    if (modal.contains(document.activeElement) && document.activeElement) document.activeElement.blur();
     modal.hidden = true;
-    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
-    lastFocus = null;
   }
   document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&swapOpen&&modal.hidden&&summary.hidden){swapOpen=false;render();document.getElementById("swapBtn").focus()}});
   modal.addEventListener("keydown", function (ev) {

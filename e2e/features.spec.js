@@ -227,6 +227,40 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("summary close restores focus to a sensible control (U24)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {
+      "fri:0": { load: 60, reps: 6, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }] },
+      "fri:1": { load: 50, reps: 6, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-smith-incline", sets: [{ load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }, { load: 50, reps: 6, rir: 2 }] },
+      "fri:2": { load: 25, reps: 8, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-bulgarian", sets: [{ load: 25, reps: 8, rir: 2 }, { load: 25, reps: 8, rir: 2 }, { load: 25, reps: 8, rir: 2 }] },
+      "fri:3": { load: 35, reps: 10, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-incline-db", sets: [{ load: 35, reps: 10, rir: 2 }, { load: 35, reps: 10, rir: 2 }, { load: 35, reps: 10, rir: 2 }] },
+      "fri:4": { load: 45, reps: 8, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-pec-deck", sets: [{ load: 45, reps: 8, rir: 2 }, { load: 45, reps: 8, rir: 2 }, { load: 45, reps: 8, rir: 2 }] },
+      "fri:5": { load: 40, reps: 10, rir: 1, done: 3, topHits: 0, lastRir: 1, exId: "fri-leg-ext", sets: [{ load: 40, reps: 10, rir: 1 }, { load: 40, reps: 10, rir: 1 }, { load: 40, reps: 10, rir: 1 }] },
+      "fri:6": { load: 10, reps: 10, rir: 1, done: 3, topHits: 0, lastRir: 1, exId: "fri-cable-lat", sets: [{ load: 10, reps: 10, rir: 1 }, { load: 10, reps: 10, rir: 1 }, { load: 10, reps: 10, rir: 1 }] },
+      "fri:7": { load: 15, reps: 12, rir: 2, done: 3, topHits: 0, lastRir: 2, exId: "fri-weighted-dip", sets: [{ load: 15, reps: 12, rir: 2 }, { load: 15, reps: 12, rir: 2 }, { load: 15, reps: 12, rir: 2 }] }
+    },
+    active: { date: "2026-11-20", status: "active", startedAt: 1763654400000, elapsedSec: 0, runningSince: 1763654400000 },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.evaluate(() => { const b = document.getElementById("finishBtn"); b.hidden = false; b.focus(); b.click(); });
+  await expect(page.locator("#summary")).toBeVisible();
+  await page.locator("#sumDone").click();
+  await expect(page.locator("#summary")).toBeHidden();
+  await expect(page.locator("#menuBtn")).toBeFocused();
+});
+
+test("menu close falls back when opener is no longer focusable (U25)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modal")).toBeVisible();
+  await page.evaluate(() => { document.getElementById("menuBtn").style.display = "none"; });
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#modal")).toBeHidden();
+  const inModal = await page.evaluate(() => { var ae = document.activeElement; return !!(ae && document.getElementById("modal").contains(ae)); });
+  expect(inModal).toBe(false);
+});
+
 test("Plan today reports no changes on a no-op re-tap (U23)", async ({ page }) => {
   const mk = (load, reps, rir) => ({ date: "2026-11-01", load, reps, rir, sets: [{ load, reps, rir }, { load, reps, rir }, { load, reps, rir }] });
   await seed(page, {
