@@ -1,5 +1,7 @@
 # LOOP_STATE — improvement loop (single short state file)
 
+**FINISHED — stopped by Khang after round 15. No more rounds; this file is now a record only.**
+
 Baseline verified green at loop start; current gate after round 15: `npm run check` OK (282 unit tests, check-assets/ids/sw OK, digest 74aa9bd667762878), `npm run typecheck` clean, `npm run e2e` 236 passed. `GYM_VERSION` is now `gym-v211`. Precached assets are ~7 bytes under the 300 KB ceiling — keep runtime edits byte-neutral or raise the ceiling only with Khang's approval. `main` ahead of the local fleet mirror; the mirror auto-pushed round 2 without any push from this loop. All commit authors Khang.
 
 Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cached-asset convention: bump `GYM_VERSION` in `version.js` and update `CACHE-HASH` in `sw.js`.
@@ -127,3 +129,9 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 
 - #10 — coverage gap only, no live bug to drive a failing test; the GO no-op is already covered by `restctl` behaviour.
 - #14 — needs Khang's ARIA role decision and ~30 bytes over the hard 300 KB precache ceiling.
+
+## Final summary (stopped after round 15)
+- 15 rounds completed; every round had a failing test first, the smallest fix, a green `npm run check` + `npm run typecheck` + `npm run e2e`, a mutation check, a Big Pickle review, and a local commit. No reviewer found a blocker.
+- Final gate: 282 unit tests, typecheck clean, 236 e2e; `gym-v211`, CACHE-HASH `74aa9bd667762878`; ~7 bytes left under the 300 KB precache ceiling.
+- Highest-value fixes: a restored backup's bad set could crash Progress/CSV/Share/startup calibration (r15); offline file saves could be cut short or fail silently (r12, r14); a swapped lift showed the wrong load in its set log (r2); unfinished sessions inflated the workout count (r3); hostile lift IDs could silently re-home a lift's data (r7). The rest were correctness guards, honest test coverage, and tooling integrity.
+- A final Big Pickle survey found no remaining small change with a real defect and a test that fails first: every other lead was already fixed, a deliberate design decision, pure coverage, or blocked by the byte ceiling. Remaining queue items are recorded above and intentionally left undone.
