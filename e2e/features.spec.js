@@ -255,6 +255,19 @@ test("merging a backup abandons a set edit before cloning the local log (U17)", 
   await expect(page.locator("#doneBtn")).not.toHaveText("Done editing");
 });
 
+test("menu hides out-of-contract calibration values (U19)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {}, liftHistory: {}, sessionLog: []
+  });
+  await page.evaluate(() => localStorage.setItem("gym-calibration", JSON.stringify({ warmupSec: 100000, overheadSec: 500, sessions: 3, at: 1 })));
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#calibInfo")).not.toContainText("1667");
+  await expect(page.locator("#calibInfo")).not.toContainText("500s");
+  await expect(page.locator("#calibInfo")).toContainText("starter values");
+});
+
 test("backup export includes the fresh lastBackup it reports (U18)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-20T10:00:00") });
   await seed(page, {

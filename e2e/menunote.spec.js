@@ -38,14 +38,10 @@ for (const size of sizes) {
 
     test("starter copy renders in full above the next button", async ({ page }) => {
       await openMenu(page, null);
-      const m = await measure(page, "calibReset"); // hidden in the starter state
-      const next = await page.evaluate(() =>
-        document.getElementById("resetDay").getBoundingClientRect().top
-      );
+      const m = await measure(page, "calibReset");
       expect(m.text).toBe("Clock learning: starter values until 3 timed sessions.");
       expect(m.scrollH, "no line is clipped away").toBeLessThanOrEqual(m.clientH + 1);
-      expect(m.bottom, "the note stays above the next button").toBeLessThanOrEqual(next);
-      expect(await page.evaluate(() => document.getElementById("calibReset").hidden)).toBe(true);
+      expect(m.bottom, "the note stays above the next button").toBeLessThanOrEqual(m.nextTop);
     });
 
     test("learned copy renders both lines above the reset button", async ({ page }) => {

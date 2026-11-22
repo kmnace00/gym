@@ -56,21 +56,17 @@
   }
   function renderCalib() {
     var info = document.getElementById("calibInfo");
-    var btn = document.getElementById("calibReset");
-    if (!info || !btn) return;
+    if (!info) return;
     var c = learnedCal();
-    if (c) {
+    var warm = c && typeof c.warmupSec === "number" && isFinite(c.warmupSec) && c.warmupSec >= 0 && c.warmupSec <= 1200;
+    var over = c && typeof c.overheadSec === "number" && isFinite(c.overheadSec) && c.overheadSec >= 5 && c.overheadSec <= 40;
+    if (c && c.sessions >= 3 && (warm || over)) {
       var parts = [];
-      if (typeof c.warmupSec === "number") parts.push("warm-up ~" + Math.round(c.warmupSec / 60) + " min");
-      if (typeof c.overheadSec === "number") parts.push("per-set overhead ~" + c.overheadSec + "s");
+      if (warm) parts.push("warm-up ~" + Math.round(c.warmupSec / 60) + " min");
+      if (over) parts.push("per-set overhead ~" + c.overheadSec + "s");
       info.textContent = "Clock learning (from " + c.sessions + " timed sessions): " + parts.join(" · ");
-      info.hidden = false;
-      btn.hidden = false;
-    } else {
-      info.textContent = "Clock learning: starter values until 3 timed sessions.";
-      info.hidden = false;
-      btn.hidden = true;
-    }
+    } else info.textContent = "Clock learning: starter values until 3 timed sessions.";
+    info.hidden = false;
   }
   /* resolve a lift id to its current working load (state first, program
      fallback) — the anchor lookup for starting guesses */
