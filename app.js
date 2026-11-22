@@ -1000,7 +1000,7 @@
       else if (e.type === "vibrate") { if (navigator.vibrate) navigator.vibrate(e.ms); }
       else if (e.type === "notify") notifyRestDone("done");
       else if (e.type === "notifyPrep") notifyRestDone("prep");
-      else if (e.type === "advanceTo") { idx = e.idx; hintText = ""; hintGood = false; }
+      else if (e.type === "advanceTo") { resetEdit(); idx = e.idx; hintText = ""; hintGood = false; }
       else if (e.type === "finishWorkout") { clearUndo(); finishWorkout(); }
       else if (e.type === "commit") commit();
       else if (e.type === "render") render();

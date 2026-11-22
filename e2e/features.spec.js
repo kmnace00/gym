@@ -227,6 +227,31 @@ test("resetting the day stops a running rest (U13)", async ({ page }) => {
   await expect(page.locator("#restLabel")).not.toContainText("set 1 done");
 });
 
+test("advancing to the next lift abandons a set edit (U15)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {
+      "fri:0": { load: 60, reps: 6, rir: 2, done: 2, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+        sets: [{ load: 77, reps: 8, rir: 1 }, { load: 77, reps: 8, rir: 1 }] },
+      "fri:1": { load: 50, reps: 6, rir: 2, done: 0, topHits: 0, lastRir: null, exId: "fri-smith-incline" }
+    },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click();
+  await page.locator("#detailsBtn").click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#skipRest").click();
+
+  await expect(page.locator("#doneBtn"), "a new lift must not inherit the previous lift's edit").not.toHaveText("Done editing");
+  await expect(page.locator("#setCount")).not.toContainText("Editing set");
+  await page.locator("#doneBtn").click();
+  const rec = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:1"]);
+  expect(rec.load, "the next lift keeps its own working load").toBe(50);
+  expect(rec.reps).toBe(6);
+});
+
 test("undo abandons a set edit so Done editing stops lying (U14)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
