@@ -868,6 +868,18 @@ test("finish arm clears on navigation and does not skip-finish (U33)", async ({ 
   await expect(page.locator("#app")).not.toHaveClass(/resting/);
 });
 
+test("entering set edit moves focus to Done editing (U34)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, { v:5, cur:"fri", idx:0, bodyweight:165, bodyweightSet:false,
+    state:{ "fri:0":{ load:60, reps:8, rir:2, done:2, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:60,reps:8,rir:2},{load:60,reps:8,rir:2}] } },
+    liftHistory:{}, sessionLog:[], active:{ id:"s1", date, day:"fri", startedAt:Date.now()-600000, accSec:600, runningSince:null, status:"active" } });
+  await page.locator('[data-i="0"]').click();
+  await page.locator('.setrow[data-set="0"]').focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await expect(page.locator("#doneBtn")).toBeFocused();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

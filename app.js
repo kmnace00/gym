@@ -1300,17 +1300,15 @@
     if (prevSet && typeof prevSet.t === "number") s.sets[editSet].t = prevSet.t;
     if (s.done >= effSets(e)) bankLift(cur, idx);
   }
-  /** Enter inline edit for a completed set, snapshotting the working values. */
   function startEdit(i) {
     var s = curSt();
     if (!s.sets || !s.sets[i]) return;
     if (editSet !== i) { editBackup = { load: workingLoad(s), reps: s.reps, rir: s.rir }; editSetOrig = JSON.parse(JSON.stringify(s.sets[i])); }
     editSet = i;
     setWorkingLoad(s, s.sets[i].load); s.reps = s.sets[i].reps; s.rir = s.sets[i].rir;
-    hintText = ""; hintGood = false;
-    render();
+    hintText = ""; hintGood = false; render();
+    var db=document.getElementById("doneBtn"); if(db) db.focus();
   }
-  /** Apply the edited set, then restore the working load/reps/RIR. */
   function finishEdit() {
     var s = curSt();
     if (editSet < 0) return;

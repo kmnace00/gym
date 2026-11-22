@@ -255,8 +255,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `restctl.cancelPendingAdvance()` now also clears `finishUntil` and unfreezes (`restctl.js:216-220`). `app.js` `cancelPendingAdvance()` rerenders rest view while resting so label/state stay truthful (`app.js:1751`). E2E U33 added. Byte funding: condensed a few app.js comments. `GYM_VERSION` `gym-v235` → `gym-v236`, CACHE-HASH → `f5341b7e7b816f39`.
 - **Verified in plain terms:** U33 arms finish on last-lift GO, navigates back to day, asserts button returns to "End rest", then tapping skip idles rest with "Skipped/Next set" message and no summary/finish. Full gate green: 286 unit, typecheck clean, 265 e2e. Independent critic-flash: see review log below.
 
+### Round 42 — `[DONE round 42]` Entering set edit keeps keyboard focus
+- **Wrong:** activating a completed set row for editing (click/keyboard) rebuilt the lift view and left focus on `BODY`, losing keyboard place. Surveyed/reproduced Nov 22.
+- **Changed:** `startEdit()` now focuses `#doneBtn` after render (`app.js:startEdit`). U34 e2e added. `GYM_VERSION` `gym-v236` → `gym-v237`, CACHE-HASH → `c155a5b0f3aedfa2`.
+- **Verified in plain terms:** U34 focuses a set row, presses Enter, asserts Done editing text and `#doneBtn` focused. Full gate green: 286 unit, typecheck clean, 266 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 42 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified startEdit focuses existing enabled doneBtn after render, guarded set presence, and call paths are set-row activation only.
 - **Round 41 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers. Non-blocking nit: rerendering rest view before nav state update could briefly stale prep — **applied** by rerendering rest view at end of render() when resting; gate re-green.
 - **Round 40 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified editValue focus restore/propagation guard, no keyup double-open, and notifyAllowed/init behavior when Notification missing or denied.
 - **Round 39 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified restPrep day gate/idx clear, stepper guards, no other rest-prep mutation path, and visible focus fallback after renderRestView.
