@@ -215,7 +215,6 @@
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flushSave(); });
   window.addEventListener("pagehide", flushSave);
 
-  /* ── element refs ──────────────────────────────────────────────────────── */
   var appEl = document.getElementById("app");
   var header = document.getElementById("header");
   var dayView = document.getElementById("dayView");
@@ -1120,7 +1119,6 @@
       });
     } catch (e) {}
   }
-  /* next-set controls on the rest screen */
   function renderRestPrep(v) {
     var prep = document.getElementById("restPrep");
     if (!prep) return;
@@ -1172,14 +1170,14 @@
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
       if (arr && arr.length && arr[arr.length - 1].date === Gym.sessionDate(payload)) arr.pop();
     } else if (s.done >= effSets(ex())) {
-      /* undoing an extra set leaves the lift complete: re-bank the shorter
-         array so Prev/tonnage/PRs/CSV don't keep the removed set */
       bankLift(cur, idx);
     }
     stopInterval();
     hintText = ""; hintGood = false;
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
+    var ae=document.activeElement;
+    if(!ae||ae===document.body||ae.disabled||!ae.getClientRects().length){var ft=document.getElementById("doneBtn"); if(ft&&ft.getClientRects().length) ft.focus();}
   }
   undoBtn.onclick = undoSet;
   undoSetBtn.onclick = undoSet;
@@ -1312,11 +1310,15 @@
   function finishEdit() {
     var s = curSt();
     if (editSet < 0) return;
+    var ei = editSet;
     applySetEdit();
     if (editBackup) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null; editSetOrig = null;
     hintText = ""; hintGood = false;
     commit(); render();
+    var db=document.getElementById("doneBtn");
+    var ft=(db&&db.getClientRects().length)?db:document.querySelector('.setrow[data-set="'+ei+'"]');
+    if(ft&&ft.focus) ft.focus();
   }
   /* Upper bounds for direct input (B3-18): absurd typed/held values would
      otherwise poison 1RM, tonnage, suggestions and the CSV export. */

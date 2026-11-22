@@ -260,8 +260,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `startEdit()` now focuses `#doneBtn` after render (`app.js:startEdit`). U34 e2e added. `GYM_VERSION` `gym-v236` → `gym-v237`, CACHE-HASH → `c155a5b0f3aedfa2`.
 - **Verified in plain terms:** U34 focuses a set row, presses Enter, asserts Done editing text and `#doneBtn` focused. Full gate green: 286 unit, typecheck clean, 266 e2e. Independent critic-flash: see review log below.
 
+### Round 43 — `[DONE round 43]` Edit/undo focus restored after rest peek and disabled undo
+- **Wrong:** finishing set edit in rest peek hid `#doneBtn` via rest-quiet and dropped focus to BODY; `undoSet()` could leave focus on BODY when the activated undo control became disabled/hidden. Surveyed/reproduced Nov 22.
+- **Changed:** `finishEdit()` focuses visible `#doneBtn` or falls back to the edited set row (`app.js:1312-1323`). `undoSet()` restores focus to visible `#doneBtn` when active element is body/disabled/invisible after undo (`app.js:1184-1188`). U35/U36 e2e added. Byte funding: condensed section comments in app.js. `GYM_VERSION` `gym-v237` → `gym-v238`, CACHE-HASH → `4acc08696f5fd1a9`.
+- **Verified in plain terms:** U35 edits a set during rest peek, finishes edit, asserts focus returns to set row while rest-quiet remains. U36 undoes last set from lift view and asserts focus moves to Done while undo button is disabled. Full gate green: 286 unit, typecheck clean, 268 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 43 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified finishEdit fallback to visible doneBtn/set row and undoSet focus restore only when active element body/disabled/invisible.
 - **Round 42 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified startEdit focuses existing enabled doneBtn after render, guarded set presence, and call paths are set-row activation only.
 - **Round 41 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers. Non-blocking nit: rerendering rest view before nav state update could briefly stale prep — **applied** by rerendering rest view at end of render() when resting; gate re-green.
 - **Round 40 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified editValue focus restore/propagation guard, no keyup double-open, and notifyAllowed/init behavior when Notification missing or denied.

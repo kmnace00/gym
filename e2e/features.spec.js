@@ -880,6 +880,30 @@ test("entering set edit moves focus to Done editing (U34)", async ({ page }) => 
   await expect(page.locator("#doneBtn")).toBeFocused();
 });
 
+test("finishEdit in rest peek restores focus to set row (U35)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator('#doneBtn')).toHaveText('Done editing');
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('.setrow[data-set="0"]')).toBeFocused();
+  await expect(page.locator('#app')).toHaveClass(/rest-quiet/);
+});
+
+test("undoSet restores focus to Done when undo control loses focus (U36)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await page.locator('#skipRest').click();
+  await page.locator('#undoSetBtn').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#doneBtn')).toBeFocused();
+  await expect(page.locator('#undoSetBtn')).toBeDisabled();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
