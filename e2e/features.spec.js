@@ -1412,6 +1412,29 @@ test("failed import keeps the pre-merge undo snapshot (U69)", async ({ page }) =
   expect(afterRestore).toBe(111);
 });
 
+test("destructive undo snapshot ignores abandoned set edit (U70)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await page.goto(url);
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:100, reps:6, rir:2, done:1, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:100,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[], active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#loadVal').locator('..').click();
+  await page.locator('.vin').fill('120');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#loadVal')).toHaveText('120');
+  await page.locator('.setrow[data-set="0"]').click();
+  await page.locator('#menuBtn').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#resetDay').click();
+  const snapLoad = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2-snapshot")).payload.state["fri:0"].load);
+  expect(snapLoad).toBe(120);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

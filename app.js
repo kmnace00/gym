@@ -1565,9 +1565,9 @@
 
   /* restart this lift: clear its sets, keep the working weight (two taps) */
   function doRestartLift() {
+    resetEdit();
     Gym.snapshot(payload, "pre-restart-lift");
     Gym.resetLift(payload, cur, idx);
-    editSet = -1; editBackup = null;
     hintText = ""; hintGood = false;
     commit(); render();
   }
@@ -1966,8 +1966,8 @@
     reader.onload = function () {
       try {
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
-        var snapOk = Gym.snapshot(payload, "pre-restore");
         resetEdit(); timerIdle("", "");
+        var snapOk = Gym.snapshot(payload, "pre-restore");
         payload = restored;
         Gym.rollSession(payload, Gym.todayDay());
         cur = payload.cur; idx = payload.idx;
@@ -1989,8 +1989,8 @@
       try {
         var stats = { added: 0, collisions: 0 };
         var merged = Gym.importMerge(payload, String(reader.result), stats);
-        var snapOk = Gym.snapshot(payload, "pre-merge");
         resetEdit(); timerIdle("", "");
+        var snapOk = Gym.snapshot(payload, "pre-merge");
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
@@ -2091,14 +2091,14 @@
     }, 2600);
   }
   function doResetDay() {
-    var snap = Gym.snapshot(payload, "pre-reset-day");
     resetEdit(); timerIdle("", "");
+    var snap = Gym.snapshot(payload, "pre-reset-day");
     Gym.resetDay(payload, cur); commit(); render(); updateFoot();
     setMsg("Day reset" + saveResult(snap));
   }
   function doClearAll() {
-    var snap = Gym.snapshot(payload, "pre-clear");
     resetEdit(); timerIdle("", "");
+    var snap = Gym.snapshot(payload, "pre-clear");
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
     clearUndo(); render(); syncClock(); commit(); updateFoot();
     setMsg("All training data cleared" + saveResult(snap));
@@ -2161,13 +2161,14 @@
     if (!snap || !snap.payload) { setMsg("No snapshot saved yet."); return; }
     var restored = Gym.migrate(JSON.stringify(snap.payload));
     if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
+    resetEdit(); timerIdle("", "");
     var snapOk = Gym.snapshot(payload, "pre-snapshot-restore");
     payload = Gym.reconcile(restored, DAYS);
     Gym.rollSession(payload, Gym.todayDay());
     cur = payload.cur; idx = payload.idx;
     if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
-    clearUndo(); resetEdit(); timerIdle("", ""); view = "day";
+    clearUndo(); view = "day";
     render(); syncClock(); commit(); updateFoot();
     setMsg("Snapshot restored" + saveResult(snapOk));
   };
