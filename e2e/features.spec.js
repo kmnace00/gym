@@ -1302,6 +1302,19 @@ test("notify toggle clears stale opt-in when permission resets to default (U63)"
   expect(await page.evaluate(() => localStorage.getItem("gym-notify"))).toBe("0");
 });
 
+test("two-tap re-arm gets a fresh confirm window (U64)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await page.clock.runFor(1000);
+  await page.locator("#clearAll").click();
+  await page.clock.runFor(100);
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+  await page.clock.runFor(1700); // past the FIRST arm's timer, inside the re-arm window
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

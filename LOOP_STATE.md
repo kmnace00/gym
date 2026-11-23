@@ -376,8 +376,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `notifyAllowed()` now requires `permission === "granted"` (`app.js:2008`). U63 e2e added (failing-first). `GYM_VERSION` `gym-v259` → `gym-v260`, CACHE-HASH → `5a482ff490784ccb`.
 - **Verified in plain terms:** U63 injects gym-notify=1 with fake Notification.permission="default", opens menu, asserts toggle Off and stored opt-in cleared. U44/U47 and full notify e2e still pass. Full gate green: 286 unit, typecheck clean, 294 e2e. Independent critic: see review log below.
 
+### Round 66 — `[DONE round 66]` Two-tap re-arm gets a fresh confirm window
+- **Wrong:** `twoTap()`'s 2,600 ms reset timer was never cancelled; re-arming the same action after arming another button let the stale timer disarm the new arm early (visible label reset mid-window; a confirm tap then needed a third tap). Surveyed/reproduced Nov 23 (round-59 critic nit).
+- **Changed:** added `armedT` timer handle; `disarmTwoTap()` clears it, each arm clears any prior timer before scheduling a new one, and the timer callback now disarms through `disarmTwoTap()`. Second-tap path reuses `disarmTwoTap()` (`app.js:2061-2092`). U64 e2e added (failing-first, clock-driven); U54/U55 and B5-10 still pass. `GYM_VERSION` `gym-v260` → `gym-v261`, CACHE-HASH → `88c476d583990789`.
+- **Verified in plain terms:** U64 arms Reset day, arms Clear all, re-arms Reset day, runs past the old timer's deadline, and asserts the "Tap again" label is still shown. Full gate green: 286 unit, typecheck clean, 295 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 66 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; single live timer handle, confirm/nav/modal disarms idempotent, U64 trace verified. Nits applied post-GO: condensed stale B5-10 comment; redundant post-fn label restore left as harmless.
 - **Round 65 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; granted/denied/unsupported/undefined paths all consistent with notifyRestDone, boot/menu init unaffected. Nit: opt-in .then() re-reads static Notification.permission rather than resolved perm (spec-safe).
 - **Round 64 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pauseBtn relocation consistent with existing restClock branch, target hidden at GO, comment condensation preserved semantics (actually fixed stale 70ms detail). Nit: in a non-GO prep-hidden rest, pausing can move focus to End rest (minor, non-blocking).
 - **Round 63 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; menuBtn persistent in day view, duplicate liftlist overflow removal cascade-neutral at all viewports, B5-04 unaffected. Nit: focus lacks defensive getClientRects guard (harmless; menuBtn never hidden on screen).
