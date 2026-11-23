@@ -1855,6 +1855,28 @@ test("finish from another day summarizes the session day (U90)", async ({ page }
   await expect(page.locator('#sumDuration')).toHaveText("8:20");
 });
 
+test("Continue from another day lands on the session day (U91)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const other = day === "fri" ? "sat" : day === "sat" ? "sun" : "fri";
+  const label = { fri:"Fri", sat:"Sat", sun:"Sun" };
+  await page.evaluate(({ day, other, date }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ load:60, reps:6, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:60,reps:6,rir:2,t:Date.now()}] },
+              [other+":0"]:{ load:50, reps:8, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:50,reps:8,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, { day, other, date });
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText(label[other]);
+  await page.locator('#continueBtn').click();
+  await expect(page.locator('#dayTitle')).toContainText(label[day]);
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -874,7 +874,7 @@
       }).join("") + "</span>";
     }).join("");
     document.getElementById("pHeatCount").textContent = snap.heatCount + "/" + snap.heatTotal;
-    document.getElementById("pHeatTitle").textContent = "Training days · " + snap.heatWeeks + " weeks"; // HEAT_WEEKS via the snapshot, not a hardcoded copy
+    document.getElementById("pHeatTitle").textContent = "Training days · " + snap.heatWeeks + " weeks"; // via snapshot
     var heatSum = document.getElementById("heatSummary");
     if (heatSum) heatSum.textContent = snap.heatCount + " of " + snap.heatTotal + " training days in the last " + snap.heatWeeks + " weeks";
 
@@ -1707,10 +1707,11 @@
     commit();
     render(); syncClock();
     showSummary(entry);
-    refreshCalibration(); // N10: learn from the session just banked — after the summary has read the prior values
+    refreshCalibration(); // after summary reads prior values
   }
   document.getElementById("finishBtn").onclick = finishWorkout;
   document.getElementById("continueBtn").onclick = function () {
+    if (payload.active && payload.active.day && payload.active.day !== cur) switchDay(payload.active.day);
     var first = firstOpen(0);
     if (first >= 0) openLift(first);
   };

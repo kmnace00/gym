@@ -496,8 +496,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `finishWorkout()` now aligns `cur`/`idx` to `payload.active.day` after `resetEdit()`, before finalizing (`app.js:1703`), matching round 88's start-path rule. U90 e2e added (failing-first). `GYM_VERSION` `gym-v283` → `gym-v284`, CACHE-HASH → `105139a5a70e83f7`.
 - **Verified in plain terms:** U90 seeds active Fri + Sat data, views Sat, finishes, and asserts summary title/volume/duration all reflect Fri. Full gate green: 286 unit, typecheck clean, 320 e2e. Independent critic: see review log below.
 
+### Round 90 — `[DONE round 90]` Continue aligns to the session day
+- **Wrong:** clicking "Continue · Lift N" while viewing a non-active day opened that day's lift and left Set Done blocked by the v159 day guard, with no cue to switch back. Same coherence class as rounds 88/89. Surveyed/reproduced Nov 23.
+- **Changed:** `continueBtn.onclick` now switches to `payload.active.day` when it differs from `cur`, before opening the first open lift (`app.js:1714`). Funded by trimming two trailing comments. U91 e2e added (failing-first). `GYM_VERSION` `gym-v284` → `gym-v285`, CACHE-HASH → `be4ff3eda95a51f8`.
+- **Verified in plain terms:** U91 seeds active day + other day's data, views the other day, taps Continue, asserts the app lands on the session day and Set Done starts rest. Full gate green: 286 unit, typecheck clean, 321 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 90 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay resets edit before reassigning cur, no-active-session guard short-circuits, U90 post-summary path is no-op, firstOpen recomputed with new cur. Nits: benign double commit; if session day has no open lift user lands on its day view (still better than blocked state).
 - **Round 89 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; alignment after resetEdit before finalize, showSummary reads only cur, finalize uses state/active only, valid active.day guaranteed, no-op when days match. Nits applied post-GO: U90 now computes the other day so it cannot collide on a Saturday run; idx=0 vs firstOpen(0) landing is UX-only.
 - **Round 88 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay restore order correct, cur-match short-circuit preserves behavior, pause returns early, focus survives, double render idempotent. Nit: new line is app.js:1222 (doc corrected).
 - **Round 87 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old string, two-tap data-label restore unaffected, doResetDay logic untouched. Nit: U88 title says "past day" but #dayNext from pinned Friday lands on Saturday (future) — assertion is day-agnostic and still valid.
