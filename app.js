@@ -1743,6 +1743,7 @@
      already applied live by applySetEdit(), so just put the working load/
      reps/RIR back — the next set must not inherit the edited set's numbers. */
   function resetEdit() {
+    disarmTwoTap();
     var s = curSt();
     if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) s.sets[editSet] = editSetOrig;
     if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
@@ -1821,6 +1822,7 @@
     if (first) first.focus();
   }
   function closeModal() {
+    disarmTwoTap();
     var back = lastFocus; lastFocus = null;
     if (back && document.contains(back) && back.getClientRects().length) back.focus();
     if (modal.contains(document.activeElement) && menuBtn && menuBtn.getClientRects().length) menuBtn.focus();
@@ -2057,6 +2059,10 @@
 
   /* two-tap confirm for destructive menu actions */
   var armedFn = null, armedUntil = 0, armedBtn = null;
+  function disarmTwoTap() {
+    if (armedBtn) armedBtn.textContent = armedBtn.getAttribute("data-label");
+    armedFn = null; armedUntil = 0; armedBtn = null;
+  }
   function twoTap(btn, confirmText, fn) {
     if (armedFn === fn && Date.now() < armedUntil) {
       armedFn = null; armedUntil = 0; armedBtn = null; fn(); btn.textContent = btn.getAttribute("data-label"); return;
