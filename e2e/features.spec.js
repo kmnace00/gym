@@ -2141,6 +2141,27 @@ test("plan note does not return in a fresh session after finish (U105)", async (
   await expect(page.locator('#daySummary')).not.toContainText('Planned');
 });
 
+test("stacked day summary stays readable (U106)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-23T10:00:00") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    const hist = {};
+    Gym.DAYS.fri.ex.forEach(function (e, i) { hist["fri:" + i] = [{ date:"2026-11-01", load:100, reps:6, rir:2, hitTop:true, setsDone:3 }]; });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165, state:{}, liftHistory:hist,
+      sessionLog:[{ date:"2026-10-02", day:"fri", status:"complete", durationSec:1800, sets:24, volume:10000 }],
+      active:{ id:"s", date:"2026-11-23", day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  });
+  await page.reload();
+  await page.locator('#planBtn').click();
+  const m = await page.evaluate(() => {
+    const d = document.getElementById("daySummary");
+    return { txt: d.textContent, scroll: d.scrollHeight, client: d.clientHeight };
+  });
+  expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
