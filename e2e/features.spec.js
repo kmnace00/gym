@@ -1942,6 +1942,24 @@ test("session actions stay visible when browsing a fresh day (U94)", async ({ pa
   await expect(page.locator('#dayTitle')).toContainText(label[day]);
 });
 
+test("Finish label reflects the session day when browsing another day (U95)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    localStorage.clear();
+    const state = {};
+    Gym.DAYS[day].ex.forEach(function (e, i) {
+      state[day + ":" + i] = { load: e.load || 0, reps: e.r, rir: e.rir, done: e.s, topHits: e.s, lastRir: e.rir, sets: [0, 1, 2].map(function () { return { load: e.load || 0, reps: e.r, rir: e.rir, t: Date.now() }; }) };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state, liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await expect(page.locator('#finishBtn')).toHaveText('Finish workout');
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#finishBtn')).toHaveText('Finish workout');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

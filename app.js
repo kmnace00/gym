@@ -417,7 +417,7 @@
     if (finBtn) {
       /* P8: any logged data can finish; only a complete session can't */
       finBtn.hidden = !has || (payload.active && payload.active.status === "complete");
-      finBtn.textContent = complete ? "Finish workout" : "Finish partial workout";
+      finBtn.textContent = li < 0 ? "Finish workout" : "Finish partial workout";
     }
 
     var rows = "";

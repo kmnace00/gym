@@ -516,8 +516,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** when the viewed day differs from `payload.active.day`, visibility is driven by `Gym.activeHasData(payload)`; Continue is not hidden by the viewed day's completeness, and Finish is hidden only for a complete session (`app.js:408-425`). U94 e2e added (failing-first). `GYM_VERSION` `gym-v287` → `gym-v288`, CACHE-HASH → `ba4e6454f16cc8e8`.
 - **Verified in plain terms:** U94 seeds a partial Friday session, browses empty Saturday, asserts both actions visible, then Continue lands back on Friday. Full gate green: 286 unit, typecheck clean, 324 e2e. Independent critic: see review log below.
 
+### Round 94 — `[DONE round 94]` Finish label reflects the session day
+- **Wrong:** round 93 made Finish visible from any day but left its text keyed to the viewed day's completeness, so browsing a fresh day during a fully-logged session read "Finish partial workout" (and the inverse). Surveyed/reproduced Nov 23.
+- **Changed:** `finBtn.textContent` now uses `li < 0` (session-day completeness, since `li` is active-day first-open when off-day) (`app.js:420`). Net −2 B. U95 e2e added (failing-first); pass4/journeys finish tests pass. `GYM_VERSION` `gym-v288` → `gym-v289`, CACHE-HASH → `785e6548d00d9e2c`.
+- **Verified in plain terms:** U95 fills the active day, browses the next day, and asserts Finish still reads "Finish workout". Full gate green: 286 unit, typecheck clean, 325 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 94 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; li<0 equals prior complete on active day (no-op), off-day li matches showSummary session-day verdict and banked data, effSets/deload consistent, finish-hidden guard unchanged. Nits: activeHasData scans all days (pre-existing).
 - **Round 93 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; active-day path collapses to prior formulas, off-day has via activeHasData, li matches handler post-switch, no show-but-no-op, complete/empty cases safe. Nits: activeHasData scans all days (pre-existing), Finish text still keys viewed-day complete.
 - **Round 92 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; label/guard use the same firstOpenLift target the handler opens post-switch, ad===cur and no-session cases fall back to firstOpenIdx, li<0 hides button matching handler no-op. Nit: guard still mixes viewed-day complete/totalDone with active-day li (pre-existing, not a regression).
 - **Round 91 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old literals, dayView keeps valid accessible name, labels remain true on today, U92 mapping matches stepDay/DAY_KEYS. Nits: stale "today" wording in comments/test titles only.
