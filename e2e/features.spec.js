@@ -1012,6 +1012,23 @@ test("load/reps direct-edit mid has 44px tap height (U45)", async ({ page }) => 
   expect(box.height).toBeGreaterThanOrEqual(44);
 });
 
+test("ending rest while editing in peek keeps focus on edit (U46)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await seed(page, { v:5, cur:"fri", idx:0, bodyweight:165, bodyweightSet:false,
+    state:{ "fri:0":{ load:100, reps:6, rir:2, done:1, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:100,reps:6,rir:2,t:Date.now()}] } },
+    liftHistory:{}, sessionLog:[], active:{ id:"s1", date, day:"fri", startedAt:Date.now()-600000, accSec:600, runningSince:null, status:"active" } });
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator('#doneBtn')).toHaveText('Done editing');
+  await page.locator('#skipRest').click();
+  await expect(page.locator('#app')).not.toHaveClass(/resting/);
+  await expect(page.locator('#doneBtn')).toBeFocused();
+  await expect(page.locator('#doneBtn')).toHaveText('Done editing');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

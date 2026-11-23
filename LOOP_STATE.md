@@ -300,8 +300,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `notifyAllowed()` guards `!window.Notification` (`app.js:2005`). `.ctl .mid` gets 44px min-height/flex centering (`style.css:230`). U44/U45 e2e added. `GYM_VERSION` `gym-v244` → `gym-v245`, CACHE-HASH → `0148e40e13bb0aac`.
 - **Verified in plain terms:** U44 injects undefined Notification with gym-notify=1 and asserts no permission error and notify toggle renders. U45 asserts load value mid box height >=44px. Full gate green: 286 unit, typecheck clean, 277 e2e. Independent critic-flash: see review log below.
 
+### Round 51 — `[DONE round 51]` End-rest while editing keeps focus on edit
+- **Wrong:** ending rest while editing a completed set in rest peek returned to lift view but moved focus to #exName while Done editing remained active. Surveyed/reproduced Nov 22.
+- **Changed:** `apply()` focusLift handling now prefers visible doneBtn/edited set row when `editSet>=0` before default lift focus (`app.js:1006-1012`). U46 e2e added. Byte funding: removed redundant comments. `GYM_VERSION` `gym-v245` → `gym-v246`, CACHE-HASH → `d520f617e92b0c7f`.
+- **Verified in plain terms:** U46 starts rest-peek edit, clicks End rest, asserts app not resting and Done editing still focused/text. Full gate green: 286 unit, typecheck clean, 278 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 51 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified focusLift only from restctl.skip, advanceTo resets edit before focus, non-advance skip keeps edit focus, finish paths unaffected.
 - **Round 50 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified notifyAllowed undefined guard avoids false-denied and init throw, CSS mid min-height/flex low layout risk. Nit addressed post-GO: notifyRestDone now guards undefined Notification/permission before firing.
 - **Round 49 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified Escape precedence/modal-summary safety, resting+show-details guard, and setRestDetails handles edit/focus/aria.
 - **Round 48 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified auto-finish-on-hide-peek is safe/guarded to resting+editing, focus lands on visible detailsBtn, GO phase unaffected. Nit: redundant render/focus inside finishEdit then setRestDetails.

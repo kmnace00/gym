@@ -980,7 +980,6 @@
       };
     }
   });
-  /* apply the controller's effect list in order, then paint its view */
   function apply(out) {
     var fx = out.effects, i, e;
     for (i = 0; i < fx.length; i++) {
@@ -1004,15 +1003,16 @@
     }
     renderRestView(out.view);
     if (out.focusLift) {
-      var ft = view === "lift" ? document.getElementById("exName") : liftList.querySelector('.liftrow[data-i="' + idx + '"]') || liftList.querySelector('.liftrow');
-      if (ft && ft.getClientRects().length) ft.focus();
+      var ft;
+      if (editSet>=0){ft=document.getElementById("doneBtn");if(!ft||!ft.getClientRects().length)ft=document.querySelector('.setrow[data-set="'+editSet+'"]');}
+      if(!ft) ft=view==="lift"?document.getElementById("exName"):liftList.querySelector('.liftrow[data-i="'+idx+'"]')||liftList.querySelector(".liftrow");
+      if(ft&&ft.getClientRects().length) ft.focus();
     }
   }
   function syncRestQuiet() {
     var v = restCtl.view();
     appEl.classList.toggle("rest-quiet", (v.phase === "active" || v.phase === "paused") && editSet < 0);
   }
-  /* one paint routine for every phase — idle, GO and the running clock */
   function renderRestView(v) {
     syncRestInterval(v);
     syncRestQuiet();
