@@ -2047,6 +2047,27 @@ test("plan message omits a zero increment for all resets (U100)", async ({ page 
   await expect(page.locator('#daySummary')).toContainText('Planned · reset');
 });
 
+test("destructive wipes clear a stale plan note (U101)", async ({ page }) => {
+  await page.goto(url);
+  const day = await page.evaluate(() => Gym.todayDay());
+  await page.evaluate((day) => {
+    localStorage.clear();
+    const hist = {};
+    Gym.DAYS[day].ex.forEach(function (e, i) {
+      hist[day + ":" + i] = [0, 1, 2].map(function (n) { return { date: "2026-11-0" + (n + 1), load: 100, reps: 6, rir: 2, hitTop: false, setsDone: 3 }; });
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state:{}, liftHistory:hist, sessionLog:[] }));
+  }, day);
+  await page.reload();
+  await page.locator('#planBtn').click();
+  await expect(page.locator('#daySummary')).toContainText('Planned');
+  await page.locator('#menuBtn').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#modalClose').click();
+  await expect(page.locator('#daySummary')).not.toContainText('Planned');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
