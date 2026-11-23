@@ -1060,7 +1060,7 @@ test("salvage copy never claims nothing is saved after implicit persist (U50)", 
       '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
   });
   await page.reload();
-  await expect(page.locator("#saveBarText")).toContainText("1 log entries recovered");
+  await expect(page.locator("#saveBarText")).toContainText("1 log entry recovered");
   await expect(page.locator("#saveBarText")).not.toContainText("Nothing is saved yet");
   await page.locator(".liftrow").first().click(); // implicit commit persists the recovered log
   await expect(page.locator("#saveBarText")).not.toContainText("Nothing is saved yet");
@@ -1492,6 +1492,20 @@ test("merge message pluralizes a single new session (U73)", async ({ page }) => 
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
   await expect(page.locator("#modalMsg")).toContainText("+1 new session,");
   await expect(page.locator("#modalMsg")).not.toContainText("+1 new sessions");
+});
+
+test("salvage count singularizes one entry (U74)", async ({ page }) => {
+  await page.goto(url);
+  const day = await page.evaluate(() => Gym.todayDay());
+  const good = { date: "2026-11-20", load: 77, reps: 6, rir: 2, setsDone: 3,
+    sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }] };
+  await page.evaluate(({ day, good }) => {
+    localStorage.setItem("gym-tool-v2", '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+      '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
+  }, { day, good });
+  await page.reload();
+  await expect(page.locator("#saveBarText")).toContainText("1 log entry recovered");
+  await expect(page.locator("#saveBarText")).not.toContainText("1 log entries");
 });
 
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {

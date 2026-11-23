@@ -324,7 +324,7 @@ for (const size of salvageSizes) {
 
       await expect(page.locator("#saveBar")).toBeVisible();
       await expect(page.locator("#saveBarText")).toContainText("recovered");
-      await expect(page.locator("#saveBarText")).toContainText("1 log entries recovered");
+      await expect(page.locator("#saveBarText")).toContainText("1 log entry recovered");
       await expect(page.locator("#saveBarDownload")).toBeVisible();
       await expect(page.locator("#saveBarAction")).toHaveText("Keep recovered log");
       await noOverflow();
@@ -373,7 +373,7 @@ for (const size of salvageSizes) {
       });
       await page.reload();
 
-      await expect(page.locator("#saveBarText")).toContainText("1 log entries recovered");
+      await expect(page.locator("#saveBarText")).toContainText("1 log entry recovered");
 
       /* the write now fails, exactly like a full storage quota */
       await page.evaluate(() => {
@@ -389,7 +389,7 @@ for (const size of salvageSizes) {
       await page.locator("#doneBtn").click();          // commit() → save fails
       await expect(page.locator("#saveBar"), "the failure bar must not be masked by the salvage notice").toBeVisible();
       await expect(page.locator("#saveBarText")).toContainText("Couldn't save");
-      await expect(page.locator("#saveBarText")).toContainText("1 recovered entries are not saved yet");
+      await expect(page.locator("#saveBarText")).toContainText("1 recovered entry is not saved yet");
       await expect(page.locator("#saveBarAction")).toHaveText("Export");
       await expect(page.locator("#saveBarDownload")).toBeVisible();
       const ok = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);

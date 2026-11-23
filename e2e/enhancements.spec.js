@@ -97,12 +97,12 @@ test("restore and merge salvage a damaged backup instead of rejecting it (B5-06)
 
   // Restore (replace): the quarantined "dead end" bytes now salvage instead of failing
   await page.setInputFiles("#replaceFile", { name: "damaged.json", mimeType: "application/json", buffer: Buffer.from(truncated) });
-  await expect(page.locator("#modalMsg"), "a damaged backup must salvage, not fail").toContainText("Recovered 1 entries from a damaged backup");
+  await expect(page.locator("#modalMsg"), "a damaged backup must salvage, not fail").toContainText("Recovered 1 entry from a damaged backup");
   await expect(page.locator("#modalMsg")).not.toContainText("Restore failed");
 
   // Merge: the recovered entries fold into the current payload
   await page.setInputFiles("#importFile", { name: "damaged.json", mimeType: "application/json", buffer: Buffer.from(truncated) });
-  await expect(page.locator("#modalMsg")).toContainText("Recovered 1 entries from a damaged backup — Merged:");
+  await expect(page.locator("#modalMsg")).toContainText("Recovered 1 entry from a damaged backup — Merged:");
 
   // Bytes with nothing to recover are still rejected
   await page.setInputFiles("#replaceFile", { name: "junk.json", mimeType: "application/json", buffer: Buffer.from("garbage") });

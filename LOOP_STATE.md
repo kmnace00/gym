@@ -426,8 +426,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** merge confirmation now pluralizes only when `stats.added !== 1` (`app.js:1999`). U73 e2e added (failing-first). `GYM_VERSION` `gym-v269` → `gym-v270`, CACHE-HASH → `47a5382411114847`.
 - **Verified in plain terms:** U73 imports a one-session backup and asserts "+1 new session," and no "+1 new sessions". U69/U11 and import tests still pass. Full gate green: 286 unit, typecheck clean, 304 e2e. Independent critic: see review log below.
 
+### Round 76 — `[DONE round 76]` Salvage counts singularize one entry
+- **Wrong:** salvage/import messages reported "1 log entries recovered" / "Recovered 1 entries from a damaged backup" — same grammatical defect round 75 fixed for new sessions. Surveyed/reproduced Nov 23.
+- **Changed:** added `ent(n)` helper returning entry/entries and applied it at all four recovered-count sites (`app.js:1959,173,180,1976,1997`); save-failure copy also agrees on is/are. U74 e2e added (failing-first). Funded by condensing the showSummary and workingLoad comments. `GYM_VERSION` `gym-v270` → `gym-v271`, CACHE-HASH → `8bebd25bfd9c1110`.
+- **Verified in plain terms:** U74 boots a salvage with one recovered entry and asserts "1 log entry recovered" (not "entries"). Existing pass3/U50/U48 and B5-06 assertions updated to the grammatically correct singular. Full gate green: 286 unit, typecheck clean, 305 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 76 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; recovered always numeric so ===1 singular, save-failure noun/verb agree for 0/1/many, salvaged prefix/saveResult untouched, comments logic-free. Nits: LOOP_STATE line number for ent() corrected post-GO; BACKLOG pointer in comment is vague.
 - **Round 75 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pluralization correct for 0/1/many, stats.added numeric, salvaged prefix/saveResult/replace paths untouched. Nit: inline pluralization fine for one-off string.
 - **Round 74 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; can-undo only consumed by resting CSS (peek still hides undo), hidden lift buttons out of tab order, focus fallback lands on visible .liftrow.now, rest advance unaffected. Nits: selector style inconsistent with apply() path; dense one-line if.
 - **Round 73 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; initNotify writes only on genuinely stale opt-in and self-corrects, no focus/message side effects, consistent with boot/openModal/toggle logic. Nit: two calls on one line (style only).

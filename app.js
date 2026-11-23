@@ -170,14 +170,14 @@
       var le = dataWarn === "salvaged" ? (Gym.lastLoadError() || {}) : null;
       saveBar.hidden = false;
       saveBarText.textContent = "Couldn't save — storage may be full" +
-        (le ? " — the " + (le.recovered || 0) + " recovered entries are not saved yet: export them now" : "");
+        (le ? " — the " + (le.recovered || 0) + " recovered " + ent(le.recovered || 0) + (le.recovered === 1 ? " is" : " are") + " not saved yet: export now" : "");
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Export";
       saveBarDownload.hidden = !le;
     } else if (dataWarn === "salvaged") {
       var se = Gym.lastLoadError() || {};
       saveBar.hidden = false;
-      saveBarText.textContent = "Some saved data was damaged — " + (se.recovered || 0) + " log entries recovered, " + (se.dropped || 0) + " couldn't be read — keep the recovered log or download the original.";
+      saveBarText.textContent = "Some saved data was damaged — " + (se.recovered || 0) + " log " + ent(se.recovered || 0) + " recovered, " + (se.dropped || 0) + " couldn't be read — keep the recovered log or download the original.";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Keep recovered log";
       saveBarDownload.hidden = false;
@@ -601,10 +601,9 @@
     var t = loadLabel(load, e);
     return (t === "light" || t === "BW" || t === "—") ? t : t + " lb";
   }
-  /* B6-07: while a lift is swapped, every load is the alternate's own added
-     weight — plain numbers, 0 renders as start light; the original lift's
-     bodyweight semantics don't apply. The working load lives in the record's
-     swapLoad field while swapped, and in `load` otherwise.                 */
+  /* B6-07: swapped load is the alternate's plain added weight (0 = start
+     light); original bodyweight rules don't apply. Stored in swapLoad while
+     swapped, else `load`. Full reasoning: BACKLOG B6-07.                  */
   function workingLoad(s) { return s.swapAlt ? (typeof s.swapLoad === "number" ? s.swapLoad : 0) : s.load; }
   /* swapped sets use the alternate's real external weight (bw:false,
      assist:false), never bodyweight-minus-help; bankLift/showSummary share this rule. */
@@ -1664,10 +1663,8 @@
     var list = DAYS[cur].ex, sets = 0, vol = 0, i;
     for (i = 0; i < list.length; i++) {
       var s = st(cur, i);
-      /* volumes by the same rule bankLift/stats use for history: the live set
-         array valued in place, so extra-set sessions (sets > s) count the same
-         tonnage here as they will in CSV. A dormant lift has done 0 and no
-         sets, so it contributes 0 — and can never read a stale prior load. */
+      /* value live sets in place like bankLift/stats so extra-set sessions match
+         CSV; a dormant lift contributes 0. Full reasoning: BACKLOG (volumes). */
       sets += s.done;
       var val = liftValuation(list[i], s);
       vol += Stats.entryVolume({ sets: s.sets || [], load: s.load, reps: s.reps, setsDone: s.done || 0, bw: val.bw, assist: val.assist }, payload.bodyweight);
@@ -1959,6 +1956,7 @@
     ev.target.value = "";
   }
   function saveResult(snapOk) { return saveFailed ? " — NOT saved — storage full; export now" : " ✓" + (snapOk ? "" : " (no undo copy — storage full)"); }
+  function ent(n) { return n === 1 ? "entry" : "entries"; }
   replaceFile.addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
     if (f.size > MAX_IMPORT_SIZE) { rejectOversized(ev); return; }
@@ -1975,7 +1973,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); syncClock(); commit(); updateFoot();
-        setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " entries from a damaged backup" : "Backup restored") + " — current data replaced" + saveResult(snapOk));
+        setMsg((restored.salvaged ? "Recovered " + restored.salvaged.recovered + " " + ent(restored.salvaged.recovered) + " from a damaged backup" : "Backup restored") + " — current data replaced" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Restore failed — not a Gym backup"); }
     };
     reader.readAsText(f);
@@ -1996,7 +1994,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); syncClock(); commit(); updateFoot();
-        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " entries from a damaged backup — " : "") + "Merged: +" + stats.added + " new session" + (stats.added === 1 ? "" : "s") + ", " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
+        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " " + ent(merged.salvaged.recovered) + " from a damaged backup — " : "") + "Merged: +" + stats.added + " new session" + (stats.added === 1 ? "" : "s") + ", " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);
