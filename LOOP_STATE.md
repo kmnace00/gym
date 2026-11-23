@@ -446,8 +446,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `resetEdit()` now calls `bankLift(cur, idx)` after restoring the original set (`app.js:1758`). `bankLift` is idempotent (upsertHistory by date) and guards on a complete lift. U77 e2e added (failing-first). `GYM_VERSION` `gym-v273` → `gym-v274`, CACHE-HASH → `19604406a0ac0a98`.
 - **Verified in plain terms:** U77 completes a lift, edits a set up two steps, taps Back, and asserts both stored state and history set load are back to 60. U76/U52/U54 and full gate green: 286 unit, typecheck clean, 308 e2e. Independent critic: see review log below.
 
+### Round 80 — `[DONE round 80]` Undo on a past day drops its history entry
+- **Wrong:** `undoSet()` only popped the lift's history entry when its date matched the active session's date. Reviewing a past day and undoing a set cleared the set in state but left the whole history entry, so Progress/CSV/PRs kept counting the removed set. Surveyed/reproduced Nov 23.
+- **Changed:** removed the date guard — the last history entry always mirrors the lift's sets and Undo only runs when done > 0 (`app.js:1168`). U78 e2e added (failing-first); U77 and all undo tests pass. `GYM_VERSION` `gym-v274` → `gym-v275`, CACHE-HASH → `a714197718294d69`.
+- **Verified in plain terms:** U78 seeds a past-dated history entry, switches to that day, undoes a set, and asserts state drops to 2 sets and the history entry is gone. Full gate green: 286 unit, typecheck clean, 309 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 80 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pop branch only on complete→incomplete where tail mirrors viewed lift, matches popHistory semantics, finish/priorEntries untouched. Notes: merge/salvage can break tail invariant on abnormal data (pre-existing); edit-then-undo on past day banks a today-dated tail (round-79 interaction, unchanged).
 - **Round 79 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; all 15 resetEdit callers change idx/cur only after the call, bankLift guard mirrors applySetEdit, upsertHistory idempotent so undo/finish paths consistent. Nit: one-line braces style.
 - **Round 78 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; editSet guard matches other applySetEdit callers, out-of-bounds path restores editBackup, bankLift path unchanged, Apply button stays focused.
 - **Round 77 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pl() strict ===1 semantics match replaced ternaries, all values numeric, updateFoot caching pure, rep messages correct, comment-only program.js trim. Nits: hardcoded " sets" at app.js:405 pre-existing/out of scope; BACKLOG pointer generic.

@@ -1580,6 +1580,32 @@ test("abandoning a set edit re-banks the original set (U77)", async ({ page }) =
   expect(vals.hist).toBe(60);
 });
 
+test("undo on a past day also drops its history entry (U78)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null },
+              "sat:0":{ load:60, reps:6, rir:2, done:3, topHits:3, lastRir:2, exId:"sat-front-pulldown", sets } },
+      liftHistory:{ "sat:0":[{ date:"2026-11-01", load:60, reps:6, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText("Sat");
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#undoSetBtn').click();
+  const counts = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    var h = p.liftHistory["sat:0"] || [];
+    return { state: p.state["sat:0"].sets.length, histEntries: h.length };
+  });
+  expect(counts.state).toBe(2);
+  expect(counts.histEntries).toBe(0);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

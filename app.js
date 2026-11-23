@@ -1165,7 +1165,7 @@
     if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
     if (wasComplete && s.done < effSets(ex())) {
       var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
-      if (arr && arr.length && arr[arr.length - 1].date === Gym.sessionDate(payload)) arr.pop();
+      if (arr && arr.length) arr.pop();
     } else if (s.done >= effSets(ex())) {
       bankLift(cur, idx);
     }
