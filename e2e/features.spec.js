@@ -996,6 +996,22 @@ test("Escape closes rest workout peek (U43)", async ({ page }) => {
   await expect(page.locator('#detailsBtn')).toHaveAttribute('aria-expanded', 'false');
 });
 
+test("notify init tolerates undefined Notification object (U44)", async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.setItem("gym-notify","1"); Object.defineProperty(window,"Notification",{value:undefined,configurable:true,writable:true}); } catch (e) {} });
+  const errs=[]; page.on("pageerror",e=>errs.push(String(e)));
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#notifyToggle")).toHaveText(/Rest notifications: (On|Off)/);
+  expect(errs.join("\n")).not.toContain("permission");
+});
+
+test("load/reps direct-edit mid has 44px tap height (U45)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('.liftrow[data-i="0"]').click();
+  const box = await page.locator('#loadVal').locator('..').boundingBox();
+  expect(box.height).toBeGreaterThanOrEqual(44);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

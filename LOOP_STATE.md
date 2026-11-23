@@ -295,8 +295,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** global Escape handler closes rest show-details peek via `setRestDetails(false)` before progress/swap handling (`app.js:1841`). U43 e2e added. `GYM_VERSION` `gym-v243` → `gym-v244`, CACHE-HASH → `1cd47d5125ec0106`.
 - **Verified in plain terms:** U43 opens rest peek, presses Escape, asserts show-details removed, detailsBtn focused and aria-expanded false. Full gate green: 286 unit, typecheck clean, 275 e2e. Independent critic-flash: see review log below.
 
+### Round 50 — `[DONE round 50]` Notify init guard + 44px load/reps tap target
+- **Wrong:** `notifyAllowed()` threw when `window.Notification` property existed but was undefined, causing menu/init errors and stale notify UI in that edge case. Load/reps direct-edit mid controls were 37.6px tall at 390x844, below 44px touch target. Surveyed/reproduced Nov 22.
+- **Changed:** `notifyAllowed()` guards `!window.Notification` (`app.js:2005`). `.ctl .mid` gets 44px min-height/flex centering (`style.css:230`). U44/U45 e2e added. `GYM_VERSION` `gym-v244` → `gym-v245`, CACHE-HASH → `d421db2307341235`.
+- **Verified in plain terms:** U44 injects undefined Notification with gym-notify=1 and asserts no permission error and notify toggle renders. U45 asserts load value mid box height >=44px. Full gate green: 286 unit, typecheck clean, 277 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 50 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified notifyAllowed undefined guard avoids false-denied and init throw, CSS mid min-height/flex low layout risk. Nit: rest-notify firing paths still read Notification.permission/new Notification directly (non-blocking).
 - **Round 49 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified Escape precedence/modal-summary safety, resting+show-details guard, and setRestDetails handles edit/focus/aria.
 - **Round 48 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified auto-finish-on-hide-peek is safe/guarded to resting+editing, focus lands on visible detailsBtn, GO phase unaffected. Nit: redundant render/focus inside finishEdit then setRestDetails.
 - **Round 47 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified pause button visible-text accessible name, swap Escape gated to lift view, modal/summary precedence preserved, stale swapOpen inert on day view.
