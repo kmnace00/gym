@@ -155,8 +155,7 @@
   var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null, saveBarMsg = "";
   function syncSaveBar() {
     if (!saveBar) return;
-    /* a one-shot success note lives in the view-agnostic bar itself: the
-       backup bar is hidden outside the day view and the header hides in rest */
+    /* one-shot note lives here — the backup bar is day-only */
     if (saveBarMsg) {
       saveBar.hidden = false;
       saveBarText.textContent = saveBarMsg; saveBarMsg = "";
@@ -1901,9 +1900,12 @@
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
   document.getElementById("exportCopy").onclick = function () {
-    var json = exportWithFreshBackup();
+    var prevBak = payload.lastBackup, json = exportWithFreshBackup();
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(json).then(function () { setMsg("Backup copied to clipboard ✓"); }, function () { setMsg("Copy blocked — use Download JSON"); });
+      navigator.clipboard.writeText(json).then(function () { setMsg("Backup copied to clipboard ✓"); }, function () {
+        payload.lastBackup = prevBak; commit(); updateFoot(); render();
+        setMsg("Copy blocked — use Download JSON");
+      });
     } else { downloadText(json, "gym-backup-" + Gym.dateKey() + ".json", "application/json"); setMsg("Backup downloaded ✓"); }
   };
   function downloadText(text, name, type) {

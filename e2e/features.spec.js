@@ -1766,6 +1766,29 @@ test("workout clock survives a peek toggle at GO (U85)", async ({ page }) => {
   await expect(page.locator('#restElapsed')).toBeVisible();
 });
 
+test("failed Copy backup keeps the overdue reminder (U86)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:60,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[], lastBackup:"2026-10-01",
+      active:{ id:"s", date:"2026-11-06", day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  });
+  await page.reload();
+  await expect(page.locator('#backupBar')).toBeVisible();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: function () { return Promise.reject(new Error("blocked")); } }, configurable: true });
+  });
+  await page.locator('#menuBtn').click();
+  await page.locator('#exportCopy').click();
+  await expect(page.locator('#modalMsg')).toHaveText("Copy blocked — use Download JSON");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).lastBackup)).toBe("2026-10-01");
+  await expect(page.locator('#menuBtn')).toHaveClass(/needs-backup/);
+  await page.locator('#modalClose').click();
+  await expect(page.locator('#backupBar')).toBeVisible();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
