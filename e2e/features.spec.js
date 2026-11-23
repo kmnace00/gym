@@ -1676,6 +1676,43 @@ test("restart after partial progress keeps earlier session history (U82)", async
   expect(hist).toEqual(["2026-11-15"]);
 });
 
+test("restart after finishing keeps the completed session (U83)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    const state = {}, hist = {};
+    Gym.DAYS[day].ex.forEach(function (e, i) {
+      state[day + ":" + i] = { load: e.load || 0, reps: e.r, rir: e.rir, done: e.s, topHits: e.s, lastRir: e.rir, sets: sets.slice(0, e.s) };
+      hist[day + ":" + i] = [{ date, load: e.load || 0, reps: e.r, rir: e.rir, hitTop: true, setsDone: e.s, sets: sets.slice(0, e.s) }];
+    });
+    const sat = "sat";
+    Gym.DAYS[sat].ex.forEach(function (e, i) {
+      state[sat + ":" + i] = { load: e.load || 0, reps: e.r, rir: e.rir, done: e.s, topHits: e.s, lastRir: e.rir, sets: sets.slice(0, e.s) };
+      hist[sat + ":" + i] = [{ date, load: e.load || 0, reps: e.r, rir: e.rir, hitTop: true, setsDone: e.s, sets: sets.slice(0, e.s) }];
+    });
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state, liftHistory:hist, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:1800, runningSince:null, status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await page.locator('#finishBtn').click();
+  await expect(page.locator('#summary')).toBeVisible();
+  await page.locator('#sumDone').click();
+  await page.locator('#dayNext').click();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#resetLiftBtn').click();
+  await page.locator('#resetLiftBtn').click();
+  const st = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { status: p.active.status, logged: p.sessionLog.length };
+  });
+  expect(st.status).toBe("complete");
+  expect(st.logged).toBe(1);
+  await expect(page.locator('#sessBtn')).toHaveAttribute('aria-label', 'Start workout timer');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -1254,9 +1254,8 @@
   }
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState !== "visible") return;
-    /* N9: the wake lock is released whenever the page hides — re-acquire it
-       on return while a session or a rest is live (iOS 18.4+ honors it in
-       standalone apps), so the countdown stays on screen at the rack. */
+    /* N9: re-acquire the wake lock on return while a session/rest is live so
+       the countdown stays on screen. */
     if (sInt || appEl.classList.contains("resting")) keepAwake();
     checkForDeploy(); initNotify();
   });

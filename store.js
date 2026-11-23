@@ -1079,7 +1079,7 @@
     var arr = p.liftHistory && p.liftHistory[k], banked = rec && bankedSnapshot(arr, rec, p);
     if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = []; }
     if (banked) arr.pop();
-    reopenSession(p);
+    if (!p.active || p.active.status !== "complete") reopenSession(p);
   }
 
   /* clear every lift's finished sets for one day, keeping loads + earlier history */
@@ -1096,7 +1096,7 @@
         }
       }
     }
-    reopenSession(p);
+    if (!p.active || p.active.status !== "complete") reopenSession(p);
   }
 
   /** "YYYY-MM-DD" for a Date, defaulting to now. */
