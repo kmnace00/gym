@@ -1112,6 +1112,24 @@ test("destructive menu actions report save failure truthfully (U52)", async ({ p
   await expect(page.locator("#modalMsg")).toContainText("NOT saved");
 });
 
+test("keeping recovered log confirms visibly and keeps focus (U53)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay(), date = Gym.dateKey();
+    const good = { date, load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3,
+      sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }] };
+    localStorage.setItem("gym-tool-v2", '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+      '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
+  });
+  await page.reload();
+  await page.locator("#saveBarAction").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#backupBar")).toBeVisible();
+  await expect(page.locator("#backupBarText")).toContainText("Recovered log kept");
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe("menuBtn");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

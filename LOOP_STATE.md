@@ -336,8 +336,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** all three now build their confirmation with the existing `saveResult(snapOk)` helper (`app.js:2079,2086,2152`), so a failed write reports "NOT saved — storage full; export now" while success still shows ✓ / no-undo-copy note. U52 e2e added. `GYM_VERSION` `gym-v251` → `gym-v252`, CACHE-HASH → `8dd79d7e18e7a3b8`.
 - **Verified in plain terms:** U52 stubs setItem to throw for gym-tool-v2, runs all three destructive actions, asserts "NOT saved" each time. Full gate green: 286 unit, typecheck clean, 283 e2e. Independent critic: see review log below.
 
+### Round 58 — `[DONE round 58]` Salvage-keep confirms visibly and keeps focus
+- **Wrong:** "Keep recovered log" wrote its confirmation into the hidden `#modalMsg` while hiding the save bar, so the user saw the bar vanish with no confirmation; keyboard activation also dropped focus to BODY. Surveyed/reproduced Nov 23.
+- **Changed:** salvage-keep success now sets `backupMsg` and re-renders the day so the confirmation appears in the visible backup bar, then focuses `#menuBtn` (`app.js:2163`). `renderDay()` now prioritizes a pending `backupMsg` over the backup reminder so the one-render confirmation shows even when a backup is due (`app.js:449`). U53 e2e added. `GYM_VERSION` `gym-v252` → `gym-v253`, CACHE-HASH → `e883f18dbb0ebc39`.
+- **Verified in plain terms:** U53 seeds salvage, focuses/Enter-activates Keep, asserts backup bar shows "Recovered log kept" and focus is #menuBtn. Existing U26/B5-04 backup-bar confirmation tests still pass. Full gate green: 286 unit, typecheck clean, 284 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 58 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; backupMsg consumed on first render so reminder not suppressed, round-36 flow intact, menuBtn visible in all views. Nit applied post-GO: reuse existing menuBtn var.
 - **Round 57 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveFailed set synchronously by commit() before setMsg in all three paths, snapshot-object truthiness correct, existing substring assertions intact. Nit: success wording now "Day reset ✓" drops "sets cleared." (cosmetic, intentional).
 - **Round 56 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; :empty avoids stale bar on reopen, #calibInfo untouched, sticky keeps flow and announcements intact. Nit: U51 tight containment could fail for a multi-line taller-than-card message (current messages short).
 - **Round 55 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pure copy edit, save-failed branch untouched, no test asserts old phrase. Nit: U50 post-click assertion trivially satisfied by unconditional copy removal (harmless).

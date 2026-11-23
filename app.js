@@ -447,8 +447,8 @@
 
     var due = !backupDismissed && Gym.backupDue(payload);
     backupBar.hidden = !due && !backupMsg;
-    if (due) { var age = Gym.backupAgeDays(payload); backupBarText.textContent = age === null ? "Never backed up — this log lives only on this phone" : "Backup " + age + " day" + (age===1?"":"s") + " old — keep your log safe"; }
-    else if (backupMsg) { backupBarText.textContent = backupMsg; backupMsg = ""; }
+    if (backupMsg) { backupBarText.textContent = backupMsg; backupMsg = ""; }
+    else if (due) { var age = Gym.backupAgeDays(payload); backupBarText.textContent = age === null ? "Never backed up — this log lives only on this phone" : "Backup " + age + " day" + (age===1?"":"s") + " old — keep your log safe"; }
   }
 
   /* history entries *before* this session. If the current lift is already
@@ -2160,7 +2160,7 @@
       /* the recovered payload lives in memory only — save it explicitly */
       persistNow();
       if (saveFailed) { setMsg("Couldn't save — export now"); }
-      else { dataWarn = null; syncSaveBar(); setMsg("Recovered log kept ✓"); }
+      else { dataWarn = null; syncSaveBar(); backupMsg = "Recovered log kept ✓"; renderDay(); menuBtn.focus(); }
     } else if (dataWarn === "corrupt") {
       downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
     } else if (dataWarn === "future") {
