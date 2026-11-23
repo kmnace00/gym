@@ -1079,6 +1079,39 @@ test("menu action feedback is visible on screen (U51)", async ({ page }) => {
   expect(visible).toBe(true);
 });
 
+test("destructive menu actions report save failure truthfully (U52)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    const d = new Date();
+    const day = d.getDay() === 6 ? "sat" : (d.getDay() === 0 ? "sun" : "fri");
+    const date = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    const p = { v:5, cur:day, idx:0, bodyweight:165, bodyweightSet:false,
+      state:{ [day+":0"]:{ load:100, reps:6, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:100,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[], active:{ id:"s1", date, day, startedAt:null, accSec:0, runningSince:null, status:"active" } };
+    localStorage.setItem("gym-tool-v2", JSON.stringify(p));
+    const snap = JSON.parse(JSON.stringify(p));
+    snap.state[day+":0"].load = 99;
+    localStorage.setItem("gym-tool-v2-snapshot", JSON.stringify({ at:Date.now(), label:"test", payload:snap }));
+  });
+  await page.addInitScript(() => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) { if (String(k) === "gym-tool-v2") throw new Error("QuotaExceededError"); return orig.call(this, k, v); };
+  });
+  await page.reload();
+
+  await page.locator("#menuBtn").click();
+  await page.locator("#resetDay").click();
+  await page.locator("#resetDay").click();
+  await expect(page.locator("#modalMsg")).toContainText("NOT saved");
+
+  await page.locator("#clearAll").click();
+  await page.locator("#clearAll").click();
+  await expect(page.locator("#modalMsg")).toContainText("NOT saved");
+
+  await page.locator("#restoreSnapshot").click();
+  await expect(page.locator("#modalMsg")).toContainText("NOT saved");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

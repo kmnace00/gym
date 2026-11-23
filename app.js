@@ -2076,14 +2076,14 @@
     var snap = Gym.snapshot(payload, "pre-reset-day");
     resetEdit(); timerIdle("", "");
     Gym.resetDay(payload, cur); commit(); render(); updateFoot();
-    setMsg(snap ? "Day reset — sets cleared." : "Day reset — no undo copy (storage full).");
+    setMsg("Day reset" + saveResult(snap));
   }
   function doClearAll() {
     var snap = Gym.snapshot(payload, "pre-clear");
     resetEdit(); timerIdle("", "");
     payload = Gym.emptyPayload(); cur = payload.cur; idx = 0; view = "day";
     clearUndo(); render(); syncClock(); commit(); updateFoot();
-    setMsg(snap ? "All training data cleared." : "All training data cleared — no undo copy (storage full).");
+    setMsg("All training data cleared" + saveResult(snap));
   }
   document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
@@ -2149,7 +2149,7 @@
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
     clearUndo(); resetEdit(); timerIdle("", ""); view = "day";
     render(); syncClock(); commit(); updateFoot();
-    setMsg(snapOk ? "Snapshot restored ✓" : "Snapshot restored ✓ — no undo copy (storage full)");
+    setMsg("Snapshot restored" + saveResult(snapOk));
   };
 
   /* corrupt payload → offer the quarantined bytes; newer-version payload →

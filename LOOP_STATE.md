@@ -331,8 +331,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** sticky bottom placement for non-empty `#modalMsg` with surface background and z-index (`style.css:439`). U51 e2e added (geometry assertion). `GYM_VERSION` `gym-v250` → `gym-v251`, CACHE-HASH → `31128645adef5f0f`.
 - **Verified in plain terms:** U51 asserts message rect inside modal-card rect after Export CSV; probed long message at 390x667 top and scrolled-bottom positions. Full gate green: 286 unit, typecheck clean, 282 e2e. Independent critic: see review log below.
 
+### Round 57 — `[DONE round 57]` Destructive menu actions report save failure
+- **Wrong:** Reset day / Clear all data / Undo snapshot restore printed success confirmations even when `Gym.save()` failed; the save bar behind the modal said storage full, and the recovered/destructive change was not persisted. Surveyed/reproduced Nov 23; same class as round 23 (import) and round 53 (salvage keep).
+- **Changed:** all three now build their confirmation with the existing `saveResult(snapOk)` helper (`app.js:2079,2086,2152`), so a failed write reports "NOT saved — storage full; export now" while success still shows ✓ / no-undo-copy note. U52 e2e added. `GYM_VERSION` `gym-v251` → `gym-v252`, CACHE-HASH → `8dd79d7e18e7a3b8`.
+- **Verified in plain terms:** U52 stubs setItem to throw for gym-tool-v2, runs all three destructive actions, asserts "NOT saved" each time. Full gate green: 286 unit, typecheck clean, 283 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 57 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveFailed set synchronously by commit() before setMsg in all three paths, snapshot-object truthiness correct, existing substring assertions intact. Nit: success wording now "Day reset ✓" drops "sets cleared." (cosmetic, intentional).
 - **Round 56 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; :empty avoids stale bar on reopen, #calibInfo untouched, sticky keeps flow and announcements intact. Nit: U51 tight containment could fail for a multi-line taller-than-card message (current messages short).
 - **Round 55 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pure copy edit, save-failed branch untouched, no test asserts old phrase. Nit: U50 post-click assertion trivially satisfied by unconditional copy removal (harmless).
 - **Round 54 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; no remaining runtime rnav refs, existing prevLift/nextLift nav intact, rest peek/keyboard unaffected.
