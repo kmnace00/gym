@@ -1029,6 +1029,15 @@ test("ending rest while editing in peek keeps focus on edit (U46)", async ({ pag
   await expect(page.locator('#doneBtn')).toHaveText('Done editing');
 });
 
+test("unsupported Notification clears stale opt-in (U47)", async ({ page }) => {
+  await page.addInitScript(() => { try { localStorage.setItem("gym-notify","1"); delete window.Notification; } catch (e) {} });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#notifyToggle")).toHaveText("Rest notifications: Off");
+  const stored = await page.evaluate(() => localStorage.getItem("gym-notify"));
+  expect(stored).toBe("0");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

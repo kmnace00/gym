@@ -305,8 +305,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `apply()` focusLift handling now prefers visible doneBtn/edited set row when `editSet>=0` before default lift focus (`app.js:1006-1012`). U46 e2e added. Byte funding: removed redundant comments. `GYM_VERSION` `gym-v245` → `gym-v246`, CACHE-HASH → `d520f617e92b0c7f`.
 - **Verified in plain terms:** U46 starts rest-peek edit, clicks End rest, asserts app not resting and Done editing still focused/text. Full gate green: 286 unit, typecheck clean, 278 e2e. Independent critic-flash: see review log below.
 
+### Round 52 — `[DONE round 52]` Unsupported Notification clears stale opt-in
+- **Wrong:** when Notification API was unsupported/missing, stale `gym-notify=1` rendered as "Rest notifications: On" because `notifyAllowed()` treated missing as allowed. Surveyed/reproduced Nov 22.
+- **Changed:** `notifyAllowed()` now requires supported Notification API and non-denied permission (`app.js:2005`), so initNotify clears stale unsupported opt-in. U47 e2e added. `GYM_VERSION` `gym-v246` → `gym-v247`, CACHE-HASH → `2b800364726dd828`.
+- **Verified in plain terms:** U47 seeds gym-notify=1, deletes window.Notification, asserts toggle Off and stored 0. Full gate green: 286 unit, typecheck clean, 279 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 52 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified unsupported Notification treated as not allowed, init clears stale opt-in, render/notify semantics safe for default/denied/granted.
 - **Round 51 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified focusLift only from restctl.skip, advanceTo resets edit before focus, non-advance skip keeps edit focus, finish paths unaffected.
 - **Round 50 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified notifyAllowed undefined guard avoids false-denied and init throw, CSS mid min-height/flex low layout risk. Nit addressed post-GO: notifyRestDone now guards undefined Notification/permission before firing.
 - **Round 49 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified Escape precedence/modal-summary safety, resting+show-details guard, and setRestDetails handles edit/focus/aria.
