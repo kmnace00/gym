@@ -1555,6 +1555,31 @@ test("Apply updates the edited set row as well as the working load (U76)", async
   expect(logged).toBe(52.5);
 });
 
+test("abandoning a set edit re-banks the original set (U77)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:3, topHits:3, lastRir:2, exId:"fri-smith-squat", sets } },
+      liftHistory:{ "fri:0":[{ date, load:60, reps:6, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await page.locator('#loadUp').click();
+  await page.locator('#loadUp').click();
+  await page.locator('#backBtn').click();
+  const vals = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { state: p.state["fri:0"].sets[0].load, hist: p.liftHistory["fri:0"][0].sets[0].load };
+  });
+  expect(vals.state).toBe(60);
+  expect(vals.hist).toBe(60);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -1752,7 +1752,7 @@
   function resetEdit() {
     disarmTwoTap();
     var s = curSt();
-    if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) s.sets[editSet] = editSetOrig;
+    if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) { s.sets[editSet] = editSetOrig; bankLift(cur, idx); }
     if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null; editSetOrig = null; swapOpen = false;
   }

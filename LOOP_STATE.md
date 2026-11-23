@@ -441,8 +441,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `applyLoadBtn.onclick` now calls `applySetEdit()` when `editSet >= 0`, so the edited row is written with the new working load immediately (`app.js:1563`). U76 e2e added (failing-first). `GYM_VERSION` `gym-v272` → `gym-v273`, CACHE-HASH → `86ee75278c24e225`.
 - **Verified in plain terms:** U76 seeds two qualifying sessions + a logged set, starts editing it, taps Apply, asserts both the working load readout and the stored set load become 52.5. Auto-progression and U31 tests still pass. Full gate green: 286 unit, typecheck clean, 307 e2e. Independent critic: see review log below.
 
+### Round 79 — `[DONE round 79]` Abandoning a set edit re-banks history
+- **Wrong:** `applySetEdit()` banks the edited set into liftHistory immediately, but `resetEdit()` restored the original set without re-banking — so abandoning an edit left history with the discarded values, diverging from the set log and every downstream view (tonnage, PRs, CSV, suggestions). Surveyed/reproduced Nov 23.
+- **Changed:** `resetEdit()` now calls `bankLift(cur, idx)` after restoring the original set (`app.js:1758`). `bankLift` is idempotent (upsertHistory by date) and guards on a complete lift. U77 e2e added (failing-first). `GYM_VERSION` `gym-v273` → `gym-v274`, CACHE-HASH → `19604406a0ac0a98`.
+- **Verified in plain terms:** U77 completes a lift, edits a set up two steps, taps Back, and asserts both stored state and history set load are back to 60. U76/U52/U54 and full gate green: 286 unit, typecheck clean, 308 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 79 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; all 15 resetEdit callers change idx/cur only after the call, bankLift guard mirrors applySetEdit, upsertHistory idempotent so undo/finish paths consistent. Nit: one-line braces style.
 - **Round 78 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; editSet guard matches other applySetEdit callers, out-of-bounds path restores editBackup, bankLift path unchanged, Apply button stays focused.
 - **Round 77 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pl() strict ===1 semantics match replaced ternaries, all values numeric, updateFoot caching pure, rep messages correct, comment-only program.js trim. Nits: hardcoded " sets" at app.js:405 pre-existing/out of scope; BACKLOG pointer generic.
 - **Round 76 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; recovered always numeric so ===1 singular, save-failure noun/verb agree for 0/1/many, salvaged prefix/saveResult untouched, comments logic-free. Nits: LOOP_STATE line number for ent() corrected post-GO; BACKLOG pointer in comment is vague.
