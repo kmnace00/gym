@@ -2185,6 +2185,16 @@ test("rest label wraps for a long lift name (U107)", async ({ page }) => {
   expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
 });
 
+test("day band says min left only after a set is logged (U108)", async ({ page }) => {
+  await page.goto(url);
+  await expect(page.locator('#bandInfo')).toHaveText(/^0\/24 sets · ~\d+ min$/);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await page.locator('#skipRest').click();
+  await page.locator('#backBtn').click();
+  await expect(page.locator('#bandInfo')).toContainText('min left');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

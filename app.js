@@ -391,14 +391,14 @@
       summary = "Off day · logs as " + (DAYS[Gym.todayDay()] ? DAYS[Gym.todayDay()].label.split(" — ")[0] : "the next session") + " · " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
-    /* B6-10: one nudge line, gone as soon as the week has a session in it */
+    /* B6-10: nudge only in an empty week */
     if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — start one in the Menu.";
     document.getElementById("daySummary").textContent = summary;
     /* today-band tally (tall Home-Screen canvas): sets done, time left */
     var bandInfo = document.getElementById("bandInfo");
     if (bandInfo) {
       bandInfo.textContent = totalDone + "/" + totalSets + " sets"
-        + (complete ? " · done" : " · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min left");
+        + (complete ? " · done" : " · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min" + (totalDone ? " left" : ""));
     }
     // first-run guidance: one line until the very first set is ever logged
     var firstRun = document.getElementById("firstRunHint");
