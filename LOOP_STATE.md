@@ -285,8 +285,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** removed static pause-rest aria-label and rely on visible text (`index.html:44`, `app.js` pause/reset branches simplified). Global Escape handler now only closes swap when `view==="lift"` (`app.js:1841`). U40/U41 e2e added. `GYM_VERSION` `gym-v241` → `gym-v242`, CACHE-HASH → `b7d1698d3532fc9e`.
 - **Verified in plain terms:** U40 toggles pause/resume and asserts button text changes with no stale aria-label. U41 opens swap, returns to day, Escape keeps day visible and focus not BODY. Full gate green: 286 unit, typecheck clean, 273 e2e. Independent critic-flash: see review log below.
 
+### Round 48 — `[DONE round 48]` Hide rest peek finishes active edit safely
+- **Wrong:** hiding workout peek while editing a completed set during rest left edit mode active but editor hidden/unreachable (focus fell to detailsBtn, Done editing hidden). Surveyed/reproduced Nov 22.
+- **Changed:** `setRestDetails()` now finishes the edit before hiding peek when resting+editing, then keeps focus on detailsBtn (`app.js:1088-1097`). U42 e2e added. Byte funding: removed two N11 comments. `GYM_VERSION` `gym-v242` → `gym-v243`, CACHE-HASH → `ec38ba3ef70f9d06`.
+- **Verified in plain terms:** U42 edits during rest peek, clicks Hide workout, asserts detailsBtn focused, show-details off, Done editing no longer active. Full gate green: 286 unit, typecheck clean, 274 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 48 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified auto-finish-on-hide-peek is safe/guarded to resting+editing, focus lands on visible detailsBtn, GO phase unaffected. Nit: redundant render/focus inside finishEdit then setRestDetails.
 - **Round 47 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified pause button visible-text accessible name, swap Escape gated to lift view, modal/summary precedence preserved, stale swapOpen inert on day view.
 - **Round 46 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified resetEdit swapOpen clear is safe across all callers and normal swap behavior intact.
 - **Round 45 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified progress Escape precedence, modal/summary precedence preserved, normal swap Escape intact. Nit: stale swapOpen may persist until normal reset paths, but render-derived/hidden outside lift view — non-blocking.

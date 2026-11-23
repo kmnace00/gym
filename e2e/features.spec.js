@@ -968,6 +968,20 @@ test("Escape on day view ignores stale swap state (U41)", async ({ page }) => {
   expect(active).not.toBe('BODY');
 });
 
+test("hiding rest peek while editing finishes edit and keeps focus on details (U42)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator('#doneBtn')).toHaveText('Done editing');
+  await page.locator('#detailsBtn').click();
+  await expect(page.locator('#detailsBtn')).toBeFocused();
+  await expect(page.locator('#app')).not.toHaveClass(/show-details/);
+  await expect(page.locator('#doneBtn')).toHaveText(/Set Done|GO/);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

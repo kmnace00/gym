@@ -1008,8 +1008,6 @@
       if (ft && ft.getClientRects().length) ft.focus();
     }
   }
-  /* N11: active/paused rest hides the editor (.rest-quiet); editing a logged
-     set is the exception; GO and idle restore it. */
   function syncRestQuiet() {
     var v = restCtl.view();
     appEl.classList.toggle("rest-quiet", (v.phase === "active" || v.phase === "paused") && editSet < 0);
@@ -1076,9 +1074,6 @@
       return;
     }
     restElapsedEl.textContent = "Workout " + fmt(sec);
-    /* N11: with the workout peeked open, the header's session pill shows
-       this same clock — one workout clock per screen, not two. The rest
-       ticks re-run this, so toggling the peek corrects within a tick. */
     restElapsedEl.hidden = appEl.classList.contains("show-details");
   }
   function setRestLabel(t, m) {
@@ -1087,10 +1082,12 @@
   }
   function setRestDetails(open) {
     if (open) blurRestNav();
-    appEl.classList.toggle("show-details", !!open);
-    detailsBtn.textContent = detailsBtn.getAttribute(open ? "data-hide" : "data-show");
-    detailsBtn.setAttribute("aria-expanded", open ? "true" : "false");
-    applyVisibility();
+    var fe=!open&&editSet>=0&&appEl.classList.contains("resting");
+    if(fe) finishEdit();
+    appEl.classList.toggle("show-details",!!open);
+    detailsBtn.textContent=detailsBtn.getAttribute(open?"data-hide":"data-show");
+    detailsBtn.setAttribute("aria-expanded",open?"true":"false");
+    applyVisibility(); if(fe) detailsBtn.focus();
   }
   detailsBtn.onclick = function () { setRestDetails(!appEl.classList.contains("show-details")); };
 
