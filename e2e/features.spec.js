@@ -1343,6 +1343,18 @@ test("finished workout pill starts a fresh session, not a resumed one (U65)", as
   expect(st.logged).toBe(1);
 });
 
+test("notify default permission does not claim denied (U66)", async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      Object.defineProperty(window, "Notification", { value: { permission: "default", requestPermission: function () { return Promise.resolve("default"); } }, configurable: true, writable: true });
+    } catch (e) {}
+  });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await page.locator("#notifyToggle").click();
+  await expect(page.locator("#modalMsg")).toHaveText("Not enabled — change in Settings");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

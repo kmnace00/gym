@@ -2019,7 +2019,7 @@
       Notification.requestPermission().then(function (perm) {
         try { localStorage.setItem(NOTIFY_KEY, perm === "granted" ? "1" : "0"); } catch (e) {}
         renderNotify();
-        if (perm !== "granted") setMsg("Permission denied — enable in Settings");
+        if (perm !== "granted") setMsg("Not enabled — change in Settings");
       });
     } catch (e) { setMsg("Notifications are not available"); }
   };
