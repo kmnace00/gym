@@ -405,19 +405,18 @@
     if (firstRun) firstRun.hidden = Gym.hasData(payload);
     document.getElementById("planBtn").hidden = !hasHist || complete;
 
-    var firstOpenIdx = firstOpen(0);
+    var firstOpenIdx = firstOpen(0), ad = payload.active && payload.active.day, off = ad && ad !== cur;
+    var has = totalDone > 0 || (off && Gym.activeHasData(payload));
+    var li = off ? firstOpenLift(ad, payload.state, 0, effSets) : firstOpenIdx;
     var contBtn = document.getElementById("continueBtn");
     if (contBtn) {
-      var ad = payload.active && payload.active.day;
-      var li = ad && ad !== cur ? firstOpenLift(ad, payload.state, 0, effSets) : firstOpenIdx;
-      contBtn.hidden = complete || li < 0 || totalDone === 0;
+      contBtn.hidden = (off ? false : complete) || li < 0 || !has;
       contBtn.textContent = "Continue · Lift " + (li + 1);
     }
     var finBtn = document.getElementById("finishBtn");
     if (finBtn) {
-      /* P8: a time-boxed session that stops at lift 6 still gets a close —
-         any logged data can finish; only an already-complete session can't */
-      finBtn.hidden = !(totalDone > 0) || (payload.active && payload.active.status === "complete");
+      /* P8: any logged data can finish; only a complete session can't */
+      finBtn.hidden = !has || (payload.active && payload.active.status === "complete");
       finBtn.textContent = complete ? "Finish workout" : "Finish partial workout";
     }
 
