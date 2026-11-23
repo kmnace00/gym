@@ -171,7 +171,7 @@
     } else if (dataWarn === "salvaged") {
       var se = Gym.lastLoadError() || {};
       saveBar.hidden = false;
-      saveBarText.textContent = "Some saved data was damaged — " + (se.recovered || 0) + " log entries recovered, " + (se.dropped || 0) + " couldn't be read. Nothing is saved yet: keep the recovered log or download the original.";
+      saveBarText.textContent = "Some saved data was damaged — " + (se.recovered || 0) + " log entries recovered, " + (se.dropped || 0) + " couldn't be read — keep the recovered log or download the original.";
       saveBarAction.hidden = false;
       saveBarAction.textContent = "Keep recovered log";
       saveBarDownload.hidden = false;

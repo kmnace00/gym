@@ -320,8 +320,15 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** removed rnav markup/JS refs/handlers/blurRestNav call and dead rnav CSS; updated e2e to assert absence. `GYM_VERSION` `gym-v248` → `gym-v249`, CACHE-HASH → `61a8be812a90b5a5`.
 - **Verified in plain terms:** full gate green: 286 unit, typecheck clean, 280 e2e. Headroom increased to 1174 bytes. Independent critic-flash: see review log below.
 
+### Round 55 — `[DONE round 55]` Salvage copy no longer lies about save state
+- **Wrong:** salvaged-boot save bar said "Nothing is saved yet: keep the recovered log…", but ordinary navigation/commit persists the recovered payload while the same banner stays — a false claim. Surveyed/reproduced Nov 23 (#24 narrow piece).
+- **Changed:** salvage copy now reads "…couldn't be read — keep the recovered log or download the original.", dropping the save-state claim while leaving explicit Keep/download behavior untouched (`app.js:171`). U50 e2e added. `GYM_VERSION` `gym-v249` → `gym-v250`, CACHE-HASH → `76412cdc259506f5`.
+- **Verified in plain terms:** U50 seeds salvage, reloads, asserts copy has no "Nothing is saved yet" before and after implicit persist from opening a lift. Full gate green: 286 unit, typecheck clean, 281 e2e. Independent critic: see review log below.
+- **Residual #24 design decision (parked):** quarantined original remains unreachable via UI after a clean reload; needs a durable flag/dismiss model. Not an autonomous small fix.
+
 ## Review log
 
+- **Round 55 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pure copy edit, save-failed branch untouched, no test asserts old phrase. Nit: U50 post-click assertion trivially satisfied by unconditional copy removal (harmless).
 - **Round 54 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; no remaining runtime rnav refs, existing prevLift/nextLift nav intact, rest peek/keyboard unaffected.
 - **Round 53 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified saveFailed branch reports truthfully, leaves dataWarn=salvaged coherent with syncSaveBar save-failed+download behavior, success path unchanged.
 - **Round 52 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified unsupported Notification treated as not allowed, init clears stale opt-in, render/notify semantics safe for default/denied/granted.
