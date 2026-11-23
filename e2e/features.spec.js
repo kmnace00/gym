@@ -1010,6 +1010,8 @@ test("load/reps direct-edit mid has 44px tap height (U45)", async ({ page }) => 
   await page.locator('.liftrow[data-i="0"]').click();
   const box = await page.locator('#loadVal').locator('..').boundingBox();
   expect(box.height).toBeGreaterThanOrEqual(44);
+  const reps = await page.locator('#repVal').locator('..').boundingBox();
+  expect(reps.width).toBeGreaterThanOrEqual(44);
 });
 
 test("ending rest while editing in peek keeps focus on edit (U46)", async ({ page }) => {

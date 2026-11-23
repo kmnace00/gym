@@ -227,7 +227,7 @@ h1{
   display:grid;place-items:center;-webkit-touch-callout:none;
 }
 .stepbtn:active{filter:brightness(1.2)}
-.ctl .mid{text-align:center;min-width:0;min-height:44px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.ctl .mid{text-align:center;min-width:44px;min-height:44px;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .ctl .k{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 .ctl .v{display:block;font-size:21px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
 .rirrow{display:flex;align-items:center;gap:6px;margin-top:8px}
