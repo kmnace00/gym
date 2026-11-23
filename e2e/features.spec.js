@@ -1532,6 +1532,29 @@ test("workout and set counts singularize in footer and share (U75)", async ({ pa
   await expect.poll(() => page.evaluate(() => window.__shared)).toContain("1 workout · 1 set ·");
 });
 
+test("Apply updates the edited set row as well as the working load (U76)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0,
+    state: { "fri:0": { done: 1, load: 50, reps: 6, rir: 2, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [0, 1, 2].map(function () { return { load: 50, reps: 6, rir: 2, t: Date.now() }; }) } },
+    liftHistory: { "fri:0": [
+      { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+      { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+    ] },
+    sessionLog: [],
+    active: { id: "s", date, day: "fri", startedAt: null, endedAt: null, accSec: 0, runningSince: null, status: "active" }
+  });
+  await page.locator(".liftrow").first().click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await expect(page.locator("#applyLoad")).toBeVisible();
+  await page.locator("#applyLoad").click();
+  await expect(page.locator("#loadVal")).toHaveText("52.5");
+  const logged = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].sets[0].load);
+  expect(logged).toBe(52.5);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

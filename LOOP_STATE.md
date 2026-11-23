@@ -436,8 +436,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** added `pl(n, word)` helper beside `ent()` and used it at the footer, Share summary, Progress subtitle/note, merge message, and three rep-count sites (`app.js:860,909,1855,1931,1997,915,1484,1526`). Funded by condensing the `rampFor` comment in `program.js` (logic unchanged). U75 e2e added (failing-first). `GYM_VERSION` `gym-v271` → `gym-v272`, CACHE-HASH → `fab6ff9c332e5b66`.
 - **Verified in plain terms:** U75 seeds one workout/one set, asserts footer "1 workout ·" and Share text "1 workout · 1 set ·". U73/U74/U76 still pass. Full gate green: 286 unit, typecheck clean, 306 e2e. Independent critic: see review log below.
 
+### Round 78 — `[DONE round 78]` Apply updates an edited set row
+- **Wrong:** tapping Apply for a progression suggestion changed the working load but left an actively-edited set row showing its old load; only Done editing reconciled it. Surveyed/reproduced Nov 23.
+- **Changed:** `applyLoadBtn.onclick` now calls `applySetEdit()` when `editSet >= 0`, so the edited row is written with the new working load immediately (`app.js:1563`). U76 e2e added (failing-first). `GYM_VERSION` `gym-v272` → `gym-v273`, CACHE-HASH → `86ee75278c24e225`.
+- **Verified in plain terms:** U76 seeds two qualifying sessions + a logged set, starts editing it, taps Apply, asserts both the working load readout and the stored set load become 52.5. Auto-progression and U31 tests still pass. Full gate green: 286 unit, typecheck clean, 307 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 78 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; editSet guard matches other applySetEdit callers, out-of-bounds path restores editBackup, bankLift path unchanged, Apply button stays focused.
 - **Round 77 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pl() strict ===1 semantics match replaced ternaries, all values numeric, updateFoot caching pure, rep messages correct, comment-only program.js trim. Nits: hardcoded " sets" at app.js:405 pre-existing/out of scope; BACKLOG pointer generic.
 - **Round 76 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; recovered always numeric so ===1 singular, save-failure noun/verb agree for 0/1/many, salvaged prefix/saveResult untouched, comments logic-free. Nits: LOOP_STATE line number for ent() corrected post-GO; BACKLOG pointer in comment is vague.
 - **Round 75 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pluralization correct for 0/1/many, stats.added numeric, salvaged prefix/saveResult/replace paths untouched. Nit: inline pluralization fine for one-off string.

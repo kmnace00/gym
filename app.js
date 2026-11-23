@@ -1559,7 +1559,7 @@
   var applyLoadBtn = document.getElementById("applyLoad");
   applyLoadBtn.onclick = function () {
     var v = parseFloat(applyLoadBtn.getAttribute("data-load"));
-    if (!isNaN(v)) { curSt().load = v; commit(); render(); }
+    if (!isNaN(v)) { curSt().load = v; if (editSet >= 0) applySetEdit(); commit(); render(); }
   };
 
   /* restart this lift: clear its sets, keep the working weight (two taps) */
