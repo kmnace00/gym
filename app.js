@@ -163,9 +163,8 @@
       saveBarAction.hidden = true; saveBarDownload.hidden = true;
       return;
     }
-    /* a live save failure outranks every load warning: the thing at risk right
-       now is the write, and the salvage counts are folded into its copy so the
-       recovered log is still named (B5-11) */
+    /* a live write failure outranks load warnings; salvage counts are folded
+       into its copy (B5-11) */
     if (saveFailed || dataWarn === "save") {
       var le = dataWarn === "salvaged" ? (Gym.lastLoadError() || {}) : null;
       saveBar.hidden = false;
@@ -1206,6 +1205,7 @@
   function syncClock(){var run=!!(payload.active&&payload.active.runningSince);if(run&&!sInt){sInt=setInterval(tickSession,500);keepAwake();}if(!run&&sInt){clearInterval(sInt);sInt=null;if(!appEl.classList.contains("resting"))releaseAwake();}renderSessionPill();}
   function startSessionTimer() {
     if (sInt) return;
+    if (payload.active && payload.active.status === "complete") payload.active = Gym.emptySession(Gym.todayDay());
     Gym.startSessionClock(payload);
     sInt = setInterval(tickSession, 500);
     renderSessionPill();

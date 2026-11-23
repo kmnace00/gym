@@ -1713,6 +1713,36 @@ test("restart after finishing keeps the completed session (U83)", async ({ page 
   await expect(page.locator('#sessBtn')).toHaveAttribute('aria-label', 'Start workout timer');
 });
 
+test("first set after finishing starts a fresh session (U84)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    const state = {};
+    Gym.DAYS[day].ex.forEach(function (e, i) {
+      state[day + ":" + i] = { load: e.load || 0, reps: e.r, rir: e.rir, done: i < 3 ? 3 : 0, topHits: i < 3 ? 3 : 0, lastRir: e.rir, sets: i < 3 ? sets : [] };
+    });
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state, liftHistory:{}, sessionLog:[],
+      active:{ id:"ses_test", date, day, startedAt:Date.now()-60000, endedAt:null, accSec:60, runningSince:null, status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await page.locator('#finishBtn').click();
+  await expect(page.locator('#summary')).toBeVisible();
+  await page.locator('#sumDone').click();
+  await expect(page.locator('#sessBtn')).toHaveAttribute('aria-label', 'Start workout timer');
+  await page.locator('#continueBtn').click();
+  await page.locator('#doneBtn').click();
+  const st = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { status: p.active.status, accSec: p.active.accSec, id: p.active.id, logged: p.sessionLog.length };
+  });
+  expect(st.status).toBe("active");
+  expect(st.accSec).toBeLessThan(10);
+  expect(st.id).not.toBe("ses_test");
+  expect(st.logged).toBe(1);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
