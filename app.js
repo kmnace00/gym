@@ -1635,7 +1635,7 @@
       if (planned != null) s.load = planned;
     });
     planMsg = (up || down)
-      ? "Planned +" + up + (down ? " · reset " + down : "")
+      ? "Planned" + (up ? " +" + up : "") + (down ? " · reset " + down : "")
       : (manual > 0 ? "Planned · no changes" : "Planned · all keep");
     commit(); render();
   };
