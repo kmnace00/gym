@@ -280,8 +280,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `resetEdit()` now clears `swapOpen` (`app.js:1754-1760`), and redundant `swapOpen=false` assignments removed from `openLift`/`navigateLift`/`switchDay` (net -36 bytes). U39 e2e added. `GYM_VERSION` `gym-v240` → `gym-v241`, CACHE-HASH → `dac2a8e5b1922d6c`.
 - **Verified in plain terms:** U39 opens swap, goes to progress, Escape closes progress, second Escape on day does not steal focus to BODY and day remains visible. Full gate green: 286 unit, typecheck clean, 271 e2e. Independent critic-flash: see review log below.
 
+### Round 47 — `[DONE round 47]` Pause-rest label matches state; stale swap Escape ignored on day view
+- **Wrong:** paused rest button text became "Resume" but static `aria-label="Pause rest"` stayed, contradicting accessible name; stale swapOpen could also consume Escape on day view (no focus loss reproduced, but stale cross-view branch). Surveyed/reproduced Nov 22.
+- **Changed:** removed static pause-rest aria-label and rely on visible text (`index.html:44`, `app.js` pause/reset branches simplified). Global Escape handler now only closes swap when `view==="lift"` (`app.js:1841`). U40/U41 e2e added. `GYM_VERSION` `gym-v241` → `gym-v242`, CACHE-HASH → `b7d1698d3532fc9e`.
+- **Verified in plain terms:** U40 toggles pause/resume and asserts button text changes with no stale aria-label. U41 opens swap, returns to day, Escape keeps day visible and focus not BODY. Full gate green: 286 unit, typecheck clean, 273 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 47 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified pause button visible-text accessible name, swap Escape gated to lift view, modal/summary precedence preserved, stale swapOpen inert on day view.
 - **Round 46 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified resetEdit swapOpen clear is safe across all callers and normal swap behavior intact.
 - **Round 45 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified progress Escape precedence, modal/summary precedence preserved, normal swap Escape intact. Nit: stale swapOpen may persist until normal reset paths, but render-derived/hidden outside lift view — non-blocking.
 - **Round 44 — critic-flash reviewer: BLOCKER (fixed)**. Blocker: modal/summary Escape handlers hid overlays without stopPropagation, so global handler could also close progress. Fixed by adding stopPropagation in modal/summary Escape handlers (`app.js:1738,1844`); re-ran targeted Escape-over-progress+modal probe and full gate. No remaining blockers.

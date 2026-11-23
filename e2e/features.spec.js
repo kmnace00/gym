@@ -941,6 +941,33 @@ test("stale swap state does not steal Escape/focus after progress closes (U39)",
   expect(active).not.toBe("BODY");
 });
 
+test("pause rest button exposes matching state without stale aria-label (U40)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await expect(page.locator('#pauseRest')).toHaveText('Pause');
+  await expect(page.locator('#pauseRest')).not.toHaveAttribute('aria-label', /.+/);
+  await page.locator('#pauseRest').click();
+  await expect(page.locator('#pauseRest')).toHaveText('Resume');
+  await expect(page.locator('#pauseRest')).not.toHaveAttribute('aria-label', /.+/);
+  await page.locator('#pauseRest').click();
+  await expect(page.locator('#pauseRest')).toHaveText('Pause');
+});
+
+test("Escape on day view ignores stale swap state (U41)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('.liftrow').first().click();
+  await page.locator('#swapBtn').click();
+  await expect(page.locator('#swapChoices')).toBeVisible();
+  await page.locator('#backBtn').click();
+  await expect(page.locator('#dayView')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#dayView')).toBeVisible();
+  const active = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName || "");
+  expect(active).not.toBe('BODY');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
