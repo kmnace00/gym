@@ -1481,6 +1481,19 @@ test("rest undo stays available from the day view (U72)", async ({ page }) => {
   expect(active).not.toBe("BODY");
 });
 
+test("merge message pluralizes a single new session (U73)", async ({ page }) => {
+  await page.goto(url);
+  const backup = JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165,
+    state: { "fri:0": { done: 0, load: 77, reps: 6, rir: 2 } },
+    liftHistory: { "fri:0": [{ date: "2026-11-01", load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3 }] }
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("+1 new session,");
+  await expect(page.locator("#modalMsg")).not.toContainText("+1 new sessions");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

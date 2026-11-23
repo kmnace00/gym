@@ -421,8 +421,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `syncUndo()` treats an active rest as a valid undo context (`app.js:931`); `undoSet()` focuses the visible current lift row when not on the lift view (`app.js:1179`). U72 e2e added (failing-first). `GYM_VERSION` `gym-v268` → `gym-v269`, CACHE-HASH → `e548d841922caaa0`.
 - **Verified in plain terms:** U72 starts rest, peeks, backs to day, closes peek, asserts Undo visible, activates it, and checks done decreased and focus stayed on a visible row. Full gate green: 286 unit, typecheck clean, 303 e2e. Independent critic: see review log below.
 
+### Round 75 — `[DONE round 75]` Merge message pluralizes one new session
+- **Wrong:** importing a backup with exactly one new history session reported "Merged: +1 new sessions, …" — grammatical and misleading. Surveyed/reproduced Nov 23.
+- **Changed:** merge confirmation now pluralizes only when `stats.added !== 1` (`app.js:1999`). U73 e2e added (failing-first). `GYM_VERSION` `gym-v269` → `gym-v270`, CACHE-HASH → `47a5382411114847`.
+- **Verified in plain terms:** U73 imports a one-session backup and asserts "+1 new session," and no "+1 new sessions". U69/U11 and import tests still pass. Full gate green: 286 unit, typecheck clean, 304 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 75 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pluralization correct for 0/1/many, stats.added numeric, salvaged prefix/saveResult/replace paths untouched. Nit: inline pluralization fine for one-off string.
 - **Round 74 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; can-undo only consumed by resting CSS (peek still hides undo), hidden lift buttons out of tab order, focus fallback lands on visible .liftrow.now, rest advance unaffected. Nits: selector style inconsistent with apply() path; dense one-line if.
 - **Round 73 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; initNotify writes only on genuinely stale opt-in and self-corrects, no focus/message side effects, consistent with boot/openModal/toggle logic. Nit: two calls on one line (style only).
 - **Round 72 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; all six snapshot sites now preceded by resetEdit, idempotent, snapshot deep-copies at call time, import/replace flows unchanged. Nit: undo during active edit restores editSetOrig per established abandon-edit semantics (not a regression).
