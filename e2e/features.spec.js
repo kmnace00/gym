@@ -1355,6 +1355,25 @@ test("notify default permission does not claim denied (U66)", async ({ page }) =
   await expect(page.locator("#modalMsg")).toHaveText("Not enabled — change in Settings");
 });
 
+test("trend toggle exposes pressed state (U67)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    const day = Gym.todayDay();
+    const hist = ["2026-10-01", "2026-11-01"].map((d, i) => ({ date: d, load: 100 + i * 5, reps: 6, rir: 2, hitTop: true, setsDone: 3, sets: [{ load: 100 + i * 5, reps: 6, rir: 2 }] }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state:{}, liftHistory:{ [day+":0"]:hist }, sessionLog:[], active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await expect(page.locator("#trendToggle")).toBeVisible();
+  await expect(page.locator("#trendToggle")).toHaveAttribute('aria-pressed', 'false');
+  await page.locator("#trendToggle").click();
+  await expect(page.locator("#trendToggle")).toHaveAttribute('aria-pressed', 'true');
+  await page.locator("#trendToggle").click();
+  await expect(page.locator("#trendToggle")).toHaveAttribute('aria-pressed', 'false');
+  expect(await page.locator("#trendToggle").getAttribute('aria-label')).toBeNull();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

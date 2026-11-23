@@ -565,7 +565,7 @@
     var wrap = document.getElementById("sparkWrap"), svg = document.getElementById("sparkline");
     var toggle = document.getElementById("trendToggle");
     var has = entries.length >= 2;
-    if (toggle) toggle.hidden = !has;
+    if (toggle) { toggle.hidden = !has; toggle.setAttribute("aria-pressed", appEl.classList.contains("show-trend")?"true":"false"); }
     if (!has) { wrap.hidden = true; return; }
     var vals = entries.map(function (h) {
       var top = topSetOf(ex(), Stats.entrySets(h), h);
@@ -606,11 +606,8 @@
      bodyweight semantics don't apply. The working load lives in the record's
      swapLoad field while swapped, and in `load` otherwise.                 */
   function workingLoad(s) { return s.swapAlt ? (typeof s.swapLoad === "number" ? s.swapLoad : 0) : s.load; }
-  /* Valuation flags for a lift's sets: while the lift is swapped, the alternate's
-     load is the machine's own external weight — a plain number, per the workingLoad
-     semantics above (B6-07/N14). So a bodyweight/assisted lift swapped to a plain
-     machine alternate is valued at its real weight (bw:false, assist:false), never
-     as bodyweight-minus-help. bankLift and showSummary share this one rule. */
+  /* swapped sets use the alternate's real external weight (bw:false,
+     assist:false), never bodyweight-minus-help; bankLift/showSummary share this rule. */
   function liftValuation(e, s) {
     return (s && s.swapAlt) ? { bw: false, assist: false } : { bw: !!e.bw, assist: !!e.assist };
   }

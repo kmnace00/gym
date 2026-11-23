@@ -391,8 +391,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** message now "Not enabled — change in Settings", accurate for both denied and default (`app.js:2022`). U66 e2e added (failing-first). `GYM_VERSION` `gym-v262` → `gym-v263`, CACHE-HASH → `d79044fe128911e6`.
 - **Verified in plain terms:** U66 stubs Notification.permission "default" + requestPermission→default, taps toggle, asserts the new message. U32/U44/U47/U63 notify tests still pass. Full gate green: 286 unit, typecheck clean, 297 e2e. Independent critic: see review log below.
 
+### Round 69 — `[DONE round 69]` Trend toggle exposes pressed state
+- **Wrong:** `#trendToggle` kept a static `aria-label="Show trend chart"` and no `aria-pressed`, so screen readers announced the wrong affordance after the chart was shown. Surveyed/reproduced Nov 23.
+- **Changed:** removed the stale aria-label (`index.html:117`) so the accessible name is the visible "Trend"; `renderSpark()` now sets `aria-pressed` true/false from `show-trend` state on every render (`app.js:568`). Funded by condensing the liftValuation comment. U67 e2e added (failing-first). `GYM_VERSION` `gym-v263` → `gym-v264`, CACHE-HASH → `fa89710e4c133bd1`.
+- **Verified in plain terms:** U67 seeds 2 history entries, opens lift, asserts aria-pressed false → true → false across two clicks and no aria-label. Full gate green: 286 unit, typecheck clean, 298 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 69 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; aria-pressed derived from single show-trend source of truth, no drift, stable accessible name "Trend", comment condensation logic-free. Nits: aria-pressed written while hidden (harmless); show-trend is DOM-only so reload resets false.
 - **Round 68 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). Pure copy fix; denied/default/granted/unsupported paths all accurate, no stale copy. Nit: "change in Settings" not exhaustive for default (a retry also re-prompts) — accurate, non-blocking.
 - **Round 67 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; finalizeSession preserves banked log, startSession→render→startSessionTimer ordering correct, normal start/pause/resume and all finish paths unaffected. Nits: fresh session keeps prior exercise index (pre-existing pattern, UX only); completed pill shows 0:00 instead of banked duration (cosmetic, intentional).
 - **Round 66 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; single live timer handle, confirm/nav/modal disarms idempotent, U64 trace verified. Nits applied post-GO: condensed stale B5-10 comment; redundant post-fn label restore left as harmless.
