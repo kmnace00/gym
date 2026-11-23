@@ -1903,7 +1903,7 @@
   menuBtn.onclick = openModal;
   /* B5-04 */
   document.getElementById("backupBarSave").onclick = downloadBackup;
-  document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; backupMsg = ""; renderDay(); };
+  document.getElementById("backupBarDismiss").onclick = function () { backupDismissed = true; backupMsg = ""; renderDay(); menuBtn.focus(); };
   document.getElementById("modalClose").onclick = closeModal;
   modal.addEventListener("click", function (ev) { if (ev.target === modal) closeModal(); });
   document.getElementById("exportCopy").onclick = function () {

@@ -1254,6 +1254,17 @@ test("GO moves focus off the rest clock to the action (U60)", async ({ page }) =
   expect(active).toBe("skipRest");
 });
 
+test("backup dismiss moves focus to a visible control (U61)", async ({ page }) => {
+  await seed(page, { v:2, cur:"fri", idx:0, state:{},
+    liftHistory:{ "fri:0":[{ date:"2026-11-01", load:50, reps:6, rir:2, hitTop:true, setsDone:3 }] } });
+  await expect(page.locator('#backupBar')).toBeVisible();
+  await page.locator('#backupBarDismiss').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#backupBar')).toBeHidden();
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe('menuBtn');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
