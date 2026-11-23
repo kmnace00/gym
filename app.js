@@ -1193,17 +1193,19 @@
     sessBtn.classList.toggle("has-time", secs > 0);
   }
   function renderSessionPill() {
-    var secs = sessionSecs(), t = fmt(secs);
+    var secs = sessionSecs();
+    var done = payload.active && payload.active.status === "complete";
+    var t = fmt(done ? 0 : secs);
     if (sInt) {
       sessBtn.classList.add("on");
       sessBtn.innerHTML = "⏸ <span id='elapsed'>" + t + "</span>";
     } else {
       /* "Start" only when nothing has elapsed yet; paused means Resume. */
       sessBtn.classList.remove("on");
-      sessBtn.innerHTML = "▶ <span class='startlbl'>" + (secs > 0 ? "Resume" : "Start") + "</span><span id='elapsed'>" + t + "</span>";
+      sessBtn.innerHTML = "▶ <span class='startlbl'>" + (!done && secs > 0 ? "Resume" : "Start") + "</span><span id='elapsed'>" + t + "</span>";
     }
-    sessBtn.classList.toggle("has-time", secs > 0);
-    sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : (secs > 0 ? "Resume workout timer" : "Start workout timer"));
+    sessBtn.classList.toggle("has-time", secs > 0 && !done);
+    sessBtn.setAttribute("aria-label", sInt ? "Pause workout timer" : (!done && secs > 0 ? "Resume workout timer" : "Start workout timer"));
   }
   function syncClock(){var run=!!(payload.active&&payload.active.runningSince);if(run&&!sInt){sInt=setInterval(tickSession,500);keepAwake();}if(!run&&sInt){clearInterval(sInt);sInt=null;if(!appEl.classList.contains("resting"))releaseAwake();}renderSessionPill();}
   function startSessionTimer() {
@@ -1224,6 +1226,7 @@
   }
   sessBtn.onclick = function () {
     if (sInt) { pauseSession(); return; }
+    if (payload.active && payload.active.status === "complete") { Gym.startSession(payload, Gym.todayDay()); render(); }
     startSessionTimer();
   };
 
@@ -1711,7 +1714,7 @@
     if (sInt) pauseSession();
     var entry = Gym.finalizeSession(payload);
     commit();
-    render();
+    render(); syncClock();
     showSummary(entry);
     refreshCalibration(); // N10: learn from the session just banked — after the summary has read the prior values
   }
