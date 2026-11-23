@@ -2068,6 +2068,28 @@ test("destructive wipes clear a stale plan note (U101)", async ({ page }) => {
   await expect(page.locator('#daySummary')).not.toContainText('Planned');
 });
 
+test("reset day clears a stale one-shot hint (U102)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:"fri-smith-squat", sets:[] } },
+      liftHistory:{ "fri:0":[{ date:"2026-11-01", load:50, reps:6, rir:2, hitTop:false, setsDone:3 }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#hint')).toContainText('New PR');
+  await page.locator('#skipRest').click();
+  await page.locator('#menuBtn').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#modalClose').click();
+  await expect(page.locator('#hint')).toHaveText('');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -982,7 +982,7 @@
       else if (e.type === "vibrate") { if (navigator.vibrate) navigator.vibrate(e.ms); }
       else if (e.type === "notify") notifyRestDone("done");
       else if (e.type === "notifyPrep") notifyRestDone("prep");
-      else if (e.type === "advanceTo") { resetEdit(); idx = e.idx; hintText = ""; hintGood = false; }
+      else if (e.type === "advanceTo") { resetEdit(); idx = e.idx; }
       else if (e.type === "finishWorkout") { clearUndo(); finishWorkout(); }
       else if (e.type === "commit") commit();
       else if (e.type === "render") render();
@@ -1166,7 +1166,6 @@
       bankLift(cur, idx);
     }
     stopInterval();
-    hintText = ""; hintGood = false;
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
     var ae=document.activeElement;
@@ -1564,7 +1563,6 @@
     resetEdit();
     Gym.snapshot(payload, "pre-restart-lift");
     Gym.resetLift(payload, cur, idx);
-    hintText = ""; hintGood = false;
     commit(); render();
   }
   resetLiftBtn.onclick = function () { twoTap(this, "Tap again to restart", doRestartLift); };
@@ -1755,11 +1753,12 @@
     if (editSetOrig && s && s.sets && editSet >= 0 && s.sets[editSet]) { s.sets[editSet] = editSetOrig; bankLift(cur, idx); }
     if (editBackup && s) { setWorkingLoad(s, editBackup.load); s.reps = editBackup.reps; s.rir = editBackup.rir; }
     editSet = -1; editBackup = null; editSetOrig = null; swapOpen = false;
+    hintText = ""; hintGood = false;
   }
   function showDay() {
     var left = idx;
     cancelPendingAdvance();
-    resetEdit(); view = "day"; hintText = ""; hintGood = false; commit(); render();
+    resetEdit(); view = "day"; commit(); render();
     /* focus back to the row the user just left — otherwise Tab restarts from
        the top of the document (the element they were on is now hidden).     */
     var row = liftList.querySelector('.liftrow[data-i="' + left + '"]');
@@ -1767,21 +1766,21 @@
   }
   function showProgress() {
     cancelPendingAdvance();
-    resetEdit(); view = "progress"; hintText = ""; hintGood = false; commit(); render();
+    resetEdit(); view = "progress"; commit(); render();
     var head = document.getElementById("progTitle");
     if (head) head.focus();
   }
   function openLift(i) {
     if (i < 0 || i >= DAYS[cur].ex.length) return;
     cancelPendingAdvance(); resetEdit();
-    idx = i; view = "lift"; hintText = ""; hintGood = false; commit(); render();
+    idx = i; view = "lift"; commit(); render();
     document.getElementById("exName").focus();
   }
   function navigateLift(delta) {
     var n = idx + delta;
     if (n < 0 || n >= DAYS[cur].ex.length) return;
     cancelPendingAdvance(); resetEdit();
-    idx = n; hintText = ""; hintGood = false; commit(); render();
+    idx = n; commit(); render();
     document.getElementById("exName").focus();
   }
   document.getElementById("backBtn").onclick = showDay;
@@ -1807,7 +1806,7 @@
     cancelPendingAdvance();
     resetEdit(); clearUndo();
     cur = d;
-    idx = 0; hintText = ""; hintGood = false; view = "day"; planMsg = "";
+    idx = 0; view = "day"; planMsg = "";
     var open = firstOpen(0);
     idx = open >= 0 ? open : 0;
     commit(); render();
