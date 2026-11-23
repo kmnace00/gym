@@ -1606,6 +1606,76 @@ test("undo on a past day also drops its history entry (U78)", async ({ page }) =
   expect(counts.histEntries).toBe(0);
 });
 
+test("restart lift on a past day clears its history entry (U79)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null },
+              "sat:0":{ load:60, reps:6, rir:2, done:3, topHits:3, lastRir:2, exId:"sat-front-pulldown", sets } },
+      liftHistory:{ "sat:0":[{ date:"2026-11-01", load:60, reps:6, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#resetLiftBtn').click();
+  await page.locator('#resetLiftBtn').click();
+  const hist = await page.evaluate(() => (JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["sat:0"] || []).length);
+  expect(hist).toBe(0);
+});
+
+test("reset day on a past day keeps older lifts' history (U80)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null },
+              "sat:0":{ load:60, reps:6, rir:2, done:3, topHits:3, lastRir:2, exId:"sat-front-pulldown", sets },
+              "sat:1":{ load:50, reps:8, rir:2, done:0, topHits:0, lastRir:null, exId:"sat-leg-curl" } },
+      liftHistory:{ "sat:0":[{ date:"2026-11-01", load:60, reps:6, rir:2, hitTop:true, setsDone:3, sets }],
+                    "sat:1":[{ date:"2026-10-25", load:50, reps:8, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await page.locator('#menuBtn').click();
+  await page.locator('#resetDay').click();
+  await page.locator('#resetDay').click();
+  const hist = await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("gym-tool-v2"));
+    return { sat0: (p.liftHistory["sat:0"] || []).length, sat1: (p.liftHistory["sat:1"] || []).length };
+  });
+  expect(hist.sat0).toBe(0);
+  expect(hist.sat1).toBe(1);
+});
+
+test("restart after partial progress keeps earlier session history (U82)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    const sets = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:"fri-smith-squat", sets:[] } },
+      liftHistory:{ "fri:0":[{ date:"2026-11-15", load:60, reps:6, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#skipRest').click();
+  await page.locator('#resetLiftBtn').click();
+  await page.locator('#resetLiftBtn').click();
+  const hist = await page.evaluate(() => (JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["fri:0"] || []).map(e => e.date));
+  expect(hist).toEqual(["2026-11-15"]);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

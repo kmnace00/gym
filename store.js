@@ -1056,13 +1056,29 @@
     return p;
   }
 
+  /* true when the trailing history snapshot mirrors the lift's current sets —
+     i.e. this session actually banked them. Partial progress has no snapshot,
+     so its trailing entry belongs to an earlier session and must be kept.  */
+  function bankedSnapshot(arr, rec, p) {
+    if (!arr || !arr.length || !rec) return false;
+    var e = arr[arr.length - 1];
+    if (!e) return false;
+    if (e.date === sessionDate(p)) return true;
+    if (!Array.isArray(e.sets) || !Array.isArray(rec.sets) || !rec.sets.length || e.sets.length !== rec.sets.length) return false;
+    for (var j = 0; j < rec.sets.length; j++) {
+      var a = e.sets[j], b = rec.sets[j];
+      if (!a || a.load !== b.load || a.reps !== b.reps || a.rir !== b.rir) return false;
+    }
+    return true;
+  }
+
   /* clear one lift's finished sets, keeping the working load / reps / RIR.
-     A same-day snapshot (from a redo) is dropped so redoing replaces it.    */
+     Its trailing history snapshot is dropped so a redo replaces it.        */
   function resetLift(p, d, i) {
     var k = d + ":" + i, rec = p.state && p.state[k];
+    var arr = p.liftHistory && p.liftHistory[k], banked = rec && bankedSnapshot(arr, rec, p);
     if (rec) { rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = []; }
-    var arr = p.liftHistory && p.liftHistory[k];
-    if (arr && arr.length && arr[arr.length - 1].date === sessionDate(p)) arr.pop();
+    if (banked) arr.pop();
     reopenSession(p);
   }
 
@@ -1074,16 +1090,9 @@
         if (p.state.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
           var rec = p.state[k];
           if (!rec) continue;                   // null record: nothing to clear
+          var arr = p.liftHistory && p.liftHistory[k], banked = bankedSnapshot(arr, rec, p);
+          if (banked) arr.pop();
           rec.done = 0; rec.topHits = 0; rec.lastRir = null; rec.sets = [];
-        }
-      }
-    }
-    if (p.liftHistory) {
-      for (k in p.liftHistory) {
-        if (p.liftHistory.hasOwnProperty(k) && k.indexOf(prefix) === 0) {
-          var arr = p.liftHistory[k];
-          if (!Array.isArray(arr)) continue;
-          while (arr.length && arr[arr.length - 1].date === sessionDate(p)) arr.pop();
         }
       }
     }

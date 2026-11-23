@@ -2024,10 +2024,9 @@
     renderCalib();
     setMsg("Clock learning reset — starter values until 3 new timed sessions.");
   };
-  /* iOS rejects the Notification constructor — use the SW registration, with
-     the constructor as fallback. The 10 s heads-up and GO share `gym-rest`
-     (GO replaces it) and each closes after 30 s. Only while JS is alive; a
-     tick >20 s past the rest's end stays silent. Full history: BACKLOG v204. */
+  /* use the SW registration for notifications (iOS rejects the constructor);
+     the 10 s heads-up and GO share `gym-rest` and close after 30 s. History:
+     BACKLOG v204. */
   var restEndEst = 0, notifyCloseT = null;
   var NOTIFY_TTL_MS = 30000;
   function closeRestNotification(handle) {
