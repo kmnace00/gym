@@ -2011,6 +2011,25 @@ test("Escape from peek restores focus to Show workout (U98)", async ({ page }) =
   await expect(page.locator('#detailsBtn')).toBeFocused();
 });
 
+test("summary PR label agrees with a single new PR (U99)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const state = {}, sets = [0, 1, 2].map(() => ({ load: 100, reps: 6, rir: 2 }));
+    Gym.DAYS[day].ex.forEach(function (e, i) {
+      state[day + ":" + i] = { done: e.s, load: 100, reps: 6, rir: 2, sets: sets };
+    });
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state,
+      liftHistory:{ [day+":0"]:[{ date, load:100, reps:6, rir:2, hitTop:true, setsDone:3, sets }] }, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await page.locator('#finishBtn').click();
+  await expect(page.locator('#sumPrs')).toHaveText('1 new');
+  await expect(page.locator('#sumPrs + .sumk')).toHaveText('PR');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

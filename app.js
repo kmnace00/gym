@@ -12,7 +12,7 @@
   var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
   var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
 
-  /* ── state ─────────────────────────────────────────────────────────────── */
+  /* ── state ── */
   var payload, cur, idx, view = "day", hintText = "", hintGood = false, planMsg = "";
 
   function st(d, i) { return getLift(payload.state, d, i, DAYS[d].ex[i]); }
@@ -1682,6 +1682,7 @@
     document.getElementById("sumSets").textContent = String(sets);
     document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " lb";
     document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
+    document.getElementById("sumPrsLabel").textContent = prs === 1 ? "PR" : "PRs";
     var nx = nextTrainingGap();
     var txt = "Next " + (DAY_LABEL[nx.day] || "session") + (nx.gap > 0 ? " in " + nx.gap + "d" : "");
     if (Gym.backupDue(payload)) txt += " · Back up tonight";
