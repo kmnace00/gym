@@ -1386,6 +1386,32 @@ test("share cancel clears stale export feedback (U68)", async ({ page }) => {
   await expect(page.locator("#modalMsg")).toHaveText(/cancel/i);
 });
 
+test("failed import keeps the pre-merge undo snapshot (U69)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:111, reps:6, rir:2, done:0, topHits:0, lastRir:null } }, liftHistory:{}, sessionLog:[] }));
+  });
+  await page.reload();
+  const backup = JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+    state:{ "fri:0":{ load:222, reps:6, rir:2, done:0, topHits:0, lastRir:null } },
+    liftHistory:{ "fri:0":[{ date:"2026-11-01", load:222, reps:6, rir:2, hitTop:true, setsDone:3 }] }, sessionLog:[] });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name:"good.json", mimeType:"application/json", buffer:Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("Merged:");
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2-snapshot")).payload.state["fri:0"].load);
+  expect(before).toBe(111);
+  await page.setInputFiles("#importFile", { name:"bad.json", mimeType:"application/json", buffer:Buffer.from("not json") });
+  await expect(page.locator("#modalMsg")).toContainText("Import failed");
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2-snapshot")).payload.state["fri:0"].load);
+  expect(after).toBe(111);
+  await page.setInputFiles("#replaceFile", { name:"bad.json", mimeType:"application/json", buffer:Buffer.from("not json") });
+  await expect(page.locator("#modalMsg")).toContainText("Restore failed");
+  const afterRestore = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2-snapshot")).payload.state["fri:0"].load);
+  expect(afterRestore).toBe(111);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

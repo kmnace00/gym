@@ -1965,8 +1965,8 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        var snapOk = Gym.snapshot(payload, "pre-restore");
         var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        var snapOk = Gym.snapshot(payload, "pre-restore");
         resetEdit(); timerIdle("", "");
         payload = restored;
         Gym.rollSession(payload, Gym.todayDay());
@@ -1987,9 +1987,9 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        var snapOk = Gym.snapshot(payload, "pre-merge");
         var stats = { added: 0, collisions: 0 };
         var merged = Gym.importMerge(payload, String(reader.result), stats);
+        var snapOk = Gym.snapshot(payload, "pre-merge");
         resetEdit(); timerIdle("", "");
         payload = Gym.reconcile(merged, DAYS); cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";

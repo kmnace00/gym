@@ -401,8 +401,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** reject branch now sets "Share cancelled" (`app.js:1939`). U68 e2e added (failing-first, stubbed rejecting navigator.share). `GYM_VERSION` `gym-v264` → `gym-v265`, CACHE-HASH → `307bfd30138b82e7`.
 - **Verified in plain terms:** U68 exports CSV, stubs share rejection, taps Share summary, asserts message matches /cancel/i. Full gate green: 286 unit, typecheck clean, 299 e2e. Independent critic: see review log below.
 
+### Round 71 — `[DONE round 71]` Failed import/restore keeps the undo snapshot
+- **Wrong:** both import handlers wrote `Gym.snapshot(payload, …)` before parsing the chosen file. A failed import/restore (garbage, empty, wrong version) threw after the snapshot write, overwriting the real undo point with post-change data — the advertised "Undo Merge" then restored the state it was meant to undo. Surveyed/reproduced Nov 23.
+- **Changed:** in both change handlers the snapshot write now happens after `Gym.importRaw`/`Gym.importMerge` succeeds (pure line reorder, 0 production bytes) (`app.js:1970,1993`). U69 e2e added (failing-first; covers both import and replace failures). `GYM_VERSION` `gym-v265` → `gym-v266`, CACHE-HASH → `064ef79ae8a62045`.
+- **Verified in plain terms:** U69 merges a good backup, feeds bad files to both inputs, and asserts the snapshot still holds pre-merge load 111. Full gate green: 286 unit, typecheck clean, 300 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 71 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; mergePayload deep-clones base so snapshot still captures pre-change data, success message/saveResult unchanged, failed parses skip snapshot as intended. Quota reorder worst case non-blocking. Nit: critic could not run check-sw-cache itself (read-only role); hash taken on trust from green gate.
 - **Round 70 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; success/clipboard/unsupported paths untouched, reject message replaces stale feedback. Nit: "Share cancelled" also shows for other reject reasons (still more accurate than stale).
 - **Round 69 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; aria-pressed derived from single show-trend source of truth, no drift, stable accessible name "Trend", comment condensation logic-free. Nits: aria-pressed written while hidden (harmless); show-trend is DOM-only so reload resets false.
 - **Round 68 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). Pure copy fix; denied/default/granted/unsupported paths all accurate, no stale copy. Nit: "change in Settings" not exhaustive for default (a retry also re-prompts) — accurate, non-blocking.
