@@ -1217,6 +1217,43 @@ test("deload toggle keeps focus on the visible control (U58)", async ({ page }) 
   expect(afterEnd).toBe('deloadStart');
 });
 
+test("inline value editor Tab advances focus (U59)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#loadVal').locator('..').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('.vin').fill('95');
+  await page.keyboard.press('Tab');
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe('loadUp');
+  const load = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].load);
+  expect(load).toBe(95);
+});
+
+test("GO moves focus off the rest clock to the action (U60)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const ex = await page.evaluate((d) => Gym.DAYS[d].ex[0], day);
+  await page.evaluate(({ day, date, ex }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ done:ex.s-1, load:ex.load||0, reps:ex.r, rir:ex.rir, sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"ses_nav", date, day, startedAt:Date.now()-600000, endedAt:null, accSec:600, runningSince:Date.now(), status:"active" }
+    }));
+  }, { day, date, ex });
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await expect(page.locator('#restTime')).toBeFocused();
+  await page.clock.runFor(185000);
+  await expect(page.locator('#timerBar')).toHaveClass(/go/);
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe("skipRest");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

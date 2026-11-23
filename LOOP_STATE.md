@@ -356,8 +356,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** after each toggle, focus the newly visible counterpart (`#deloadEnd`/`#deloadStart`) when it has a client rect (`app.js:2134,2141`). U58 e2e added (failing-first confirmed). `GYM_VERSION` `gym-v255` → `gym-v256`, CACHE-HASH → `1b68036d74e25806`.
 - **Verified in plain terms:** U58 focuses/Enter-activates each toggle and asserts focus moved to the replacement visible button. Full gate green: 286 unit, typecheck clean, 289 e2e. Independent critic: see review log below.
 
+### Round 62 — `[DONE round 62]` Keyboard focus order in value editor and at GO
+- **Wrong:** Tab out of the inline load/reps editor snapped focus back to the opener instead of advancing to the next control (regression from round 40's focus restore applied to blur). Separately, at rest GO with focus on the `#restTime` div, Enter did nothing and the user had to Tab 3 times to reach the action. Surveyed/reproduced Nov 23.
+- **Changed:** `editValue().finish(commit, fromBlur)` skips the explicit focus restore when invoked from `onblur`, letting the browser's native Tab/click focus stand; Enter/Escape restore unchanged (`app.js:1393,1401`). `renderRestPrep()` also moves focus to `#skipRest` when the rest clock holds focus as prep hides at GO (`app.js:1127`). U59/U60 e2e added (both failing-first); U31/U57 still pass. `GYM_VERSION` `gym-v256` → `gym-v257`, CACHE-HASH → `e8d424dec477e6d3`.
+- **Verified in plain terms:** U59 types in load editor, Tabs, asserts focus on #loadUp and value persisted. U60 runs rest to GO with clock focused, asserts focus on #skipRest. Full gate green: 286 unit, typecheck clean, 291 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 62 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; blur commit semantics unchanged, invalid values fall back to render, restClock clause is a no-op unless clock holds focus, Enter/Escape restore preserved. Nit: condition not phase-gated so focus may move to skipRest slightly before GO in prep-hidden rest (harmless).
 - **Round 61 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; renderDeload makes exactly one button visible, getClientRects guard correct, modal focus trap unaffected. Nits: no explicit hidden-counterpart or modal-retention assertions (non-regressions).
 - **Round 60 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveBarMsg consumed synchronously and cannot mask real failures, action visibility reset in all branches, focus fallback correct in every view, GO prep focus safe. Nits: confirmation uses --warn styling; cleared by next syncSaveBar (intended).
 - **Round 59 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; hoisting safe, no legitimate two-tap broken, data-label always set when armed. Nit: a stale timer can shorten a re-armed window (fails safe, pre-existing).

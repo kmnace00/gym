@@ -1125,7 +1125,7 @@
     var dayOk = !appEl.classList.contains("resting") || !payload.active || payload.active.day === cur;
     prep.hidden = !v.showPrep || !dayOk;
     if (prep.hidden) {
-      if (prep.contains(document.activeElement)) { var go = document.getElementById("skipRest"); if (go && go.getClientRects().length) go.focus(); }
+      if (prep.contains(document.activeElement)||document.activeElement===restClock) { var go = document.getElementById("skipRest"); if (go && go.getClientRects().length) go.focus(); }
       restPrepIdx = -1; return;
     }
     restPrepIdx = v.prepIdx;
@@ -1387,7 +1387,7 @@
     inp.type = "number"; inp.inputMode = "decimal"; inp.step = String(step);
     inp.className = "vin"; inp.value = String(current); inp.setAttribute("aria-label","Enter value");
     valueEl.style.display = "none"; mid.appendChild(inp); inp.focus(); inp.select();
-    function finish(commit) {
+    function finish(commit, fromBlur) {
       if (!editingValue) return;
       editingValue = false;
       var v = parseFloat(inp.value), vid = valueEl.id;
@@ -1395,10 +1395,10 @@
       if (commit && isFinite(v)) apply(v); else render();
       var lmEl = vid && document.getElementById(vid) ? /** @type {HTMLElement|null} */ (document.getElementById(vid).parentElement) : null;
       var ft = /** @type {HTMLElement|null} */ ((prev && prev instanceof HTMLElement && prev.isConnected && prev.getClientRects().length) ? prev : (lmEl && lmEl.querySelector(".step[aria-label]")) || lmEl);
-      if (ft) try { ft.focus(); } catch(e){}
+      if (!fromBlur && ft) try { ft.focus(); } catch(e){}
     }
     inp.onkeydown = function (ev) { if (ev.key==="Enter"||ev.key==="Escape") { ev.preventDefault(); ev.stopPropagation(); finish(ev.key==="Enter"); } };
-    inp.onblur = function () { finish(true); };
+    inp.onblur = function () { finish(true, 1); };
   }
   function editLoad() {
     var s = curSt(), cur_ex = ex(), wl = workingLoad(s);
