@@ -371,8 +371,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** the GO focus fallback in `renderRestPrep()` now also covers `document.activeElement === pauseBtn`, moving focus to visible `#skipRest` (`app.js:1128`). U62 e2e added (failing-first); U57/U60 still pass. Byte funding: condensed the persistence comment at `app.js:154` (−179 B). `GYM_VERSION` `gym-v258` → `gym-v259`, CACHE-HASH → `2a3b4e5e2219eeb0`.
 - **Verified in plain terms:** U62 focuses Pause during rest, runs clock to GO, asserts focus on #skipRest. Full gate green: 286 unit, typecheck clean, 293 e2e. Headroom restored to 193 bytes. Independent critic: see review log below.
 
+### Round 65 — `[DONE round 65]` Notification toggle truthful after permission downgrade
+- **Wrong:** `notifyAllowed()` treated any permission except "denied" as allowed, so a stored opt-in showed "Rest notifications: On" after the user reset site permission to "ask"/default — yet `notifyRestDone()` requires "granted", so no notification would ever fire. Rounds 40/52 fixed denied/unsupported; this third state was missed. Surveyed/reproduced Nov 23.
+- **Changed:** `notifyAllowed()` now requires `permission === "granted"` (`app.js:2008`). U63 e2e added (failing-first). `GYM_VERSION` `gym-v259` → `gym-v260`, CACHE-HASH → `5a482ff490784ccb`.
+- **Verified in plain terms:** U63 injects gym-notify=1 with fake Notification.permission="default", opens menu, asserts toggle Off and stored opt-in cleared. U44/U47 and full notify e2e still pass. Full gate green: 286 unit, typecheck clean, 294 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 65 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; granted/denied/unsupported/undefined paths all consistent with notifyRestDone, boot/menu init unaffected. Nit: opt-in .then() re-reads static Notification.permission rather than resolved perm (spec-safe).
 - **Round 64 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pauseBtn relocation consistent with existing restClock branch, target hidden at GO, comment condensation preserved semantics (actually fixed stale 70ms detail). Nit: in a non-GO prep-hidden rest, pausing can move focus to End rest (minor, non-blocking).
 - **Round 63 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; menuBtn persistent in day view, duplicate liftlist overflow removal cascade-neutral at all viewports, B5-04 unaffected. Nit: focus lacks defensive getClientRects guard (harmless; menuBtn never hidden on screen).
 - **Round 62 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; blur commit semantics unchanged, invalid values fall back to render, restClock clause is a no-op unless clock holds focus, Enter/Escape restore preserved. Nit: condition not phase-gated so focus may move to skipRest slightly before GO in prep-hidden rest (harmless).

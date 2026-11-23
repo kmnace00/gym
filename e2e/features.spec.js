@@ -1289,6 +1289,19 @@ test("GO moves focus off the hidden Pause button (U62)", async ({ page }) => {
   expect(active).toBe("skipRest");
 });
 
+test("notify toggle clears stale opt-in when permission resets to default (U63)", async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("gym-notify", "1");
+      Object.defineProperty(window, "Notification", { value: { permission: "default", requestPermission: function () { return Promise.resolve("default"); } }, configurable: true, writable: true });
+    } catch (e) {}
+  });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#notifyToggle")).toHaveText("Rest notifications: Off");
+  expect(await page.evaluate(() => localStorage.getItem("gym-notify"))).toBe("0");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

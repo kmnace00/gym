@@ -2006,7 +2006,7 @@
   /* ── rest-complete notifications (opt-in, best effort) ─────────────────── */
   var NOTIFY_KEY = "gym-notify";
   function notifyOn() { try { return localStorage.getItem(NOTIFY_KEY) === "1"; } catch (e) { return false; } }
-  function notifyAllowed() { return "Notification" in window && !!window.Notification && window.Notification.permission !== "denied"; }
+  function notifyAllowed() { return "Notification" in window && !!window.Notification && window.Notification.permission === "granted"; }
   function renderNotify() { var b = document.getElementById("notifyToggle"); if (b) b.textContent = "Rest notifications: " + (notifyOn() && notifyAllowed() ? "On" : "Off"); }
   function initNotify() { if (notifyOn() && !notifyAllowed()) { try { localStorage.setItem(NOTIFY_KEY, "0"); } catch (e) {} } renderNotify(); }
   document.getElementById("notifyToggle").onclick = function () {
