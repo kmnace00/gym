@@ -2117,6 +2117,30 @@ test("plan with no eligible history says no changes (U104)", async ({ page }) =>
   await expect(page.locator('#daySummary')).not.toContainText('all keep');
 });
 
+test("plan note does not return in a fresh session after finish (U105)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165, state:{},
+      liftHistory:{ "fri:0":[{ date:"2026-11-01", load:60, reps:6, rir:2, hitTop:true, setsDone:3 }] }, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('#planBtn').click();
+  await expect(page.locator('#daySummary')).toContainText('Planned');
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#skipRest').click();
+  await page.locator('#backBtn').click();
+  await page.locator('#finishBtn').click();
+  await expect(page.locator('#summary')).toBeVisible();
+  await page.locator('#sumDone').click();
+  await page.locator('#sessBtn').click();
+  await expect(page.locator('#daySummary')).not.toContainText('Planned');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

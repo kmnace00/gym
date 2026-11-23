@@ -1699,7 +1699,7 @@
     if (b) b.focus();
   }
   function finishWorkout() {
-    resetEdit();
+    resetEdit(); planMsg = "";
     if (payload.active && payload.active.day !== cur) { cur = payload.active.day; idx = 0; }
     timerIdle("", "Workout complete — nice work."); // a live rest must not outlive the workout
     if (sInt) pauseSession();
