@@ -928,7 +928,7 @@
 
   /* undo/restart are per-lift controls: enabled only when the visible lift has sets */
   function syncUndo() {
-    var done = view === "lift" ? curSt().done : 0;
+    var done = (view === "lift" || appEl.classList.contains("resting")) ? curSt().done : 0;
     undoSetBtn.disabled = done === 0;
     resetLiftBtn.disabled = done === 0;
     appEl.classList.toggle("can-undo", done > 0);
@@ -1175,7 +1175,7 @@
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();
     var ae=document.activeElement;
-    if(!ae||ae===document.body||ae.disabled||!ae.getClientRects().length){var ft=document.getElementById("doneBtn"); if(ft&&ft.getClientRects().length) ft.focus();}
+    if(!ae||ae===document.body||ae.disabled||!ae.getClientRects().length){var ft=view==="lift"?document.getElementById("doneBtn"):liftList.querySelector(".liftrow.now")||liftList.querySelector(".liftrow"); if(ft&&ft.getClientRects().length) ft.focus();}
   }
   undoBtn.onclick = undoSet;
   undoSetBtn.onclick = undoSet;

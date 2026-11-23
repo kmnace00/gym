@@ -1454,6 +1454,33 @@ test("notify toggle refreshes when returning to the tab (U71)", async ({ page })
   expect(await page.evaluate(() => localStorage.getItem("gym-notify"))).toBe("0");
 });
 
+test("rest undo stays available from the day view (U72)", async ({ page }) => {
+  const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
+  await page.goto(url);
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:100, reps:6, rir:2, done:1, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:100,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[], active:{ id:"s", date, day:"fri", startedAt:Date.now()-600000, accSec:600, runningSince:Date.now(), status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await page.locator('#backBtn').click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#app')).not.toHaveClass(/show-details/);
+  await expect(page.locator('#undoBtn')).toBeVisible();
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].done);
+  await page.locator('#undoBtn').focus();
+  await page.keyboard.press('Enter');
+  const done = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].done);
+  expect(done).toBe(before - 1);
+  const active = await page.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.tagName));
+  expect(active).not.toBe("BODY");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
