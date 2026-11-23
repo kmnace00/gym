@@ -1877,6 +1877,26 @@ test("Continue from another day lands on the session day (U91)", async ({ page }
   await expect(page.locator('#app')).toHaveClass(/resting/);
 });
 
+test("day view labels stay truthful when browsing another day (U92)", async ({ page }) => {
+  await page.goto(url);
+  const day = await page.evaluate(() => Gym.todayDay());
+  const other = day === "fri" ? "sat" : day === "sat" ? "sun" : "fri";
+  const label = { fri:"Fri", sat:"Sat", sun:"Sun" };
+  await page.evaluate(({ day, other }) => {
+    const hist = {};
+    [day, other].forEach(function (d) { hist[d + ":0"] = [{ date: "2026-11-01", load: 60, reps: 6, rir: 2, setsDone: 3 }]; });
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165, state:{}, liftHistory:hist, sessionLog:[] }));
+  }, { day, other });
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText(label[other]);
+  expect(await page.locator('#planBtn').textContent()).toBe("Plan lifts");
+  expect(await page.locator('#dayView').getAttribute('aria-label')).toBe("Workout lifts");
+  expect(await page.locator('#dayBand').textContent()).toContain("Day");
+  expect(await page.locator('#dayBand').textContent()).not.toContain("Today");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

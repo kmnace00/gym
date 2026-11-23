@@ -501,8 +501,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `continueBtn.onclick` now switches to `payload.active.day` when it differs from `cur`, before opening the first open lift (`app.js:1714`). Funded by trimming two trailing comments. U91 e2e added (failing-first). `GYM_VERSION` `gym-v284` → `gym-v285`, CACHE-HASH → `be4ff3eda95a51f8`.
 - **Verified in plain terms:** U91 seeds active day + other day's data, views the other day, taps Continue, asserts the app lands on the session day and Set Done starts rest. Full gate green: 286 unit, typecheck clean, 321 e2e. Independent critic: see review log below.
 
+### Round 91 — `[DONE round 91]` Day-view labels stop claiming "Today"
+- **Wrong:** while browsing a non-active day, the day view still said "Plan today", band title "Today", and announced "Today's lifts", although those refer to the viewed day. Same class as round 87. Surveyed/reproduced Nov 23.
+- **Changed:** `index.html` copy/aria now "Plan lifts", band "Day", section aria-label "Workout lifts" (`index.html:67,80,92`). Net −2 B. U92 e2e added (failing-first). `GYM_VERSION` `gym-v285` → `gym-v286`, CACHE-HASH → `afcd7e88b58e0acd`.
+- **Verified in plain terms:** U92 browses another day and asserts no "Today" wording on the plan button, section aria-label, or band. Full gate green: 286 unit, typecheck clean, 322 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 91 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old literals, dayView keeps valid accessible name, labels remain true on today, U92 mapping matches stepDay/DAY_KEYS. Nits: stale "today" wording in comments/test titles only.
 - **Round 90 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay resets edit before reassigning cur, no-active-session guard short-circuits, U90 post-summary path is no-op, firstOpen recomputed with new cur. Nits: benign double commit; if session day has no open lift user lands on its day view (still better than blocked state).
 - **Round 89 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; alignment after resetEdit before finalize, showSummary reads only cur, finalize uses state/active only, valid active.day guaranteed, no-op when days match. Nits applied post-GO: U90 now computes the other day so it cannot collide on a Saturday run; idx=0 vs firstOpen(0) landing is UX-only.
 - **Round 88 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay restore order correct, cur-match short-circuit preserves behavior, pause returns early, focus survives, double render idempotent. Nit: new line is app.js:1222 (doc corrected).
