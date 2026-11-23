@@ -411,8 +411,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `resetEdit()` now runs before `Gym.snapshot()` in doResetDay/doClearAll/doRestartLift/replaceFile/importFile/restoreSnapshot; doRestartLift uses `resetEdit()` instead of manually nulling edit state (`app.js:1567,2093,2099,1968,1991,2164`). Pure line reorder / net −16 B. U70 e2e added (failing-first). `GYM_VERSION` `gym-v266` → `gym-v267`, CACHE-HASH → `39c93c0510aed1e8`.
 - **Verified in plain terms:** U70 dials load 120, starts set edit (working view shows 100), Reset day two-tap, asserts undo snapshot still holds 120. Full gate green: 286 unit, typecheck clean, 301 e2e. Independent critic: see review log below.
 
+### Round 73 — `[DONE round 73]` Notify toggle refreshes on tab return
+- **Wrong:** if Notification permission was revoked externally while the menu was open, the toggle kept showing "Rest notifications: On" and the stale opt-in stayed at 1; only a menu reopen corrected it. Surveyed/reproduced Nov 23.
+- **Changed:** the visible-branch `visibilitychange` handler now calls `initNotify()` alongside `checkForDeploy()` (`app.js:1262`), so returning to the tab clears stale opt-in and re-renders the label. U71 e2e added (failing-first). `GYM_VERSION` `gym-v267` → `gym-v268`, CACHE-HASH → `07a9f75513b773b8`.
+- **Verified in plain terms:** U71 stubs granted permission + gym-notify=1, opens menu, switches permission to denied and dispatches visibilitychange, asserts toggle Off and stored 0. U44/U47/U63/U66 pass. Full gate green: 286 unit, typecheck clean, 302 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 73 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; initNotify writes only on genuinely stale opt-in and self-corrects, no focus/message side effects, consistent with boot/openModal/toggle logic. Nit: two calls on one line (style only).
 - **Round 72 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; all six snapshot sites now preceded by resetEdit, idempotent, snapshot deep-copies at call time, import/replace flows unchanged. Nit: undo during active edit restores editSetOrig per established abandon-edit semantics (not a regression).
 - **Round 71 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; mergePayload deep-clones base so snapshot still captures pre-change data, success message/saveResult unchanged, failed parses skip snapshot as intended. Quota reorder worst case non-blocking. Nit: critic could not run check-sw-cache itself (read-only role); hash taken on trust from green gate.
 - **Round 70 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; success/clipboard/unsupported paths untouched, reject message replaces stale feedback. Nit: "Share cancelled" also shows for other reject reasons (still more accurate than stale).

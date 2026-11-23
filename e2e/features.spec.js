@@ -1435,6 +1435,25 @@ test("destructive undo snapshot ignores abandoned set edit (U70)", async ({ page
   expect(snapLoad).toBe(120);
 });
 
+test("notify toggle refreshes when returning to the tab (U71)", async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("gym-notify", "1");
+      Object.defineProperty(window, "Notification", { value: { permission: "granted", requestPermission: function () { return Promise.resolve("granted"); } }, configurable: true, writable: true });
+    } catch (e) {}
+  });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#notifyToggle")).toHaveText("Rest notifications: On");
+  await page.evaluate(() => {
+    window.Notification.permission = "denied";
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.locator("#notifyToggle")).toHaveText("Rest notifications: Off");
+  expect(await page.evaluate(() => localStorage.getItem("gym-notify"))).toBe("0");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -1259,7 +1259,7 @@
        on return while a session or a rest is live (iOS 18.4+ honors it in
        standalone apps), so the countdown stays on screen at the rack. */
     if (sInt || appEl.classList.contains("resting")) keepAwake();
-    checkForDeploy();
+    checkForDeploy(); initNotify();
   });
 
   var RIR_TXT = [
