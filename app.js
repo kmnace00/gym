@@ -408,8 +408,10 @@
     var firstOpenIdx = firstOpen(0);
     var contBtn = document.getElementById("continueBtn");
     if (contBtn) {
-      contBtn.hidden = complete || firstOpenIdx < 0 || totalDone === 0;
-      contBtn.textContent = "Continue · Lift " + (firstOpenIdx + 1);
+      var ad = payload.active && payload.active.day;
+      var li = ad && ad !== cur ? firstOpenLift(ad, payload.state, 0, effSets) : firstOpenIdx;
+      contBtn.hidden = complete || li < 0 || totalDone === 0;
+      contBtn.textContent = "Continue · Lift " + (li + 1);
     }
     var finBtn = document.getElementById("finishBtn");
     if (finBtn) {
@@ -1740,7 +1742,7 @@
     else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
   });
 
-  /* ── navigation ────────────────────────────────────────────────────────── */
+  /* ── navigation ── */
   /* moving between lifts by hand cancels a pending "auto-advance", so the
      GO button can never jump somewhere the user did not choose.             */
   function cancelPendingAdvance() { restCtl.cancelPendingAdvance(); }

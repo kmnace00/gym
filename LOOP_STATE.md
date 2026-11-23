@@ -506,8 +506,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `index.html` copy/aria now "Plan lifts", band "Day", section aria-label "Workout lifts" (`index.html:67,80,92`). Net −2 B. U92 e2e added (failing-first). `GYM_VERSION` `gym-v285` → `gym-v286`, CACHE-HASH → `afcd7e88b58e0acd`.
 - **Verified in plain terms:** U92 browses another day and asserts no "Today" wording on the plan button, section aria-label, or band. Full gate green: 286 unit, typecheck clean, 322 e2e. Independent critic: see review log below.
 
+### Round 92 — `[DONE round 92]` Continue label names the lift it opens
+- **Wrong:** when browsing another day, "Continue · Lift N" was labelled from the viewed day's first open lift, but round 90's handler opens the session day's first open lift — the number could be wrong. Surveyed/reproduced Nov 23.
+- **Changed:** `renderDay()` now computes the first open lift for `payload.active.day` when it differs from `cur` (via `firstOpenLift`) for the Continue label and hidden guard (`app.js:408-415`). Funded by trimming the navigation divider comment. U93 e2e added (failing-first). `GYM_VERSION` `gym-v286` → `gym-v287`, CACHE-HASH → `1f8002e05dfff85f`.
+- **Verified in plain terms:** U93 seeds a complete Fri lift 0 + partial other-day lift 0, browses the other day, asserts label "Continue · Lift 2" and that tapping opens "Lift 2 of". Full gate green: 286 unit, typecheck clean, 323 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 92 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; label/guard use the same firstOpenLift target the handler opens post-switch, ad===cur and no-session cases fall back to firstOpenIdx, li<0 hides button matching handler no-op. Nit: guard still mixes viewed-day complete/totalDone with active-day li (pre-existing, not a regression).
 - **Round 91 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old literals, dayView keeps valid accessible name, labels remain true on today, U92 mapping matches stepDay/DAY_KEYS. Nits: stale "today" wording in comments/test titles only.
 - **Round 90 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay resets edit before reassigning cur, no-active-session guard short-circuits, U90 post-summary path is no-op, firstOpen recomputed with new cur. Nits: benign double commit; if session day has no open lift user lands on its day view (still better than blocked state).
 - **Round 89 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; alignment after resetEdit before finalize, showSummary reads only cur, finalize uses state/active only, valid active.day guaranteed, no-op when days match. Nits applied post-GO: U90 now computes the other day so it cannot collide on a Saturday run; idx=0 vs firstOpen(0) landing is UX-only.

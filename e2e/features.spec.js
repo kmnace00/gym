@@ -1897,6 +1897,28 @@ test("day view labels stay truthful when browsing another day (U92)", async ({ p
   expect(await page.locator('#dayBand').textContent()).not.toContain("Today");
 });
 
+test("Continue label names the lift it actually opens (U93)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const other = day === "fri" ? "sat" : day === "sat" ? "sun" : "fri";
+  const label = { fri:"Fri", sat:"Sat", sun:"Sun" };
+  await page.evaluate(({ day, other, date }) => {
+    localStorage.clear();
+    const full = [0, 1, 2].map(() => ({ load: 60, reps: 6, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ load:60, reps:6, rir:2, done:3, topHits:3, lastRir:2, sets:full },
+              [other+":0"]:{ load:50, reps:8, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:50,reps:8,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, { day, other, date });
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText(label[other]);
+  await expect(page.locator('#continueBtn')).toHaveText('Continue · Lift 2');
+  await page.locator('#continueBtn').click();
+  await expect(page.locator('#liftMeta')).toContainText('Lift 2 of');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
