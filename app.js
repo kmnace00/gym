@@ -154,9 +154,17 @@
   /* ── persistence: immediate by default, coalesced on the 70ms stepper path ──
      The whole payload is small, but writing it ~14×/s during a press-and-hold
      is waste. Steppers schedule a trailing save; everything else saves now.   */
-  var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null;
+  var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null, saveBarMsg = "";
   function syncSaveBar() {
     if (!saveBar) return;
+    /* a one-shot success note lives in the view-agnostic bar itself: the
+       backup bar is hidden outside the day view and the header hides in rest */
+    if (saveBarMsg) {
+      saveBar.hidden = false;
+      saveBarText.textContent = saveBarMsg; saveBarMsg = "";
+      saveBarAction.hidden = true; saveBarDownload.hidden = true;
+      return;
+    }
     /* a live save failure outranks every load warning: the thing at risk right
        now is the write, and the salvage counts are folded into its copy so the
        recovered log is still named (B5-11) */
@@ -189,6 +197,7 @@
       saveBarDownload.hidden = true;
     } else {
       saveBar.hidden = true;
+      saveBarAction.hidden = false;
       saveBarDownload.hidden = true;
     }
   }
@@ -1115,7 +1124,10 @@
     if (!prep) return;
     var dayOk = !appEl.classList.contains("resting") || !payload.active || payload.active.day === cur;
     prep.hidden = !v.showPrep || !dayOk;
-    if (prep.hidden) { restPrepIdx = -1; return; }
+    if (prep.hidden) {
+      if (prep.contains(document.activeElement)) { var go = document.getElementById("skipRest"); if (go && go.getClientRects().length) go.focus(); }
+      restPrepIdx = -1; return;
+    }
     restPrepIdx = v.prepIdx;
     document.getElementById("restPrepName").textContent = v.prepName;
     document.getElementById("restPrepLoad").textContent = v.prepLoad;
@@ -2166,7 +2178,7 @@
       /* the recovered payload lives in memory only — save it explicitly */
       persistNow();
       if (saveFailed) { setMsg("Couldn't save — export now"); }
-      else { dataWarn = null; syncSaveBar(); backupMsg = "Recovered log kept ✓"; renderDay(); menuBtn.focus(); }
+      else { dataWarn = null; saveBarMsg = "Recovered log kept ✓"; syncSaveBar(); var ft = menuBtn.getClientRects().length ? menuBtn : document.getElementById("skipRest"); if (ft && ft.getClientRects().length) ft.focus(); }
     } else if (dataWarn === "corrupt") {
       downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
     } else if (dataWarn === "future") {

@@ -335,7 +335,8 @@ for (const size of salvageSizes) {
       expect(await page.evaluate(() => localStorage.getItem("gym-tool-v2"))).toBe(seeded.raw);
 
       await page.locator("#saveBarAction").click();
-      await expect(page.locator("#saveBar")).toBeHidden();
+      await expect(page.locator("#saveBarText")).toHaveText("Recovered log kept ✓");
+      await expect(page.locator("#saveBarAction")).toBeHidden();
       await expect(page.locator("#saveBarDownload")).toBeHidden();
 
       const saved = await page.evaluate((day) => {
@@ -401,7 +402,7 @@ for (const size of salvageSizes) {
       await expect(page.locator("#saveBarAction")).toHaveText("Keep recovered log");
       await expect(page.locator("#saveBarText")).toContainText("keep the recovered log");
       await page.locator("#saveBarAction").click();
-      await expect(page.locator("#saveBar")).toBeHidden();
+      await expect(page.locator("#saveBarText")).toHaveText("Recovered log kept ✓");
 
       expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
     });

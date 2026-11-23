@@ -1124,10 +1124,29 @@ test("keeping recovered log confirms visibly and keeps focus (U53)", async ({ pa
   await page.reload();
   await page.locator("#saveBarAction").focus();
   await page.keyboard.press("Enter");
-  await expect(page.locator("#backupBar")).toBeVisible();
-  await expect(page.locator("#backupBarText")).toContainText("Recovered log kept");
+  await expect(page.locator("#saveBar")).toBeVisible();
+  await expect(page.locator("#saveBarText")).toHaveText("Recovered log kept ✓");
   const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
   expect(active).toBe("menuBtn");
+});
+
+test("salvage keep confirms visibly during rest and keeps focus (U56)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay(), date = Gym.dateKey();
+    const good = { date, load: 77, reps: 6, rir: 2, hitTop: true, setsDone: 3,
+      sets: [{ load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }, { load: 77, reps: 6, rir: 2 }] };
+    localStorage.setItem("gym-tool-v2", '{"v":4,"cur":"' + day + '","idx":0,"state":{},"sessionLog":[],"bodyweight":165,' +
+      '"liftHistory":{"' + day + ':0":[' + JSON.stringify(good) + ',{"date":"2026-11-08","load":80');
+  });
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#saveBarAction').click();
+  await expect(page.locator("#saveBarText")).toHaveText("Recovered log kept ✓");
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe("skipRest");
 });
 
 test("restart confirm disarms on lift navigation (U54)", async ({ page }) => {
@@ -1155,6 +1174,32 @@ test("menu two-tap confirm disarms on modal close (U55)", async ({ page }) => {
   await page.locator('#modalClose').click();
   await page.locator('#menuBtn').click();
   expect(await page.locator('#resetDay').textContent()).toBe('Reset day');
+});
+
+test("rest GO moves focus from hidden prep to skipRest (U57)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const ex = await page.evaluate((d) => Gym.DAYS[d].ex[0], day);
+  await page.evaluate(({ day, date, ex }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ done:ex.s-1, load:ex.load||0, reps:ex.r, rir:ex.rir, sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"ses_nav", date, day, startedAt:Date.now()-600000, endedAt:null, accSec:600, runningSince:Date.now(), status:"active" }
+    }));
+  }, { day, date, ex });
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#restLoadUp').focus();
+  await expect(page.locator('#restLoadUp')).toBeFocused();
+  await page.clock.runFor(180000);
+  await expect(page.locator('#timerBar')).toHaveClass(/go/);
+  await expect(page.locator('#restPrep')).toBeHidden();
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe("skipRest");
 });
 
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
