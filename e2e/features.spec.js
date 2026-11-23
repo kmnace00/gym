@@ -1991,6 +1991,26 @@ test("bodyweight edit reports save failure truthfully (U97)", async ({ page }) =
   await expect(page.locator('#modalMsg')).not.toContainText(' ✓');
 });
 
+test("Escape from peek restores focus to Show workout (U98)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:"fri-smith-squat", sets:[] } },
+      liftHistory:{}, sessionLog:[], active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await page.locator('#menuBtn').focus();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#app')).not.toHaveClass(/show-details/);
+  await expect(page.locator('#detailsBtn')).toBeFocused();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

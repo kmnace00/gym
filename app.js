@@ -1801,9 +1801,8 @@
      tabs (#dayCluster, back in N24). */
   var DAY_KEYS = ["fri", "sat", "sun"];
   function switchDay(d) {
-    /* reset the in-progress set edit BEFORE switching days: the backup
-       restores into curSt(), so switching first writes it into the wrong
-       day's lift (B5-05, matching openLift's order) */
+    /* reset edit before switching: the backup restores into curSt(), so
+       switching first writes into the wrong day's lift (B5-05). */
     cancelPendingAdvance();
     resetEdit(); clearUndo();
     cur = d;
@@ -1835,7 +1834,7 @@
     if (modal.contains(document.activeElement) && document.activeElement) document.activeElement.blur();
     modal.hidden = true;
   }
-  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&modal.hidden&&summary.hidden){if(appEl.classList.contains("resting")&&appEl.classList.contains("show-details")){setRestDetails(false);return}if(view==="progress")showDay();else if(swapOpen&&view==="lift"){swapOpen=!1;render();document.getElementById("swapBtn").focus()}}});
+  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&modal.hidden&&summary.hidden){if(appEl.classList.contains("resting")&&appEl.classList.contains("show-details")){setRestDetails(false);detailsBtn.focus();return}if(view==="progress")showDay();else if(swapOpen&&view==="lift"){swapOpen=!1;render();document.getElementById("swapBtn").focus()}}});
   modal.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape") { ev.stopPropagation();closeModal(); return; }
     if (ev.key !== "Tab") return;
