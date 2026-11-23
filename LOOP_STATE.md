@@ -476,8 +476,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** on clipboard rejection the handler restores the previous `lastBackup`, commits, and re-renders (footer dot + day-view backup bar), then shows the accurate blocked message (`app.js:1903-1910`). The exported JSON keeps the fresh stamp on both paths. U86 e2e added (failing-first); U18/U26 pass. Funded by condensing the saveBarMsg comment. `GYM_VERSION` `gym-v279` → `gym-v280`, CACHE-HASH → `1ace87dd68836b5b`.
 - **Verified in plain terms:** U86 stubs clipboard rejection, asserts stored lastBackup unchanged, menu dot and backup bar still present after closing the modal, and blocked message shown. Full gate green: 286 unit, typecheck clean, 316 e2e. Independent critic: see review log below.
 
+### Round 86 — `[DONE round 86]` Armed Restart announces its confirm label
+- **Wrong:** `#resetLiftBtn` had a static `aria-label="Restart this lift"`; when `twoTap()` armed it and changed visible text to "Tap again to restart", the aria-label still won, so screen readers gave no warning before the destructive second tap. Same class as rounds 19/47. Surveyed/reproduced Nov 23.
+- **Changed:** removed the static aria-label (`index.html:119`) so the accessible name follows textContent. U87 e2e added (failing-first), asserting both text and accessible name when armed. Net −31 B. `GYM_VERSION` `gym-v280` → `gym-v281`, CACHE-HASH → `2932fe1fc7afbf5d`.
+- **Verified in plain terms:** U87 arms Restart and checks `toHaveAccessibleName("Tap again to restart")`. U54/U64 and full gate green: 286 unit, typecheck clean, 317 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 86 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no other two-tap button has a static aria-label, unarmed name tracks textContent, ID/geometry selectors intact. Nit: ↺ glyph may be vocalized (harmless, matches text-as-name convention).
 - **Round 85 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; resolve path unchanged, exported JSON keeps fresh stamp, render() safe off day view, commit/updateFoot/render cover dot and bar. Nit: a later backup landing while the first clipboard promise is pending could be clobbered by the restore (narrow race, status only).
 - **Round 84 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; CSS hide selector covers GO/active peek, null branch still hides on idle, no competing display rules, show-details cannot persist outside resting.
 - **Round 83 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; emptySession resets only session-scoped fields, day/date match pill-Start and rollSession paths, pill Start does not double-fire, fresh id prevents log overwrite. Nit: guard does not call render(), but both callers do.
