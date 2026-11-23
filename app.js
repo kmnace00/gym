@@ -1996,7 +1996,8 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); syncClock(); commit(); updateFoot();
-        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " " + ent(merged.salvaged.recovered) + " from a damaged backup — " : "") + "Merged: +" + stats.added + " new " + pl(stats.added, "session") + ", " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
+        var mg = stats.added ? "+" + stats.added + " new " + pl(stats.added, "session") : "", sd = stats.collisions ? stats.collisions + " same-date kept the fuller copy" : "";
+        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " " + ent(merged.salvaged.recovered) + " from a damaged backup — " : "") + "Merged: " + (mg && sd ? mg + ", " + sd : mg || sd || "no changes") + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);

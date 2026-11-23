@@ -1490,7 +1490,7 @@ test("merge message pluralizes a single new session (U73)", async ({ page }) => 
   });
   await page.locator("#menuBtn").click();
   await page.setInputFiles("#importFile", { name: "b.json", mimeType: "application/json", buffer: Buffer.from(backup) });
-  await expect(page.locator("#modalMsg")).toContainText("+1 new session,");
+  await expect(page.locator("#modalMsg")).toContainText("+1 new session");
   await expect(page.locator("#modalMsg")).not.toContainText("+1 new sessions");
 });
 
@@ -2088,6 +2088,20 @@ test("reset day clears a stale one-shot hint (U102)", async ({ page }) => {
   await page.locator('#resetDay').click();
   await page.locator('#modalClose').click();
   await expect(page.locator('#hint')).toHaveText('');
+});
+
+test("identical re-import does not report zero counts (U103)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  const backup = JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165, state:{},
+    liftHistory:{ "fri:0":[{ date:"2026-11-01", load:60, reps:6, rir:2, hitTop:true, setsDone:3 }] }, sessionLog:[] });
+  await page.evaluate((b) => { localStorage.clear(); localStorage.setItem("gym-tool-v2", b); }, backup);
+  await page.reload();
+  await page.locator('#menuBtn').click();
+  await page.setInputFiles('#importFile', { name:"same.json", mimeType:"application/json", buffer:Buffer.from(backup) });
+  await expect(page.locator('#modalMsg')).toContainText('Merged:');
+  await expect(page.locator('#modalMsg')).not.toContainText('+0');
+  await expect(page.locator('#modalMsg')).not.toContainText('0 same-date');
 });
 
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
