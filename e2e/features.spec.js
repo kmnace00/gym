@@ -1960,6 +1960,22 @@ test("Finish label reflects the session day when browsing another day (U95)", as
   await expect(page.locator('#finishBtn')).toHaveText('Finish workout');
 });
 
+test("deload actions report save failure truthfully (U96)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (String(k) === "gym-tool-v2") throw new Error("QuotaExceededError");
+      return orig.call(this, k, v);
+    };
+  });
+  await page.locator('#menuBtn').click();
+  await page.locator('#deloadStart').click();
+  await expect(page.locator('#modalMsg')).toContainText('NOT saved');
+  await page.locator('#deloadEnd').click();
+  await expect(page.locator('#modalMsg')).toContainText('NOT saved');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

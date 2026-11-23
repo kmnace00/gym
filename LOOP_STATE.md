@@ -521,8 +521,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `finBtn.textContent` now uses `li < 0` (session-day completeness, since `li` is active-day first-open when off-day) (`app.js:420`). Net −2 B. U95 e2e added (failing-first); pass4/journeys finish tests pass. `GYM_VERSION` `gym-v288` → `gym-v289`, CACHE-HASH → `785e6548d00d9e2c`.
 - **Verified in plain terms:** U95 fills the active day, browses the next day, and asserts Finish still reads "Finish workout". Full gate green: 286 unit, typecheck clean, 325 e2e. Independent critic: see review log below.
 
+### Round 95 — `[DONE round 95]` Deload actions report save failure
+- **Wrong:** deload start/end claimed success even when `commit()` failed to persist `deloadSince` (storage full), leaving the save bar showing the failure — the class round 57 fixed for Reset day/Clear all. Surveyed/reproduced Nov 23.
+- **Changed:** both deload confirmations now append `saveResult(true)` (`app.js:2136,2142`), so a failed write reports "NOT saved — storage full; export now" while success shows ✓. U96 e2e added (failing-first). `GYM_VERSION` `gym-v289` → `gym-v290`, CACHE-HASH → `0cceb9f54d316d12`.
+- **Verified in plain terms:** U96 stubs throwing setItem, clicks both deload actions, asserts "NOT saved" each time. Deload/deloadfollow e2e pass. Full gate green: 286 unit, typecheck clean, 326 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 95 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveResult(true) correct (no snapshot note on success), saveFailed set synchronously before setMsg, focus fallback and other tests unaffected. Nit: success messages gain trailing ✓ (cosmetic).
 - **Round 94 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; li<0 equals prior complete on active day (no-op), off-day li matches showSummary session-day verdict and banked data, effSets/deload consistent, finish-hidden guard unchanged. Nits: activeHasData scans all days (pre-existing).
 - **Round 93 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; active-day path collapses to prior formulas, off-day has via activeHasData, li matches handler post-switch, no show-but-no-op, complete/empty cases safe. Nits: activeHasData scans all days (pre-existing), Finish text still keys viewed-day complete.
 - **Round 92 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; label/guard use the same firstOpenLift target the handler opens post-switch, ad===cur and no-session cases fall back to firstOpenIdx, li<0 hides button matching handler no-op. Nit: guard still mixes viewed-day complete/totalDone with active-day li (pre-existing, not a regression).
