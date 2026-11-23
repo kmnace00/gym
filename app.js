@@ -291,10 +291,7 @@
     document.getElementById("prevLift").disabled = first;
     document.getElementById("nextLift").disabled = last;
   }
-  /* N12 (updated): day switching lives on the header day tabs (#dayCluster of
-     Fri/Sat/Sun buttons, added back in N24) AND the day view's ‹ › chevrons —
-     both route through switchDay. Stats.weekStatus stays; its original N12
-     tab-rendering lifecycle note is obsolete since the tabs are back. */
+  /* N12/N24: day tabs and the day view chevrons both route through switchDay. */
   /* ── B6-10: deload follow-through nudge ────────────────────────────────────
      Derived from existing dates only: last deload start + 7 d, else the first
      logged session; never stored or auto-started, and only in an empty week. */
@@ -1222,6 +1219,7 @@
   sessBtn.onclick = function () {
     if (sInt) { pauseSession(); return; }
     if (payload.active && payload.active.status === "complete") { Gym.startSession(payload, Gym.todayDay()); render(); }
+    if (payload.active && payload.active.day && payload.active.day !== cur) switchDay(payload.active.day);
     startSessionTimer();
   };
 

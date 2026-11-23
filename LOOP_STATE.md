@@ -486,8 +486,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** arm text is now "Tap again to reset day" (`app.js:2105`), matching the button's own label; existing assertions updated. U88 e2e added (failing-first). Net −2 B. `GYM_VERSION` `gym-v281` → `gym-v282`, CACHE-HASH → `c5c7b0bce17c98f8`.
 - **Verified in plain terms:** U88 navigates to Saturday, arms Reset day, asserts the new text. Full gate green: 286 unit, typecheck clean, 318 e2e. Independent critic: see review log below.
 
+### Round 88 — `[DONE round 88]` Pill start lands on the session's day
+- **Wrong:** tapping the session pill from a non-active day started/resumed the session but left the shell viewing the other day, so Set Done was blocked by the day guard while the clock ran. Surveyed/reproduced Nov 23.
+- **Changed:** `sessBtn.onclick` now calls `switchDay(payload.active.day)` when the viewed day differs (`app.js:1222`), reusing the established day-switch path. Funded by condensing the stale N12/N24 comment. U89 e2e added (failing-first). `GYM_VERSION` `gym-v282` → `gym-v283`, CACHE-HASH → `67d4d9a586f45257`.
+- **Verified in plain terms:** U89 switches to Saturday, taps the pill, and asserts the app lands on Friday with the pill showing Pause. U65/U83/U84 pass. Full gate green: 286 unit, typecheck clean, 319 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 88 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay restore order correct, cur-match short-circuit preserves behavior, pause returns early, focus survives, double render idempotent. Nit: new line is app.js:1222 (doc corrected).
 - **Round 87 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old string, two-tap data-label restore unaffected, doResetDay logic untouched. Nit: U88 title says "past day" but #dayNext from pinned Friday lands on Saturday (future) — assertion is day-agnostic and still valid.
 - **Round 86 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no other two-tap button has a static aria-label, unarmed name tracks textContent, ID/geometry selectors intact. Nit: ↺ glyph may be vocalized (harmless, matches text-as-name convention).
 - **Round 85 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; resolve path unchanged, exported JSON keeps fresh stamp, render() safe off day view, commit/updateFoot/render cover dot and bar. Nit: a later backup landing while the first clipboard promise is pending could be clobbered by the restore (narrow race, status only).
