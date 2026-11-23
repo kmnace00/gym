@@ -310,8 +310,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `notifyAllowed()` now requires supported Notification API and non-denied permission (`app.js:2005`), so initNotify clears stale unsupported opt-in. U47 e2e added. `GYM_VERSION` `gym-v246` → `gym-v247`, CACHE-HASH → `2b800364726dd828`.
 - **Verified in plain terms:** U47 seeds gym-notify=1, deletes window.Notification, asserts toggle Off and stored 0. Full gate green: 286 unit, typecheck clean, 279 e2e. Independent critic-flash: see review log below.
 
+### Round 53 — `[DONE round 53]` Salvaged keep reports save failure truthfully
+- **Wrong:** clicking "Keep recovered log" after salvaged load reported "Recovered log kept ✓" even when persistNow() failed; save bar flipped to export but success message and lost recovery affordance were misleading. Surveyed/reproduced Nov 22.
+- **Changed:** salvaged saveBarAction now checks `saveFailed` after `persistNow()`; on failure sets "Couldn't save — export now" and preserves save-bar recovery/download state, on success clears dataWarn/syncs and shows success (`app.js:2165-2173`). U48 e2e added. `GYM_VERSION` `gym-v247` → `gym-v248`, CACHE-HASH → `923d1aa44b371658`.
+- **Verified in plain terms:** U48 seeds corrupt-but-salvageable payload, forces Gym.save false, clicks Keep recovered log, asserts modal error msg, Export action, download visible. Full gate green: 286 unit, typecheck clean, 280 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 53 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified saveFailed branch reports truthfully, leaves dataWarn=salvaged coherent with syncSaveBar save-failed+download behavior, success path unchanged.
 - **Round 52 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified unsupported Notification treated as not allowed, init clears stale opt-in, render/notify semantics safe for default/denied/granted.
 - **Round 51 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified focusLift only from restctl.skip, advanceTo resets edit before focus, non-advance skip keeps edit focus, finish paths unaffected.
 - **Round 50 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified notifyAllowed undefined guard avoids false-denied and init throw, CSS mid min-height/flex low layout risk. Nit addressed post-GO: notifyRestDone now guards undefined Notification/permission before firing.

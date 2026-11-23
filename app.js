@@ -2167,9 +2167,8 @@
     if (dataWarn === "salvaged") {
       /* the recovered payload lives in memory only — save it explicitly */
       persistNow();
-      dataWarn = null;
-      syncSaveBar();
-      setMsg("Recovered log kept ✓");
+      if (saveFailed) { setMsg("Couldn't save — export now"); }
+      else { dataWarn = null; syncSaveBar(); setMsg("Recovered log kept ✓"); }
     } else if (dataWarn === "corrupt") {
       downloadText(Gym.quarantineRaw() || "", "gym-quarantine-" + Gym.dateKey() + ".json", "application/json");
     } else if (dataWarn === "future") {

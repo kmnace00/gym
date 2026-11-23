@@ -1038,6 +1038,18 @@ test("unsupported Notification clears stale opt-in (U47)", async ({ page }) => {
   expect(stored).toBe("0");
 });
 
+test("salvaged keep reports save failure and preserves download (U48)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(()=>{localStorage.clear(); localStorage.setItem('gym-tool-v2','{"v":5,"liftHistory":{"sun:0":[{"date":"2026-11-20","sets":[{"load":100,"reps":8,"rir":2}],"load":100,"reps":8,"setsDone":1}], "BAD" ');});
+  await page.reload();
+  await expect(page.locator('#saveBar')).toBeVisible();
+  await page.evaluate(()=>{ Gym.save=()=>false; });
+  await page.locator('#saveBarAction').click();
+  await expect(page.locator('#modalMsg')).toHaveText(/Couldn't save/);
+  await expect(page.locator('#saveBarAction')).toHaveText('Export');
+  await expect(page.locator('#saveBarDownload')).toBeVisible();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
