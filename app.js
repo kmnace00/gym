@@ -151,9 +151,7 @@
     Gym.upsertHistory(payload, d, i, entry);
   }
 
-  /* ── persistence: immediate by default, coalesced on the 70ms stepper path ──
-     The whole payload is small, but writing it ~14×/s during a press-and-hold
-     is waste. Steppers schedule a trailing save; everything else saves now.   */
+  /* immediate saves; steppers coalesce writes during press-and-hold */
   var saveTimer = null, saveDirty = false, saveFailed = false, dataWarn = null, saveBarMsg = "";
   function syncSaveBar() {
     if (!saveBar) return;
@@ -1125,7 +1123,7 @@
     var dayOk = !appEl.classList.contains("resting") || !payload.active || payload.active.day === cur;
     prep.hidden = !v.showPrep || !dayOk;
     if (prep.hidden) {
-      if (prep.contains(document.activeElement)||document.activeElement===restClock) { var go = document.getElementById("skipRest"); if (go && go.getClientRects().length) go.focus(); }
+      if (prep.contains(document.activeElement)||document.activeElement===restClock||document.activeElement===pauseBtn) { var go = document.getElementById("skipRest"); if (go && go.getClientRects().length) go.focus(); }
       restPrepIdx = -1; return;
     }
     restPrepIdx = v.prepIdx;

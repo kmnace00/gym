@@ -366,8 +366,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `backupBarDismiss` now focuses visible `#menuBtn` after `renderDay()` (`app.js:1906`). Funded by removing two duplicate `.liftlist{overflow-y:auto}` declarations inside `@media` blocks whose base rule at `style.css:117` already sets it (`style.css:758,798` deleted). U61 e2e added (failing-first). `GYM_VERSION` `gym-v257` → `gym-v258`, CACHE-HASH → `1aa9dbad28c199cf`.
 - **Verified in plain terms:** U61 seeds overdue backup, focuses/Enter-activates ✕, asserts bar hidden and focus on menuBtn. Full gate green: 286 unit, typecheck clean, 292 e2e. Headroom restored from 8 to 49 bytes. Independent critic: see review log below.
 
+### Round 64 — `[DONE round 64]` GO focus off hidden Pause button
+- **Wrong:** at rest GO, `#pauseRest` is hidden by CSS but can still hold keyboard focus; Enter was a no-op and the real GO action was a Tab away. Same class as rounds 60/62. Surveyed/reproduced Nov 23.
+- **Changed:** the GO focus fallback in `renderRestPrep()` now also covers `document.activeElement === pauseBtn`, moving focus to visible `#skipRest` (`app.js:1128`). U62 e2e added (failing-first); U57/U60 still pass. Byte funding: condensed the persistence comment at `app.js:154` (−179 B). `GYM_VERSION` `gym-v258` → `gym-v259`, CACHE-HASH → `2a3b4e5e2219eeb0`.
+- **Verified in plain terms:** U62 focuses Pause during rest, runs clock to GO, asserts focus on #skipRest. Full gate green: 286 unit, typecheck clean, 293 e2e. Headroom restored to 193 bytes. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 64 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pauseBtn relocation consistent with existing restClock branch, target hidden at GO, comment condensation preserved semantics (actually fixed stale 70ms detail). Nit: in a non-GO prep-hidden rest, pausing can move focus to End rest (minor, non-blocking).
 - **Round 63 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; menuBtn persistent in day view, duplicate liftlist overflow removal cascade-neutral at all viewports, B5-04 unaffected. Nit: focus lacks defensive getClientRects guard (harmless; menuBtn never hidden on screen).
 - **Round 62 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; blur commit semantics unchanged, invalid values fall back to render, restClock clause is a no-op unless clock holds focus, Enter/Escape restore preserved. Nit: condition not phase-gated so focus may move to skipRest slightly before GO in prep-hidden rest (harmless).
 - **Round 61 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; renderDeload makes exactly one button visible, getClientRects guard correct, modal focus trap unaffected. Nits: no explicit hidden-counterpart or modal-retention assertions (non-regressions).

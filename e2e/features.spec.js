@@ -1265,6 +1265,30 @@ test("backup dismiss moves focus to a visible control (U61)", async ({ page }) =
   expect(active).toBe('menuBtn');
 });
 
+test("GO moves focus off the hidden Pause button (U62)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const ex = await page.evaluate((d) => Gym.DAYS[d].ex[0], day);
+  await page.evaluate(({ day, date, ex }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ done:ex.s-1, load:ex.load||0, reps:ex.r, rir:ex.rir, sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"ses_nav", date, day, startedAt:Date.now()-600000, endedAt:null, accSec:600, runningSince:Date.now(), status:"active" }
+    }));
+  }, { day, date, ex });
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#pauseRest').focus();
+  await page.clock.runFor(185000);
+  await expect(page.locator('#timerBar')).toHaveClass(/go/);
+  const active = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(active).toBe("skipRest");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
