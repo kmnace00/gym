@@ -1743,6 +1743,29 @@ test("first set after finishing starts a fresh session (U84)", async ({ page }) 
   expect(st.logged).toBe(1);
 });
 
+test("workout clock survives a peek toggle at GO (U85)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ load:60, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:day+"-x", sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:Date.now()-600000, accSec:600, runningSince:Date.now(), status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.clock.runFor(185000);
+  await expect(page.locator('#timerBar')).toHaveClass(/go/);
+  await expect(page.locator('#restElapsed')).toBeVisible();
+  await page.locator('#detailsBtn').click();
+  await expect(page.locator('#restElapsed')).toBeHidden();
+  await page.locator('#detailsBtn').click();
+  await expect(page.locator('#restElapsed')).toBeVisible();
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

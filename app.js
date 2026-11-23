@@ -1071,7 +1071,7 @@
       return;
     }
     restElapsedEl.textContent = "Workout " + fmt(sec);
-    restElapsedEl.hidden = appEl.classList.contains("show-details");
+    restElapsedEl.hidden = false; // CSS hides it during peek in every phase
   }
   function setRestLabel(t, m) {
     document.getElementById("restLabel").textContent = t;

@@ -466,8 +466,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `startSessionTimer()` now replaces a complete `active` with `Gym.emptySession()` before starting the clock (`app.js:1208`), leaving set progress intact and preserving the banked log. Funded by condensing the B5-11 save-bar comment. U84 e2e added (failing-first). `GYM_VERSION` `gym-v277` → `gym-v278`, CACHE-HASH → `4e10213aa0869a2c`.
 - **Verified in plain terms:** U84 finishes a partial workout, continues to next lift, logs a set, and asserts fresh active status, accSec<10, new id, and banked log preserved. Full gate green: 286 unit, typecheck clean, 314 e2e. Independent critic: see review log below.
 
+### Round 84 — `[DONE round 84]` Workout clock visibility at GO is CSS-driven
+- **Wrong:** `setRestElapsed()` wrote the `hidden` attribute from `show-details`, but rest ticks stop at GO — so toggling the peek at GO left the workout clock either stale-hidden (vanished) or stale-visible alongside the header pill (two clocks), violating N11. Surveyed/reproduced Nov 23.
+- **Changed:** `setRestElapsed()` now leaves `hidden=false` and CSS `.app.resting.show-details .timer .relapsed{display:none}` owns peek hiding in every phase (`app.js:1074`, `style.css:375`). U85 e2e added (failing-first); U43 and restquiet.spec.js still pass. `GYM_VERSION` `gym-v278` → `gym-v279`, CACHE-HASH → `653cd691ccf5aef5`.
+- **Verified in plain terms:** U85 runs rest to GO, toggles peek twice, and asserts the workout clock hides during peek and returns after. Full gate green: 286 unit, typecheck clean, 315 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 84 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; CSS hide selector covers GO/active peek, null branch still hides on idle, no competing display rules, show-details cannot persist outside resting.
 - **Round 83 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; emptySession resets only session-scoped fields, day/date match pill-Start and rollSession paths, pill Start does not double-fire, fresh id prevents log overwrite. Nit: guard does not call render(), but both callers do.
 - **Round 82 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; complete status skips re-arm so sessionLog intact, pill tap starts fresh session via startSession, rollover keeps finished log entry, reopenSession unchanged. Nit: retained sessionLog vs popped banked history on completed reset is pre-existing reset semantics, no data lost.
 - **Round 81 — critic reviewer: GO after blocker fix** (Tier 1, off-peak, hy4-flash-free). Original partial-progress deletion fixed by bankedSnapshot; date-match or sets-signature gating verified, callers compute before clearing state, U82 covers regression. Nit: effSets shrink + exact set match could still pop an older entry (rare, non-blocking).
