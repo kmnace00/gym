@@ -1374,6 +1374,18 @@ test("trend toggle exposes pressed state (U67)", async ({ page }) => {
   expect(await page.locator("#trendToggle").getAttribute('aria-label')).toBeNull();
 });
 
+test("share cancel clears stale export feedback (U68)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: function () { return Promise.reject(new Error("cancel")); }, configurable: true });
+  });
+  await page.locator("#menuBtn").click();
+  await page.locator("#exportCsv").click();
+  await expect(page.locator("#modalMsg")).toHaveText(/CSV exported/);
+  await page.locator("#shareSummary").click();
+  await expect(page.locator("#modalMsg")).toHaveText(/cancel/i);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

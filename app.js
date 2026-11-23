@@ -1935,7 +1935,7 @@
   document.getElementById("shareSummary").onclick = function () {
     var text = summaryText();
     if (navigator.share) {
-      navigator.share({ title: "Gym", text: text }).then(function () { setMsg("Shared ✓"); }, function () {});
+      navigator.share({ title: "Gym", text: text }).then(function () { setMsg("Shared ✓"); }, function () { setMsg("Share cancelled"); });
     } else if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(function () { setMsg("Summary copied ✓"); }, function () { setMsg("Share not available"); });
     } else { setMsg("Share not available"); }

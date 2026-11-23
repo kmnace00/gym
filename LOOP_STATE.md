@@ -396,8 +396,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** removed the stale aria-label (`index.html:117`) so the accessible name is the visible "Trend"; `renderSpark()` now sets `aria-pressed` true/false from `show-trend` state on every render (`app.js:568`). Funded by condensing the liftValuation comment. U67 e2e added (failing-first). `GYM_VERSION` `gym-v263` → `gym-v264`, CACHE-HASH → `fa89710e4c133bd1`.
 - **Verified in plain terms:** U67 seeds 2 history entries, opens lift, asserts aria-pressed false → true → false across two clicks and no aria-label. Full gate green: 286 unit, typecheck clean, 298 e2e. Independent critic: see review log below.
 
+### Round 70 — `[DONE round 70]` Share cancel clears stale feedback
+- **Wrong:** `navigator.share(...)` reject handler was a no-op, so cancelling/dismissing the share sheet left the previous message (e.g. "CSV exported ✓") on screen — misleading after round 56 made modalMsg sticky. Surveyed/reproduced (file:// share rejects).
+- **Changed:** reject branch now sets "Share cancelled" (`app.js:1939`). U68 e2e added (failing-first, stubbed rejecting navigator.share). `GYM_VERSION` `gym-v264` → `gym-v265`, CACHE-HASH → `307bfd30138b82e7`.
+- **Verified in plain terms:** U68 exports CSV, stubs share rejection, taps Share summary, asserts message matches /cancel/i. Full gate green: 286 unit, typecheck clean, 299 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 70 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; success/clipboard/unsupported paths untouched, reject message replaces stale feedback. Nit: "Share cancelled" also shows for other reject reasons (still more accurate than stale).
 - **Round 69 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; aria-pressed derived from single show-trend source of truth, no drift, stable accessible name "Trend", comment condensation logic-free. Nits: aria-pressed written while hidden (harmless); show-trend is DOM-only so reload resets false.
 - **Round 68 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). Pure copy fix; denied/default/granted/unsupported paths all accurate, no stale copy. Nit: "change in Settings" not exhaustive for default (a retry also re-prompts) — accurate, non-blocking.
 - **Round 67 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; finalizeSession preserves banked log, startSession→render→startSessionTimer ordering correct, normal start/pause/resume and all finish paths unaffected. Nits: fresh session keeps prior exercise index (pre-existing pattern, UX only); completed pill shows 0:00 instead of banked duration (cosmetic, intentional).
