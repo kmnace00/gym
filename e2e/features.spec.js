@@ -2162,6 +2162,27 @@ test("stacked day summary stays readable (U106)", async ({ page }) => {
   expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
 });
 
+test("rest label wraps for a long lift name (U107)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"sun", idx:5, bodyweight:165,
+      state:{ "sun:5":{ load:30, reps:12, rir:1, done:0, topHits:0, lastRir:null, exId:"sun-lat-pec", sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day:"sun", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('.liftrow[data-i="5"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  const m = await page.evaluate(() => {
+    const d = document.getElementById("restLabel");
+    return { txt: d.textContent, scroll: d.scrollWidth, client: d.clientWidth };
+  });
+  expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

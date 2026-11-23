@@ -291,7 +291,7 @@ h1{
 }
 .app.resting .timer .clock{font-size:clamp(80px,25vw,118px);font-weight:800;line-height:.95;min-width:0;letter-spacing:-.03em}
 .app.resting .timer .tlabel{flex:none;text-align:center;font-size:14px;max-width:340px}
-.app.resting .timer .tlabel strong{display:block;font-size:19px}
+.app.resting .timer .tlabel strong{display:block;font-size:19px;white-space:normal}
 .app.resting .timer .tlabel span{margin-top:4px}
 .app.resting .timer .tbtns{display:flex;gap:10px}
 .app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px;min-width:108px}
