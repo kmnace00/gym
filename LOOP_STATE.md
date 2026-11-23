@@ -290,8 +290,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `setRestDetails()` now finishes the edit before hiding peek when resting+editing, then keeps focus on detailsBtn (`app.js:1088-1097`). U42 e2e added. Byte funding: removed two N11 comments. `GYM_VERSION` `gym-v242` → `gym-v243`, CACHE-HASH → `ec38ba3ef70f9d06`.
 - **Verified in plain terms:** U42 edits during rest peek, clicks Hide workout, asserts detailsBtn focused, show-details off, Done editing no longer active. Full gate green: 286 unit, typecheck clean, 274 e2e. Independent critic-flash: see review log below.
 
+### Round 49 — `[DONE round 49]` Escape closes rest workout peek
+- **Wrong:** during active rest with workout peek open, Escape did nothing; keyboard users had no dismiss affordance. Surveyed/reproduced Nov 22.
+- **Changed:** global Escape handler closes rest show-details peek via `setRestDetails(false)` before progress/swap handling (`app.js:1841`). U43 e2e added. `GYM_VERSION` `gym-v243` → `gym-v244`, CACHE-HASH → `1cd47d5125ec0106`.
+- **Verified in plain terms:** U43 opens rest peek, presses Escape, asserts show-details removed, detailsBtn focused and aria-expanded false. Full gate green: 286 unit, typecheck clean, 275 e2e. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 49 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified Escape precedence/modal-summary safety, resting+show-details guard, and setRestDetails handles edit/focus/aria.
 - **Round 48 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified auto-finish-on-hide-peek is safe/guarded to resting+editing, focus lands on visible detailsBtn, GO phase unaffected. Nit: redundant render/focus inside finishEdit then setRestDetails.
 - **Round 47 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified pause button visible-text accessible name, swap Escape gated to lift view, modal/summary precedence preserved, stale swapOpen inert on day view.
 - **Round 46 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified resetEdit swapOpen clear is safe across all callers and normal swap behavior intact.

@@ -982,6 +982,20 @@ test("hiding rest peek while editing finishes edit and keeps focus on details (U
   await expect(page.locator('#doneBtn')).toHaveText(/Set Done|GO/);
 });
 
+test("Escape closes rest workout peek (U43)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  await page.locator('#detailsBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/show-details/);
+  await expect(page.locator('#detailsBtn')).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#app')).not.toHaveClass(/show-details/);
+  await expect(page.locator('#detailsBtn')).toBeFocused();
+  await expect(page.locator('#detailsBtn')).toHaveAttribute('aria-expanded', 'false');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

@@ -1835,7 +1835,7 @@
     if (modal.contains(document.activeElement) && document.activeElement) document.activeElement.blur();
     modal.hidden = true;
   }
-  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&modal.hidden&&summary.hidden){if(view==="progress")showDay();else if(swapOpen&&view==="lift"){swapOpen=!1;render();document.getElementById("swapBtn").focus()}}});
+  document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&modal.hidden&&summary.hidden){if(appEl.classList.contains("resting")&&appEl.classList.contains("show-details")){setRestDetails(false);return}if(view==="progress")showDay();else if(swapOpen&&view==="lift"){swapOpen=!1;render();document.getElementById("swapBtn").focus()}}});
   modal.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape") { ev.stopPropagation();closeModal(); return; }
     if (ev.key !== "Tab") return;
