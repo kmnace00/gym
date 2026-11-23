@@ -436,6 +436,8 @@ h1{
 /* N18: never let the two-line clock-learning note shrink into one line and
    paint under the next button — a flex item must keep its content height. */
 .modalmsg{flex:none;min-height:1.1em;font-size:12.5px;line-height:1.35;color:var(--accent)}
+/* keep action feedback on screen when the menu card scrolls (U51) */
+#modalMsg:not(:empty){position:sticky;bottom:0;background:var(--surface);padding:6px 0;z-index:2}
 .modalfoot{font-size:11px;color:var(--faint);text-align:center;margin-top:2px;padding-top:8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 
 /* ── progression suggestion + sparkline ────────────────────────────────── */

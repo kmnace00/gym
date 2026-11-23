@@ -1066,6 +1066,19 @@ test("salvage copy never claims nothing is saved after implicit persist (U50)", 
   await expect(page.locator("#saveBarText")).not.toContainText("Nothing is saved yet");
 });
 
+test("menu action feedback is visible on screen (U51)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await page.locator("#exportCsv").click();
+  await expect(page.locator("#modalMsg")).toHaveText(/CSV exported/);
+  const visible = await page.evaluate(() => {
+    const m = document.getElementById("modalMsg").getBoundingClientRect();
+    const c = document.querySelector(".modal-card").getBoundingClientRect();
+    return m.top >= c.top && m.bottom <= c.bottom;
+  });
+  expect(visible).toBe(true);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

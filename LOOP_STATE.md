@@ -326,8 +326,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Verified in plain terms:** U50 seeds salvage, reloads, asserts copy has no "Nothing is saved yet" before and after implicit persist from opening a lift. Full gate green: 286 unit, typecheck clean, 281 e2e. Independent critic: see review log below.
 - **Residual #24 design decision (parked):** quarantined original remains unreachable via UI after a clean reload; needs a durable flag/dismiss model. Not an autonomous small fix.
 
+### Round 56 — `[DONE round 56]` Menu action feedback stuck off-screen
+- **Wrong:** `#modalMsg` sat below the scrollable `.modal-card` viewport (bottom 859px vs card 824px/647px), so every menu action confirmation/error (Export CSV, reset learning, deload, copy/import/restore, invalid bodyweight) was invisible to sighted users despite correct text and `role=status`. Surveyed/reproduced Nov 23.
+- **Changed:** sticky bottom placement for non-empty `#modalMsg` with surface background and z-index (`style.css:439`). U51 e2e added (geometry assertion). `GYM_VERSION` `gym-v250` → `gym-v251`, CACHE-HASH → `31128645adef5f0f`.
+- **Verified in plain terms:** U51 asserts message rect inside modal-card rect after Export CSV; probed long message at 390x667 top and scrolled-bottom positions. Full gate green: 286 unit, typecheck clean, 282 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 56 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; :empty avoids stale bar on reopen, #calibInfo untouched, sticky keeps flow and announcements intact. Nit: U51 tight containment could fail for a multi-line taller-than-card message (current messages short).
 - **Round 55 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pure copy edit, save-failed branch untouched, no test asserts old phrase. Nit: U50 post-click assertion trivially satisfied by unconditional copy removal (harmless).
 - **Round 54 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; no remaining runtime rnav refs, existing prevLift/nextLift nav intact, rest peek/keyboard unaffected.
 - **Round 53 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified saveFailed branch reports truthfully, leaves dataWarn=salvaged coherent with syncSaveBar save-failed+download behavior, success path unchanged.
