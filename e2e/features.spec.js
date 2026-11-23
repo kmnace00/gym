@@ -2104,6 +2104,19 @@ test("identical re-import does not report zero counts (U103)", async ({ page }) 
   await expect(page.locator('#modalMsg')).not.toContainText('0 same-date');
 });
 
+test("plan with no eligible history says no changes (U104)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165, state:{},
+      liftHistory:{ "fri:0":[{ date:"2026-11-06", load:70, reps:6, rir:2, hitTop:true, setsDone:3, swap:"Leg press" }] }, sessionLog:[] }));
+  });
+  await page.reload();
+  await page.locator('#planBtn').click();
+  await expect(page.locator('#daySummary')).toContainText('Planned · no changes');
+  await expect(page.locator('#daySummary')).not.toContainText('all keep');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
