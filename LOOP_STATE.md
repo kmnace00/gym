@@ -481,8 +481,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** removed the static aria-label (`index.html:119`) so the accessible name follows textContent. U87 e2e added (failing-first), asserting both text and accessible name when armed. Net −31 B. `GYM_VERSION` `gym-v280` → `gym-v281`, CACHE-HASH → `2932fe1fc7afbf5d`.
 - **Verified in plain terms:** U87 arms Restart and checks `toHaveAccessibleName("Tap again to restart")`. U54/U64 and full gate green: 286 unit, typecheck clean, 317 e2e. Independent critic: see review log below.
 
+### Round 87 — `[DONE round 87]` Reset-day confirm copy truthful on past days
+- **Wrong:** two-tap Reset day always armed as "Tap again to reset today", but `doResetDay()` acts on the viewed day — false when reviewing any past training day. Surveyed/reproduced Nov 23.
+- **Changed:** arm text is now "Tap again to reset day" (`app.js:2105`), matching the button's own label; existing assertions updated. U88 e2e added (failing-first). Net −2 B. `GYM_VERSION` `gym-v281` → `gym-v282`, CACHE-HASH → `c5c7b0bce17c98f8`.
+- **Verified in plain terms:** U88 navigates to Saturday, arms Reset day, asserts the new text. Full gate green: 286 unit, typecheck clean, 318 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 87 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old string, two-tap data-label restore unaffected, doResetDay logic untouched. Nit: U88 title says "past day" but #dayNext from pinned Friday lands on Saturday (future) — assertion is day-agnostic and still valid.
 - **Round 86 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no other two-tap button has a static aria-label, unarmed name tracks textContent, ID/geometry selectors intact. Nit: ↺ glyph may be vocalized (harmless, matches text-as-name convention).
 - **Round 85 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; resolve path unchanged, exported JSON keeps fresh stamp, render() safe off day view, commit/updateFoot/render cover dot and bar. Nit: a later backup landing while the first clipboard promise is pending could be clobbered by the restore (narrow race, status only).
 - **Round 84 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; CSS hide selector covers GO/active peek, null branch still hides on idle, no competing display rules, show-details cannot persist outside resting.

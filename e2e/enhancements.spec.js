@@ -306,7 +306,7 @@ test("arming a second destructive button restores the first one's label (B5-10)"
 
   await page.locator("#menuBtn").click();
   await page.locator("#resetDay").click();
-  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset day");
   await page.locator("#clearAll").click();
   await expect(page.locator("#clearAll")).toHaveText("Tap again to erase everything");
 

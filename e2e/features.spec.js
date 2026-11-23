@@ -1170,7 +1170,7 @@ test("menu two-tap confirm disarms on modal close (U55)", async ({ page }) => {
   await page.goto(url);
   await page.locator('#menuBtn').click();
   await page.locator('#resetDay').click();
-  await expect(page.locator('#resetDay')).toHaveText('Tap again to reset today');
+  await expect(page.locator('#resetDay')).toHaveText('Tap again to reset day');
   await page.locator('#modalClose').click();
   await page.locator('#menuBtn').click();
   expect(await page.locator('#resetDay').textContent()).toBe('Reset day');
@@ -1310,9 +1310,9 @@ test("two-tap re-arm gets a fresh confirm window (U64)", async ({ page }) => {
   await page.locator("#clearAll").click();
   await page.clock.runFor(100);
   await page.locator("#resetDay").click();
-  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset day");
   await page.clock.runFor(1700); // past the FIRST arm's timer, inside the re-arm window
-  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset today");
+  await expect(page.locator("#resetDay")).toHaveText("Tap again to reset day");
 });
 
 test("finished workout pill starts a fresh session, not a resumed one (U65)", async ({ page }) => {
@@ -1804,6 +1804,15 @@ test("armed Restart announces the confirm label (U87)", async ({ page }) => {
   await page.locator('#resetLiftBtn').click();
   await expect(page.locator('#resetLiftBtn')).toHaveText('Tap again to restart');
   await expect(page.locator('#resetLiftBtn')).toHaveAccessibleName('Tap again to restart');
+});
+
+test("Reset day confirm label is accurate on a past day (U88)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText("Sat");
+  await page.locator('#menuBtn').click();
+  await page.locator('#resetDay').click();
+  await expect(page.locator('#resetDay')).toHaveText('Tap again to reset day');
 });
 
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {

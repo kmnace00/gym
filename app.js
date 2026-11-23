@@ -2102,7 +2102,7 @@
     clearUndo(); render(); syncClock(); commit(); updateFoot();
     setMsg("All training data cleared" + saveResult(snap));
   }
-  document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset today", doResetDay); };
+  document.getElementById("resetDay").onclick = function () { twoTap(this, "Tap again to reset day", doResetDay); };
   document.getElementById("clearAll").onclick = function () { twoTap(this, "Tap again to erase everything", doClearAll); };
 
   /* ── bodyweight + snapshot recovery ───────────────────────────────────── */
