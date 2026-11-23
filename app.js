@@ -2145,11 +2145,11 @@
   };
   var bwInput = document.getElementById("bwInput");
   bwInput.addEventListener("input", function () {
-    if (saveBw(this.value)) setMsg("Bodyweight set to " + payload.bodyweight + " lb");
+    if (saveBw(this.value)) setMsg("Bodyweight set to " + payload.bodyweight + " lb" + saveResult(true));
   });
   bwInput.addEventListener("change", function () {
     if (saveBw(this.value)) {
-      render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb");
+      render(); setMsg("Bodyweight set to " + payload.bodyweight + " lb" + saveResult(true));
     } else {
       /* still focused, so renderBw() would decline — restore in place */
       this.value = String(payload.bodyweight || 165);
