@@ -1202,6 +1202,21 @@ test("rest GO moves focus from hidden prep to skipRest (U57)", async ({ page }) 
   expect(active).toBe("skipRest");
 });
 
+test("deload toggle keeps focus on the visible control (U58)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('#menuBtn').click();
+  await page.locator('#deloadStart').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#deloadEnd')).toBeVisible();
+  const afterStart = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(afterStart).toBe('deloadEnd');
+  await page.locator('#deloadEnd').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#deloadStart')).toBeVisible();
+  const afterEnd = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  expect(afterEnd).toBe('deloadStart');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

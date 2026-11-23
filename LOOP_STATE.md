@@ -351,8 +351,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** added a one-shot `saveBarMsg` displayed by `syncSaveBar()` in the view-agnostic save bar (actions hidden) with focus fallback to visible `#menuBtn` or `#skipRest` (`app.js:157,159,181,2175`). `renderRestPrep()` moves focus to `#skipRest` when hiding a prep card that contains focus (`app.js:1120`). U56/U57 added; U53 updated to assert the save-bar confirmation; two pass3 salvage assertions updated from "bar hidden" to "bar shows ✓" to match the intentional persistent confirmation. `GYM_VERSION` `gym-v254` → `gym-v255`, CACHE-HASH → `6e22f9626dd2530a`.
 - **Verified in plain terms:** U56 starts rest in salvage, clicks Keep, asserts save-bar text and skipRest focus. U57 focuses restLoadUp, runs clock to GO, asserts prep hidden and skipRest focused. U53 asserts save-bar confirmation and menuBtn focus. Full gate green: 286 unit, typecheck clean, 288 e2e. Independent critic: see review log below.
 
+### Round 61 — `[DONE round 61]` Deload toggle keeps focus on visible control
+- **Wrong:** keyboard-activating Start/End deload week swapped the two buttons; the activated one hid itself and focus fell to BODY at 390x844/667. Queued from an earlier survey.
+- **Changed:** after each toggle, focus the newly visible counterpart (`#deloadEnd`/`#deloadStart`) when it has a client rect (`app.js:2134,2141`). U58 e2e added (failing-first confirmed). `GYM_VERSION` `gym-v255` → `gym-v256`, CACHE-HASH → `1b68036d74e25806`.
+- **Verified in plain terms:** U58 focuses/Enter-activates each toggle and asserts focus moved to the replacement visible button. Full gate green: 286 unit, typecheck clean, 289 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 61 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; renderDeload makes exactly one button visible, getClientRects guard correct, modal focus trap unaffected. Nits: no explicit hidden-counterpart or modal-retention assertions (non-regressions).
 - **Round 60 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveBarMsg consumed synchronously and cannot mask real failures, action visibility reset in all branches, focus fallback correct in every view, GO prep focus safe. Nits: confirmation uses --warn styling; cleared by next syncSaveBar (intended).
 - **Round 59 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; hoisting safe, no legitimate two-tap broken, data-label always set when armed. Nit: a stale timer can shorten a re-armed window (fails safe, pre-existing).
 - **Round 58 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; backupMsg consumed on first render so reminder not suppressed, round-36 flow intact, menuBtn visible in all views. Nit applied post-GO: reuse existing menuBtn var.

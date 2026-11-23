@@ -2135,11 +2135,13 @@
     payload.deloadSince = Gym.dateKey();
     commit(); render(); updateFoot();
     setMsg("Deload week started — fewer sets, ~10% lighter.");
+    var e = document.getElementById("deloadEnd"); if (e && e.getClientRects().length) e.focus();
   };
   document.getElementById("deloadEnd").onclick = function () {
     payload.deloadSince = null;
     commit(); render(); updateFoot();
     setMsg("Deload week ended — normal targets restored.");
+    var s = document.getElementById("deloadStart"); if (s && s.getClientRects().length) s.focus();
   };
   var bwInput = document.getElementById("bwInput");
   bwInput.addEventListener("input", function () {
