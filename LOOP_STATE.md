@@ -315,8 +315,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** salvaged saveBarAction now checks `saveFailed` after `persistNow()`; on failure sets "Couldn't save — export now" and preserves save-bar recovery/download state, on success clears dataWarn/syncs and shows success (`app.js:2165-2173`). U48 e2e added. `GYM_VERSION` `gym-v247` → `gym-v248`, CACHE-HASH → `923d1aa44b371658`.
 - **Verified in plain terms:** U48 seeds corrupt-but-salvageable payload, forces Gym.save false, clicks Keep recovered log, asserts modal error msg, Export action, download visible. Full gate green: 286 unit, typecheck clean, 280 e2e. Independent critic-flash: see review log below.
 
+### Round 54 — `[DONE round 54]` Remove dead rest lift-nav arrows
+- **Wrong:** dead hidden rest lift-nav controls (`#rPrevBtn/#rNextBtn/.rnav`) remained in markup/JS/CSS/e2e after rest nav was intentionally locked to Show-workout peek, consuming precache bytes and stale maintenance surface. Surveyed/verified Nov 22.
+- **Changed:** removed rnav markup/JS refs/handlers/blurRestNav call and dead rnav CSS; updated e2e to assert absence. `GYM_VERSION` `gym-v248` → `gym-v249`, CACHE-HASH → `61a8be812a90b5a5`.
+- **Verified in plain terms:** full gate green: 286 unit, typecheck clean, 280 e2e. Headroom increased to 1174 bytes. Independent critic-flash: see review log below.
+
 ## Review log
 
+- **Round 54 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; no remaining runtime rnav refs, existing prevLift/nextLift nav intact, rest peek/keyboard unaffected.
 - **Round 53 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified saveFailed branch reports truthfully, leaves dataWarn=salvaged coherent with syncSaveBar save-failed+download behavior, success path unchanged.
 - **Round 52 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified unsupported Notification treated as not allowed, init clears stale opt-in, render/notify semantics safe for default/denied/granted.
 - **Round 51 — critic-flash reviewer: GO** (Tier 1, off-peak). No blockers; verified focusLift only from restctl.skip, advanceTo resets edit before focus, non-advance skip keeps edit focus, finish paths unaffected.

@@ -161,16 +161,6 @@ test("keyboard rest order is +15 / Pause / End rest / Show workout / Undo / prep
     "restRepDown"
   ]);
 
-  const hiddenNotReachable = await page.evaluate(() => {
-    const ids = ["rPrevBtn", "rNextBtn"];
-    return ids.every((id) => {
-      const el = document.getElementById(id);
-      const wrap = el.closest(".rnav");
-      el.focus();
-      return wrap && getComputedStyle(wrap).display === "none" && !el.hasAttribute("tabindex") && document.activeElement !== el;
-    });
-  });
-  expect(hiddenNotReachable).toBe(true);
 });
 
 test("Import backup is reachable and activatable by keyboard", async ({ page }) => {

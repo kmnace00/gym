@@ -231,8 +231,6 @@
   var skipBtn = document.getElementById("skipRest");
   var pauseBtn = document.getElementById("pauseRest");
   var undoBtn = document.getElementById("undoBtn");
-  var rPrevBtn = document.getElementById("rPrevBtn");
-  var rNextBtn = document.getElementById("rNextBtn");
   var sessBtn = document.getElementById("sessBtn");
   var rirRow = document.getElementById("rirRow");
   var rirHint = document.getElementById("rirHint");
@@ -287,8 +285,6 @@
     var first = idx === 0, last = idx === DAYS[cur].ex.length - 1;
     document.getElementById("prevLift").disabled = first;
     document.getElementById("nextLift").disabled = last;
-    rPrevBtn.disabled = first;
-    rNextBtn.disabled = last;
   }
   /* N12 (updated): day switching lives on the header day tabs (#dayCluster of
      Fri/Sat/Sun buttons, added back in N24) AND the day view's ‹ › chevrons —
@@ -948,7 +944,6 @@
      200 ms; `rArmT` is the 2,600 ms two-tap finish window.                   */
   var rInt = null, rArmT = null, restNextRaw = "", restPrepIdx = -1;
 
-  function blurRestNav() { if (document.activeElement === rPrevBtn || document.activeElement === rNextBtn) document.activeElement.blur(); }
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
   function stopInterval() { if (rInt) { clearInterval(rInt); rInt = null; } }
   function startInterval() { stopInterval(); rInt = setInterval(tickRest, 200); }
@@ -1081,7 +1076,6 @@
     document.getElementById("restMsg").textContent = m;
   }
   function setRestDetails(open) {
-    if (open) blurRestNav();
     var fe=!open&&editSet>=0&&appEl.classList.contains("resting");
     if(fe) finishEdit();
     appEl.classList.toggle("show-details",!!open);
@@ -1795,8 +1789,6 @@
   });
   document.getElementById("prevLift").onclick = function () { navigateLift(-1); };
   document.getElementById("nextLift").onclick = function () { navigateLift(1); };
-  rPrevBtn.onclick = function () { navigateLift(-1); };
-  rNextBtn.onclick = function () { navigateLift(1); };
   /* N12 (updated): day switching — the ‹ › chevrons beside the day title
      cycle the three training days, sharing switchDay with the header day
      tabs (#dayCluster, back in N24). */

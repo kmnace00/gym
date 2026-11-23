@@ -323,15 +323,14 @@ test("arming a second destructive button restores the first one's label (B5-10)"
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
 
-test("full-screen rest hides the lift nav arrows", async ({ page }) => {
+test("full-screen rest has no lift nav arrows", async ({ page }) => {
   await page.goto(url);
   await page.locator(".liftrow").first().click();
   await page.locator("#doneBtn").click();
   await expect(page.locator("#timerBar")).toHaveClass(/active/);
-  await expect(page.locator("#rPrevBtn")).toBeHidden();
-  await expect(page.locator("#rNextBtn")).toBeHidden();
+  await expect(page.locator("#rPrevBtn")).toHaveCount(0);
+  await expect(page.locator("#rNextBtn")).toHaveCount(0);
 });
-
 /* B3-26 — the tempo cue used to disappear after lift 1; it now follows the
    lifter into the deep part of the session, and the short-phone layout must
    still fit on one screen. */
