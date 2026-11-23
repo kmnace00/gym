@@ -2047,8 +2047,7 @@
     }, NOTIFY_TTL_MS);
   }
   function notifyRestDone(kind) {
-    if (!notifyOn() || !("Notification" in window)) return;
-    if (Notification.permission !== "granted" || !document.hidden) return;
+    if (!notifyOn() || !window.Notification || window.Notification.permission !== "granted" || !document.hidden) return;
     if (restEndEst && Date.now() - restEndEst > 20000) return;
     var title = kind === "prep" ? "Rest almost done — get ready" : "Rest done — GO";
     var opts = { body: restNextRaw || "Next set", tag: "gym-rest" };
