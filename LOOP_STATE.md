@@ -491,8 +491,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `sessBtn.onclick` now calls `switchDay(payload.active.day)` when the viewed day differs (`app.js:1222`), reusing the established day-switch path. Funded by condensing the stale N12/N24 comment. U89 e2e added (failing-first). `GYM_VERSION` `gym-v282` → `gym-v283`, CACHE-HASH → `67d4d9a586f45257`.
 - **Verified in plain terms:** U89 switches to Saturday, taps the pill, and asserts the app lands on Friday with the pill showing Pause. U65/U83/U84 pass. Full gate green: 286 unit, typecheck clean, 319 e2e. Independent critic: see review log below.
 
+### Round 89 — `[DONE round 89]` Finish from another day summarizes the session day
+- **Wrong:** `finishWorkout()` finalized the active session but `showSummary()` read title/sets/volume from the viewed `cur`, so finishing while viewing another day produced a mixed-day summary (Sat identity with Fri duration/PRs) and banked both days' sets into one entry. Surveyed/reproduced Nov 23.
+- **Changed:** `finishWorkout()` now aligns `cur`/`idx` to `payload.active.day` after `resetEdit()`, before finalizing (`app.js:1703`), matching round 88's start-path rule. U90 e2e added (failing-first). `GYM_VERSION` `gym-v283` → `gym-v284`, CACHE-HASH → `105139a5a70e83f7`.
+- **Verified in plain terms:** U90 seeds active Fri + Sat data, views Sat, finishes, and asserts summary title/volume/duration all reflect Fri. Full gate green: 286 unit, typecheck clean, 320 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 89 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; alignment after resetEdit before finalize, showSummary reads only cur, finalize uses state/active only, valid active.day guaranteed, no-op when days match. Nits applied post-GO: U90 now computes the other day so it cannot collide on a Saturday run; idx=0 vs firstOpen(0) landing is UX-only.
 - **Round 88 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; switchDay restore order correct, cur-match short-circuit preserves behavior, pause returns early, focus survives, double render idempotent. Nit: new line is app.js:1222 (doc corrected).
 - **Round 87 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no live dependency on old string, two-tap data-label restore unaffected, doResetDay logic untouched. Nit: U88 title says "past day" but #dayNext from pinned Friday lands on Saturday (future) — assertion is day-agnostic and still valid.
 - **Round 86 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; no other two-tap button has a static aria-label, unarmed name tracks textContent, ID/geometry selectors intact. Nit: ↺ glyph may be vocalized (harmless, matches text-as-name convention).

@@ -1832,6 +1832,29 @@ test("starting the clock from another day lands on the session day (U89)", async
   await expect(page.locator('#sessBtn')).toHaveAttribute('aria-label', 'Pause workout timer');
 });
 
+test("finish from another day summarizes the session day (U90)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  const other = day === "fri" ? "sat" : day === "sat" ? "sun" : "fri";
+  const label = { fri:"Fri", sat:"Sat", sun:"Sun" };
+  await page.evaluate(({ day, other, date }) => {
+    localStorage.clear();
+    const mk = (load, n) => [0, 1, 2].map(() => ({ load, reps: n, rir: 2, t: Date.now() }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ load:100, reps:6, rir:2, done:3, topHits:3, lastRir:2, sets:mk(100,6) },
+              [other+":0"]:{ load:50, reps:8, rir:2, done:3, topHits:3, lastRir:2, sets:mk(50,8) } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:500, runningSince:null, status:"active" } }));
+  }, { day, other, date });
+  await page.reload();
+  await page.locator('#dayNext').click();
+  await expect(page.locator('#dayTitle')).toContainText(label[other]);
+  await page.locator('#finishBtn').click();
+  await expect(page.locator('#sumTitle')).toContainText(label[day]);
+  await expect(page.locator('#sumVol')).toHaveText("1.8k lb");
+  await expect(page.locator('#sumDuration')).toHaveText("8:20");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
