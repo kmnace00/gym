@@ -857,7 +857,7 @@
     document.getElementById("pSets").textContent = snap.sets;
     document.getElementById("pDays").textContent = snap.weekDone + "/" + snap.weekTotal;
     document.getElementById("pSub").textContent = snap.workouts
-      ? snap.workouts + " workout" + (snap.workouts === 1 ? "" : "s") + " · " + Stats.compactVol(snap.volume) + " lb · "
+      ? snap.workouts + " " + pl(snap.workouts, "workout") + " · " + Stats.compactVol(snap.volume) + " lb · "
         + snap.weekDone + "/" + snap.weekTotal + " this week"
       : "No workouts yet — open a lift to begin";
 
@@ -906,13 +906,13 @@
       }
     }
     document.getElementById("pNote").textContent = recent.length
-      ? "Last " + recent.length + " session" + (recent.length === 1 ? "" : "s") + wowTxt
+      ? "Last " + recent.length + " " + pl(recent.length, "session") + wowTxt
       : "Log a full lift to see the trend";
 
     var pr = snap.pr;
     /* v202: a plain load-less lift's PR metric is a rep count, not a 1RM. */
     var prTxt = !pr ? "" : "PR " + pr.name + " · " + (pr.bw || pr.assist || pr.load > 0
-      ? Math.round(pr.metric) + " lb" : pr.reps + " reps");
+      ? Math.round(pr.metric) + " lb" : pr.reps + " " + pl(pr.reps, "rep"));
     document.getElementById("pPr").textContent = prTxt;
 
     var movers = snap.movers;
@@ -1481,7 +1481,7 @@
     if (prevBest > -Infinity && newMetric > prevBest) {
       hintText = "New PR — " + (wl > 0
         ? (s.swapAlt ? swLoadLabel(wl) : e.assist ? "help " + wl : loadLabel(wl, e)) + " × " + s.reps + " (est. 1RM " + Math.round(newMetric) + ")"
-        : s.reps + " reps");
+        : s.reps + " " + pl(s.reps, "rep"));
       hintGood = true;
     }
 
@@ -1523,7 +1523,7 @@
       }
       nextText = nx ? "Up next — " + nxName + " · " + effSets(nx) + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {
-      nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " reps" +
+      nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " " + pl(s.reps, "rep") +
         (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
           : e.assist ? " · " + assistWord(s.load)
             : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
@@ -1849,9 +1849,9 @@
   function hideMsg() { document.getElementById("modalMsg").textContent = ""; }
   function setMsg(t) { document.getElementById("modalMsg").textContent = t; }
   function updateFoot() {
-    var age = Gym.backupAgeDays(payload);
+    var age = Gym.backupAgeDays(payload), sc = Stats.sessionCount(payload);
     var b = age === null ? "never backed up" : (age === 0 ? "backed up today" : "backed up " + age + "d ago");
-    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + (typeof GYM_VERSION === "string" ? GYM_VERSION : "dev") + " · " + Stats.sessionCount(payload) + " workouts · " + b;
+    document.getElementById("modalFoot").textContent = "v" + Gym.CURRENT + " · " + (typeof GYM_VERSION === "string" ? GYM_VERSION : "dev") + " · " + sc + " " + pl(sc, "workout") + " · " + b;
     /* support line: the numbers that decide the Home-Screen layout — the app
        box, the reported viewport, the resolved safe-area insets, the mode */
     var sf = document.getElementById("screenFoot");
@@ -1927,7 +1927,7 @@
   function summaryText() {
     var sessions = Stats.sessionCount(payload), sets = Stats.setsRecorded(payload);
     var vol = Math.round(Stats.totalVolume(payload));
-    return "Gym — " + sessions + " workouts · " + sets + " sets · " + vol + " lb tonnage";
+    return "Gym — " + sessions + " " + pl(sessions, "workout") + " · " + sets + " " + pl(sets, "set") + " · " + vol + " lb tonnage";
   }
   document.getElementById("shareSummary").onclick = function () {
     var text = summaryText();
@@ -1957,6 +1957,7 @@
   }
   function saveResult(snapOk) { return saveFailed ? " — NOT saved — storage full; export now" : " ✓" + (snapOk ? "" : " (no undo copy — storage full)"); }
   function ent(n) { return n === 1 ? "entry" : "entries"; }
+  function pl(n, w) { return w + (n === 1 ? "" : "s"); }
   replaceFile.addEventListener("change", function (ev) {
     var f = ev.target.files && ev.target.files[0]; if (!f) return;
     if (f.size > MAX_IMPORT_SIZE) { rejectOversized(ev); return; }
@@ -1994,7 +1995,7 @@
         if (idx >= DAYS[cur].ex.length) idx = 0;
         clearUndo(); view = "day";
         render(); syncClock(); commit(); updateFoot();
-        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " " + ent(merged.salvaged.recovered) + " from a damaged backup — " : "") + "Merged: +" + stats.added + " new session" + (stats.added === 1 ? "" : "s") + ", " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
+        setMsg((merged.salvaged ? "Recovered " + merged.salvaged.recovered + " " + ent(merged.salvaged.recovered) + " from a damaged backup — " : "") + "Merged: +" + stats.added + " new " + pl(stats.added, "session") + ", " + stats.collisions + " same-date kept the fuller copy" + saveResult(snapOk));
       } catch (e) { setMsg(/newer version/.test(e.message) ? "That backup is from a newer version of the app — reload the app, then try again" : "Import failed — not a Gym backup"); }
     };
     reader.readAsText(f);

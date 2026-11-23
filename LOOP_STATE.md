@@ -431,8 +431,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** added `ent(n)` helper returning entry/entries and applied it at all four recovered-count sites (`app.js:1959,173,180,1976,1997`); save-failure copy also agrees on is/are. U74 e2e added (failing-first). Funded by condensing the showSummary and workingLoad comments. `GYM_VERSION` `gym-v270` → `gym-v271`, CACHE-HASH → `8bebd25bfd9c1110`.
 - **Verified in plain terms:** U74 boots a salvage with one recovered entry and asserts "1 log entry recovered" (not "entries"). Existing pass3/U50/U48 and B5-06 assertions updated to the grammatically correct singular. Full gate green: 286 unit, typecheck clean, 305 e2e. Independent critic: see review log below.
 
+### Round 77 — `[DONE round 77]` Workout/set/rep counts singularize everywhere
+- **Wrong:** menu footer and Share summary said "1 workouts" / "1 sets" (and rest next / PR copy said "1 reps"), contradicting the already-correct Progress "1 workout". Surveyed/reproduced Nov 23.
+- **Changed:** added `pl(n, word)` helper beside `ent()` and used it at the footer, Share summary, Progress subtitle/note, merge message, and three rep-count sites (`app.js:860,909,1855,1931,1997,915,1484,1526`). Funded by condensing the `rampFor` comment in `program.js` (logic unchanged). U75 e2e added (failing-first). `GYM_VERSION` `gym-v271` → `gym-v272`, CACHE-HASH → `fab6ff9c332e5b66`.
+- **Verified in plain terms:** U75 seeds one workout/one set, asserts footer "1 workout ·" and Share text "1 workout · 1 set ·". U73/U74/U76 still pass. Full gate green: 286 unit, typecheck clean, 306 e2e. Independent critic: see review log below.
+
 ## Review log
 
+- **Round 77 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pl() strict ===1 semantics match replaced ternaries, all values numeric, updateFoot caching pure, rep messages correct, comment-only program.js trim. Nits: hardcoded " sets" at app.js:405 pre-existing/out of scope; BACKLOG pointer generic.
 - **Round 76 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; recovered always numeric so ===1 singular, save-failure noun/verb agree for 0/1/many, salvaged prefix/saveResult untouched, comments logic-free. Nits: LOOP_STATE line number for ent() corrected post-GO; BACKLOG pointer in comment is vague.
 - **Round 75 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; pluralization correct for 0/1/many, stats.added numeric, salvaged prefix/saveResult/replace paths untouched. Nit: inline pluralization fine for one-off string.
 - **Round 74 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; can-undo only consumed by resting CSS (peek still hides undo), hidden lift buttons out of tab order, focus fallback lands on visible .liftrow.now, rest advance unaffected. Nits: selector style inconsistent with apply() path; dense one-line if.

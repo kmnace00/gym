@@ -101,19 +101,11 @@
   }
   function snapStep(v, step) { return step > 0 ? round2(Math.round(v / step) * step) : round2(v); }
 
-  /* The ramp-up sets before a lift's first working set, display-only (never
-     logged): full ramp for the day's first lift, one feeler for later heavy
-     lifts, and (N21) a single warm-up set for every other lift with a working
-     load — 50% of the load × half the working reps (rounded). null when the
-     lift has no real external load to ramp toward — bodyweight, unloaded
-     (load null), or a zero load. Assisted lifts (N15) still warm up: their
-     logged number is help, so a heavier (larger) help number is EASIER — one
-     set at 1.5× the help, at fewer reps, which is what Khang actually does
-     (N21-follow-up). An assisted AND bodyweight lift (Sunday's assisted
-     pull-up, Nov 15) hits the `e.bw` guard first and earns no ramp — that is
-     deliberate, and it is why `dayMins("sun")` does not move. Loads snap to
-     the lift's step. (app.js only ever passes a lift's real working load, so a
-     starting guess never earns a ramp.)                                     */
+  /* ramp-up sets before a lift's first working set, display-only (never
+     logged): full ramp for the day's first lift, one feeler for later long-
+     rest lifts, else a warm-up set. null for bodyweight/unloaded/zero-load;
+     assisted lifts warm up at a heavier help number. Loads snap to the step.
+     Full reasoning: BACKLOG (rampFor / N21 / N21-follow-up).                */
   function rampFor(e, load, isFirst) {
     if (!e || e.bw || typeof load !== "number" || !(load > 0)) return null;
     if (e.assist) {

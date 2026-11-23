@@ -1508,6 +1508,30 @@ test("salvage count singularizes one entry (U74)", async ({ page }) => {
   await expect(page.locator("#saveBarText")).not.toContainText("1 log entries");
 });
 
+test("workout and set counts singularize in footer and share (U75)", async ({ page }) => {
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:day, idx:0, bodyweight:165,
+      state:{ [day+":0"]:{ load:100, reps:6, rir:2, done:1, topHits:0, lastRir:2, sets:[{load:100,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{ [day+":0"]:[{ date, load:100, reps:6, rir:2, setsDone:1, sets:[{load:100,reps:6,rir:2}] }] },
+      sessionLog:[{ date, day, status:"complete", durationSec:600, sets:1, volume:600 }],
+      active:{ id:"s", date, day, startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, { day, date });
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modalFoot")).toContainText("1 workout ·");
+  await expect(page.locator("#modalFoot")).not.toContainText("1 workouts");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    window.__shared = "";
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: function (x) { window.__shared = x; return Promise.resolve(); } }, configurable: true });
+  });
+  await page.locator("#shareSummary").click();
+  await expect.poll(() => page.evaluate(() => window.__shared)).toContain("1 workout · 1 set ·");
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
