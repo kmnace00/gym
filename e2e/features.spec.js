@@ -2247,6 +2247,23 @@ test("lift header says min left only after a set is logged (U111)", async ({ pag
   await expect(page.locator('#liftMeta')).toContainText('min left');
 });
 
+test("rest label names the alternate after a swap (U112)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:1, bodyweight:165,
+      state:{ "fri:1":{ load:100, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:"fri-smith-incline", swapAlt:"Barbell incline press", swapLoad:100, sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('.liftrow[data-i="1"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#restLabel')).toContainText('Barbell incline press — set 1 done');
+  await expect(page.locator('#restLabel')).not.toContainText('Smith incline press');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

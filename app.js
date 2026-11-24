@@ -1446,8 +1446,7 @@
     /* the working load follows the swap mode (B6-07); reps/RIR targets stay
        the original lift's */
     var wl = workingLoad(s);
-    /* capture the log *before* this set so the PR check compares against
-       history, not against the set we are about to bank */
+    /* snapshot history before this set so the PR check excludes it */
     var priorHist = priorEntries();
     var prevBest = -Infinity, hi, hj, topEntry;
     for (hi = 0; hi < priorHist.length; hi++) {
@@ -1527,7 +1526,7 @@
 
     commit();
     restNextRaw = nextText;
-    apply(restCtl.start(restDuration(e.rest, s.rir), e.n + " — set " + Math.min(s.done, effSets(e)) + " done", s.done >= effSets(e), restNote, nextText, hintText));
+    apply(restCtl.start(restDuration(e.rest, s.rir), (s.swapAlt || e.n) + " — set " + Math.min(s.done, effSets(e)) + " done", s.done >= effSets(e), restNote, nextText, hintText));
 
     ensureAudio();
     if (navigator.vibrate) navigator.vibrate(10);
