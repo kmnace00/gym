@@ -42,7 +42,7 @@ test("the GO screen promises only what skip() will do when the lift is incomplet
 });
 
 test("the GO screen still promises the next lift when the lift is complete (v196)", () => {
-  const s = mk({ done: 3, sets: 3 });
+  const s = mk({ done: 3, sets: 3, firstOpen: (from) => from > 0 ? 1 : 0 });
   toGo(s);
   const v = s.ctl.view();
   assert.equal(v.msg, "Lift done — next up.");

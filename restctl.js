@@ -58,8 +58,6 @@
       startLabel: "", idleLabel: "", idleMsg: "", hint: ""
     };
 
-    function lastLift() { return deps.idx() >= deps.dayLen() - 1; }
-
     /** 0 when idle, the full fraction at GO. */
     function view() {
       var now = deps.now(), phase = rest.phase;
@@ -67,12 +65,14 @@
       var label = "", msg = "", nextText = "", skipLabel = "End rest";
       if (phase === "go") {
         var adv = Rest.canAdvance(ctx.pending, deps.cur(), ctx.pDay, deps.idx(), ctx.pIdx, deps.done() >= deps.sets());
+        var nx = adv ? Rest.nextLift(deps.idx(), deps.dayLen(), deps.firstOpen(deps.idx() + 1), deps.firstOpen(0)) : -1;
+        var atEnd = adv && nx < 0;
         label = "GO";
-        msg = Rest.goLabel(adv, lastLift());
+        msg = Rest.goLabel(adv, atEnd);
         nextText = ctx.nextText.replace("Up next —", "Up now —");
         skipLabel = armed
           ? "Tap again to finish"
-          : Rest.advanceLabel(adv, lastLift());
+          : Rest.advanceLabel(adv, atEnd);
       } else if (phase === "paused") {
         label = ctx.startLabel;
         msg = "Paused — tap Resume to continue.";

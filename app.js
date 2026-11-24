@@ -747,31 +747,24 @@
       perLine.hidden = !perSide;
       if (perSide) perLine.textContent = "Both sides = 1 set · then rest " + fmt(effRest);
     }
-    /* N4: from the last prescribed set onward, name the next lift — he was
-       leaving this view mid-set just to learn where to head next. Name only
-       when the next load is unknown (no dangling separator). */
+    /* N4: near last set, name the next lift the app will go to. */
     var nextLine = document.getElementById("nextLine");
     if (nextLine) {
       var showNext = editSet < 0 && s.done >= effSets(e) - 1;
       nextLine.hidden = !showNext;
       if (showNext) {
-        if (idx >= list.length - 1) {
+        var nxIdx = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0));
+        if (nxIdx < 0) {
           nextLine.textContent = "Last lift of the day";
         } else {
-          var ne = list[idx + 1], ns = st(cur, idx + 1);
+          var ne = list[nxIdx], ns = st(cur, nxIdx);
           var nName = ns.swapAlt ? ns.swapAlt : ne.n;
           var nLoadTxt = "";
-          /* N26: an assisted next lift reports the help it will actually use —
-             "bodyweight" only when there is none stored (its programme load is
-             0, so the old `ne.load === 0` branch read as bodyweight even at
-             45 lb of help). */
+          /* N26: assisted next lift reports actual help; 0 help = bodyweight. */
           if (!ns.swapAlt && ne.assist) nLoadTxt = ns.load > 0 ? "help " + ns.load : "bodyweight";
           else if (!ns.swapAlt && ne.load === 0) nLoadTxt = "bodyweight";
           else {
             var nLoad = ns.swapAlt ? workingLoad(ns) : (ns.load > 0 ? ns.load : ne.load);
-            /* when the next lift has no load yet (a swapped start-light or a
-               load===null lift at 0), say so like the rest screen does — the
-               three surfaces must not disagree. */
             if (nLoad != null && nLoad > 0) nLoadTxt = String(nLoad);
             else nLoadTxt = "start light";
           }
@@ -1494,27 +1487,17 @@
 
     var list = DAYS[cur].ex, nextText = "";
     if (s.done >= effSets(e)) {
-      var nx = list[idx + 1];
-      var nxLoad = "";
-      var nxName = nx ? nx.n : "";
+      var nxIdx = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0));
+      var nx = nxIdx >= 0 ? list[nxIdx] : null;
+      var nxLoad = "", nxName = nx ? nx.n : "";
       if (nx) {
-        var nsx = st(cur, idx + 1);
+        var nsx = st(cur, nxIdx);
         nxName = nsx.swapAlt ? nsx.swapAlt : nx.n;
-        /* N26/swap-consistent: a swapped next lift reports the ALTERNATE's
-           name and plain working load, exactly like the lift view's Next line
-           (nextLine) and the rest-prep card. */
-        if (nsx.swapAlt) {
-          var nsw = workingLoad(nsx);
-          nxLoad = nsw > 0 ? " · Load " + nsw : " · start light";
-        } else if (nx.assist) {
-          nxLoad = nsx.load > 0 ? " · help " + nsx.load : " · bodyweight";
-        } else if (nx.load === null) {
-          nxLoad = nsx.load > 0 ? " · Load " + nsx.load : " · start light";
-        } else if (nx.load === 0) {
-          nxLoad = " · bodyweight";
-        } else {
-          nxLoad = " · Load " + nsx.load;
-        }
+        if (nsx.swapAlt) { var nsw = workingLoad(nsx); nxLoad = nsw > 0 ? " · Load " + nsw : " · start light"; }
+        else if (nx.assist) nxLoad = nsx.load > 0 ? " · help " + nsx.load : " · bodyweight";
+        else if (nx.load === null) nxLoad = nsx.load > 0 ? " · Load " + nsx.load : " · start light";
+        else if (nx.load === 0) nxLoad = " · bodyweight";
+        else nxLoad = " · Load " + nsx.load;
       }
       nextText = nx ? "Up next — " + nxName + " · " + effSets(nx) + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
     } else {

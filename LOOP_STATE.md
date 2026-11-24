@@ -531,8 +531,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** both success messages now append `saveResult(true)` (`app.js:2148,2152`). U97 e2e added (failing-first). `GYM_VERSION` `gym-v290` → `gym-v291`, CACHE-HASH → `ce631abdcbf78782`.
 - **Verified in plain terms:** U97 stubs throwing setItem, types a bodyweight, asserts "NOT saved" and no ✓. Bodyweight e2e passes. Full gate green: 286 unit, typecheck clean, 327 e2e. Independent critic: see review log below.
 
+### Round 115 — `[DONE round 115]` Out-of-order next-lift copy is truthful
+- **Wrong:** finishing lifts out of order made rest GO and lift next-line lie: finishing the last-in-list lift while earlier lifts were open showed "Workout complete — nice work." / "Finish" / "Last lift of the day", but GO actually wrapped to the earliest open lift (B3-34). Symmetric case: finishing a mid-list lift that was the last open one said "Next lift".
+- **Changed:** derive destination from `Rest.nextLift(idx, list.length, firstOpen(idx+1), firstOpen(0))` in lift-view nextLine and doneBtn nextText (`app.js:750,1490`) and in restctl GO label/skip (`restctl.js:67`, `atEnd = adv && nx < 0`). rest.js semantics unchanged. `GYM_VERSION` `gym-v309` → `gym-v310`, CACHE-HASH → `0967e65cbf2e67cb`.
+- **Verified in plain terms:** 2 failing-first e2e in `e2e/nextlift.spec.js` cover last-finished-but-earlier-open (expects "Lift done — next up."/"Next lift") and last-open-out-of-order (expects "Workout complete"/"Finish"). `e2e/phase1.spec.js` updated to expect real next-open name. `test/restctl.test.js` complete-case given `firstOpen`. Full gate green: 286 unit, typecheck clean, 346 e2e. critic-flash GO (session `ses_df48505c3ffe55CZEG10bC0tV4`).
+
 ## Review log
 
+- **Round 115 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df48505c3ffe55CZEG10bC0tV4`). No blockers; nextLine/nextText/restctl GO derive same B3-34 destination, `atEnd` gated by `adv`, skip/finish two-tap path preserved, swap/assist/load formatting preserved, tests cover reported wrap cases.
 - **Round 96 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveFailed set synchronously before message, valid/invalid gating and blur/change else-branch untouched, unchanged-value early return still truthful, saveResult(true) matches established pattern.
 - **Round 95 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveResult(true) correct (no snapshot note on success), saveFailed set synchronously before setMsg, focus fallback and other tests unaffected. Nit: success messages gain trailing ✓ (cosmetic).
 - **Round 94 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; li<0 equals prior complete on active day (no-op), off-day li matches showSummary session-day verdict and banked data, effSets/deload consistent, finish-hidden guard unchanged. Nits: activeHasData scans all days (pre-existing).

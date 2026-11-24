@@ -62,11 +62,12 @@ test("the next line stays hidden before the last set", async ({ page }) => {
   await expect(page.locator("#nextLine")).toBeHidden();
 });
 
-test("the last lift of the day says so instead of naming a next lift", async ({ page }) => {
+test("the last lift in list names the actual next open lift when earlier lifts remain", async ({ page }) => {
   await page.goto(url);
-  await seed(page, { 7: 2 }); // Assisted dip, one set left
+  await seed(page, { 7: 2 }); // Assisted dip, one set left; lifts 0-6 still open
   await page.locator(".liftrow").nth(7).click();
-  await expect(page.locator("#nextLine")).toHaveText("Last lift of the day");
+  await expect(page.locator("#nextLine")).toContainText("Next:");
+  await expect(page.locator("#nextLine")).toContainText("Smith squat");
 });
 
 test("a finished lift's primary button goes to the next open lift", async ({ page }) => {

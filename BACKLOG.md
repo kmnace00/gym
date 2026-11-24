@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 115 — `[DONE round 115]` Out-of-order next-lift copy truthful
+Out-of-order completion no longer lies about workout completion/next lift. GO/next-line derive destination from `Rest.nextLift` B3-34 wrap (`app.js`, `restctl.js`), tests in `e2e/nextlift.spec.js` + `e2e/phase1.spec.js`, `test/restctl.test.js` fixture aligned. Gate: 286 unit, typecheck clean, 346 e2e. critic-flash GO. `gym-v310`.
+
 ### L9 — Full rest-controller extraction [T2] — DESIGNED Nov 8
 Design is in `DESIGN.md` ("L9 design"): new `restctl.js`, controller owns
 `rest` + `restCtx` + interval + finish-arming, returns `{state, view,
