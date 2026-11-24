@@ -554,10 +554,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 119 — `[DONE round 119]` One session no longer claims a tonnage trend
 - **Wrong:** `#pNote` claimed " · tonnage trend" from a single logged session while `pSpark` is cleared under 2 points (`app.js:877`) — a trend claim with no chart to back it up.
 - **Changed:** emit " · tonnage trend" only when `recent.length > 1` (`app.js:895`); wow-vs-prior-7d branch untouched. Two U118 e2e added (1 session => no claim + empty spark; 2 sessions => claim + path). `GYM_VERSION` `gym-v313` → `gym-v314`, CACHE-HASH → `b2aa2250866ccd5b`.
-- **Verified in plain terms:** U118 one-session case failed pre-fix (`Received: "Last 1 session · tonnage trend"`), passes now; two-session case pins real trend. Full gate green: 286 unit, typecheck clean, 351 e2e. critic-flash: see review log.
+- **Verified in plain terms:** U118 one-session case failed pre-fix (`Received: "Last 1 session · tonnage trend"`), passes now; two-session case pins real trend. Full gate green: 286 unit, typecheck clean, 351 e2e. critic-flash GO (session `ses_df27238f3fferkzI4NzPu9Efbm`).
+
+### Round 120 — `[DONE round 120]` Switching set rows no longer corrupts the edit baseline
+- **Wrong:** `startEdit(i)` overwrote `editBackup`/`editSetOrig` when a second logged set row was tapped mid-edit, leaking row 0's temporary value into the working load and the next set's prescription (and bankable on the next Set Done).
+- **Changed:** `startEdit()` now commits any active edit via `finishEdit()` before snapshotting the newly tapped row (`app.js:1291`), so row 0's edit is committed and the working baseline restored first. Re-tapping same row is safe (commit then re-enter). `GYM_VERSION` `gym-v314` → `gym-v315`, CACHE-HASH → `0ec287b4090c00f8`.
+- **Verified in plain terms:** U119 (switch+finish: working 110, persisted sets `[107.5,110]`) and U120 (switch+abandon: working 110) both failed pre-fix (`Received: "107.5"`), pass now. Full gate green: 286 unit, typecheck clean, 353 e2e. critic: see review log.
 
 ## Review log
 
+- **Round 120 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_df01be834ffeD0OKQcft3e5qep`). Tier 2 `critic` and Big Pickle `critic-flash` both failed with account free-usage limit, so review ran on the free local tier per Khang. No blockers; `finishEdit()` commits row 0 (preserving `t`/`edited`) and nulls all edit vars before row 1 snapshot, two commits produce one idempotent history entry `[107.5,110]`, `topHits`/`lastRir` untouched, resetEdit/undo correct, re-tapping same row loses no committed data (non-blocking behavior change), U119/U120 prove the defect.
 - **Round 119 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df27238f3fferkzI4NzPu9Efbm`). No blockers; suppression condition `recent.length > 1` exactly matches chart-empty condition, two-session path renders and is pinned, wow-vs-prior-7d claim (window comparison, not chart) correctly retained, U118 proves the defect.
 - **Round 118 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df46eed9dffe2cJBpR71R7llNg`). No blockers; hidden modal buttons excluded without dropping visible focusables, U117 covers the regression.
 - **Round 117 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df477a5fcffedD1972PICNE5aW`). No blockers; aria-expanded only in disclosure state, removed for undo/locked, chooser/focus behavior unchanged, U116 proves defect.

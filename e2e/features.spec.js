@@ -2364,3 +2364,35 @@ test("the Bulgarian split squat rests 2:30 after a set (B6-08)", async ({ page }
   expect(secs, "the countdown starts at 150 s").toBeGreaterThanOrEqual(149);
   expect(secs).toBeLessThanOrEqual(150);
 });
+
+/* Switching between two logged-set rows while editing must not overwrite the
+   pre-edit baseline: row 0's live value leaked into the working load and the
+   next set's prescription before the fix. */
+async function seedTwoSetEdit(page) {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: { "fri:0": { load: 110, reps: 6, rir: 2, done: 2, topHits: 0, lastRir: 2, exId: "fri-smith-squat",
+      sets: [{ load: 105, reps: 6, rir: 2 }, { load: 110, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator('[data-i="0"]').click();
+  await page.locator('.setrow[data-set="0"]').click();
+  await page.locator("#loadUp").click(); // row 0 -> 107.5
+  await page.locator('.setrow[data-set="1"]').click(); // switch rows, still editing
+}
+
+test("switching edited set rows keeps the pre-edit working load (U119)", async ({ page }) => {
+  await seedTwoSetEdit(page);
+  await expect(page.locator("#doneBtn")).toHaveText("Done editing");
+  await page.locator("#doneBtn").click();
+  await expect(page.locator("#loadVal")).toHaveText("110");
+  const sets = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["fri:0"].sets.map((s) => s.load));
+  expect(sets).toEqual([107.5, 110]);
+});
+
+test("abandoning after a row switch restores the working load (U120)", async ({ page }) => {
+  await seedTwoSetEdit(page);
+  await page.locator("#backBtn").click();
+  await page.locator('[data-i="0"]').click();
+  await expect(page.locator("#loadVal")).toHaveText("110");
+});

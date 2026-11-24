@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 120 — `[DONE round 120]` Switching set rows no longer corrupts the edit baseline
+`startEdit()` commits any active set edit via `finishEdit()` before snapshotting a newly tapped row; row 0's temporary value no longer leaks into the working load or next set (`app.js`). U119/U120 e2e. Gate: 286 unit, typecheck clean, 353 e2e. critic-flash GO (hy4-flash-free, after Big Pickle free limit). `gym-v315`.
+
 ### Round 119 — `[DONE round 119]` One session no longer claims a tonnage trend
 Progress note no longer claims "tonnage trend" with a single session and an empty spark chart; " · tonnage trend" emitted only when recent.length > 1 (`app.js`). U118 e2e. Gate: 286 unit, typecheck clean, 351 e2e. critic-flash GO. `gym-v314`.
 

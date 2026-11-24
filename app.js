@@ -1289,6 +1289,7 @@
     if (s.done >= effSets(e)) bankLift(cur, idx);
   }
   function startEdit(i) {
+    if (editSet >= 0) finishEdit(); // commit the active row before switching, so its edit cannot become another set's baseline
     var s = curSt();
     if (!s.sets || !s.sets[i]) return;
     if (editSet !== i) { editBackup = { load: workingLoad(s), reps: s.reps, rir: s.rir }; editSetOrig = JSON.parse(JSON.stringify(s.sets[i])); }
