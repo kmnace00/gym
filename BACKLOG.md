@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 121 — `[DONE round 121]` Learned warm-up no longer reads as 0 min
+Menu Clock-learning line prints learned warm-up in seconds, so 0–29 s no longer shows "warm-up ~0 min" (`app.js`). U121 e2e. Gate: 286 unit, typecheck clean, 354 e2e. critic-flash GO (hy4-flash-free). `gym-v316`.
+
 ### Round 120 — `[DONE round 120]` Switching set rows no longer corrupts the edit baseline
 `startEdit()` commits any active set edit via `finishEdit()` before snapshotting a newly tapped row; row 0's temporary value no longer leaks into the working load or next set (`app.js`). U119/U120 e2e. Gate: 286 unit, typecheck clean, 353 e2e. critic-flash GO (hy4-flash-free, after Big Pickle free limit). `gym-v315`.
 

@@ -393,6 +393,19 @@ test("menu hides out-of-contract calibration values (U19)", async ({ page }) => 
   await expect(page.locator("#calibInfo")).toContainText("starter values");
 });
 
+test("learned warm-up under a minute is not shown as 0 min (U121)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+    state: {}, liftHistory: {}, sessionLog: []
+  });
+  await page.evaluate(() => localStorage.setItem("gym-calibration", JSON.stringify({ warmupSec: 12, overheadSec: 10, sessions: 3, at: 1 })));
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  const el = page.locator("#calibInfo");
+  await expect(el).toContainText("warm-up ~12s");
+  await expect(el).not.toContainText("0 min");
+});
+
 test("backup export includes the fresh lastBackup it reports (U18)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-20T10:00:00") });
   await seed(page, {

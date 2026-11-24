@@ -61,7 +61,7 @@
     var over = c && typeof c.overheadSec === "number" && isFinite(c.overheadSec) && c.overheadSec >= 5 && c.overheadSec <= 40;
     if (c && c.sessions >= 3 && (warm || over)) {
       var parts = [];
-      if (warm) parts.push("warm-up ~" + Math.round(c.warmupSec / 60) + " min");
+      if (warm) parts.push("warm-up ~" + Math.round(c.warmupSec) + "s");
       if (over) parts.push("per-set overhead ~" + c.overheadSec + "s");
       info.textContent = "Clock learning (from " + c.sessions + " timed sessions): " + parts.join(" · ");
     } else info.textContent = "Clock learning: starter values until 3 timed sessions.";
