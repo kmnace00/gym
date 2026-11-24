@@ -541,8 +541,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** `doRestartLift()` restores focus after render when active element is null/body/disabled/invisible: `#doneBtn` in lift view, else visible `.liftrow.now/.liftrow` (`app.js:1549`). Mirrors undoSet fallback; no steal when focus is already on a visible control. U115 e2e added failing-first. `GYM_VERSION` `gym-v310` → `gym-v311`, CACHE-HASH → `ae48c68fe54965fa`.
 - **Verified in plain terms:** U115 focuses Restart, confirms two-tap, asserts Restart disabled and `#doneBtn` focused. Full gate green: 286 unit, typecheck clean, 347 e2e. critic-flash GO (session `ses_df47b4b0affeMYjT3jWrYds5OG`).
 
+### Round 117 — `[DONE round 117]` Swap button aria-expanded only for disclosure
+- **Wrong:** `#swapBtn` always exposed `aria-expanded="false"` when swapped (undo action) or locked (sets logged), misleading assistive tech.
+- **Changed:** set `aria-expanded` only when `!sw && !setsLogged` (`swapOpen ? "true":"false"`), else remove it (`app.js:694`). Chooser/focus behavior unchanged. U116 e2e added failing-first. `GYM_VERSION` `gym-v311` → `gym-v312`, CACHE-HASH → `45a41ecd37219002`.
+- **Verified in plain terms:** U116 asserts disclosure false/true, undo has no aria-expanded, locked+disabled has no aria-expanded. Full gate green: 286 unit, typecheck clean, 348 e2e. critic-flash GO (session `ses_df477a5fcffedD1972PICNE5aW`).
+
 ## Review log
 
+- **Round 117 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df477a5fcffedD1972PICNE5aW`). No blockers; aria-expanded only in disclosure state, removed for undo/locked, chooser/focus behavior unchanged, U116 proves defect.
 - **Round 116 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df47b4b0affeMYjT3jWrYds5OG`). No blockers; focus recovery only when active element body/null/disabled/invisible, lift target `#doneBtn` visible/enabled, mirrors undoSet, U115 proves defect.
 - **Round 115 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df48505c3ffe55CZEG10bC0tV4`). No blockers; nextLine/nextText/restctl GO derive same B3-34 destination, `atEnd` gated by `adv`, skip/finish two-tap path preserved, swap/assist/load formatting preserved, tests cover reported wrap cases.
 - **Round 96 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveFailed set synchronously before message, valid/invalid gating and blur/change else-branch untouched, unchanged-value early return still truthful, saveResult(true) matches established pattern.

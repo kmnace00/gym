@@ -691,7 +691,8 @@
     if (swapBtn) {
       swapBtn.disabled = setsLogged;
       swapBtn.textContent = sw ? "Using " + s.swapAlt + " — undo" : "Swap";
-      swapBtn.setAttribute("aria-expanded", swapOpen && !sw && !setsLogged ? "true" : "false");
+      if (!sw && !setsLogged) swapBtn.setAttribute("aria-expanded", swapOpen ? "true" : "false");
+      else swapBtn.removeAttribute("aria-expanded");
     }
     /* N14: alternatives chooser */
     var scEl = document.getElementById("swapChoices");

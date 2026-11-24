@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 117 — `[DONE round 117]` Swap button aria-expanded only for disclosure
+`#swapBtn` no longer exposes stale `aria-expanded="false"` when it acts as undo/locked; aria-expanded is set only in disclosure state (`app.js`). U116 e2e. Gate: 286 unit, typecheck clean, 348 e2e. critic-flash GO. `gym-v312`.
+
 ### Round 116 — `[DONE round 116]` Restart lift restores keyboard focus
 Restart lift no longer drops keyboard focus to `body` when `#resetLiftBtn` becomes disabled. `doRestartLift()` focuses `#doneBtn` (lift view) or visible lift row only when active element is lost/hidden (`app.js`). U115 e2e. Gate: 286 unit, typecheck clean, 347 e2e. critic-flash GO. `gym-v311`.
 

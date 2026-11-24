@@ -677,6 +677,23 @@ test("accent text clears 4.5:1 on every themed surface (U4)", async ({ page }) =
   }
 });
 
+test("swap button aria-expanded only for disclosure state (U116)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  const swap = page.locator("#swapBtn");
+  // disclosure: unswapped, no sets
+  await expect(swap).toHaveAttribute("aria-expanded", "false");
+  await swap.click();
+  await expect(swap).toHaveAttribute("aria-expanded", "true");
+  await page.locator(".swapchoice", { hasText: "Barbell back squat" }).click();
+  // undo action, not a disclosure
+  await expect(swap).not.toHaveAttribute("aria-expanded");
+  // lock case: log a set
+  await page.locator("#doneBtn").click();
+  await expect(swap).toBeDisabled();
+  await expect(swap).not.toHaveAttribute("aria-expanded");
+});
+
 for (const size of sizes) {
   test.describe(`swap mode viewport 390x${size.height}`, () => {
     test.use({ viewport: size });
