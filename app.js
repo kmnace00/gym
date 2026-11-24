@@ -1677,6 +1677,7 @@
       : (DAY_LABEL[cur] || "") + " workout complete";
     document.getElementById("sumDuration").textContent = dur ? fmt(dur) : "—";
     document.getElementById("sumSets").textContent = String(sets);
+    document.getElementById("sumSetsLabel").textContent = pl(sets, "set");
     document.getElementById("sumVol").textContent = Stats.compactVol(vol) + " lb";
     document.getElementById("sumPrs").textContent = prs ? prs + " new" : "—";
     document.getElementById("sumPrsLabel").textContent = prs === 1 ? "PR" : "PRs";
