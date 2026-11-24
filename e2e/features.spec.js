@@ -2217,6 +2217,27 @@ test("rest prep name wraps for a long lift (U109)", async ({ page }) => {
   expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
 });
 
+test("lift title wraps for the longest alternate name (U110)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"sat", idx:3, bodyweight:165,
+      state:{ "sat:3":{ load:40, reps:10, rir:2, done:0, topHits:0, lastRir:null, exId:"sat-leg-curl", swapAlt:"Nordic hamstring curl (eccentric-only, assisted)" } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day:"sat", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('.liftrow[data-i="3"]').click();
+  const m = await page.evaluate(() => {
+    const h = document.getElementById("exName");
+    return { txt: h.textContent, scroll: h.scrollHeight, client: h.clientHeight };
+  });
+  expect(m.txt).toBe("Nordic hamstring curl (eccentric-only, assisted)");
+  expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
