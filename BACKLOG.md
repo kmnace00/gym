@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 119 — `[DONE round 119]` One session no longer claims a tonnage trend
+Progress note no longer claims "tonnage trend" with a single session and an empty spark chart; " · tonnage trend" emitted only when recent.length > 1 (`app.js`). U118 e2e. Gate: 286 unit, typecheck clean, 351 e2e. critic-flash GO. `gym-v314`.
+
 ### Round 118 — `[DONE round 118]` Modal focus trap skips hidden controls
 Modal Tab trap no longer includes hidden buttons (`#restoreSnapshot`, `#deloadEnd`); selector now `button:not([hidden])` (`app.js`). U117 e2e. Gate: 286 unit, typecheck clean, 349 e2e. critic-flash GO. `gym-v313`.
 

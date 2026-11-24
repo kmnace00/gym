@@ -891,8 +891,8 @@
     if (recent.length) {
       if (wow.hasPrev) {
         wowTxt = " · " + (wow.deltaPct >= 0 ? "▲" : "▼") + Math.abs(wow.deltaPct) + "% vs prior 7d";
-      } else {
-        wowTxt = " · tonnage trend";
+      } else if (recent.length > 1) {
+        wowTxt = " · tonnage trend"; // no trend line is drawn from a single session
       }
     }
     document.getElementById("pNote").textContent = recent.length

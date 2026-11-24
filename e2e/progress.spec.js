@@ -336,3 +336,32 @@ test("the trend windows progression sessions, not raw history (v182)", async ({ 
   });
   expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });
+
+test("Recent sessions makes no trend claim from a single session (U118)", async ({ page }) => {
+  /* One session draws no spark line (app.js clears pSpark under 2 points), so
+     the note must not claim a "tonnage trend" that is not rendered. */
+  await page.clock.install({ time: new Date("2026-11-24T10:00:00") });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [
+      { date: "2026-11-20", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 }
+    ] }
+  });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pNote")).toHaveText("Last 1 session");
+  await expect(page.locator("#pSpark")).toBeEmpty();
+});
+
+test("Recent sessions still claims a trend from two sessions (U118)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-24T10:00:00") });
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [
+      { date: "2026-11-18", load: 50, reps: 6, rir: 2, hitTop: false, setsDone: 3 },
+      { date: "2026-11-20", load: 60, reps: 6, rir: 2, hitTop: false, setsDone: 3 }
+    ] }
+  });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pNote")).toHaveText("Last 2 sessions · tonnage trend");
+  await expect(page.locator("#pSpark path")).toHaveCount(1);
+});

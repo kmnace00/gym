@@ -551,8 +551,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** modal trap selector `button` -> `button:not([hidden])` (`app.js:1830`), matching summary trap intent. U117 e2e added. `GYM_VERSION` `gym-v312` → `gym-v313`, CACHE-HASH → `7259f0feb5c3ade5`.
 - **Verified in plain terms:** U117 opens menu with restore/deload hidden, tabs 24x, asserts neither hidden control focused. Full gate green: 286 unit, typecheck clean, 349 e2e. critic-flash GO (session `ses_df46eed9dffe2cJBpR71R7llNg`).
 
+### Round 119 — `[DONE round 119]` One session no longer claims a tonnage trend
+- **Wrong:** `#pNote` claimed " · tonnage trend" from a single logged session while `pSpark` is cleared under 2 points (`app.js:877`) — a trend claim with no chart to back it up.
+- **Changed:** emit " · tonnage trend" only when `recent.length > 1` (`app.js:895`); wow-vs-prior-7d branch untouched. Two U118 e2e added (1 session => no claim + empty spark; 2 sessions => claim + path). `GYM_VERSION` `gym-v313` → `gym-v314`, CACHE-HASH → `b2aa2250866ccd5b`.
+- **Verified in plain terms:** U118 one-session case failed pre-fix (`Received: "Last 1 session · tonnage trend"`), passes now; two-session case pins real trend. Full gate green: 286 unit, typecheck clean, 351 e2e. critic-flash: see review log.
+
 ## Review log
 
+- **Round 119 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df27238f3fferkzI4NzPu9Efbm`). No blockers; suppression condition `recent.length > 1` exactly matches chart-empty condition, two-session path renders and is pinned, wow-vs-prior-7d claim (window comparison, not chart) correctly retained, U118 proves the defect.
 - **Round 118 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df46eed9dffe2cJBpR71R7llNg`). No blockers; hidden modal buttons excluded without dropping visible focusables, U117 covers the regression.
 - **Round 117 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df477a5fcffedD1972PICNE5aW`). No blockers; aria-expanded only in disclosure state, removed for undo/locked, chooser/focus behavior unchanged, U116 proves defect.
 - **Round 116 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df47b4b0affeMYjT3jWrYds5OG`). No blockers; focus recovery only when active element body/null/disabled/invisible, lift target `#doneBtn` visible/enabled, mirrors undoSet, U115 proves defect.
