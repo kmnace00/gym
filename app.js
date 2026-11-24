@@ -1827,7 +1827,7 @@
   modal.addEventListener("keydown", function (ev) {
     if (ev.key === "Escape") { ev.stopPropagation();closeModal(); return; }
     if (ev.key !== "Tab") return;
-    var items = modal.querySelectorAll("button, label.modalbtn, input:not([hidden])");
+    var items = modal.querySelectorAll("button:not([hidden]), label.modalbtn, input:not([hidden])");
     if (!items.length) return;
     var first = items[0], last = items[items.length - 1];
     if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }

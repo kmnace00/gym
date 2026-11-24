@@ -694,6 +694,23 @@ test("swap button aria-expanded only for disclosure state (U116)", async ({ page
   await expect(swap).not.toHaveAttribute("aria-expanded");
 });
 
+test("modal focus trap skips hidden controls (U117)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modal")).toBeVisible();
+  await expect(page.locator("#restoreSnapshot")).toBeHidden();
+  await expect(page.locator("#deloadEnd")).toBeHidden();
+  const seen = [];
+  for (let i = 0; i < 24; i++) {
+    await page.keyboard.press("Tab");
+    seen.push(await page.evaluate(() => document.activeElement && document.activeElement.id));
+  }
+  expect(seen).not.toContain("restoreSnapshot");
+  expect(seen).not.toContain("deloadEnd");
+});
+
 for (const size of sizes) {
   test.describe(`swap mode viewport 390x${size.height}`, () => {
     test.use({ viewport: size });

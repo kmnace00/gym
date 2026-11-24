@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 118 — `[DONE round 118]` Modal focus trap skips hidden controls
+Modal Tab trap no longer includes hidden buttons (`#restoreSnapshot`, `#deloadEnd`); selector now `button:not([hidden])` (`app.js`). U117 e2e. Gate: 286 unit, typecheck clean, 349 e2e. critic-flash GO. `gym-v313`.
+
 ### Round 117 — `[DONE round 117]` Swap button aria-expanded only for disclosure
 `#swapBtn` no longer exposes stale `aria-expanded="false"` when it acts as undo/locked; aria-expanded is set only in disclosure state (`app.js`). U116 e2e. Gate: 286 unit, typecheck clean, 348 e2e. critic-flash GO. `gym-v312`.
 
