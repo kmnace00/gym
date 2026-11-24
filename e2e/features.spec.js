@@ -2195,6 +2195,28 @@ test("day band says min left only after a set is logged (U108)", async ({ page }
   await expect(page.locator('#bandInfo')).toContainText('min left');
 });
 
+test("rest prep name wraps for a long lift (U109)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"sun", idx:4, bodyweight:165,
+      state:{ "sun:4":{ load:60, reps:8, rir:2, done:3, topHits:3, lastRir:2, exId:"sun-seated-row", sets:[0,1,2].map(() => ({ load:60, reps:8, rir:2, t:Date.now() })) },
+              "sun:5":{ load:20, reps:12, rir:1, done:0, topHits:0, lastRir:null, exId:"sun-lat-pec", sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day:"sun", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('.liftrow[data-i="4"]').click();
+  await page.locator('#doneBtn').click();
+  await expect(page.locator('#app')).toHaveClass(/resting/);
+  const m = await page.evaluate(() => {
+    const d = document.getElementById("restPrepName");
+    return { txt: d.textContent, scroll: d.scrollWidth, client: d.clientWidth };
+  });
+  expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
