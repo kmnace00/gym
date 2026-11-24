@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 116 — `[DONE round 116]` Restart lift restores keyboard focus
+Restart lift no longer drops keyboard focus to `body` when `#resetLiftBtn` becomes disabled. `doRestartLift()` focuses `#doneBtn` (lift view) or visible lift row only when active element is lost/hidden (`app.js`). U115 e2e. Gate: 286 unit, typecheck clean, 347 e2e. critic-flash GO. `gym-v311`.
+
 ### Round 115 — `[DONE round 115]` Out-of-order next-lift copy truthful
 Out-of-order completion no longer lies about workout completion/next lift. GO/next-line derive destination from `Rest.nextLift` B3-34 wrap (`app.js`, `restctl.js`), tests in `e2e/nextlift.spec.js` + `e2e/phase1.spec.js`, `test/restctl.test.js` fixture aligned. Gate: 286 unit, typecheck clean, 346 e2e. critic-flash GO. `gym-v310`.
 

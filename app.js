@@ -1546,6 +1546,11 @@
     Gym.snapshot(payload, "pre-restart-lift");
     Gym.resetLift(payload, cur, idx);
     commit(); render();
+    var ae = document.activeElement;
+    if (!ae || ae === document.body || ae.disabled || !ae.getClientRects().length) {
+      var ft = view === "lift" ? document.getElementById("doneBtn") : liftList.querySelector(".liftrow.now") || liftList.querySelector(".liftrow");
+      if (ft && ft.getClientRects().length) ft.focus();
+    }
   }
   resetLiftBtn.onclick = function () { twoTap(this, "Tap again to restart", doRestartLift); };
 

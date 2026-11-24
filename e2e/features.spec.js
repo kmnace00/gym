@@ -1808,6 +1808,24 @@ test("armed Restart announces the confirm label (U87)", async ({ page }) => {
   await expect(page.locator('#resetLiftBtn')).toHaveAccessibleName('Tap again to restart');
 });
 
+test("restart lift keeps keyboard focus on a visible control (U115)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:0":{ load:60, reps:6, rir:2, done:1, topHits:0, lastRir:2, exId:"fri-smith-squat", sets:[{load:60,reps:6,rir:2,t:Date.now()}] } },
+      liftHistory:{}, sessionLog:[], active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  await page.locator('[data-i="0"]').click();
+  await page.locator('#resetLiftBtn').focus();
+  await page.locator('#resetLiftBtn').click();
+  await page.locator('#resetLiftBtn').click();
+  await expect(page.locator('#resetLiftBtn')).toBeDisabled();
+  await expect(page.locator('#doneBtn')).toBeFocused();
+});
+
 test("Reset day confirm label is accurate on a past day (U88)", async ({ page }) => {
   await page.goto(url);
   await page.locator('#dayNext').click();

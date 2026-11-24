@@ -536,8 +536,14 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 - **Changed:** derive destination from `Rest.nextLift(idx, list.length, firstOpen(idx+1), firstOpen(0))` in lift-view nextLine and doneBtn nextText (`app.js:750,1490`) and in restctl GO label/skip (`restctl.js:67`, `atEnd = adv && nx < 0`). rest.js semantics unchanged. `GYM_VERSION` `gym-v309` → `gym-v310`, CACHE-HASH → `0967e65cbf2e67cb`.
 - **Verified in plain terms:** 2 failing-first e2e in `e2e/nextlift.spec.js` cover last-finished-but-earlier-open (expects "Lift done — next up."/"Next lift") and last-open-out-of-order (expects "Workout complete"/"Finish"). `e2e/phase1.spec.js` updated to expect real next-open name. `test/restctl.test.js` complete-case given `firstOpen`. Full gate green: 286 unit, typecheck clean, 346 e2e. critic-flash GO (session `ses_df48505c3ffe55CZEG10bC0tV4`).
 
+### Round 116 — `[DONE round 116]` Restart lift restores keyboard focus
+- **Wrong:** confirming Restart lift disabled `#resetLiftBtn` and left keyboard focus on `body` (no focus recovery).
+- **Changed:** `doRestartLift()` restores focus after render when active element is null/body/disabled/invisible: `#doneBtn` in lift view, else visible `.liftrow.now/.liftrow` (`app.js:1549`). Mirrors undoSet fallback; no steal when focus is already on a visible control. U115 e2e added failing-first. `GYM_VERSION` `gym-v310` → `gym-v311`, CACHE-HASH → `ae48c68fe54965fa`.
+- **Verified in plain terms:** U115 focuses Restart, confirms two-tap, asserts Restart disabled and `#doneBtn` focused. Full gate green: 286 unit, typecheck clean, 347 e2e. critic-flash GO (session `ses_df47b4b0affeMYjT3jWrYds5OG`).
+
 ## Review log
 
+- **Round 116 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df47b4b0affeMYjT3jWrYds5OG`). No blockers; focus recovery only when active element body/null/disabled/invisible, lift target `#doneBtn` visible/enabled, mirrors undoSet, U115 proves defect.
 - **Round 115 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/big-pickle, `ses_df48505c3ffe55CZEG10bC0tV4`). No blockers; nextLine/nextText/restctl GO derive same B3-34 destination, `atEnd` gated by `adv`, skip/finish two-tap path preserved, swap/assist/load formatting preserved, tests cover reported wrap cases.
 - **Round 96 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveFailed set synchronously before message, valid/invalid gating and blur/change else-branch untouched, unchanged-value early return still truthful, saveResult(true) matches established pattern.
 - **Round 95 — critic reviewer: GO** (Tier 1, off-peak, hy4-flash-free). No blockers; saveResult(true) correct (no snapshot note on success), saveFailed set synchronously before setMsg, focus fallback and other tests unaffected. Nit: success messages gain trailing ✓ (cosmetic).
