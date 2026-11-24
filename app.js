@@ -392,7 +392,7 @@
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     /* B6-10: nudge only in an empty week */
-    if (deloadNudgeDue()) summary += " · 5+ weeks since a deload — start one in the Menu.";
+    if (deloadNudgeDue()) summary += " · 5+ weeks without a deload — start one in the Menu.";
     document.getElementById("daySummary").textContent = summary;
     /* today-band tally (tall Home-Screen canvas): sets done, time left */
     var bandInfo = document.getElementById("bandInfo");

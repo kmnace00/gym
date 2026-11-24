@@ -8,7 +8,7 @@ const path = require("path");
 const url = "file://" + path.resolve(__dirname, "..", "index.html");
 const sizes = [{ width: 390, height: 667 }, { width: 390, height: 844 }];
 
-const NUDGE = "5+ weeks since a deload — start one in the Menu.";
+const NUDGE = "5+ weeks without a deload — start one in the Menu.";
 
 async function seed(page, obj, clock) {
   if (clock) await page.clock.install({ time: new Date(clock) });
@@ -173,11 +173,12 @@ for (const size of sizes) {
       await expect(page.locator("#daySummary")).not.toContainText("Start deload week");
     });
 
-    test("never deloaded: the anchor is the first logged session", async ({ page }) => {
+    test("never deloaded: the anchor is the first logged session (U122)", async ({ page }) => {
       const fresh = JSON.parse(JSON.stringify(DUE));
       delete fresh.deloadSince;
       await seed(page, fresh, "2026-12-13T10:00:00");
       await expect(page.locator("#daySummary")).toContainText(NUDGE);
+      await expect(page.locator("#daySummary")).not.toContainText("since a deload");
     });
   });
 }

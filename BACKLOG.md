@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 122 — `[DONE round 122]` Deload nudge no longer claims a deload happened
+Nudge copy now says "5+ weeks without a deload" — truthful when the anchor falls back to the first logged session (`app.js`); approved nudge behavior/cadence untouched (P7). U122 e2e. Gate: 286 unit, typecheck clean, 354 e2e. critic-flash GO (hy4-flash-free). `gym-v317`.
+
 ### Round 121 — `[DONE round 121]` Learned warm-up no longer reads as 0 min
 Menu Clock-learning line prints learned warm-up in seconds, so 0–29 s no longer shows "warm-up ~0 min" (`app.js`). U121 e2e. Gate: 286 unit, typecheck clean, 354 e2e. critic-flash GO (hy4-flash-free). `gym-v316`.
 
