@@ -2238,6 +2238,15 @@ test("lift title wraps for the longest alternate name (U110)", async ({ page }) 
   expect(m.scroll).toBeLessThanOrEqual(m.client + 1);
 });
 
+test("lift header says min left only after a set is logged (U111)", async ({ page }) => {
+  await page.goto(url);
+  await page.locator('[data-i="0"]').click();
+  await expect(page.locator('#liftMeta')).not.toContainText('min left');
+  await page.locator('#doneBtn').click();
+  await page.locator('#skipRest').click();
+  await expect(page.locator('#liftMeta')).toContainText('min left');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {

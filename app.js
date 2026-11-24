@@ -679,7 +679,7 @@
     var sw = !!s.swapAlt, wl = workingLoad(s), setsLogged = (s.sets || []).length > 0;
     var anyDone = false;
     list.forEach(function (x, i) { if (st(cur, i).done > 0) anyDone = true; });
-    document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min";
+    document.getElementById("liftMeta").textContent = (DAY_LABEL[cur] || "") + " · Lift " + (idx + 1) + " of " + list.length + " · ~" + (anyDone ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min" + (anyDone ? " left" : "");
     document.getElementById("exName").textContent = sw ? s.swapAlt : e.n;
     /* the swap's one-line state: what it replaced, or why it is locked */
     var swapSub = document.getElementById("swapSub");
