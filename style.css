@@ -128,7 +128,7 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 .liftrow.done .liftstatus{color:var(--good)}
 .liftstatus{flex:none;width:20px;text-align:center;font-size:15px;font-weight:800;color:var(--accent)}
 .liftmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.liftname{font-size:16.5px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liftname{font-size:16.5px;font-weight:700;letter-spacing:-.01em;white-space:normal;overflow:visible;text-overflow:clip}
 .liftmeta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chev{flex:none;font-size:20px;color:var(--faint);line-height:1;transition:transform .15s ease}
 .liftrow:active .chev{transform:translateX(2px)}

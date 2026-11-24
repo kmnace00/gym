@@ -434,7 +434,7 @@
       var restTxt = fmt(restDuration(e.rest, s.rir));
       rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
         + '<span class="liftstatus">' + (done ? "✓" : "") + '</span>'
-        + '<span class="liftmain"><span class="liftname">' + esc(e.n) + '</span>'
+        + '<span class="liftmain"><span class="liftname">' + esc(s.swapAlt || e.n) + '</span>'
         + '<span class="liftmeta">' + effSets(e) + '×' + e.r + (e.top > e.r ? "–" + e.top : "") + ' · ' + loadTxt + ' · ' + restTxt + ' rest</span></span>'
         + '<span class="chev">›</span></li>';
     });

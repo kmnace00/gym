@@ -2264,6 +2264,22 @@ test("rest label names the alternate after a swap (U112)", async ({ page }) => {
   await expect(page.locator('#restLabel')).not.toContainText('Smith incline press');
 });
 
+test("swapped day row names the alternate (U113)", async ({ page }) => {
+  await page.goto(url);
+  const date = await page.evaluate(() => Gym.dateKey());
+  await page.evaluate((date) => {
+    localStorage.clear();
+    localStorage.setItem("gym-tool-v2", JSON.stringify({ v:5, cur:"fri", idx:0, bodyweight:165,
+      state:{ "fri:1":{ load:120, reps:6, rir:2, done:0, topHits:0, lastRir:null, exId:"fri-smith-incline", swapAlt:"Barbell incline press", swapLoad:120, sets:[] } },
+      liftHistory:{}, sessionLog:[],
+      active:{ id:"s", date, day:"fri", startedAt:null, endedAt:null, accSec:0, runningSince:null, status:"active" } }));
+  }, date);
+  await page.reload();
+  const name = page.locator('.liftrow[data-i="1"] .liftname');
+  await expect(name).toHaveText('Barbell incline press');
+  await expect(name).not.toContainText('Smith incline press');
+});
+
 test("restore and clear-all clear live rest and reconcile session clock (U27)", async ({ page }) => {
   const date = await page.evaluate(() => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); });
   await seed(page, {
