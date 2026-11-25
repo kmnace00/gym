@@ -690,10 +690,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 146 — `[DONE round 146]` Print sheet hides the backup reminder
 - **Wrong:** the print hide list suppressed the backup bar's buttons but not the `#backupBar` container, so "Never backed up — this log lives only on this phone" printed on the day sheet. Taken autonomously from the survey's confirmed near-miss (a fresh print element missed by 138/140).
 - **Changed:** add `.backupbar,` to the print hide list (`style.css:712`); day title/rows unchanged. U146 e2e added failing-first. `GYM_VERSION` `gym-v340` → `gym-v341`, CACHE-HASH → `0b3d549b1d7ec896`.
-- **Verified in plain terms:** live probe pre-fix `#backupBar` display flex on paper; U146 asserts none + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 380 e2e. Precache 307,086/307,200 (114 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe pre-fix `#backupBar` display flex on paper; U146 asserts none + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 380 e2e. Precache 307,086/307,200 (114 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 147 — `[DONE round 147]` All-done button stops promising a finished Finish
+- **Wrong:** after finalizing a workout, the lift view's `#goNextBtn` still read "All lifts done — finish ✓" / aria "…to finish" and routed to a day view where Finish is hidden — promising an action that no longer exists.
+- **Changed:** pure string swap to "All lifts done ✓" / "All lifts done — back to the day view" (`app.js:814`); routing unchanged, −21 B. U147 e2e added failing-first. `GYM_VERSION` `gym-v341` → `gym-v342`, CACHE-HASH → `4864f67f2a5285e4`.
+- **Verified in plain terms:** live probe pre-fix showed old text after finish; U147 finalizes, reopens a lift, asserts new copy/aria + Finish hidden; pre-fix failed. Full gate green: 286 unit, typecheck clean, 381 e2e. Precache 307,065/307,200 (135 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 147 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded3b8698ffeBXgVfGw9dMtvVf`). No blockers; copy-only swap, routing unchanged, pre-finalize state still accurate (Finish present), no exact-string pin, U147 proves the defect condition (Finish hidden) not just copy.
 - **Round 146 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded4783bcffebXGbwW8rkx4a1j`). No blockers; print-only hide of `.backupbar` removes only the reminder (buttons are its children), day title/rows unaffected, screen mode untouched, U146 genuinely fails pre-fix.
 - **Round 145 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded5447e6ffeJzLBlU4GFC9ljP`). No blockers; same established pattern as other load writers, guard no-ops outside rest (peek keeps resting set), no-change/skipped-lift cases idempotent, ticker repaints from refreshed ctx, U145 genuinely fails pre-fix.
 - **Round 144 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded5ef914ffezna6uWn80xzXS4`). No blockers; `firstOpen(0) < 0` exactly matches `renderDay`'s complete test, partial-day branch byte-identical, deload/extra-set targets consistent, existing SR tests unaffected, U144 genuinely fails pre-fix.

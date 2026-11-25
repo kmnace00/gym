@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 147 — `[DONE round 147]` All-done button stops promising a finished Finish
+`#goNextBtn`'s all-done copy is now "All lifts done ✓" instead of promising a Finish that is hidden after finalizing (`app.js`). U147 e2e. Gate: 286 unit, typecheck clean, 381 e2e. critic-flash GO (hy4-flash-free). `gym-v342`.
+
 ### Round 146 — `[DONE round 146]` Print sheet hides the backup reminder
 The `@media print` hide list now includes `.backupbar`, so the backup reminder no longer prints on the day sheet (`style.css`). U146 e2e. Gate: 286 unit, typecheck clean, 380 e2e. critic-flash GO (hy4-flash-free). `gym-v341`.
 - Taken from the survey's confirmed near-miss: no new T1 found.

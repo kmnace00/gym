@@ -811,8 +811,8 @@
           goBtn.setAttribute("aria-label", "Go to the next unfinished lift: " + oName);
           goBtn.onclick = function () { openLift(openIdx); };
         } else {
-          goBtn.textContent = "All lifts done — finish ✓";
-          goBtn.setAttribute("aria-label", "All lifts done — back to the day view to finish");
+          goBtn.textContent = "All lifts done ✓";
+          goBtn.setAttribute("aria-label", "All lifts done — back to the day view");
           goBtn.onclick = function () { showDay(); };
         }
       }

@@ -114,6 +114,20 @@ test("a fully finished day routes the button to the finish", async ({ page }) =>
   await expect(page.locator("#dayView")).toBeVisible();
 });
 
+test("finished workout's all-done button no longer promises a Finish (U147)", async ({ page }) => {
+  await page.goto(url);
+  await seed(page, (() => { const all = {}; for (let i = 0; i < 8; i++) all[i] = 3; return all; })());
+  await page.locator("#finishBtn").click();
+  await page.locator("#sumDone").click();
+  await page.locator(".liftrow").nth(0).click();
+  const go = page.locator("#goNextBtn");
+  await expect(go).toContainText("All lifts done ✓"); // stale pre-fix: "All lifts done — finish ✓"
+  expect(await go.getAttribute("aria-label")).toBe("All lifts done — back to the day view");
+  await go.click();
+  await expect(page.locator("#finishBtn")).toBeHidden(); // nothing left to finish
+  await expect(page.locator("#daySummary")).toContainText("Workout complete");
+});
+
 test("extra sets log like normal sets with the adjusted reps (existing flow)", async ({ page }) => {
   await page.goto(url);
   await seed(page, { 2: 3 }); // Bulgarian complete
