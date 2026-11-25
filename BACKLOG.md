@@ -719,6 +719,10 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 145 — `[DONE round 145]` Plan from the day view refreshes rest copy
+`#planBtn` now calls `syncRestNext()`, so a plan applied during a rest updates the rest headline/notification too (`app.js`). U145 e2e. Gate: 286 unit, typecheck clean, 379 e2e. critic-flash GO (hy4-flash-free). `gym-v340`.
+- Taken from the survey's confirmed near-miss: no new T1 found.
+
 ### Round 144 — `[DONE round 144]` Complete day's SR sentence says workout complete
 The sr-only week sentence now says "workout complete" on a finished day instead of "about 0 minutes left" (`app.js`). U144 e2e. Gate: 286 unit, typecheck clean, 378 e2e. critic-flash GO (hy4-flash-free). `gym-v339`.
 - Taken from the parked near-miss list: fresh survey found no new T1.

@@ -305,6 +305,36 @@ test("rest Up now tracks a direct-edited next-set reps (U126)", async ({ page })
   await expect(page.locator("#restNext")).toContainText("9 reps"); // stale pre-fix
 });
 
+test("rest Up next tracks loads set by Plan from the day view (U145)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay(), date = Gym.dateKey(), state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => { state[day + ":" + i] = { load: e.load || 0, reps: e.r, rir: e.rir, done: 0, sets: [] }; });
+    state[day + ":0"].done = 2;
+    state[day + ":0"].sets = [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }];
+    const lh = {};
+    lh[day + ":1"] = [
+      { date: "2026-10-25", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 },
+      { date: "2026-11-01", load: 50, reps: 8, rir: 2, hitTop: true, setsDone: 3 }
+    ];
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, state, liftHistory: lh, sessionLog: [],
+      active: { id: "s", date, day, startedAt: Date.now() - 600000, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // rest targets lift 2
+  await expect(page.locator("#restNext")).toContainText("Load 50");
+  await page.locator("#detailsBtn").click(); // peek reveals the header
+  await page.locator("#backBtn").click(); // day view, rest strip still visible
+  await expect(page.locator("#planBtn")).toBeVisible();
+  await page.locator("#planBtn").click();
+  await expect(page.locator(".liftrow").nth(1)).toContainText("Load 52.5");
+  await expect(page.locator("#restNext")).toContainText("Load 52.5"); // stale pre-fix
+});
+
 test("rest Up now tracks an applied suggested load (U139)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
   await page.goto(url);

@@ -1598,7 +1598,7 @@
     render();
   };
 
-  /* plan the whole day: pre-fill each not-yet-started lift from its history */
+  /* pre-fill not-yet-started lifts from history */
   document.getElementById("planBtn").onclick = function () {
     var list = DAYS[cur].ex, up = 0, down = 0, keep = 0, manual = 0;
     list.forEach(function (e, i) {
@@ -1618,7 +1618,7 @@
     planMsg = (up || down)
       ? "Planned" + (up ? " +" + up : "") + (down ? " · reset " + down : "")
       : (manual > 0 || !keep ? "Planned · no changes" : "Planned · all keep");
-    commit(); render();
+    commit(); render(); syncRestNext();
   };
 
   /* ── finish workout + one-screen summary ───────────────────────────────── */
