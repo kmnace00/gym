@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 124 — `[DONE round 124]` Completed lift's Next button uses the GO target
+`#goNextBtn` now reuses the `Rest.nextLift` destination already computed for `#nextLine`, so both surfaces and GO agree (`app.js`). U124 e2e. Gate: 286 unit, typecheck clean, 357 e2e. critic-flash GO (hy4-flash-free). `gym-v319`.
+
 ### Round 123 — `[DONE round 123]` Rest "Up next" tracks prep steppers
 `#restNext` now recomputes after rest prep load/reps changes (`nextUpText()` + `restctl.setNextText()`), so active/GO copy matches the set that opens (`app.js`, `restctl.js`). U123 e2e (mid-lift + inter-lift). Gate: 286 unit, typecheck clean, 356 e2e. critic-flash GO (hy4-flash-free). `gym-v318`.
 

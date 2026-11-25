@@ -672,6 +672,7 @@
   function renderLift() {
     syncRestQuiet();
     var e = ex(), s = curSt(), list = DAYS[cur].ex;
+    var nxIdx = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0));
     var sw = !!s.swapAlt, wl = workingLoad(s), setsLogged = (s.sets || []).length > 0;
     var anyDone = false;
     list.forEach(function (x, i) { if (st(cur, i).done > 0) anyDone = true; });
@@ -750,7 +751,6 @@
       var showNext = editSet < 0 && s.done >= effSets(e) - 1;
       nextLine.hidden = !showNext;
       if (showNext) {
-        var nxIdx = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0));
         if (nxIdx < 0) {
           nextLine.textContent = "Last lift of the day";
         } else {
@@ -809,7 +809,7 @@
        view, where Finish lives. */
     var goBtn = document.getElementById("goNextBtn");
     if (goBtn) {
-      var openIdx = complete && editSet < 0 ? firstOpen(0) : -1;
+      var openIdx = complete && editSet < 0 ? nxIdx : -1;
       var showGo = complete && editSet < 0;
       goBtn.hidden = !showGo;
       if (showGo) {

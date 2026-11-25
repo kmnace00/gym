@@ -82,6 +82,17 @@ test("a finished lift's primary button goes to the next open lift", async ({ pag
   await expect(go).toBeHidden();
 });
 
+test("a completed middle lift's Next button names the lift GO opens (U124)", async ({ page }) => {
+  await page.goto(url);
+  await seed(page, { 2: 3 }); // Bulgarian complete; lifts 0,1 and 3+ still open
+  await page.locator(".liftrow").nth(2).click();
+  await expect(page.locator("#nextLine")).toContainText("Incline DB press");
+  const go = page.locator("#goNextBtn");
+  await expect(go).toContainText("Incline DB press"); // pre-fix: "Smith squat"
+  await go.click();
+  await expect(page.locator("#exName")).toHaveText("Incline DB press");
+});
+
 test("a fully finished day routes the button to the finish", async ({ page }) => {
   await page.goto(url);
   const all = {};
