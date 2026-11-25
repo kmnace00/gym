@@ -26,6 +26,35 @@ async function weekStates(page) {
   });
 }
 
+test("undoing one set after Finish clears the done day dot (U142)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const date = Gym.dateKey(), day = Gym.todayDay(), lh = {}, lifts = {}, state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => {
+      const sets = Array.from({ length: e.s }, () => ({ load: e.load || 0, reps: e.r, rir: e.rir }));
+      lh[day + ":" + i] = [{ date, load: e.load || 0, reps: e.r, rir: e.rir, hitTop: false, setsDone: e.s, sets }];
+      lifts[day + ":" + i] = { done: e.s, sets };
+      state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, state, liftHistory: lh,
+      sessionLog: [{ id: "s1", date, day, status: "complete", durationSec: 600, lifts }]
+    }));
+  });
+  await page.reload();
+  await expect(page.locator(".daytab").first()).toHaveClass(/done/);
+  await page.locator(".liftrow").nth(7).click();
+  await page.locator("#undoSetBtn").click(); // pops the last lift's history entry
+  await page.locator("#backBtn").click();
+  await expect(page.locator(".daytab").first()).toHaveClass(/partial/); // stale done pre-fix
+  await expect(page.locator(".daytab").first()).toHaveAttribute("aria-label", /partly logged/);
+  await expect(page.locator("#dayWeekSummary")).toContainText("Fri partly logged");
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pDays")).toHaveText("0/3");
+  await expect(page.locator("#pHeatCount")).toHaveText("1/24"); // heatmap unchanged
+});
+
 test("undoing every set after Finish clears the partial day dot (U133)", async ({ page }) => {
   await page.goto(url);
   await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({

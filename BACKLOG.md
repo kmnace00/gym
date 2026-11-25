@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 142 — `[DONE round 142]` Undo one set clears the done day dot
+`weekStatus()` now ignores same-day session snapshots when `liftHistory` already reports the day, so undoing one set shows `partial` instead of `done` (`stats.js`). U142 e2e. Gate: 286 unit, typecheck clean, 376 e2e. critic-flash GO (hy4-flash-free). `gym-v337`.
+
 ### Round 141 — `[DONE round 141]` Merge counts whole workout dates, not per-lift rows
 `mergePayload()` now classifies incoming workout dates against the local date set, so an already-logged date is never reported as a new session (`store.js`). Two U141 e2e. Gate: 286 unit, typecheck clean, 375 e2e. critic-flash GO (hy4-flash-free). `gym-v336`.
 

@@ -318,8 +318,8 @@
     key.setDate(monday.getDate() + offs[day]);
     return keyOf(key);
   }
-  /** Covered day → logged-lift count. */
-  function sessionCoverage(payload) {
+  /** Covered day → lift count; `skipSameDay` omits sessions liftHistory already reports. */
+  function sessionCoverage(payload, skipSameDay) {
     var log = (payload && payload.sessionLog) || [], out = Object.create(null), i, s, key, n;
     for (i = 0; i < log.length; i++) {
       s = log[i];
@@ -327,7 +327,7 @@
       n = sessionLoggedLifts(s, s.day);
       if (!n) continue;
       key = sessionCoveredKey(s);
-      if (!key) continue;
+      if (!key || (skipSameDay && key === s.date)) continue;
       if (!out[key] || n > out[key]) out[key] = n;
     }
     return out;
@@ -343,7 +343,7 @@
     var today = parseKey(nowKey);
     if (!today) return [];
     var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
-    var covered = sessionCoverage(payload); // B6-02: covered by an off-day session
+    var covered = sessionCoverage(payload, true); // B6-02: off-day sessions only
     var names = ["fri", "sat", "sun"], out = [], i;
     for (i = 0; i < 3; i++) {
       var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);
