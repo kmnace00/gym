@@ -675,10 +675,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 143 — `[DONE round 143]` One-shot hint live region only writes on change
 - **Wrong:** `#hint` is aria-live polite but `renderLift()` replaced its text on every render even when `hintText` was unchanged, so unrelated renders (RIR/swap/stepper release) re-announced the same one-shot warning.
 - **Changed:** guard the `textContent` write with a comparison (`app.js:824`), mirroring round 136's `setRestLabel` guard; `priorEntries()` comment condensed to fund bytes (−20 B net). U143 e2e added failing-first. `GYM_VERSION` `gym-v337` → `gym-v338`, CACHE-HASH → `8f35e45125744934`.
-- **Verified in plain terms:** live probe showed 1 mutation pre-fix on an RIR click; U143 asserts zero mutations; pre-fix got 1. Full gate green: 286 unit, typecheck clean, 377 e2e. Precache 307,127/307,200 (73 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe showed 1 mutation pre-fix on an RIR click; U143 asserts zero mutations; pre-fix got 1. Full gate green: 286 unit, typecheck clean, 377 e2e. Precache 307,127/307,200 (73 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 144 — `[DONE round 144]` Complete day's SR sentence says workout complete
+- **Wrong:** on a fully complete day the sr-only `#dayWeekSummary` said "about 0 minutes left" while the visible summary said "Workout complete — nice work" — a parked near-miss, taken autonomously when the fresh survey came up empty.
+- **Changed:** SR sentence ends " — workout complete." when `firstOpen(0) < 0` (same completion test as `renderDay`), partial-day copy unchanged; rest-interval comment condensed to fund bytes. U144 e2e added failing-first. `GYM_VERSION` `gym-v338` → `gym-v339`, CACHE-HASH → `c9a7771f5aeb67ce`.
+- **Verified in plain terms:** live probe pre-fix SR "about 0 minutes left"; U144 asserts both surfaces say workout complete and SR lacks "minutes left". Full gate green: 286 unit, typecheck clean, 378 e2e. Precache 307,087/307,200 (113 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 144 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded5ef914ffezna6uWn80xzXS4`). No blockers; `firstOpen(0) < 0` exactly matches `renderDay`'s complete test, partial-day branch byte-identical, deload/extra-set targets consistent, existing SR tests unaffected, U144 genuinely fails pre-fix.
 - **Round 143 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def2511f7ffeIFU1Ag7Q211RRl`). No blockers; guard skips only identical rewrites, only writer to `#hint` so no DOM/state divergence, className write and clearing still work, no legitimate announcement suppressed, U143 isolates the text write correctly.
 - **Round 142 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def32aa59ffeugtRoHj4fKw8ck`). No blockers; off-day attribution B6-02 intact (skip only when coveredKey === session date), heatmap uses unfiltered coverage, a complete same-day session always has liftHistory so no false-partial, U142 genuinely fails pre-fix.
 - **Round 141 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def3e1b93ffe8YfdH1TilwmvIq`). No blockers; new date sets mirror `Stats.workoutDates`/`sessionVolumes`, only `inc` is written so merged data unchanged, `inc===null` skips, production callers sanitize incoming, U141 + B3-19 genuinely fail pre-fix.

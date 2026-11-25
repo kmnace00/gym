@@ -26,6 +26,26 @@ async function weekStates(page) {
   });
 }
 
+test("complete day's screen-reader sentence says workout complete (U144)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay(), date = Gym.dateKey(), state = {};
+    Gym.DAYS[day].ex.forEach((e, i) => {
+      const sets = Array.from({ length: e.s }, () => ({ load: e.load || 0, reps: e.r, rir: e.rir }));
+      state[day + ":" + i] = { done: e.s, load: e.load || 0, reps: e.r, rir: e.rir, sets };
+    });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: day, idx: 0, bodyweight: 165, state, liftHistory: {}, sessionLog: [],
+      active: { id: "s", date, day, startedAt: Date.now() - 600000, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await expect(page.locator("#daySummary")).toContainText("Workout complete");
+  await expect(page.locator("#dayWeekSummary")).toContainText("workout complete");
+  await expect(page.locator("#dayWeekSummary")).not.toContainText("minutes left"); // stale pre-fix
+});
+
 test("undoing one set after Finish clears the done day dot (U142)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
   await page.goto(url);

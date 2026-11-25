@@ -360,8 +360,7 @@
       var list = DAYS[cur].ex, dDone = 0, di;
       for (di = 0; di < list.length; di++) dDone += Math.min(st(cur, di).done, effSets(list[di]));
       sr.textContent = "This week: " + spoken + ". Viewing " + DAY_LABEL[cur] +
-        " — about " + (dDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " minutes" +
-        (dDone > 0 ? " left" : "") + ".";
+        (firstOpen(0) < 0 ? " — workout complete." : " — about " + (dDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " minutes" + (dDone > 0 ? " left" : "") + ".");
     }
   }
 
@@ -927,8 +926,7 @@
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
   function stopInterval() { if (rInt) { clearInterval(rInt); rInt = null; } }
   function startInterval() { stopInterval(); rInt = setInterval(tickRest, 200); }
-  /* the interval follows the view: an active, unfrozen rest ticks, everything
-     else stops (the two-tap "finish" arm freezes the visible clock) */
+  /* only an active, unfrozen rest ticks; the finish arm freezes it */
   function syncRestInterval(v) {
     if (v.ticking) { if (!rInt) startInterval(); }
     else stopInterval();
