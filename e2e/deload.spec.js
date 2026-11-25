@@ -94,6 +94,26 @@ for (const size of sizes) {
   });
 }
 
+test("rest Up next follows a deload toggle (U134)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, deloadSince: "2026-11-06",
+    state: { "fri:0": { done: 0, load: 60, reps: 6, rir: 2, sets: [] } },
+    liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // rest after set 1; deload target is 2
+  await expect(page.locator("#restNext")).toContainText("Set 2 of 2");
+  await page.locator("#detailsBtn").click(); // peek reveals the header/menu
+  await page.locator("#menuBtn").click();
+  await page.locator("#deloadEnd").click();
+  await page.locator("#modalClose").click();
+  await expect(page.locator("#restPrepName")).toContainText("Set 2 of 3");
+  await expect(page.locator("#restNext")).toContainText("Set 2 of 3"); // stale pre-fix
+});
+
 test("undo after ending a deload drops the banked snapshot (U128)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
   const sets = [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }];

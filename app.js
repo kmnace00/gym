@@ -2120,13 +2120,13 @@
   }
   document.getElementById("deloadStart").onclick = function () {
     payload.deloadSince = Gym.dateKey();
-    commit(); render(); updateFoot();
+    commit(); render(); updateFoot(); syncRestNext();
     setMsg("Deload week started — fewer sets, ~10% lighter." + saveResult(true));
     var e = document.getElementById("deloadEnd"); if (e && e.getClientRects().length) e.focus();
   };
   document.getElementById("deloadEnd").onclick = function () {
     payload.deloadSince = null;
-    commit(); render(); updateFoot();
+    commit(); render(); updateFoot(); syncRestNext();
     setMsg("Deload week ended — normal targets restored." + saveResult(true));
     var s = document.getElementById("deloadStart"); if (s && s.getClientRects().length) s.focus();
   };

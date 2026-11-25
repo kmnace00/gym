@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 134 — `[DONE round 134]` Rest Up next follows a deload toggle
+Deload start/end mid-rest now call `syncRestNext()`, so the headline follows the changed set target (`app.js`). U134 e2e. Gate: 286 unit, typecheck clean, 367 e2e. critic-flash GO (hy4-flash-free). `gym-v329`.
+
 ### Round 133 — `[DONE round 133]` Undo after Finish refreshes the session snapshot
 `undoSet()` now refreshes a completed session's derived `sessionLog` snapshot via `finalizeSession()`, so day-tab dots/SR sentence agree with undone sets (`app.js`). U133 e2e. Gate: 286 unit, typecheck clean, 366 e2e. critic-flash GO (hy4-flash-free). `gym-v328`.
 
