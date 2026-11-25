@@ -685,10 +685,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 145 — `[DONE round 145]` Plan from the day view refreshes rest copy
 - **Wrong:** `#planBtn` rewrote not-yet-started lifts' loads but omitted `syncRestNext()`; with a rest in progress (via peek → Back), the day row showed the new load while the rest headline/notification still promised the old one. Taken autonomously from the survey's confirmed near-miss.
 - **Changed:** `syncRestNext()` added after commit/render in the planBtn handler (`app.js:1618`); plan comment condensed to fund bytes. U145 e2e added failing-first. `GYM_VERSION` `gym-v339` → `gym-v340`, CACHE-HASH → `deed41897d06b4b3`.
-- **Verified in plain terms:** live probe pre-fix row "Load 52.5" vs restNext "Load 50"; U145 asserts both; pre-fix failed. Full gate green: 286 unit, typecheck clean, 379 e2e. Precache 307,075/307,200 (125 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe pre-fix row "Load 52.5" vs restNext "Load 50"; U145 asserts both; pre-fix failed. Full gate green: 286 unit, typecheck clean, 379 e2e. Precache 307,075/307,200 (125 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 146 — `[DONE round 146]` Print sheet hides the backup reminder
+- **Wrong:** the print hide list suppressed the backup bar's buttons but not the `#backupBar` container, so "Never backed up — this log lives only on this phone" printed on the day sheet. Taken autonomously from the survey's confirmed near-miss (a fresh print element missed by 138/140).
+- **Changed:** add `.backupbar,` to the print hide list (`style.css:712`); day title/rows unchanged. U146 e2e added failing-first. `GYM_VERSION` `gym-v340` → `gym-v341`, CACHE-HASH → `0b3d549b1d7ec896`.
+- **Verified in plain terms:** live probe pre-fix `#backupBar` display flex on paper; U146 asserts none + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 380 e2e. Precache 307,086/307,200 (114 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 146 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded4783bcffebXGbwW8rkx4a1j`). No blockers; print-only hide of `.backupbar` removes only the reminder (buttons are its children), day title/rows unaffected, screen mode untouched, U146 genuinely fails pre-fix.
 - **Round 145 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded5447e6ffeJzLBlU4GFC9ljP`). No blockers; same established pattern as other load writers, guard no-ops outside rest (peek keeps resting set), no-change/skipped-lift cases idempotent, ticker repaints from refreshed ctx, U145 genuinely fails pre-fix.
 - **Round 144 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded5ef914ffezna6uWn80xzXS4`). No blockers; `firstOpen(0) < 0` exactly matches `renderDay`'s complete test, partial-day branch byte-identical, deload/extra-set targets consistent, existing SR tests unaffected, U144 genuinely fails pre-fix.
 - **Round 143 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def2511f7ffeIFU1Ag7Q211RRl`). No blockers; guard skips only identical rewrites, only writer to `#hint` so no DOM/state divergence, className write and clearing still work, no legitimate announcement suppressed, U143 isolates the text write correctly.

@@ -769,6 +769,23 @@ test("one-shot hint live region is not rewritten on unrelated renders (U143)", a
   expect(await page.evaluate(() => window.__hintMut), "unchanged hint text must not mutate").toBe(0);
 });
 
+test("print sheet hides the backup reminder (U146)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165,
+    state: { "fri:0": { done: 1, load: 60, reps: 6, rir: 2, sets: [{ load: 60, reps: 6, rir: 2 }] } },
+    liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  await page.emulateMedia({ media: "print" });
+  const r = await page.evaluate(() => ({
+    bar: getComputedStyle(document.getElementById("backupBar")).display,
+    title: getComputedStyle(document.getElementById("dayTitle")).display
+  }));
+  expect(r.bar).toBe("none"); // pre-fix: flex — reminder printed on paper
+  expect(r.title).not.toBe("none"); // day title must still print
+});
+
 test("print rows stay compact on a tall canvas (U140)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 }); // >= the 880px screen tier
   await page.goto(url);
