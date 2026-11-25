@@ -675,8 +675,7 @@ input{caret-color:var(--accent)}
   .sumv{font-size:15px}
 }
 
-/* ── forced colors (Windows High Contrast et al.): structure by border and
-      system colour, since backgrounds and shadows are stripped ─────────── */
+/* ── forced colors: structure via border/system colour, not background ── */
 @media (forced-colors: active){
   .liftrow,.setrow,.pstat,.pcard,.modal-card,.summary-card,.ctl,.timer{
     border:1px solid CanvasText;
@@ -694,7 +693,10 @@ input{caret-color:var(--accent)}
     color:HighlightText;
   }
   .app.resting .timer.go #skipRest{background:HighlightText;color:Highlight}
-  .setrow.now,.liftrow.now{outline:2px solid Highlight;outline-offset:-2px}
+  .setrow.now,.liftrow.now,.daytab.on{outline:2px solid Highlight;outline-offset:-2px}
+  .daytab.done .dwdot{background:Highlight;border-color:Highlight}
+  .daytab.partial .dwdot{border-style:dashed;border-color:Highlight}
+  .daytab.today .dwdot{outline:1px solid Highlight;outline-offset:1px}
   .hday,.pseg,.pdbar,.timer .rbar{border:1px solid CanvasText}
 }
 

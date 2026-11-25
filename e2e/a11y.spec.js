@@ -743,3 +743,25 @@ for (const size of sizes) {
     });
   });
 }
+
+test("forced colors keep day selection and status dots distinct (U135)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-08T10:00:00") }); // Sunday
+  const lh = {};
+  for (let i = 0; i < 8; i++) lh["fri:" + i] = [{ date: "2026-11-06", load: 60, reps: 6, rir: 2, setsDone: 3 }];
+  lh["sat:0"] = [{ date: "2026-11-07", load: 60, reps: 6, rir: 2, setsDone: 3 }]; // partial Saturday
+  await seed(page, { v: 5, cur: "sun", idx: 0, bodyweight: 165, state: {}, liftHistory: lh, sessionLog: [] });
+  await page.emulateMedia({ forcedColors: "active" });
+  const r = await page.evaluate(() => {
+    const dot = (s) => {
+      const e = document.querySelector(".daytab." + s + " .dwdot"), c = getComputedStyle(e);
+      return { bg: c.backgroundColor, bs: c.borderStyle };
+    };
+    return {
+      onOutline: getComputedStyle(document.querySelector(".daytab.on")).outlineStyle,
+      done: dot("done"), partial: dot("partial"), today: dot("today")
+    };
+  });
+  expect(r.onOutline).toBe("solid"); // pre-fix: none — selected day indistinguishable
+  expect(r.partial.bs).toBe("dashed"); // pre-fix: solid
+  expect(r.done.bg).not.toBe(r.today.bg); // pre-fix: both white
+});
