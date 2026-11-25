@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 133 — `[DONE round 133]` Undo after Finish refreshes the session snapshot
+`undoSet()` now refreshes a completed session's derived `sessionLog` snapshot via `finalizeSession()`, so day-tab dots/SR sentence agree with undone sets (`app.js`). U133 e2e. Gate: 286 unit, typecheck clean, 366 e2e. critic-flash GO (hy4-flash-free). `gym-v328`.
+
 ### Round 132 — `[DONE round 132]` Set count acknowledges extra sets
 `#setCount` now appends "· K extra" when more sets than prescribed are logged, matching the checked rows and summary (`app.js`). U132 e2e. Gate: 286 unit, typecheck clean, 365 e2e. critic-flash GO (hy4-flash-free). `gym-v327`.
 

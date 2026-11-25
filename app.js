@@ -288,9 +288,7 @@
     document.getElementById("nextLift").disabled = last;
   }
   /* N12/N24: day tabs and the day view chevrons both route through switchDay. */
-  /* ── B6-10: deload follow-through nudge ────────────────────────────────────
-     Derived from existing dates only: last deload start + 7 d, else the first
-     logged session; never stored or auto-started, and only in an empty week. */
+  /* ── B6-10: deload nudge — derived from dates only, never stored. */
   function dayNum(key) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ""));
     return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null;
@@ -1147,6 +1145,8 @@
     if (s.done < effSets(ex())) {
       if (banked && arr && arr.length) arr.pop();
     } else bankLift(cur, idx);
+    /* refresh the finished session's derived set snapshot */
+    if (payload.active && payload.active.status === "complete") Gym.finalizeSession(payload);
     stopInterval();
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();

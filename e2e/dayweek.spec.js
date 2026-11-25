@@ -26,6 +26,25 @@ async function weekStates(page) {
   });
 }
 
+test("undoing every set after Finish clears the partial day dot (U133)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false, state: {}, liftHistory: {}, sessionLog: []
+  })));
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  for (let i = 0; i < 3; i++) { await page.locator("#doneBtn").click(); await page.locator("#skipRest").click(); }
+  await page.locator("#backBtn").click();
+  await page.locator("#finishBtn").click();
+  await page.locator("#sumDone").click();
+  await page.locator(".liftrow").first().click();
+  for (let i = 0; i < 3; i++) await page.locator("#undoSetBtn").click();
+  await page.locator("#backBtn").click();
+  await expect(page.locator(".daytab").first()).toHaveClass(/today/); // stale partial pre-fix
+  await expect(page.locator(".daytab").first()).toHaveAttribute("aria-label", /today/);
+  await expect(page.locator("#dayWeekSummary")).toContainText("Fri today");
+});
+
 test("three header day buttons, states match Stats.weekStatus, ≥44px", async ({ page }) => {
   await page.goto(url);
   await page.evaluate(() => localStorage.clear());
