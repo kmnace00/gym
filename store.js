@@ -82,13 +82,7 @@
     };
   }
 
-  /* ── sanitize on the way in ───────────────────────────────────────────────
-     A backup is *untrusted input*: it is parsed and later rendered through
-     innerHTML templates. Coerce every numeric field that is present to a real
-     number (turning a hostile string into NaN-safe data), without adding or
-     removing keys — missing fields must stay missing so getLift() can inject
-     program defaults. This closes the import → innerHTML injection vector at
-     the data boundary, before any render.                                    */
+  /* sanitize untrusted backups at the data boundary, before innerHTML render */
   function num(v, dflt) {
     var n = typeof v === "number" ? v : Number(v);
     return isFinite(n) ? n : dflt;
@@ -305,7 +299,7 @@
     if (!isObj(p.liftHistory)) p.liftHistory = {};
     stripUnsafeKeys(p.state);
     stripUnsafeKeys(p.liftHistory);
-    if (typeof p.idx !== "number" || !isFinite(p.idx) || Math.floor(p.idx) !== p.idx || p.idx < 0) p.idx = 0; // whole numbers only — a fractional idx indexes nothing and crashes the lift view
+    if (typeof p.idx !== "number" || !isFinite(p.idx) || Math.floor(p.idx) !== p.idx || p.idx < 0) p.idx = 0; // whole numbers only
     if (!validDay(p.cur)) p.cur = "fri";
     if (typeof p.lastBackup !== "string") p.lastBackup = null;
     p.bodyweight = typeof p.bodyweight === "number" && isFinite(p.bodyweight) && p.bodyweight > 0 && p.bodyweight <= BODYWEIGHT_MAX ? p.bodyweight : 165;
@@ -908,8 +902,19 @@
     }
 
     var incHist = isObj(incoming && incoming.liftHistory) ? incoming.liftHistory : {}, k2;
-    /* count distinct dates: one session banks an entry per lift. */
-    var incDates = Object.create(null), collDates = Object.create(null);
+    /* count whole workout dates, not per-lift rows: a date already logged
+       locally is a collision even under a lift key that was empty before. */
+    var localDates = Object.create(null), inDates = Object.create(null), kd;
+    for (kd in out.liftHistory) if (own(out.liftHistory, kd) && Array.isArray(out.liftHistory[kd])) {
+      out.liftHistory[kd].forEach(function (e) { if (e && e.date) localDates[e.date] = 1; });
+    }
+    out.sessionLog.forEach(function (s) { if (s && s.status === "complete" && s.date) localDates[s.date] = 1; });
+    for (kd in incHist) if (own(incHist, kd) && !unsafeKey(kd) && Array.isArray(incHist[kd])) {
+      incHist[kd].forEach(function (e) { if (e && e.date && !unsafeKey(e.date)) inDates[e.date] = 1; });
+    }
+    (Array.isArray(incoming && incoming.sessionLog) ? incoming.sessionLog : []).forEach(function (s) {
+      if (s && s.status === "complete" && s.date && !unsafeKey(s.date)) inDates[s.date] = 1;
+    });
     for (k2 in incHist) if (own(incHist, k2) && !unsafeKey(k2)) {
       var seen = Object.create(null);
       var existing = own(out.liftHistory, k2) && Array.isArray(out.liftHistory[k2]) ? out.liftHistory[k2] : [];
@@ -922,10 +927,8 @@
         /* same-date collision: keep the fuller session, never blindly clobber */
         if (!prev) {
           seen[dk] = e;
-          if (fromIncoming && inc && e.date && !incDates[e.date]) { incDates[e.date] = 1; inc.added = (inc.added || 0) + 1; }
         } else {
           if ((e.setsDone || (e.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = e;
-          if (fromIncoming && inc && e.date && !collDates[e.date]) { collDates[e.date] = 1; inc.collisions = (inc.collisions || 0) + 1; }
         }
       }
       existing.forEach(function (e) { keep(e, false); });
@@ -957,6 +960,12 @@
     }
     out.v = CURRENT;
     if (!out.lastBackup && incoming && incoming.lastBackup) out.lastBackup = incoming.lastBackup;
+    if (inc) {
+      inc.added = 0; inc.collisions = 0;
+      for (kd in inDates) if (own(inDates, kd)) {
+        if (localDates[kd]) inc.collisions++; else inc.added++;
+      }
+    }
     return normalize(out);
   }
 

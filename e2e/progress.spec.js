@@ -337,6 +337,39 @@ test("the trend windows progression sessions, not raw history (v182)", async ({ 
   expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });
 
+test("merge counts an already-logged date as a collision, not a new session (U141)", async ({ page }) => {
+  const entry = { date: "2026-11-06", load: 60, reps: 6, rir: 2, hitTop: false, setsDone: 3 };
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [entry] }
+  });
+  const backup = JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, sessionLog: [],
+    liftHistory: { "fri:0": [entry], "fri:1": [entry] } // same date, a second lift key
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "same-date.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("1 same-date kept the fuller copy");
+  await expect(page.locator("#modalMsg")).not.toContainText("new session"); // stale pre-fix: "+1 new session"
+  await page.locator("#modalClose").click();
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pSessions")).toHaveText("1");
+});
+
+test("merge counts a session-log-only backup as a new workout (U141)", async ({ page }) => {
+  await seed(page, { v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, liftHistory: {}, sessionLog: [] });
+  const backup = JSON.stringify({
+    v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, liftHistory: {},
+    sessionLog: [{ id: "ses_x", date: "2026-11-06", day: "fri", status: "complete", durationSec: 600, lifts: {} }]
+  });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "log-only.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("+1 new session"); // stale pre-fix: "no changes"
+  await page.locator("#modalClose").click();
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pSessions")).toHaveText("1");
+});
+
 test("empty movers copy does not claim a lift was never logged twice (U131)", async ({ page }) => {
   await seed(page, { v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [], liftHistory: { "fri:5": [
     { date: "2026-10-01", load: 0, reps: 12, rir: 1, hitTop: false, setsDone: 3, bw: false },

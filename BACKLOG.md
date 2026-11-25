@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 141 — `[DONE round 141]` Merge counts whole workout dates, not per-lift rows
+`mergePayload()` now classifies incoming workout dates against the local date set, so an already-logged date is never reported as a new session (`store.js`). Two U141 e2e. Gate: 286 unit, typecheck clean, 375 e2e. critic-flash GO (hy4-flash-free). `gym-v336`.
+
 ### Round 140 — `[DONE round 140]` Print rows stay compact on a tall canvas
 The 880px layout tier is now screen-only, so print keeps its 44px lift rows (`style.css`). U140 e2e. Gate: 286 unit, typecheck clean, 373 e2e. critic-flash GO (hy4-flash-free). `gym-v335`.
 

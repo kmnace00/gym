@@ -660,10 +660,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 140 — `[DONE round 140]` Print rows stay compact on a tall canvas
 - **Wrong:** the `@media (min-height:880px)` screen tier came after the print block with equal specificity, overriding print's `.liftrow{min-height:44px}` to 58px at paper/tall viewport sizes.
 - **Changed:** scope the tier to `@media screen and (min-height:880px)` (`style.css:794`); all rules in the block are screen layout, print keeps its own. U140 e2e added failing-first. `GYM_VERSION` `gym-v334` → `gym-v335`, CACHE-HASH → `a2434efda967c94b`.
-- **Verified in plain terms:** live probe confirmed print `.liftrow` 58px pre-fix; U140 asserts 44px at 1280x900 print; pre-fix got 58px. Full gate green: 286 unit, typecheck clean, 373 e2e. Precache 306,947/307,200 (253 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe confirmed print `.liftrow` 58px pre-fix; U140 asserts 44px at 1280x900 print; pre-fix got 58px. Full gate green: 286 unit, typecheck clean, 373 e2e. Precache 306,947/307,200 (253 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 141 — `[DONE round 141]` Merge counts whole workout dates, not per-lift rows
+- **Wrong:** a date already logged locally but appearing under a new lift key was counted as both "added" and "collision", reporting "+1 new session" while `workoutDates` was unchanged; a session-log-only backup reported "no changes" while the workout count grew.
+- **Changed:** `mergePayload()` classifies incoming workout dates against the local date set once (history + complete sessionLog), ignoring per-lift keys; updated stats only, merged payload unchanged. Two comments condensed to fund bytes. `GYM_VERSION` `gym-v335` → `gym-v336`, CACHE-HASH → `6080f82eb0ffa614`.
+- **Verified in plain terms:** Node probe: same-date case {0,1} with dates unchanged, sessionlog-only {1,0}, B3-19 {2,1}, U73 {1,0}, U103 collisions=1. Two U141 e2e fail pre-fix. Full gate green: 286 unit, typecheck clean, 375 e2e. Precache 307,050/307,200 (150 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 141 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def3e1b93ffe8YfdH1TilwmvIq`). No blockers; new date sets mirror `Stats.workoutDates`/`sessionVolumes`, only `inc` is written so merged data unchanged, `inc===null` skips, production callers sanitize incoming, U141 + B3-19 genuinely fail pre-fix.
 - **Round 140 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def4bc69affeZzl8f9xT7qduuZ`). No blockers; print keeps its own 44px row rule, `screen` matches all normal viewports so screen layout unchanged, other min-height tiers don't conflict, U140 genuinely fails pre-fix.
 - **Round 139 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def534072ffeiDlw8HNRiiaAwE`). No blockers; guard no-ops outside rest, Apply unreachable while swapped, assist help number path stays truthful, no focus/suggestion interaction, GO notification body fixed too, U139 genuinely fails pre-fix.
 - **Round 138 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def5e63a8ffeNHjWCe5lXxJ1Px`). No blockers; `.mini` hides only day chevrons (lift chevrons already hidden with the lift view), day title stays, screen mode untouched, e2e correctly uses getClientRects for the child of a hidden parent.
