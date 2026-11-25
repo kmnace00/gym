@@ -468,10 +468,8 @@
            valuation flags apply to every entry that reaches here. */
         return { bw: !!e.bw, assist: !!e.assist || en.assist === true, bodyweight: resolveBodyweight(en, bwKg) };
       }
-      /* B6-06/B6-09: "top movers" compares the ORIGINAL lift's own progression,
-         so boundary sessions must be neither a swap (a different exercise) nor a
-         deload week (intentionally ~10% light) — the same rule app.js
-         `progressionEntry` uses for suggestions/sparkline/PRs. */
+      /* B6-06/B6-09: compare the original lift's own progression — swapped
+         and deload entries are filtered out of `seq` above. */
       var seq = [], en;
       for (var gj = 0; gj < arr.length; gj++) {
         en = arr[gj];
@@ -480,6 +478,8 @@
       if (seq.length < 2) continue;
       first = topSet(entrySets(seq[0]), metric, optsFor(seq[0])) || seq[0];
       last = topSet(entrySets(seq[seq.length - 1]), metric, optsFor(seq[seq.length - 1])) || seq[seq.length - 1];
+      /* plain null-load lifts score reps at 0 but lb when loaded — no mixed units. */
+      if (!e.bw && !e.assist && ((first.load || 0) > 0) !== ((last.load || 0) > 0)) continue;
       var fm = metric(first.load || 0, first.reps || 0, optsFor(seq[0]));
       var lm = metric(last.load || 0, last.reps || 0, optsFor(seq[seq.length - 1]));
       if (!fm) continue;

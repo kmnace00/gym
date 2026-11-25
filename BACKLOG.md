@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 130 — `[DONE round 130]` Top movers never divides reps by 1RM
+`topMovers()` skips a plain lift whose boundary metrics mix reps (load 0) and lb (loaded), killing the `+955.8%` nonsense (`stats.js`). U130 e2e. Gate: 286 unit, typecheck clean, 363 e2e. critic-flash GO (hy4-flash-free). `gym-v325`.
+
 ### Round 129 — `[DONE round 129]` Merge confirmation counts workouts, not lift rows
 `mergePayload()` now counts distinct dates for `added`/`collisions`, so a one-workout backup reports "+1 new session" instead of one per lift row (`store.js`). U129 e2e. Gate: 286 unit, typecheck clean, 362 e2e. critic-flash GO (hy4-flash-free). `gym-v324`.
 - Rejected round-129 first candidate: "partial-lift set edit doesn't re-bank" — no history entry exists for partial lifts (verified live), nothing stale.

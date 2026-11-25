@@ -337,6 +337,18 @@ test("the trend windows progression sessions, not raw history (v182)", async ({ 
   expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });
 
+test("top movers never divides reps by 1RM (U130)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [],
+    liftHistory: { "fri:5": [
+      { date: "2026-10-01", load: 0, reps: 12, rir: 1, hitTop: false, setsDone: 3, bw: false },
+      { date: "2026-11-01", load: 100, reps: 8, rir: 1, hitTop: false, setsDone: 3, bw: false }
+    ] }
+  });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pMovers")).not.toContainText("%"); // pre-fix: "+955.8%"
+});
+
 test("merge confirmation counts workouts, not lift rows (U129)", async ({ page }) => {
   await seed(page, { v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, liftHistory: {}, sessionLog: [] });
   const lifts = await page.evaluate(() => Gym.DAYS.fri.ex.map((e) => ({ id: e.id, load: e.load || 0, reps: e.r, rir: e.rir, s: e.s })));
