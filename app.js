@@ -665,6 +665,14 @@
       row.querySelector(".sr").textContent = (s.swapAlt ? swLoadLabel(wl) : loadLabel(s.load, e)) + " × " + s.reps;
       row.querySelector(".srir").textContent = "@" + s.rir + " RIR";
     }
+    paintRamp(e, s, wl, !!s.swapAlt);
+  }
+  function paintRamp(e, s, wl, sw) {
+    var el = document.getElementById("rampLine");
+    if (!el) return;
+    var r = editSet < 0 && s.done === 0 && !s.guess ? Gym.rampFor(e, sw ? wl : (s.load > 0 ? s.load : e.load), idx === 0) : null;
+    el.hidden = !r;
+    if (r) el.textContent = rampText(r);
   }
   function renderLift() {
     syncRestQuiet();
@@ -766,18 +774,9 @@
         }
       }
     }
-    /* N7: the ramp guide — display only, never logged. Only before the
-       lift's first set, and only off a real load: a starting guess (s.guess)
-       never qualifies a lift for a ramp. */
-    var rampLine = document.getElementById("rampLine");
-    if (rampLine) {
-      var ramp = null;
-      if (editSet < 0 && s.done === 0 && !s.guess) {
-        ramp = Gym.rampFor(e, sw ? wl : (s.load > 0 ? s.load : e.load), idx === 0);
-      }
-      rampLine.hidden = !ramp;
-      if (ramp) rampLine.textContent = rampText(ramp);
-    }
+    /* N7: ramp guide — display only, before set 1, off a real load (a guess
+       never qualifies). */
+    paintRamp(e, s, wl, sw);
 
     var complete = s.done >= effSets(e);
     renderSetLog(e, s);

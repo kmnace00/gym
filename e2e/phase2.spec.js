@@ -50,6 +50,18 @@ test("the first lift shows its full ramp before set 1, then never again", async 
   await expect(page.locator("#rampLine")).toBeHidden();
 });
 
+test("a single load-step tap refreshes the ramp guide (U127)", async ({ page }) => {
+  await page.goto(url);
+  const day = await page.evaluate(() => Gym.todayDay());
+  await seedDay(page, day, {});
+  await page.locator(".liftrow").nth(0).click(); // Smith squat, load 60
+  const ramp = page.locator("#rampLine");
+  await expect(ramp).toHaveText("Ramp: 30×5 · 42.5×3 · 50×1");
+  await page.locator("#loadUp").click(); // single tap: light path, no full render
+  await expect(page.locator("#loadVal")).toHaveText("62.5");
+  await expect(ramp).toHaveText("Ramp: 32.5×5 · 45×3 · 52.5×1"); // stale pre-fix
+});
+
 test("the rest before a heavy lift's first set shows its feeler", async ({ page }) => {
   await page.goto(url);
   const day = await page.evaluate(() => Gym.todayDay());

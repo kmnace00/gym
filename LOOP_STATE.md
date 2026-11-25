@@ -589,10 +589,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 126 — `[DONE round 126]` Direct load/reps edit refreshes rest copy
 - **Wrong:** round 123 added `syncRestNext()` to steppers only; the tap-to-type editors `editLoad()`/`editReps()` wrote the same values but left `restctl` ctx.nextText frozen, so at GO the line still said "6 reps" after typing 9.
 - **Changed:** `syncRestNext()` added to both edit callbacks (`app.js:1402,1407`); light-path comment condensed to fund bytes. U126 e2e added failing-first. `GYM_VERSION` `gym-v320` → `gym-v321`, CACHE-HASH → `e547a1c03a594386`.
-- **Verified in plain terms:** U126 reaches GO, peeks, edits reps to 9, asserts "Up now —" + "9 reps"; pre-fix received "6 reps". Full gate green: 286 unit, typecheck clean, 359 e2e. Precache 306,769/307,200 (431 B headroom). critic: see review log.
+- **Verified in plain terms:** U126 reaches GO, peeks, edits reps to 9, asserts "Up now —" + "9 reps"; pre-fix received "6 reps". Full gate green: 286 unit, typecheck clean, 359 e2e. Precache 306,769/307,200 (431 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 127 — `[DONE round 127]` Ramp guide tracks a single stepper tap
+- **Wrong:** `#rampLine` was painted only by `renderLift()`; a single stepper tap uses `updateLiftReadouts()` with no full render, so the ramp kept the old load's steps while `#exPres` showed the new one.
+- **Changed:** factored `paintRamp(e, s, wl, sw)` and called it from both painters; gating and load selection unchanged, −56 B net. U127 e2e added failing-first. `GYM_VERSION` `gym-v321` → `gym-v322`, CACHE-HASH → `b6f8dfe3ea5e1e75`.
+- **Verified in plain terms:** U127 single-taps loadUp and asserts the ramp steps change; pre-fix kept `30×5 · 42.5×3 · 50×1`. Full gate green: 286 unit, typecheck clean, 360 e2e. Precache 306,713/307,200 (487 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 127 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defdd0adbffebRamuAOrfGw271`). No blockers; `paintRamp()` is a verbatim lift of the inline block with identical inputs at both call sites, gating/load/first-lift semantics unchanged across set-edit/guess/swap/assist/null-load states, no flicker on hold, U127 proves the defect.
 - **Round 126 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defe29b91ffeyrOQkKk7DYDRSR`). No blockers; guard passes exactly at active/GO and no-ops in lift view, calls match steppers so set-edit/swap/assist behavior unchanged, no focus/double-write, `nextUpText()` reflects typed value and matches what opens, U126 proves the defect.
 - **Round 125 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defea40acffeIkwjVEPS69F5nI`). No blockers; `updateLiftReadouts()` is the only painter on the single-tap path, suffix agrees with `renderLift()` in all states (swap/assist/start-light/after-first-set), `s.guess` cannot diverge from `s.guess && !setsLogged`, no leak to non-guess lifts, U125 reproduces the defect.
 - **Round 124 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_deff382b0ffekKBBG8fXW6MvNo`). No blockers; hoisting `nxIdx` is side-effect free (pure `Rest.nextLift`/`firstOpenLift`), hidden-edit and all-done cases unchanged (`nxIdx=-1` -> day view), per-render closure preserved, guard tests consistent, U124 proves the divergence.

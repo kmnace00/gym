@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 127 — `[DONE round 127]` Ramp guide tracks a single stepper tap
+`paintRamp()` shared by `renderLift()` and `updateLiftReadouts()` keeps the ramp steps in sync with the load on a single stepper tap (`app.js`). U127 e2e. Gate: 286 unit, typecheck clean, 360 e2e. critic-flash GO (hy4-flash-free). `gym-v322`.
+
 ### Round 126 — `[DONE round 126]` Direct load/reps edit refreshes rest copy
 `editLoad()`/`editReps()` now call `syncRestNext()` like the steppers, so the GO "Up now" line matches a typed-in load/reps (`app.js`). U126 e2e. Gate: 286 unit, typecheck clean, 359 e2e. critic-flash GO (hy4-flash-free). `gym-v321`.
 
