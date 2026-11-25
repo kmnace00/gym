@@ -638,11 +638,8 @@
       ? "Editing set " + (editSet + 1) + " — tap Done"
       : complete ? "All " + effSets(e) + " sets done" : "Set " + (s.done + 1) + " of " + effSets(e);
   }
-  /* Light path for stepper taps (B5-20): a press-and-hold fires every 70 ms,
-     and a full render() each time rebuilds the set log, suggestion and
-     sparkline ~14× per second. During the hold only the numeric readouts and
-     the row being adjusted change, so patch those in place; the full render
-     runs on release.                                          */
+  /* Light path (B5-20): hold fires 70 ms; patch readouts/row in place and
+     render on release. */
   function updateLiftReadouts() {
     var e = ex(), s = curSt();
     var wl = workingLoad(s);
@@ -1399,12 +1396,12 @@
          either -45 or 45 means 45 lb of help, and the stored value stays the
          positive help number every rule in program.js expects. */
       var typed = (!s.swapAlt && cur_ex.assist) ? Math.abs(v) : v;
-      setWorkingLoad(s, clampLoad(Gym.round2(typed))); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+      setWorkingLoad(s, clampLoad(Gym.round2(typed))); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view()); syncRestNext();
     });
   }
   function editReps() {
     editValue(document.getElementById("repVal"), curSt().reps, 1, function (v) {
-      curSt().reps = clampReps(Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view());
+      curSt().reps = clampReps(Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view()); syncRestNext();
     });
   }
   [{id:"loadVal",fn:editLoad,lab:"Edit load"},{id:"repVal",fn:editReps,lab:"Edit reps"}].forEach(function(x){

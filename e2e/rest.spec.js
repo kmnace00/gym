@@ -281,3 +281,26 @@ test("inter-lift Up next tracks the next lift's prep load (U123)", async ({ page
   const load = (await page.locator("#restPrepLoad").textContent()).replace(" lb", "");
   await expect(page.locator("#restNext")).toContainText("Load " + load);
 });
+
+test("rest Up now tracks a direct-edited next-set reps (U126)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // set 1 -> active rest
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  expect(await page.locator("#restNext").textContent()).toContain("6 reps");
+
+  await page.clock.fastForward(200000); // active -> GO
+  await expect(page.locator("#timerBar")).toHaveClass(/go/);
+  await page.locator("#detailsBtn").click(); // peek: adjust mids visible
+  await expect(page.locator("#repVal")).toBeVisible();
+
+  await page.locator("#repVal").click();
+  await page.locator(".vin").fill("9");
+  await page.locator(".vin").press("Enter");
+  await expect(page.locator("#repVal")).toHaveText("9");
+
+  await page.locator("#detailsBtn").click(); // close peek -> #restNext visible
+  await expect(page.locator("#restNext")).toContainText("Up now —");
+  await expect(page.locator("#restNext")).toContainText("9 reps"); // stale pre-fix
+});

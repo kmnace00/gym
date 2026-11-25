@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 126 — `[DONE round 126]` Direct load/reps edit refreshes rest copy
+`editLoad()`/`editReps()` now call `syncRestNext()` like the steppers, so the GO "Up now" line matches a typed-in load/reps (`app.js`). U126 e2e. Gate: 286 unit, typecheck clean, 359 e2e. critic-flash GO (hy4-flash-free). `gym-v321`.
+
 ### Round 125 — `[DONE round 125]` Single stepper tap keeps the starting-guess tag
 `updateLiftReadouts()` now paints ` · starting guess` like `renderLift()`, so a single stepper tap no longer hides a still-active guess (`app.js`). U125 e2e. Gate: 286 unit, typecheck clean, 358 e2e. critic-flash GO (hy4-flash-free). `gym-v320`.
 
