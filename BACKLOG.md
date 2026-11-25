@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 139 — `[DONE round 139]` Apply suggested load refreshes rest copy
+`#applyLoad` now calls `syncRestNext()` so the GO headline/notification match the applied load (`app.js`). U139 e2e. Gate: 286 unit, typecheck clean, 372 e2e. critic-flash GO (hy4-flash-free). `gym-v334`.
+
 ### Round 138 — `[DONE round 138]` Print sheet hides day-switcher chrome
 Print hide list now includes `.daycluster` and `.mini`, so day tabs and chevrons no longer print (`style.css`). U138 e2e. Gate: 286 unit, typecheck clean, 371 e2e. critic-flash GO (hy4-flash-free). `gym-v333`.
 

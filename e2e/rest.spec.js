@@ -304,3 +304,31 @@ test("rest Up now tracks a direct-edited next-set reps (U126)", async ({ page })
   await expect(page.locator("#restNext")).toContainText("Up now —");
   await expect(page.locator("#restNext")).toContainText("9 reps"); // stale pre-fix
 });
+
+test("rest Up now tracks an applied suggested load (U139)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const day = Gym.todayDay(), date = Gym.dateKey(), e = Gym.DAYS[day].ex[0], state = {};
+    Gym.DAYS[day].ex.forEach((x, i) => { state[day + ":" + i] = { done: 0, load: x.load || 0, reps: x.r, rir: x.rir, sets: [] }; });
+    const good = (d) => ({ date: d, load: 60, reps: e.top + 2, rir: e.rir, hitTop: true, setsDone: 3,
+      sets: [{ load: 60, reps: e.top + 2, rir: e.rir }, { load: 60, reps: e.top + 2, rir: e.rir }, { load: 60, reps: e.top + 2, rir: e.rir }] });
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 165, state,
+      liftHistory: { [day + ":0"]: [good("2026-10-30"), good("2026-11-06")] }, sessionLog: [],
+      active: { id: "s1", date, day, startedAt: Date.now(), endedAt: null, accSec: 0, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#applyLoad")).toBeVisible();
+  await page.locator("#doneBtn").click();
+  await page.clock.fastForward(200000);
+  await expect(page.locator("#timerBar")).toHaveClass(/go/);
+  await expect(page.locator("#restNext")).toContainText("load 60");
+  await page.locator("#detailsBtn").click(); // peek reveals Apply at GO
+  await page.locator("#applyLoad").click();
+  await expect(page.locator("#loadVal")).toHaveText("62.5");
+  await page.locator("#detailsBtn").click();
+  await expect(page.locator("#restNext")).toContainText("load 62.5"); // stale pre-fix
+});

@@ -1300,8 +1300,7 @@
     var ft=(db&&db.getClientRects().length)?db:document.querySelector('.setrow[data-set="'+ei+'"]');
     if(ft&&ft.focus) ft.focus();
   }
-  /* Upper bounds for direct input (B3-18): absurd typed/held values would
-     otherwise poison 1RM, tonnage, suggestions and the CSV export. */
+  /* Direct-input caps (B3-18) */
   var MAX_LOAD = 2000, MAX_REPS = 999;
   function clampLoad(v) { return Math.min(MAX_LOAD, Math.max(0, v)); }
   function clampReps(v) { return Math.min(MAX_REPS, Math.max(1, v)); }
@@ -1537,7 +1536,7 @@
   var applyLoadBtn = document.getElementById("applyLoad");
   applyLoadBtn.onclick = function () {
     var v = parseFloat(applyLoadBtn.getAttribute("data-load"));
-    if (!isNaN(v)) { curSt().load = v; if (editSet >= 0) applySetEdit(); commit(); render(); }
+    if (!isNaN(v)) { curSt().load = v; if (editSet >= 0) applySetEdit(); commit(); render(); syncRestNext(); }
   };
 
   /* restart this lift: clear its sets, keep the working weight (two taps) */
