@@ -904,7 +904,7 @@
           return '<li class="pmover"><span class="pmname">' + esc(m.name) + '</span>'
             + '<span class="pmdelta ' + (m.pct >= 0 ? "up" : "down") + '">' + sign + m.pct + '%</span></li>';
         }).join("")
-      : '<li class="pmover empty">No lift logged twice yet</li>';
+      : '<li class="pmover empty">No comparable lifts yet</li>';
   }
 
   /* undo/restart are per-lift controls: enabled only when the visible lift has sets */

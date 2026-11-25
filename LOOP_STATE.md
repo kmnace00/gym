@@ -610,10 +610,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 130 — `[DONE round 130]` Top movers never divides reps by 1RM
 - **Wrong:** `progressMetric` returns reps at load 0 but 1RM-lb once loaded; `topMovers` compared across those units, so a null-load lift's first "start light" session (12 reps) vs a later loaded one (100 lb) rendered `+955.8%`.
 - **Changed:** skip a plain (non-bw/non-assist) lift in `topMovers` when exactly one boundary has load > 0 (`stats.js`); bw/assist and both-zero/both-loaded comparisons unchanged. Two comments condensed to fund bytes. `GYM_VERSION` `gym-v324` → `gym-v325`, CACHE-HASH → `34538c1636fc3595`.
-- **Verified in plain terms:** U130 seeds fri:5 with load 0/12 reps then 100 lb/8 reps and asserts `#pMovers` has no `%`; pre-fix got `Leg extension+955.8%`. Full gate green: 286 unit, typecheck clean, 363 e2e. Precache 306,982/307,200 (218 B headroom). critic: see review log.
+- **Verified in plain terms:** U130 seeds fri:5 with load 0/12 reps then 100 lb/8 reps and asserts `#pMovers` has no `%`; pre-fix got `Leg extension+955.8%`. Full gate green: 286 unit, typecheck clean, 363 e2e. Precache 306,982/307,200 (218 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 131 — `[DONE round 131]` Empty movers copy no longer claims a lift was never logged twice
+- **Wrong:** round 130's mixed-unit skip can leave `movers` empty for a lift that WAS logged twice (its PR is on screen), yet the only empty copy was "No lift logged twice yet".
+- **Changed:** empty copy → "No comparable lifts yet" (`app.js:907`), true for all empty-list causes (no history, one entry, all swaps/deloads, mixed-unit skips). −1 B net. U131 e2e added failing-first. `GYM_VERSION` `gym-v325` → `gym-v326`, CACHE-HASH → `c88938321b83a9f9`.
+- **Verified in plain terms:** U131 asserts `PR Leg extension` present plus new copy; pre-fix showed "No lift logged twice yet". Full gate green: 286 unit, typecheck clean, 364 e2e. Precache 306,981/307,200 (219 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 131 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defada2e4ffeo5YyOpvg1kCMN4`). No blockers; new copy accurate for every empty-list cause, old string unpinned, U131 proves the PR is present so old copy was false, no hidden logic change.
 - **Round 130 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defb665b3ffey5i1SwXWhGUqcS`). No blockers; guard skips exactly 0↔load mixed-unit boundaries, like-unit and bw/assist comparisons unchanged, injected metrics unaffected, swap/deload filtering intact, U130 reproduces the verified `+955.8%` defect.
 - **Round 129 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defc43b8dffe8t3MbfJab33qOm`). No blockers; `incDates`/`collDates` are null-prototype and shared across lift keys so a date repeated across 8 keys counts once, unsafe keys filtered before counting, U103/U73 singular-plural intact, U129 reproduces the defect.
 - **Round 128 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defd3ff08ffeEz1zvnmyXPOwBq`). No blockers; old/new predicates equivalent for extra sets, complete-banked, partial-with-earlier-history, and past-day cases; `banked` must be computed before truncation and is, U128 proves the deload-end defect.

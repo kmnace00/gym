@@ -337,6 +337,17 @@ test("the trend windows progression sessions, not raw history (v182)", async ({ 
   expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });
 
+test("empty movers copy does not claim a lift was never logged twice (U131)", async ({ page }) => {
+  await seed(page, { v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [], liftHistory: { "fri:5": [
+    { date: "2026-10-01", load: 0, reps: 12, rir: 1, hitTop: false, setsDone: 3, bw: false },
+    { date: "2026-11-01", load: 100, reps: 8, rir: 1, hitTop: false, setsDone: 3, bw: false }
+  ] } });
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pPr")).toContainText("PR Leg extension"); // it was logged twice
+  await expect(page.locator("#pMovers")).toContainText("No comparable lifts yet"); // stale pre-fix
+  await expect(page.locator("#pMovers")).not.toContainText("No lift logged twice yet");
+});
+
 test("top movers never divides reps by 1RM (U130)", async ({ page }) => {
   await seed(page, {
     v: 5, cur: "fri", idx: 0, state: {}, sessionLog: [],
