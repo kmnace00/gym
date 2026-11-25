@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 136 — `[DONE round 136]` Rest live region no longer announces every tick
+`setRestLabel()` now skips unchanged writes, so the polite `#restLive` region only mutates on real label/msg changes (`app.js`). U136 e2e. Gate: 286 unit, typecheck clean, 369 e2e. critic-flash GO (hy4-flash-free). `gym-v331`.
+
 ### Round 135 — `[DONE round 135]` Forced colors keep day tabs distinguishable
 Day-tab selection and done/partial/today dots now use Highlight outlines/fills under forced-colors (`style.css`). U135 e2e. Gate: 286 unit, typecheck clean, 368 e2e. critic-flash GO (hy4-flash-free). `gym-v330`.
 

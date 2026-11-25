@@ -744,6 +744,22 @@ for (const size of sizes) {
   });
 }
 
+test("rest live region is not rewritten on every tick (U136)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // starts a rest with a fixed label/msg
+  await page.evaluate(() => {
+    window.__liveMut = 0;
+    new MutationObserver(() => { window.__liveMut++; }).observe(
+      document.getElementById("restLive"), { childList: true, characterData: true, subtree: true });
+  });
+  const text = await page.locator("#restLive").innerText();
+  await page.clock.runFor(1000); // ~5 ticks; pre-fix rewrote the unchanged text each time
+  expect(await page.locator("#restLive").innerText()).toBe(text);
+  expect(await page.evaluate(() => window.__liveMut), "unchanged live text must not mutate on ticks").toBe(0);
+});
+
 test("forced colors keep day selection and status dots distinct (U135)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-08T10:00:00") }); // Sunday
   const lh = {};

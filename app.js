@@ -1042,7 +1042,7 @@
     renderRestPrep(v);
     applyVisibility();
   }
-  /* B3-16: the rest screen shows how long the workout has been running */
+  /* B3-16: workout elapsed on the rest screen */
   function setRestElapsed(sec) {
     if (sec === null || sec === undefined) {
       restElapsedEl.hidden = true;
@@ -1053,8 +1053,9 @@
     restElapsedEl.hidden = false; // CSS hides it during peek in every phase
   }
   function setRestLabel(t, m) {
-    document.getElementById("restLabel").textContent = t;
-    document.getElementById("restMsg").textContent = m;
+    var a = document.getElementById("restLabel"), b = document.getElementById("restMsg");
+    if (a.textContent !== t) a.textContent = t;
+    if (b.textContent !== m) b.textContent = m;
   }
   function setRestDetails(open) {
     var fe=!open&&editSet>=0&&appEl.classList.contains("resting");
