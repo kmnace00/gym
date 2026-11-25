@@ -551,7 +551,7 @@ h1{
 .bbact:active{filter:brightness(1.1)}
 .bbdismiss:active{opacity:1}
 
-/* ── B6-09: deload-week banner (day view, above the lift rows) ──────────── */
+/* B6-09: deload banner (day view, above rows) */
 .deloadbar{
   flex:none;display:flex;align-items:center;gap:8px;margin:0 0 8px;
   padding:8px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent);
@@ -709,7 +709,7 @@ input{caret-color:var(--accent)}
   }
   html,body{overflow:visible;height:auto}
   .app{height:auto;max-width:none}
-  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.bbdismiss,.bbact,.firstrun,.backupbar,#progressSegs{display:none!important}
+  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.bbdismiss,.bbact,.firstrun,.backupbar,.deloadbar,#progressSegs{display:none!important}
   .view{display:none!important}
   #dayView{display:flex!important}
   .liftlist{flex:none}
