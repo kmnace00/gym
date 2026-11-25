@@ -744,6 +744,31 @@ for (const size of sizes) {
   });
 }
 
+test("one-shot hint live region is not rewritten on unrelated renders (U143)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  await page.goto(url);
+  await page.evaluate(() => {
+    const sets = Array.from({ length: 12 }, () => ({ load: 60, reps: 6, rir: 2 }));
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: true,
+      state: { "fri:0": { done: 12, load: 60, reps: 6, rir: 2, sets } },
+      liftHistory: {}, sessionLog: [],
+      active: { id: "s", date: "2026-11-06", day: "fri", startedAt: Date.now() - 600000, accSec: 600, runningSince: null, status: "active" }
+    }));
+  });
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // set-limit guard → persistent hint, no rest
+  await expect(page.locator("#hint")).toContainText("Set limit reached");
+  await page.evaluate(() => {
+    window.__hintMut = 0;
+    new MutationObserver(() => { window.__hintMut++; }).observe(
+      document.getElementById("hint"), { childList: true, characterData: true, subtree: true });
+  });
+  await page.locator('.rir[data-rir="1"]').click(); // unrelated render, hintText unchanged
+  expect(await page.evaluate(() => window.__hintMut), "unchanged hint text must not mutate").toBe(0);
+});
+
 test("print rows stay compact on a tall canvas (U140)", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 }); // >= the 880px screen tier
   await page.goto(url);

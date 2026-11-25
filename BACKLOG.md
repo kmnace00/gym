@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 143 — `[DONE round 143]` One-shot hint live region only writes on change
+`renderLift()` now guards the `#hint` text write so unrelated renders don't re-announce a one-shot warning (`app.js`). U143 e2e. Gate: 286 unit, typecheck clean, 377 e2e. critic-flash GO (hy4-flash-free). `gym-v338`.
+
 ### Round 142 — `[DONE round 142]` Undo one set clears the done day dot
 `weekStatus()` now ignores same-day session snapshots when `liftHistory` already reports the day, so undoing one set shows `partial` instead of `done` (`stats.js`). U142 e2e. Gate: 286 unit, typecheck clean, 376 e2e. critic-flash GO (hy4-flash-free). `gym-v337`.
 

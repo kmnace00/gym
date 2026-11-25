@@ -448,8 +448,7 @@
     else if (due) { var age = Gym.backupAgeDays(payload); backupBarText.textContent = age === null ? "Never backed up — this log lives only on this phone" : "Backup " + age + " day" + (age===1?"":"s") + " old — keep your log safe"; }
   }
 
-  /* history entries *before* this session. If the current lift is already
-     complete, the newest entry is this session, so skip it. */
+  /* history before this session; if the lift is complete, skip its banked entry */
   function priorEntries() {
     var entries = Gym.series(payload, cur, idx).filter(progressionEntry); // swaps and deload weeks don't feed progression
     var s = curSt();
@@ -821,7 +820,7 @@
     }
 
     var hint = document.getElementById("hint");
-    hint.textContent = hintText;
+    if (hint.textContent !== hintText) hint.textContent = hintText;
     hint.className = "hint" + (hintText ? " show" : "") + (hintGood ? " good" : "");
 
     setNavDisabled();
