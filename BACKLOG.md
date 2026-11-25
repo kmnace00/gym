@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 125 — `[DONE round 125]` Single stepper tap keeps the starting-guess tag
+`updateLiftReadouts()` now paints ` · starting guess` like `renderLift()`, so a single stepper tap no longer hides a still-active guess (`app.js`). U125 e2e. Gate: 286 unit, typecheck clean, 358 e2e. critic-flash GO (hy4-flash-free). `gym-v320`.
+
 ### Round 124 — `[DONE round 124]` Completed lift's Next button uses the GO target
 `#goNextBtn` now reuses the `Rest.nextLift` destination already computed for `#nextLine`, so both surfaces and GO agree (`app.js`). U124 e2e. Gate: 286 unit, typecheck clean, 357 e2e. critic-flash GO (hy4-flash-free). `gym-v319`.
 

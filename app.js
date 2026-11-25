@@ -658,7 +658,7 @@
       : e.assist
         ? (s.load > 0 ? "help <b>" + s.load + "</b> lb" : "bodyweight")
         : (e.load === null
-          ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" : "start light")
+          ? (s.load > 0 ? "Load <b>" + s.load + "</b> lb" + (s.guess ? " · starting guess" : "") : "start light")
           : (e.load === 0 ? "bodyweight" : "Load <b>" + s.load + "</b> lb"));
     document.getElementById("exPres").innerHTML =
       "<b>" + s.reps + (e.top > s.reps ? "–" + e.top : "") + "</b> reps · " + loadBig

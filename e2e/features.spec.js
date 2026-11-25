@@ -2409,3 +2409,21 @@ test("abandoning after a row switch restores the working load (U120)", async ({ 
   await page.locator('[data-i="0"]').click();
   await expect(page.locator("#loadVal")).toHaveText("110");
 });
+
+test("single stepper tap keeps the starting-guess tag (U125)", async ({ page }) => {
+  await seed(page, {
+    v: 5, cur: "sun", idx: 3, bodyweight: 165, bodyweightSet: true,
+    state: {
+      "fri:3": { load: 52.5, reps: 7, rir: 2, done: 0, sets: [] }, // guess anchor
+      "sun:3": { load: 0, reps: 12, rir: 1, done: 0, sets: [] }    // blank-load fly
+    },
+    liftHistory: {}, sessionLog: []
+  });
+  await page.locator(".liftrow").nth(3).click();
+  await expect(page.locator("#exName")).toHaveText("Incline DB fly");
+  await expect(page.locator("#exPres")).toContainText("starting guess");
+  await page.locator("#loadUp").click(); // single tap: light path, no full render
+  await expect(page.locator("#exPres")).toContainText("starting guess"); // stale pre-fix
+  const guess = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).state["sun:3"].guess);
+  expect(guess).toBe(1); // still a guess by the model
+});
