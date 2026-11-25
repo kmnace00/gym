@@ -240,3 +240,44 @@ test("navigating to the day view cancels the pending GO advance (v196)", async (
 
   expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
 });
+
+test("rest Up next tracks the prep stepper's adjusted load (U123)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // set 1 -> active rest
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  expect(await page.locator("#restNext").textContent()).toContain("load ");
+
+  await page.locator("#restLoadUp").click();
+  await page.locator("#restLoadUp").click();
+  const load = (await page.locator("#restPrepLoad").textContent()).replace(" lb", "");
+  await expect(page.locator("#restNext")).toContainText("load " + load); // stale pre-fix
+
+  await page.clock.fastForward(200000); // active -> GO
+  await expect(page.locator("#restNext")).toContainText("Up now —");
+  await expect(page.locator("#restNext")).toContainText("load " + load);
+});
+
+test("inter-lift Up next tracks the next lift's prep load (U123)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  const { day, date } = await page.evaluate(() => ({ day: Gym.todayDay(), date: Gym.dateKey() }));
+  await page.evaluate(({ day, date }) => {
+    const ex = Gym.DAYS[day].ex;
+    const state = {};
+    state[day + ":0"] = { done: ex[0].s - 1, load: ex[0].load || 0, reps: ex[0].r, rir: ex[0].rir, sets: [] };
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 4, cur: day, idx: 0, bodyweight: 75, state, liftHistory: {}, sessionLog: [],
+      active: { id: "s", date, day, startedAt: Date.now() - 1200000, endedAt: null, accSec: 1200, runningSince: null, status: "active" }
+    }));
+  }, { day, date });
+  await page.reload();
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // completes lift 0 -> inter-lift rest
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  expect(await page.locator("#restNext").textContent()).toContain("Up next —");
+  await page.locator("#restLoadUp").click();
+  const load = (await page.locator("#restPrepLoad").textContent()).replace(" lb", "");
+  await expect(page.locator("#restNext")).toContainText("Load " + load);
+});

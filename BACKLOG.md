@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 123 — `[DONE round 123]` Rest "Up next" tracks prep steppers
+`#restNext` now recomputes after rest prep load/reps changes (`nextUpText()` + `restctl.setNextText()`), so active/GO copy matches the set that opens (`app.js`, `restctl.js`). U123 e2e (mid-lift + inter-lift). Gate: 286 unit, typecheck clean, 356 e2e. critic-flash GO (hy4-flash-free). `gym-v318`.
+
 ### Round 122 — `[DONE round 122]` Deload nudge no longer claims a deload happened
 Nudge copy now says "5+ weeks without a deload" — truthful when the anchor falls back to the first logged session (`app.js`); approved nudge behavior/cadence untouched (P7). U122 e2e. Gate: 286 unit, typecheck clean, 354 e2e. critic-flash GO (hy4-flash-free). `gym-v317`.
 

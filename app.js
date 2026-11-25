@@ -23,9 +23,7 @@
   function effSets(e) { return deloadActive(payload) ? deloadSets(e) : e.s; }
   /** The first open lift of the current day for the effective (deload-aware) target. */
   function firstOpen(from) { return firstOpenLift(cur, payload.state, from, effSets); }
-  /* N6/N10: the time model's calibration. Seeds until the learned values
-     exist (Stats.calibration over the last 6 timestamped sessions, >= 3 to
-     engage), stored outside the workout payload so they never export. */
+  /* N6/N10: learned pace from 6 timed sessions (>=3), outside the payload. */
   var CALIB_KEY = "gym-calibration";
   function learnedCal() {
     try { var c = JSON.parse(localStorage.getItem(CALIB_KEY) || "null"); return c && typeof c === "object" ? c : null; }
@@ -114,9 +112,7 @@
     }
     return Stats.topSet(sets, function (l, r) { return metricFor(e, l, r); });
   }
-  /* Bank the *whole* set array for a lift: this is the single source of truth
-     for tonnage, PRs, CSV and the progression nudge (extra sets included). */
-  /** Bank a lift's whole set array into today's history entry (volume/PR/CSV truth). */
+  /* Bank the whole set array — source for tonnage, PRs, CSV and the nudge. */
   function bankLift(d, i) {
     var e = DAYS[d].ex[i], s = st(d, i);
     if (!s.sets || !s.sets.length || s.done < effSets(e)) return;
@@ -933,8 +929,7 @@
   }
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
-  /* restctl.js orchestrates; this shell paints its effects. `rInt` ticks every
-     200 ms; `rArmT` is the 2,600 ms two-tap finish window.                   */
+  /* restctl orchestrates; shell paints. rInt ticks 200 ms; rArmT arms finish. */
   var rInt = null, rArmT = null, restNextRaw = "", restPrepIdx = -1;
 
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
@@ -1333,6 +1328,7 @@
     scheduleSave();
     if (view === "lift") updateLiftReadouts();
     renderRestPrep(restCtl.view());
+    syncRestNext();
   }
   function stepReps(d, tIdx) {
     if (tIdx === undefined || tIdx < 0) tIdx = idx;
@@ -1342,6 +1338,12 @@
     scheduleSave();
     if (view === "lift") updateLiftReadouts();
     renderRestPrep(restCtl.view());
+    syncRestNext();
+  }
+  function syncRestNext() {
+    if (!appEl.classList.contains("resting")) return;
+    var t = nextUpText();
+    restCtl.setNextText(t); restNextRaw = t; restNext.textContent = restCtl.view().nextText;
   }
   function bindStepper(id, fn) {
     var b = document.getElementById(id), delay = null, rep = null, held = false;
@@ -1417,6 +1419,30 @@
     renderSpark();
   };
 
+  /* Rest "Up next" must match the next set — refresh after prep steppers. */
+  function nextUpText() {
+    var s = curSt(), e = ex(), wl = workingLoad(s), list = DAYS[cur].ex, t = "";
+    if (s.done >= effSets(e)) {
+      var i = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0)), n = i >= 0 ? list[i] : null, l = "", nm = n ? n.n : "";
+      if (n) {
+        var q = st(cur, i), w;
+        nm = q.swapAlt ? q.swapAlt : n.n;
+        if (q.swapAlt) { w = workingLoad(q); l = w > 0 ? " · Load " + w : " · start light"; }
+        else if (n.assist) l = q.load > 0 ? " · help " + q.load : " · bodyweight";
+        else if (n.load === null) l = q.load > 0 ? " · Load " + q.load : " · start light";
+        else if (n.load === 0) l = " · bodyweight";
+        else l = " · Load " + q.load;
+      }
+      t = n ? "Up next — " + nm + " · " + effSets(n) + " × " + n.r + (n.top > n.r ? "–" + n.top : "") + l : "Last lift done — workout complete";
+    } else {
+      t = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " " + pl(s.reps, "rep") +
+        (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
+          : e.assist ? " · " + assistWord(s.load)
+            : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
+    }
+    return t;
+  }
+
   /* ── set done ──────────────────────────────────────────────────────────── */
   document.getElementById("doneBtn").onclick = function () {
     var e = ex(), s = curSt();
@@ -1487,28 +1513,7 @@
     /* bank set array on completion/extra sets */
     bankLift(cur, idx);
 
-    var list = DAYS[cur].ex, nextText = "";
-    if (s.done >= effSets(e)) {
-      var nxIdx = Rest.nextLift(idx, list.length, firstOpen(idx + 1), firstOpen(0));
-      var nx = nxIdx >= 0 ? list[nxIdx] : null;
-      var nxLoad = "", nxName = nx ? nx.n : "";
-      if (nx) {
-        var nsx = st(cur, nxIdx);
-        nxName = nsx.swapAlt ? nsx.swapAlt : nx.n;
-        if (nsx.swapAlt) { var nsw = workingLoad(nsx); nxLoad = nsw > 0 ? " · Load " + nsw : " · start light"; }
-        else if (nx.assist) nxLoad = nsx.load > 0 ? " · help " + nsx.load : " · bodyweight";
-        else if (nx.load === null) nxLoad = nsx.load > 0 ? " · Load " + nsx.load : " · start light";
-        else if (nx.load === 0) nxLoad = " · bodyweight";
-        else nxLoad = " · Load " + nsx.load;
-      }
-      nextText = nx ? "Up next — " + nxName + " · " + effSets(nx) + " × " + nx.r + (nx.top > nx.r ? "–" + nx.top : "") + nxLoad : "Last lift done — workout complete";
-    } else {
-      nextText = "Up next — Set " + (s.done + 1) + " of " + effSets(e) + " · " + s.reps + " " + pl(s.reps, "rep") +
-        (s.swapAlt ? (wl > 0 ? " · load " + wl : " · start light")
-          : e.assist ? " · " + assistWord(s.load)
-            : (e.load === null ? (s.load > 0 ? " · load " + s.load : " · start light") : (e.load === 0 ? " · bodyweight" : " · load " + s.load)));
-    }
-
+    var nextText = nextUpText();
     commit();
     restNextRaw = nextText;
     apply(restCtl.start(restDuration(e.rest, s.rir), (s.swapAlt || e.n) + " — set " + Math.min(s.done, effSets(e)) + " done", s.done >= effSets(e), restNote, nextText, hintText));
@@ -1731,8 +1736,7 @@
   });
 
   /* ── navigation ── */
-  /* moving between lifts by hand cancels a pending "auto-advance", so the
-     GO button can never jump somewhere the user did not choose.             */
+  /* Manual lift switches cancel pending auto-advance (no surprise GO jumps). */
   function cancelPendingAdvance() { restCtl.cancelPendingAdvance(); }
   /* navigating away abandons an in-progress set edit: the set's own value is
      already applied live by applySetEdit(), so just put the working load/

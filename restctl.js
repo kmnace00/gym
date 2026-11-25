@@ -141,6 +141,8 @@
       return out([{ type: "closeDetails" }, { type: "blurIfOutside" }]);
     }
 
+    function setNextText(t) { ctx.nextText = t || ""; }
+
     function idle(label, msg) {
       toIdle(label, msg);
       return out([]);
@@ -221,7 +223,7 @@
       start: start, tick: tick, idle: idle,
       pause: pause, resume: resume, extend15: extend15, skip: skip,
       finishReset: finishReset, cancelPendingAdvance: cancelPendingAdvance,
-      view: view
+      setNextText: setNextText, view: view
     };
   }
 
