@@ -700,10 +700,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 148 — `[DONE round 148]` Print sheet hides the deload banner
 - **Wrong:** `@media print` hid all transient day-view chrome except `.deloadbar`, so an active deload banner printed on the paper sheet even though the rows already carry reduced targets. Fresh print surface missed by 138/140/146.
 - **Changed:** add `.deloadbar,` to the print hide list and condense its comment (`style.css:554,712`), −47 B net. U148 e2e added failing-first. `GYM_VERSION` `gym-v342` → `gym-v343`, CACHE-HASH → `7fc90a2edef7c0d6`.
-- **Verified in plain terms:** live probe pre-fix print `deload:flex`, backup none; U148 asserts banner hidden on paper + visible on screen + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 382 e2e. Precache 307,018/307,200 (182 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe pre-fix print `deload:flex`, backup none; U148 asserts banner hidden on paper + visible on screen + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 382 e2e. Precache 307,018/307,200 (182 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 149 — `[DONE round 149]` Print sheet hides the save/failure bar
+- **Wrong:** `@media print` hid all transient bars except `#saveBar`, so a corrupt-payload/storage failure warning printed as an amber strip on the paper day sheet.
+- **Changed:** print hide list adds `.savebar,` and drops now-redundant `.bbdismiss,.bbact,` (they only exist inside the hidden bars) (`style.css:712`), −9 B net. U149 e2e added failing-first. `GYM_VERSION` `gym-v343` → `gym-v344`, CACHE-HASH → `649578d6279b0940`.
+- **Verified in plain terms:** live probe pre-fix print `saveBar:flex`; U149 seeds corrupt storage, asserts bar hidden on paper + visible on screen + button zero boxes + title visible; pre-fix failed. Full gate green: 286 unit, typecheck clean, 383 e2e. Precache 307,009/307,200 (191 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 149 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded21d859ffeDvAGH03Tbpd6bu`). No blockers; `.bbact`/`.bbdismiss` only exist inside hidden bars, change confined to print, day title/rows kept, screen mode untouched, U149 sound and fails pre-fix.
 - **Round 148 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded2f88c5ffeaXYjLIm3bdKi8w`). No blockers; print-only hide leaves screen banner untouched, reduced targets still in rows, day title/rows kept, U148 mirrors established print test pattern and fails pre-fix.
 - **Round 147 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded3b8698ffeBXgVfGw9dMtvVf`). No blockers; copy-only swap, routing unchanged, pre-finalize state still accurate (Finish present), no exact-string pin, U147 proves the defect condition (Finish hidden) not just copy.
 - **Round 146 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_ded4783bcffebXGbwW8rkx4a1j`). No blockers; print-only hide of `.backupbar` removes only the reminder (buttons are its children), day title/rows unaffected, screen mode untouched, U146 genuinely fails pre-fix.

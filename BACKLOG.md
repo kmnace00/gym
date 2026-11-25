@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 149 — `[DONE round 149]` Print sheet hides the save/failure bar
+The `@media print` hide list now includes `.savebar` and drops redundant `.bbact/.bbdismiss`, so storage-warning bars no longer print (`style.css`). U149 e2e. Gate: 286 unit, typecheck clean, 383 e2e. critic-flash GO (hy4-flash-free). `gym-v344`.
+
 ### Round 148 — `[DONE round 148]` Print sheet hides the deload banner
 The `@media print` hide list now includes `.deloadbar`, so the deload banner no longer prints on the day sheet (`style.css`). U148 e2e. Gate: 286 unit, typecheck clean, 382 e2e. critic-flash GO (hy4-flash-free). `gym-v343`.
 

@@ -769,6 +769,22 @@ test("one-shot hint live region is not rewritten on unrelated renders (U143)", a
   expect(await page.evaluate(() => window.__hintMut), "unchanged hint text must not mutate").toBe(0);
 });
 
+test("print sheet hides the save/failure bar (U149)", async ({ page }) => {
+  await page.goto(url);
+  await page.evaluate(() => localStorage.setItem("gym-tool-v2", "not json"));
+  await page.reload();
+  await expect(page.locator("#saveBar")).toBeVisible(); // failure bar is live on screen
+  await page.emulateMedia({ media: "print" });
+  const r = await page.evaluate(() => ({
+    bar: getComputedStyle(document.getElementById("saveBar")).display,
+    boxes: document.getElementById("saveBarAction").getClientRects().length,
+    title: getComputedStyle(document.getElementById("dayTitle")).display
+  }));
+  expect(r.bar).toBe("none"); // pre-fix: flex — failure bar printed on paper
+  expect(r.boxes).toBe(0); // its button is hidden with the parent
+  expect(r.title).not.toBe("none"); // day title must still print
+});
+
 test("print sheet hides the deload banner (U148)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-25T10:00:00") });
   await page.goto(url);

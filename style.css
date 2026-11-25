@@ -709,7 +709,7 @@ input{caret-color:var(--accent)}
   }
   html,body{overflow:visible;height:auto}
   .app{height:auto;max-width:none}
-  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.bbdismiss,.bbact,.firstrun,.backupbar,.deloadbar,#progressSegs{display:none!important}
+  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.firstrun,.backupbar,.deloadbar,.savebar,#progressSegs{display:none!important}
   .view{display:none!important}
   #dayView{display:flex!important}
   .liftlist{flex:none}
