@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 132 — `[DONE round 132]` Set count acknowledges extra sets
+`#setCount` now appends "· K extra" when more sets than prescribed are logged, matching the checked rows and summary (`app.js`). U132 e2e. Gate: 286 unit, typecheck clean, 365 e2e. critic-flash GO (hy4-flash-free). `gym-v327`.
+
 ### Round 131 — `[DONE round 131]` Empty movers copy no longer claims a lift was never logged twice
 Progress empty movers copy is now "No comparable lifts yet" — truthful for mixed-unit skips and all other empty causes (`app.js`). U131 e2e. Gate: 286 unit, typecheck clean, 364 e2e. critic-flash GO (hy4-flash-free). `gym-v326`.
 

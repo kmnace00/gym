@@ -613,9 +613,7 @@
   function setWorkingLoad(s, v) { if (s.swapAlt) { s.swapLoad = v; stashSwapLoad(s); } else s.load = v; }
   function swLoadLabel(load) { return load > 0 ? String(load) : "light"; }
   function swLoadText(load) { return load > 0 ? load + " lb" : "light"; }
-  /* the set log: one row per prescribed set, completed sets checked, the next
-     set highlighted — rows stay compact and top-aligned; the log scrolls
-     when a lift has more sets than fit */
+  /* set log: a row per set, done checked, next highlighted; scrolls if long. */
   function renderSetLog(e, s) {
     var rows = Math.max(effSets(e), s.done);
     var html = "";
@@ -636,7 +634,8 @@
     var complete = s.done >= effSets(e);
     document.getElementById("setCount").textContent = editSet >= 0
       ? "Editing set " + (editSet + 1) + " — tap Done"
-      : complete ? "All " + effSets(e) + " sets done" : "Set " + (s.done + 1) + " of " + effSets(e);
+      : complete ? "All " + effSets(e) + " sets done" + (s.done > effSets(e) ? " · " + (s.done - effSets(e)) + " extra" : "")
+        : "Set " + (s.done + 1) + " of " + effSets(e);
   }
   /* Light path (B5-20): hold fires 70 ms; patch readouts/row in place and
      render on release. */

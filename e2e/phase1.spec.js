@@ -93,6 +93,14 @@ test("a completed middle lift's Next button names the lift GO opens (U124)", asy
   await expect(page.locator("#exName")).toHaveText("Incline DB press");
 });
 
+test("set count acknowledges extra sets (U132)", async ({ page }) => {
+  await page.goto(url);
+  await seed(page, { 2: 4 }); // Bulgarian complete + 1 extra
+  await page.locator(".liftrow").nth(2).click();
+  await expect(page.locator("#setLog .setrow.done")).toHaveCount(4);
+  await expect(page.locator("#setCount")).toContainText("All 3 sets done · 1 extra"); // stale pre-fix
+});
+
 test("a fully finished day routes the button to the finish", async ({ page }) => {
   await page.goto(url);
   const all = {};

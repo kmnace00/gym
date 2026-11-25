@@ -615,10 +615,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 131 — `[DONE round 131]` Empty movers copy no longer claims a lift was never logged twice
 - **Wrong:** round 130's mixed-unit skip can leave `movers` empty for a lift that WAS logged twice (its PR is on screen), yet the only empty copy was "No lift logged twice yet".
 - **Changed:** empty copy → "No comparable lifts yet" (`app.js:907`), true for all empty-list causes (no history, one entry, all swaps/deloads, mixed-unit skips). −1 B net. U131 e2e added failing-first. `GYM_VERSION` `gym-v325` → `gym-v326`, CACHE-HASH → `c88938321b83a9f9`.
-- **Verified in plain terms:** U131 asserts `PR Leg extension` present plus new copy; pre-fix showed "No lift logged twice yet". Full gate green: 286 unit, typecheck clean, 364 e2e. Precache 306,981/307,200 (219 B headroom). critic: see review log.
+- **Verified in plain terms:** U131 asserts `PR Leg extension` present plus new copy; pre-fix showed "No lift logged twice yet". Full gate green: 286 unit, typecheck clean, 364 e2e. Precache 306,981/307,200 (219 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 132 — `[DONE round 132]` Set count acknowledges extra sets
+- **Wrong:** with an extra set logged, `renderSetLog()` shows N+1 checked rows and the summary counts N+1, but `#setCount` still said "All N sets done" — a screen reader reviewing the rows was told too few.
+- **Changed:** append " · K extra" to the complete-case count when `s.done > effSets(e)` (`app.js:637`); set-log comment condensed to fund bytes. U132 e2e added failing-first. `GYM_VERSION` `gym-v326` → `gym-v327`, CACHE-HASH → `fa9ac5c7ccdeb607`.
+- **Verified in plain terms:** U132 seeds done=4 on a 3-set lift, asserts 4 done rows and "All 3 sets done · 1 extra"; pre-fix was "All 3 sets done". Full gate green: 286 unit, typecheck clean, 365 e2e. Precache 306,945/307,200 (255 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 132 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defa1d7ebffeknMCGuQugYO3HZ`). No blockers; suffix only in complete+over-target branch, deload/hostile-payload cases semantically right, existing `toContainText` pins and exact-match a11y assertions unaffected, U132 proves the defect.
 - **Round 131 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defada2e4ffeo5YyOpvg1kCMN4`). No blockers; new copy accurate for every empty-list cause, old string unpinned, U131 proves the PR is present so old copy was false, no hidden logic change.
 - **Round 130 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defb665b3ffey5i1SwXWhGUqcS`). No blockers; guard skips exactly 0↔load mixed-unit boundaries, like-unit and bw/assist comparisons unchanged, injected metrics unaffected, swap/deload filtering intact, U130 reproduces the verified `+955.8%` defect.
 - **Round 129 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_defc43b8dffe8t3MbfJab33qOm`). No blockers; `incDates`/`collDates` are null-prototype and shared across lift keys so a date repeated across 8 keys counts once, unsafe keys filtered before counting, U103/U73 singular-plural intact, U129 reproduces the defect.
