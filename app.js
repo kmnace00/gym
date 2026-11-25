@@ -923,7 +923,7 @@
 
   /* ── rest timer (timestamp-based: honest even if the phone sleeps) ─────── */
   /* restctl orchestrates; shell paints. rInt ticks 200 ms; rArmT arms finish. */
-  var rInt = null, rArmT = null, restNextRaw = "", restPrepIdx = -1;
+  var rInt = null, rArmT = null, restPrepIdx = -1;
 
   function resetPauseUi() { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
   function stopInterval() { if (rInt) { clearInterval(rInt); rInt = null; } }
@@ -1337,7 +1337,7 @@
   function syncRestNext() {
     if (!appEl.classList.contains("resting")) return;
     var t = nextUpText();
-    restCtl.setNextText(t); restNextRaw = t; restNext.textContent = restCtl.view().nextText;
+    restCtl.setNextText(t); restNext.textContent = restCtl.view().nextText;
   }
   function bindStepper(id, fn) {
     var b = document.getElementById(id), delay = null, rep = null, held = false;
@@ -1509,7 +1509,6 @@
 
     var nextText = nextUpText();
     commit();
-    restNextRaw = nextText;
     apply(restCtl.start(restDuration(e.rest, s.rir), (s.swapAlt || e.n) + " — set " + Math.min(s.done, effSets(e)) + " done", s.done >= effSets(e), restNote, nextText, hintText));
 
     ensureAudio();
@@ -2042,7 +2041,7 @@
     if (!notifyOn() || !window.Notification || window.Notification.permission !== "granted" || !document.hidden) return;
     if (restEndEst && Date.now() - restEndEst > 20000) return;
     var title = kind === "prep" ? "Rest almost done — get ready" : "Rest done — GO";
-    var opts = { body: restNextRaw || "Next set", tag: "gym-rest" };
+    var opts = { body: restCtl.view().nextText || "Next set", tag: "gym-rest" };
     if (navigator.serviceWorker && navigator.serviceWorker.ready) {
       navigator.serviceWorker.ready.then(function (reg) {
         if (reg && reg.showNotification) {

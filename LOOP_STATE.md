@@ -640,10 +640,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 136 — `[DONE round 136]` Rest live region no longer announces every tick
 - **Wrong:** `#restLive` is an aria-live polite region; `setRestLabel()` rewrote both children with identical text on every 200 ms rest tick (~900 identical mutations over a 3-min rest).
 - **Changed:** guard each `textContent` write with a comparison in `setRestLabel()` (`app.js:1055`); B3-16 comment condensed to fund bytes. U136 e2e added failing-first. `GYM_VERSION` `gym-v330` → `gym-v331`, CACHE-HASH → `81787c5debed86c9`.
-- **Verified in plain terms:** live probe showed 5 mutations in 1 s pre-fix; U136 (clock + MutationObserver) asserts unchanged text and zero mutations; pre-fix got 5. Full gate green: 286 unit, typecheck clean, 369 e2e. Precache 307,065/307,200 (135 B headroom). critic: see review log.
+- **Verified in plain terms:** live probe showed 5 mutations in 1 s pre-fix; U136 (clock + MutationObserver) asserts unchanged text and zero mutations; pre-fix got 5. Full gate green: 286 unit, typecheck clean, 369 e2e. Precache 307,065/307,200 (135 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 137 — `[DONE round 137]` GO notification body says Up now
+- **Wrong:** the GO heads-up body came from `restNextRaw` (always "Up next —") even though the in-app line at GO says "Up now —" — the lock-screen banner at rest end told the lifter the set was still next.
+- **Changed:** notification body now reads `restCtl.view().nextText` (active ⇒ "Up next —", go ⇒ "Up now —"); removed the dead `restNextRaw` cache and its two writes (`app.js:926,1340,1512,2045`), −50 B. U137 e2e added failing-first. `GYM_VERSION` `gym-v331` → `gym-v332`, CACHE-HASH → `ccffd3e26267e025`.
+- **Verified in plain terms:** U137 stubs SW showNotification, asserts prep body "Up next —" and GO body "Up now —"; pre-fix GO body was "Up next — Set 2 of 3 · …". Full gate green: 286 unit, typecheck clean, 370 e2e. Precache 307,014/307,200 (186 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 137 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def676d28ffe5JkKQ3an4ygaCX`). No blockers; effect application is synchronous at correct phase, `view().nextText` populated for all notify paths and matches in-app line, blocked-advance/complete copy preserved, no orphan readers, U137 genuinely fails pre-fix.
 - **Round 136 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def6f5fd5ffeQn9mXJu8MrlRTM`). No blockers; all real message paths (start/GO/paused/idle/PR hint) pass genuinely different strings so no announcement suppressed, leaf-node textContent comparison safe, e2e observes exactly the per-tick mutations, no other consumers affected.
 - **Round 135 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def7b8fcaffeITZUNj0TOc383a`). No blockers; rules confined to forced-colors block so normal mode untouched, `Highlight` is a valid system color already used in the same block, day states are mutually exclusive so no overlap, focus outline still present, U135 proves the defect.
 - **Round 134 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def8590e5ffeKBTQ5Mt5EPEkwH`). No blockers; guard no-ops outside rest, set-edit input committed first, GO "Up now —" replacement and notification raw text preserved, focus untouched, U134 reproduces the exact stale-copy defect.

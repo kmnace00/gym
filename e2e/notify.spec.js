@@ -97,6 +97,19 @@ test("a 10 s heads-up precedes GO; both route through the SW registration", asyn
   expect(shown[1][1].tag).toBe("gym-rest");
 });
 
+test("GO notification body says Up now, matching the in-app rest line (U137)", async ({ page }) => {
+  await armedPage(page);
+  await startRest(page);
+  await expect(page.locator("#restNext")).toContainText("Up next —");
+  await page.clock.runFor(181000); // heads-up at 170 s, GO at 180 s
+  await expect(page.locator("#restNext")).toContainText("Up now —"); // in-app already right
+  const shown = await page.evaluate(() => window.__shown);
+  expect(shown[1][0]).toBe("Rest done — GO");
+  expect(shown[0][1].body).toContain("Up next —"); // prep banner unchanged
+  expect(shown[1][1].body).toContain("Up now —"); // stale pre-fix ("Up next — …")
+  expect(shown[1][1].body).not.toContain("Up next —");
+});
+
 test("each banner auto-closes 30 s after it appears (GO replaces the heads-up timer)", async ({ page }) => {
   await armedPage(page);
   await startRest(page);
