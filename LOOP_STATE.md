@@ -594,10 +594,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 127 — `[DONE round 127]` Ramp guide tracks a single stepper tap
 - **Wrong:** `#rampLine` was painted only by `renderLift()`; a single stepper tap uses `updateLiftReadouts()` with no full render, so the ramp kept the old load's steps while `#exPres` showed the new one.
 - **Changed:** factored `paintRamp(e, s, wl, sw)` and called it from both painters; gating and load selection unchanged, −56 B net. U127 e2e added failing-first. `GYM_VERSION` `gym-v321` → `gym-v322`, CACHE-HASH → `b6f8dfe3ea5e1e75`.
-- **Verified in plain terms:** U127 single-taps loadUp and asserts the ramp steps change; pre-fix kept `30×5 · 42.5×3 · 50×1`. Full gate green: 286 unit, typecheck clean, 360 e2e. Precache 306,713/307,200 (487 B headroom). critic: see review log.
+- **Verified in plain terms:** U127 single-taps loadUp and asserts the ramp steps change; pre-fix kept `30×5 · 42.5×3 · 50×1`. Full gate green: 286 unit, typecheck clean, 360 e2e. Precache 306,713/307,200 (487 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 128 — `[DONE round 128]` Undo after ending a deload drops the banked snapshot
+- **Wrong:** `undoSet()` keyed history popping on `wasComplete = s.done >= effSets()`. Ending a deload mid-workout raises effSets 2→3, so undoing a 2-set deload lift left state at 1 set but kept the 2-set history entry — Progress/CSV/PRs kept counting the undone set.
+- **Changed:** export `Gym.bankedSnapshot` (store.js) and use it in `undoSet()` (computed before decrement) to decide the pop; extra-set case still re-banks (`app.js:1140`). `GYM_VERSION` `gym-v322` → `gym-v323`, CACHE-HASH → `987fea11ab44ee76`.
+- **Verified in plain terms:** U128 seeds a deload-stamped 2-set entry + an older entry, ends deload, undoes, asserts the trailing entry is popped; pre-fix got `hist.length=2`. Full gate green: 286 unit, typecheck clean, 361 e2e. Precache 306,702/307,200 (498 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 128 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defd3ff08ffeEz1zvnmyXPOwBq`). No blockers; old/new predicates equivalent for extra sets, complete-banked, partial-with-earlier-history, and past-day cases; `banked` must be computed before truncation and is, U128 proves the deload-end defect.
 - **Round 127 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defdd0adbffebRamuAOrfGw271`). No blockers; `paintRamp()` is a verbatim lift of the inline block with identical inputs at both call sites, gating/load/first-lift semantics unchanged across set-edit/guess/swap/assist/null-load states, no flicker on hold, U127 proves the defect.
 - **Round 126 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defe29b91ffeyrOQkKk7DYDRSR`). No blockers; guard passes exactly at active/GO and no-ops in lift view, calls match steppers so set-edit/swap/assist behavior unchanged, no focus/double-write, `nextUpText()` reflects typed value and matches what opens, U126 proves the defect.
 - **Round 125 — critic-flash reviewer: GO** (Tier 1, off-peak, opencode/hy4-flash-free, `ses_defea40acffeIkwjVEPS69F5nI`). No blockers; `updateLiftReadouts()` is the only painter on the single-tap path, suffix agrees with `renderLift()` in all states (swap/assist/start-light/after-first-set), `s.guess` cannot diverge from `s.guess && !setsLogged`, no leak to non-guess lifts, U125 reproduces the defect.

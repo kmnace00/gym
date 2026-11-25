@@ -1140,16 +1140,14 @@
     resetEdit();
     var s = curSt();
     if (s.done <= 0) return;
-    var wasComplete = s.done >= effSets(ex());
+    var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
+    var banked = Gym.bankedSnapshot(arr, s, payload);
     s.done--;
     if (s.sets && s.sets.length > s.done) s.sets.length = s.done;
     if (s.done <= 0) { s.topHits = 0; s.lastRir = null; }
-    if (wasComplete && s.done < effSets(ex())) {
-      var arr = payload.liftHistory && payload.liftHistory[cur + ":" + idx];
-      if (arr && arr.length) arr.pop();
-    } else if (s.done >= effSets(ex())) {
-      bankLift(cur, idx);
-    }
+    if (s.done < effSets(ex())) {
+      if (banked && arr && arr.length) arr.pop();
+    } else bankLift(cur, idx);
     stopInterval();
     timerIdle("", "Set removed — back to set " + (s.done + 1) + ".");
     commit(); render();

@@ -1124,7 +1124,7 @@
     activeHasData: activeHasData, startSessionClock: startSessionClock, pauseSessionClock: pauseSessionClock,
     sessionElapsedSec: sessionElapsedSec,
     finalizeSession: finalizeSession, startSession: startSession, rollSession: rollSession, reopenSession: reopenSession,
-    resetLift: resetLift, resetDay: resetDay,
+    resetLift: resetLift, resetDay: resetDay, bankedSnapshot: bankedSnapshot,
     markBackup: markBackup, backupAgeDays: backupAgeDays, backupDue: backupDue, hasData: hasData,
     mergePayload: mergePayload, importMerge: importMerge, reconcile: reconcile,
     deloadActive: deloadActive,

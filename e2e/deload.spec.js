@@ -94,6 +94,37 @@ for (const size of sizes) {
   });
 }
 
+test("undo after ending a deload drops the banked snapshot (U128)", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
+  const sets = [{ load: 60, reps: 6, rir: 2 }, { load: 60, reps: 6, rir: 2 }];
+  await page.goto(url);
+  await page.evaluate((sets) => {
+    localStorage.setItem("gym-tool-v2", JSON.stringify({
+      v: 5, cur: "fri", idx: 0, bodyweight: 165, bodyweightSet: false,
+      deloadSince: "2026-11-06",
+      state: { "fri:0": { load: 60, reps: 6, rir: 2, done: 2, topHits: 0, lastRir: 2, exId: "fri-smith-squat", sets: sets } },
+      liftHistory: { "fri:0": [
+        { date: "2026-10-30", load: 55, reps: 6, rir: 2, hitTop: false, setsDone: 3, exId: "fri-smith-squat" },
+        { date: "2026-11-06", load: 60, reps: 6, rir: 2, hitTop: false, setsDone: 2, sets: sets, exId: "fri-smith-squat", deload: true }
+      ] },
+      sessionLog: [],
+      active: { id: "s1", date: "2026-11-06", day: "fri", startedAt: Date.now() - 600000, endedAt: null, accSec: 600, runningSince: null, status: "active" }
+    }));
+  }, sets);
+  await page.reload();
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#deloadEnd")).toBeVisible();
+  await page.locator("#deloadEnd").click();
+  await page.locator("#modalClose").click();
+  await page.locator(".liftrow").first().click();
+  await expect(page.locator("#setCount")).toHaveText("Set 3 of 3"); // deload target was 2
+
+  await page.locator("#undoSetBtn").click();
+  const hist = await page.evaluate(() => JSON.parse(localStorage.getItem("gym-tool-v2")).liftHistory["fri:0"]);
+  expect(hist.length).toBe(1); // pre-fix: the 2-set deload snapshot stays
+  expect(hist[0].date).toBe("2026-10-30");
+});
+
 test("the rest screen's Up next counts the deload sets, not the programme's (v183)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seed(page);
