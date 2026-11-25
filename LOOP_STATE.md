@@ -655,10 +655,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 139 — `[DONE round 139]` Apply suggested load refreshes rest copy
 - **Wrong:** `#applyLoad` wrote the new working load but (unlike steppers and direct edits) omitted `syncRestNext()`, so at GO the rest headline/notification still promised the old load (62.5 applied but "load 60" shown).
 - **Changed:** `syncRestNext()` added to `applyLoadBtn.onclick` after commit/render (`app.js:1539`); direct-input caps comment condensed to fund bytes. U139 e2e added failing-first. `GYM_VERSION` `gym-v333` → `gym-v334`, CACHE-HASH → `14dd14db84303554`.
-- **Verified in plain terms:** U139 seeds two qualifying sessions, reaches GO, peeks + applies 62.5, asserts restNext "load 62.5"; pre-fix stayed "load 60". Full gate green: 286 unit, typecheck clean, 372 e2e. Precache 306,936/307,200 (264 B headroom). critic: see review log.
+- **Verified in plain terms:** U139 seeds two qualifying sessions, reaches GO, peeks + applies 62.5, asserts restNext "load 62.5"; pre-fix stayed "load 60". Full gate green: 286 unit, typecheck clean, 372 e2e. Precache 306,936/307,200 (264 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 140 — `[DONE round 140]` Print rows stay compact on a tall canvas
+- **Wrong:** the `@media (min-height:880px)` screen tier came after the print block with equal specificity, overriding print's `.liftrow{min-height:44px}` to 58px at paper/tall viewport sizes.
+- **Changed:** scope the tier to `@media screen and (min-height:880px)` (`style.css:794`); all rules in the block are screen layout, print keeps its own. U140 e2e added failing-first. `GYM_VERSION` `gym-v334` → `gym-v335`, CACHE-HASH → `a2434efda967c94b`.
+- **Verified in plain terms:** live probe confirmed print `.liftrow` 58px pre-fix; U140 asserts 44px at 1280x900 print; pre-fix got 58px. Full gate green: 286 unit, typecheck clean, 373 e2e. Precache 306,947/307,200 (253 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 140 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def4bc69affeZzl8f9xT7qduuZ`). No blockers; print keeps its own 44px row rule, `screen` matches all normal viewports so screen layout unchanged, other min-height tiers don't conflict, U140 genuinely fails pre-fix.
 - **Round 139 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def534072ffeiDlw8HNRiiaAwE`). No blockers; guard no-ops outside rest, Apply unreachable while swapped, assist help number path stays truthful, no focus/suggestion interaction, GO notification body fixed too, U139 genuinely fails pre-fix.
 - **Round 138 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def5e63a8ffeNHjWCe5lXxJ1Px`). No blockers; `.mini` hides only day chevrons (lift chevrons already hidden with the lift view), day title stays, screen mode untouched, e2e correctly uses getClientRects for the child of a hidden parent.
 - **Round 137 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def676d28ffe5JkKQ3an4ygaCX`). No blockers; effect application is synchronous at correct phase, `view().nextText` populated for all notify paths and matches in-app line, blocked-advance/complete copy preserved, no orphan readers, U137 genuinely fails pre-fix.

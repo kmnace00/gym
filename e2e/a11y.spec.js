@@ -744,6 +744,14 @@ for (const size of sizes) {
   });
 }
 
+test("print rows stay compact on a tall canvas (U140)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 }); // >= the 880px screen tier
+  await page.goto(url);
+  await page.emulateMedia({ media: "print" });
+  const minH = await page.evaluate(() => getComputedStyle(document.querySelector(".liftrow")).minHeight);
+  expect(minH).toBe("44px"); // pre-fix: 58px from the screen-only tall tier
+});
+
 test("print sheet hides day-switcher chrome (U138)", async ({ page }) => {
   await page.goto(url);
   await page.emulateMedia({ media: "print" });

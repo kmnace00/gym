@@ -719,6 +719,9 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 140 — `[DONE round 140]` Print rows stay compact on a tall canvas
+The 880px layout tier is now screen-only, so print keeps its 44px lift rows (`style.css`). U140 e2e. Gate: 286 unit, typecheck clean, 373 e2e. critic-flash GO (hy4-flash-free). `gym-v335`.
+
 ### Round 139 — `[DONE round 139]` Apply suggested load refreshes rest copy
 `#applyLoad` now calls `syncRestNext()` so the GO headline/notification match the applied load (`app.js`). U139 e2e. Gate: 286 unit, typecheck clean, 372 e2e. critic-flash GO (hy4-flash-free). `gym-v334`.
 

@@ -791,7 +791,7 @@ input{caret-color:var(--accent)}
   .dayband{display:block}
 }
 
-@media (min-height:880px){
+@media screen and (min-height:880px){
   .app{gap:16px}
   /* day view: compact, scannable rows up top; the flex:1 list absorbs the
      spare height as breathing room above the pinned bottom dock */
