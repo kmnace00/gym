@@ -908,6 +908,8 @@
     }
 
     var incHist = isObj(incoming && incoming.liftHistory) ? incoming.liftHistory : {}, k2;
+    /* count distinct dates: one session banks an entry per lift. */
+    var incDates = Object.create(null), collDates = Object.create(null);
     for (k2 in incHist) if (own(incHist, k2) && !unsafeKey(k2)) {
       var seen = Object.create(null);
       var existing = own(out.liftHistory, k2) && Array.isArray(out.liftHistory[k2]) ? out.liftHistory[k2] : [];
@@ -920,10 +922,10 @@
         /* same-date collision: keep the fuller session, never blindly clobber */
         if (!prev) {
           seen[dk] = e;
-          if (fromIncoming && inc) inc.added = (inc.added || 0) + 1;
+          if (fromIncoming && inc && e.date && !incDates[e.date]) { incDates[e.date] = 1; inc.added = (inc.added || 0) + 1; }
         } else {
           if ((e.setsDone || (e.sets || []).length) > (prev.setsDone || (prev.sets || []).length)) seen[dk] = e;
-          if (fromIncoming && inc) inc.collisions = (inc.collisions || 0) + 1;
+          if (fromIncoming && inc && e.date && !collDates[e.date]) { collDates[e.date] = 1; inc.collisions = (inc.collisions || 0) + 1; }
         }
       }
       existing.forEach(function (e) { keep(e, false); });

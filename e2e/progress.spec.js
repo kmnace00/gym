@@ -337,6 +337,23 @@ test("the trend windows progression sessions, not raw history (v182)", async ({ 
   expect(pts, "the sparkline plots the last 12 progression sessions").toBe(12);
 });
 
+test("merge confirmation counts workouts, not lift rows (U129)", async ({ page }) => {
+  await seed(page, { v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, liftHistory: {}, sessionLog: [] });
+  const lifts = await page.evaluate(() => Gym.DAYS.fri.ex.map((e) => ({ id: e.id, load: e.load || 0, reps: e.r, rir: e.rir, s: e.s })));
+  const lh = {};
+  lifts.forEach((e, i) => {
+    lh["fri:" + i] = [{ date: "2026-11-06", load: e.load, reps: e.reps, rir: e.rir, hitTop: false, setsDone: e.s, exId: e.id }];
+  });
+  const backup = JSON.stringify({ v: 5, cur: "fri", idx: 0, bodyweight: 165, state: {}, liftHistory: lh, sessionLog: [] });
+  await page.locator("#menuBtn").click();
+  await page.setInputFiles("#importFile", { name: "one-workout.json", mimeType: "application/json", buffer: Buffer.from(backup) });
+  await expect(page.locator("#modalMsg")).toContainText("+1 new session");
+  await expect(page.locator("#modalMsg")).not.toContainText("+8 new sessions");
+  await page.locator("#modalClose").click();
+  await page.locator("#progressBtn").click();
+  await expect(page.locator("#pSessions")).toHaveText("1");
+});
+
 test("Recent sessions makes no trend claim from a single session (U118)", async ({ page }) => {
   /* One session draws no spark line (app.js clears pSpark under 2 points), so
      the note must not claim a "tonnage trend" that is not rendered. */

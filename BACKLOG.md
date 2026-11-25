@@ -719,6 +719,10 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 129 — `[DONE round 129]` Merge confirmation counts workouts, not lift rows
+`mergePayload()` now counts distinct dates for `added`/`collisions`, so a one-workout backup reports "+1 new session" instead of one per lift row (`store.js`). U129 e2e. Gate: 286 unit, typecheck clean, 362 e2e. critic-flash GO (hy4-flash-free). `gym-v324`.
+- Rejected round-129 first candidate: "partial-lift set edit doesn't re-bank" — no history entry exists for partial lifts (verified live), nothing stale.
+
 ### Round 128 — `[DONE round 128]` Undo after ending a deload drops the banked snapshot
 `undoSet()` now uses the shared `Gym.bankedSnapshot` predicate instead of `wasComplete`, so undo after a mid-workout deload end removes the stale 2-set history entry (`app.js`, `store.js`). U128 e2e. Gate: 286 unit, typecheck clean, 361 e2e. critic-flash GO (hy4-flash-free). `gym-v323`.
 
