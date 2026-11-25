@@ -744,6 +744,23 @@ for (const size of sizes) {
   });
 }
 
+test("print sheet hides day-switcher chrome (U138)", async ({ page }) => {
+  await page.goto(url);
+  await page.emulateMedia({ media: "print" });
+  const d = await page.evaluate(() => {
+    const s = (sel) => getComputedStyle(document.querySelector(sel)).display;
+    return {
+      cluster: s("#dayCluster"), prev: s("#dayPrev"), next: s("#dayNext"), title: s("#dayTitle"),
+      tabBoxes: document.querySelector(".daytab").getClientRects().length
+    };
+  });
+  expect(d.cluster).toBe("none"); // pre-fix: flex
+  expect(d.prev).toBe("none"); // pre-fix: grid
+  expect(d.next).toBe("none"); // pre-fix: grid
+  expect(d.tabBoxes).toBe(0); // day tabs inherit the hidden cluster; pre-fix: visible
+  expect(d.title).not.toBe("none"); // the day title must still print
+});
+
 test("rest live region is not rewritten on every tick (U136)", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-06T10:00:00") });
   await page.goto(url);

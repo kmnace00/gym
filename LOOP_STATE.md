@@ -645,10 +645,16 @@ Full gate per round: `npm run check` + `npm run typecheck` + `npm run e2e`. Cach
 ### Round 137 — `[DONE round 137]` GO notification body says Up now
 - **Wrong:** the GO heads-up body came from `restNextRaw` (always "Up next —") even though the in-app line at GO says "Up now —" — the lock-screen banner at rest end told the lifter the set was still next.
 - **Changed:** notification body now reads `restCtl.view().nextText` (active ⇒ "Up next —", go ⇒ "Up now —"); removed the dead `restNextRaw` cache and its two writes (`app.js:926,1340,1512,2045`), −50 B. U137 e2e added failing-first. `GYM_VERSION` `gym-v331` → `gym-v332`, CACHE-HASH → `ccffd3e26267e025`.
-- **Verified in plain terms:** U137 stubs SW showNotification, asserts prep body "Up next —" and GO body "Up now —"; pre-fix GO body was "Up next — Set 2 of 3 · …". Full gate green: 286 unit, typecheck clean, 370 e2e. Precache 307,014/307,200 (186 B headroom). critic: see review log.
+- **Verified in plain terms:** U137 stubs SW showNotification, asserts prep body "Up next —" and GO body "Up now —"; pre-fix GO body was "Up next — Set 2 of 3 · …". Full gate green: 286 unit, typecheck clean, 370 e2e. Precache 307,014/307,200 (186 B headroom). critic-flash GO (hy4-flash-free): see review log.
+
+### Round 138 — `[DONE round 138]` Print sheet hides day-switcher chrome
+- **Wrong:** the `@media print` hide list omitted `.daycluster` (Fri/Sat/Sun tabs) and `.mini` (#dayPrev/#dayNext chevrons), so the printed day sheet showed interactive navigation controls (probed live: cluster flex, tabs inline-flex, chevrons grid).
+- **Changed:** add `.daycluster,.mini` to the print hide list (`style.css:712`); day title still prints, lift view already hidden. U138 e2e added failing-first. `GYM_VERSION` `gym-v332` → `gym-v333`, CACHE-HASH → `afe1392afca6fd0b`.
+- **Verified in plain terms:** U138 emulates print media and asserts cluster/chevrons hidden, tabs have zero boxes, title visible; pre-fix failed with `flex`. Full gate green: 286 unit, typecheck clean, 371 e2e. Precache 307,032/307,200 (168 B headroom). critic: see review log.
 
 ## Review log
 
+- **Round 138 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def5e63a8ffeNHjWCe5lXxJ1Px`). No blockers; `.mini` hides only day chevrons (lift chevrons already hidden with the lift view), day title stays, screen mode untouched, e2e correctly uses getClientRects for the child of a hidden parent.
 - **Round 137 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def676d28ffe5JkKQ3an4ygaCX`). No blockers; effect application is synchronous at correct phase, `view().nextText` populated for all notify paths and matches in-app line, blocked-advance/complete copy preserved, no orphan readers, U137 genuinely fails pre-fix.
 - **Round 136 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def6f5fd5ffeQn9mXJu8MrlRTM`). No blockers; all real message paths (start/GO/paused/idle/PR hint) pass genuinely different strings so no announcement suppressed, leaf-node textContent comparison safe, e2e observes exactly the per-tick mutations, no other consumers affected.
 - **Round 135 — critic-flash reviewer: GO** (Tier 1, free local model, opencode/hy4-flash-free, `ses_def7b8fcaffeITZUNj0TOc383a`). No blockers; rules confined to forced-colors block so normal mode untouched, `Highlight` is a valid system color already used in the same block, day states are mutually exclusive so no overlap, focus outline still present, U135 proves the defect.
