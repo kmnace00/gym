@@ -719,6 +719,12 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 152 — `[EMPTY round 152]` Final rotation empty — QUEUE DRY
+Unprobed angles (rollover/timezone, quota/write failure, offline/SW, import/export messages, backup age, keyboard traps, reduced-motion/high-contrast/zoom, first-run empty states) all clean. Repo untouched; baseline `gym-v345`, 384 e2e green.
+
+### Round 151 — `[EMPTY round 151]` Honest empty survey
+No fresh T1 outside closed/parked families; repo untouched. Only evidence-backed near-miss (flat mover painted green, `app.js:898-900`) declined as topMovers is closed (130/131). Funding source noted for a future byte-tight round: deleting the redundant `tempoLine.style.display=""` write (`app.js:738`) is −99 B with no user-visible effect.
+
 ### Round 150 — `[DONE round 150]` Partial lift's last-set RIR copy follows the selection
 `#exPres` now follows the selected RIR on a partial lift's last set instead of always claiming "0–1 RIR" (`app.js`). U150 e2e. Gate: 286 unit, typecheck clean, 384 e2e. critic-flash GO (hy4-flash-free). `gym-v345`.
 - **Defect:** `#exPres` hard-codes "0–1 RIR · last set" for the last set of a flagged partial lift even when the user selects RIR 2 — the same screen shows the hint "2 in the tank" and `aria-pressed` on RIR 2, and behavior agrees with 2 (no +30s rest, no partials cue). Two duplicated ternaries: `app.js:646` and `app.js:723`.
