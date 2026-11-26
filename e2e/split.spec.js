@@ -41,12 +41,22 @@ for (const size of sizes) {
       await expect(page.locator(".daytab")).toHaveCount(3);
       await expect(page.locator("#dayTitle")).toContainText("Push + Quads");
 
-      /* toggle from the menu */
+      /* switch from the menu: a segmented control shows both splits, with
+         the one in use highlighted (v347 — the old single "Split: …" button
+         read as a status label, not an action) */
       await page.locator("#menuBtn").click();
-      await expect(page.locator("#splitToggle")).toContainText("Split: 3-day");
-      await page.locator("#splitToggle").click();
-      await expect(page.locator("#splitToggle")).toContainText("Split: 4-day");
+      await expect(page.locator("#split3Btn")).toHaveClass(/on/);
+      await expect(page.locator("#split3Btn")).toHaveAttribute("aria-pressed", "true");
+      await expect(page.locator("#split4Btn")).not.toHaveClass(/on/);
+      await expect(page.locator("#split4Btn")).toHaveAttribute("aria-pressed", "false");
+      await page.locator("#split4Btn").click();
+      await expect(page.locator("#split4Btn")).toHaveClass(/on/);
+      await expect(page.locator("#split4Btn")).toHaveAttribute("aria-pressed", "true");
+      await expect(page.locator("#split3Btn")).not.toHaveClass(/on/);
       await expect(page.locator("#modalMsg")).toContainText("4-day split on");
+      /* tapping the split already in use changes nothing */
+      await page.locator("#split4Btn").click();
+      await expect(page.locator("#modalMsg")).toContainText("Already on the 4-day split");
       await page.locator("#modalClose").click();
 
       /* four tabs now; Friday is Upper A, and the week strip knows Monday */
@@ -70,9 +80,10 @@ for (const size of sizes) {
       await expect(page.locator(".liftrow")).toHaveCount(6);
       await noOverflow(page);
 
-      /* toggle back: the squat history is home on Friday again */
+      /* switch back: the squat history is home on Friday again */
       await page.locator("#menuBtn").click();
-      await page.locator("#splitToggle").click();
+      await page.locator("#split3Btn").click();
+      await expect(page.locator("#split3Btn")).toHaveClass(/on/);
       await expect(page.locator("#modalMsg")).toContainText("3-day split on");
       await page.locator("#modalClose").click();
       await expect(page.locator(".daytab")).toHaveCount(3);
@@ -85,6 +96,17 @@ for (const size of sizes) {
       expect(saved.split).toBe("3");
       expect(saved.liftHistory["fri:0"]).toHaveLength(1);
       expect(errors).toEqual([]);
+    });
+
+    test("day rows stay compact — they never stretch to fill spare height (v347)", async ({ page }) => {
+      await seed(page);
+      const heights = await page.locator(".liftrow").evaluateAll((rows) => rows.map((r) => r.getBoundingClientRect().height));
+      expect(heights.length).toBeGreaterThan(0);
+      for (const h of heights) {
+        expect(h, "lift row keeps the 44px tap target").toBeGreaterThanOrEqual(44);
+        expect(h, "lift row must not stretch into a tall sparse card").toBeLessThanOrEqual(68);
+      }
+      await noOverflow(page);
     });
 
     test("a payload saved in 4-day mode reopens in 4-day mode", async ({ page }) => {

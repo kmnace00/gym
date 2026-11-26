@@ -2152,14 +2152,23 @@
      nothing is reset. An in-progress session keeps its day if that day
      exists in the new split (fri/sat/sun do in both); a Monday session
      toggled back to 3-day banks under its lifts' 3-day homes.            */
+  /* Nov 26, 2026 (v347): the split is a segmented control, not a toggle
+     button — both options are always visible and the highlighted one is
+     the split in use, so there is nothing to guess about what a tap does. */
   function renderSplit() {
-    var b = document.getElementById("splitToggle");
-    if (b) b.textContent = splitMode() === "4" ? "Split: 4-day · Upper/Lower ×2" : "Split: 3-day · Fri–Sun";
+    var is4 = splitMode() === "4";
+    var b3 = document.getElementById("split3Btn"), b4 = document.getElementById("split4Btn");
+    if (b3) { b3.classList.toggle("on", !is4); b3.setAttribute("aria-pressed", String(!is4)); }
+    if (b4) { b4.classList.toggle("on", is4); b4.setAttribute("aria-pressed", String(is4)); }
   }
-  document.getElementById("splitToggle").onclick = function () {
+  function setSplit(mode) {
+    if (splitMode() === mode) {
+      setMsg(mode === "4" ? "Already on the 4-day split." : "Already on the 3-day split.");
+      return;
+    }
     cancelPendingAdvance();
     resetEdit(); clearUndo();
-    payload.split = splitMode() === "4" ? "3" : "4";
+    payload.split = mode;
     applySplit();
     payload = Gym.reconcile(payload, DAYS);
     if (!DAYS[cur]) cur = Gym.todayDay(splitMode());
@@ -2168,10 +2177,12 @@
     if (open >= 0) idx = open;
     view = "day";
     commit(); render(); updateFoot(); syncRestNext(); renderSplit();
-    setMsg(splitMode() === "4"
+    setMsg(mode === "4"
       ? "4-day split on — Upper/Lower ×2, Fri–Mon. Same lifts and loads, shorter days." + saveResult(true)
       : "3-day split on — Fri–Sun, as before. Loads and history kept." + saveResult(true));
-  };
+  }
+  document.getElementById("split3Btn").onclick = function () { setSplit("3"); };
+  document.getElementById("split4Btn").onclick = function () { setSplit("4"); };
   var bwInput = document.getElementById("bwInput");
   bwInput.addEventListener("input", function () {
     if (saveBw(this.value)) setMsg("Bodyweight set to " + payload.bodyweight + " lb" + saveResult(true));

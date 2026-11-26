@@ -114,11 +114,16 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 .daytitle{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.2;flex:1}
 .daysub{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .firstrun{font-size:12px;color:var(--muted);line-height:1.3;text-wrap:balance}
-.liftlist{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;list-style:none}
+.liftlist{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+/* v347: rows are compact at every height, not just the >=880px tall canvas.
+   They used to flex-grow to fill the list, so a 6-lift day on a tall phone
+   stretched each row past 100px of mostly empty card. Now a row is its
+   content (~56px) and the spare height sits as breathing room above the
+   pinned bottom dock — the tall-canvas design, applied everywhere. */
 .liftrow{
-  flex:1 0 auto;min-height:52px;overflow:hidden;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);
+  flex:none;min-height:56px;overflow:hidden;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-md);
   width:100%;text-align:left;background:var(--surface);
-  border:1px solid var(--line);border-radius:14px;padding:0 14px;
+  border:1px solid var(--line);border-radius:14px;padding:6px 14px;
   transition:border-color .2s ease,background .2s ease,transform .08s ease;
 }
 .liftrow:active{transform:scale(.992)}
@@ -386,6 +391,7 @@ h1{
   .dayhead{padding-bottom:6px}
   .daytab{padding:0 7px;font-size:12px}
   .liftlist{gap:5px}
+  .liftrow{min-height:50px;padding-top:4px;padding-bottom:4px}
   h1{font-size:23px;margin:0 0 4px}
   .guide{margin-top:4px;font-size:13.5px;line-height:1.4}
   .cue{font-size:13.5px;line-height:1.4}
@@ -462,6 +468,18 @@ h1{
 .modalbtn:active{filter:brightness(1.12)}
 /* B6-09: the deload controls read as a mode switch, not a data action */
 .modalbtn-deload{color:var(--accent);background:var(--accent-soft)}
+
+/* v347: the training-split segmented control — both splits always visible,
+   the one in use is filled; tapping the other one switches. Replaces the
+   single "Split: …" button whose label read as a status, not an action. */
+.splitseg{flex:none;display:flex;flex-direction:column;gap:7px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.splitseg-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center}
+.splitseg-btns{display:flex;gap:6px}
+.splitseg-btn{flex:1;min-height:48px;border-radius:9px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 6px;color:var(--muted);transition:background .15s ease,color .15s ease,border-color .15s ease}
+.splitseg-btn .splitseg-t{font-size:14.5px;font-weight:700;line-height:1.2}
+.splitseg-btn .splitseg-s{font-size:11px;font-weight:600;line-height:1.2;opacity:.85}
+.splitseg-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.splitseg-btn:not(.on):active{filter:brightness(1.15)}
 
 /* short phones: make room for the suggestion + sparkline so Set Done stays on-screen */
 @media (max-height:720px){
@@ -789,6 +807,9 @@ input{caret-color:var(--accent)}
 /* the tally needs ~26px of room the 667 canvas cannot spare */
 @media (min-height:720px){
   .dayband{display:block}
+  /* v347: with compact rows there is height to spare — spend a little of
+     it on a larger lift name instead of empty card */
+  .liftname{font-size:17px}
 }
 
 @media screen and (min-height:880px){

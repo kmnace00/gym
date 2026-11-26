@@ -196,7 +196,13 @@
     <label class="modalrow" for="bwInput">Bodyweight (lb)<input type="number" id="bwInput" inputmode="decimal" min="66" max="700" step="0.5"></label>
     <button class="modalbtn modalbtn-deload" id="deloadStart" type="button">Start deload week</button>
     <button class="modalbtn modalbtn-deload" id="deloadEnd" type="button" hidden>End deload week</button>
-    <button class="modalbtn" id="splitToggle" type="button">Split: 3-day</button>
+    <div class="splitseg" role="group" aria-labelledby="splitLabel">
+      <span class="splitseg-label" id="splitLabel">Training split — tap to switch</span>
+      <div class="splitseg-btns">
+        <button class="splitseg-btn" id="split3Btn" type="button" aria-pressed="true"><span class="splitseg-t">3-day</span><span class="splitseg-s">Fri–Sun</span></button>
+        <button class="splitseg-btn" id="split4Btn" type="button" aria-pressed="false"><span class="splitseg-t">4-day</span><span class="splitseg-s">Upper/Lower ×2</span></button>
+      </div>
+    </div>
     <div class="modalsep"></div>
     <button class="modalbtn" id="themeToggle" type="button">Theme: Dark</button>
     <button class="modalbtn" id="notifyToggle" type="button">Rest notifications: Off</button>
