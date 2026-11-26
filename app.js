@@ -442,7 +442,7 @@
           : e.load === null ? (s.load > 0 ? "Load " + s.load + (s.guess && !(s.sets || []).length ? " (guess)" : "") : "start light")
             : e.load === 0 ? "bodyweight" : "Load " + s.load;
       var restTxt = fmt(restDuration(e.rest, s.rir));
-      rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" role="button" tabindex="0">'
+      rows += '<li class="liftrow' + (done ? " done" : "") + (i === idx ? " now" : "") + '" data-i="' + i + '" tabindex="0">'
         + '<span class="liftstatus">' + (done ? "✓" : "") + '</span>'
         + '<span class="liftmain"><span class="liftname">' + esc(s.swapAlt || e.n) + '</span>'
         + '<span class="liftmeta">' + effSets(e) + '×' + e.r + (e.top > e.r ? "–" + e.top : "") + ' · ' + loadTxt + ' · ' + restTxt + ' rest</span></span>'
@@ -1453,9 +1453,13 @@
       curSt().reps = clampReps(Math.round(v)); if (editSet >= 0) applySetEdit(); commit(); render(); renderRestPrep(restCtl.view()); syncRestNext();
     });
   }
-  [{id:"loadVal",fn:editLoad,lab:"Edit load"},{id:"repVal",fn:editReps,lab:"Edit reps"}].forEach(function(x){
+  /* No aria-label on these zones: the visible text IS the name
+     ("Load (lb) 135"). A fixed "Edit load" label fails Label-in-Name
+     the moment the value changes — the name would stop containing
+     the text on screen. Content-as-name stays true at every value. */
+  [{id:"loadVal",fn:editLoad},{id:"repVal",fn:editReps}].forEach(function(x){
     var m=/** @type {HTMLElement} */ (document.getElementById(x.id).parentNode);
-    m.tabIndex=0; m.setAttribute("role","button"); m.setAttribute("aria-label",x.lab);
+    m.tabIndex=0; m.setAttribute("role","button");
     m.onclick=x.fn; m.onkeydown=function(ev){ if(ev.key==="Enter"||ev.key===" "){ev.preventDefault(); x.fn();} };
   });
 

@@ -1,7 +1,7 @@
 /* ── design tokens — dark-first, light is an explicit opt-in ───────────── */
 :root{
   --bg:#17100b; --surface:#241811; --surface-2:#2e1f14; --line:#513d24;
-  --ink:#f7ebd9; --muted:#d2a97c; --faint:#b28c60;
+  --ink:#f7ebd9; --muted:#d2a97c; --muted-strong:#e6c491; --faint:#b28c60;
   --accent:#e3a857; --accent-ink:#2e2a26; --accent-soft:rgba(227,168,87,.16);
   --good:#7fb069; --warn-bg:#3a2c0c; --warn:#fbbf24;
   --danger:#f87171;
@@ -10,7 +10,7 @@
 }
 html[data-theme="light"]{
   --bg:#fdebd2; --surface:#fff9ef; --surface-2:#f7e3c2; --line:#dfc28f;
-  --ink:#2e2a26; --muted:#7a5c3e; --faint:#7d6138;
+  --ink:#2e2a26; --muted:#7a5c3e; --muted-strong:#644627; --faint:#7d6138;
   --accent:#855126; --accent-ink:#ffffff; --accent-soft:rgba(133,81,38,.14);
   --good:#3e7531; --warn-bg:#fef3c7; --warn:#92400e;
   --danger:#b91c1c;
@@ -128,6 +128,7 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 }
 .liftrow:active{transform:scale(.992)}
 .liftrow.now .chev{color:var(--accent)}
+.liftrow.now .liftmeta{color:var(--muted-strong)}
 .liftrow.now{border-color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow-md),inset 3px 0 0 var(--accent)}
 .liftrow.done{opacity:.62}
 .liftrow.done .liftstatus{color:var(--good)}
@@ -159,7 +160,7 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 /* N22: the closing Zone 2 finisher line — display only, never a lift row.
    It lives inside the day dock (below), so it is a plain line, not a card. */
 .finisher{flex:none;font-size:13px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
-.finisher .fzopt{opacity:.78}
+.finisher .fzopt{color:var(--muted-strong)}
 
 /* The day dock: the day's tail (today tally + Zone 2 finisher) is one surface
    that runs off the screen edges and into the home-indicator inset, so the day
@@ -231,6 +232,7 @@ h1{
 .setrow.now .sn{background:var(--accent);color:var(--accent-ink)}
 .setrow .sr{font-weight:800;font-size:16.5px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .setrow .srir{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.setrow.now .srir{color:var(--muted-strong)}
 .setrow .smark{font-weight:800;font-size:14px;text-align:center;color:var(--accent)}
 .setrow.done{opacity:.78}
 /* B10-02: a done row is tappable (tap-to-edit) — give it press feedback */
@@ -498,6 +500,7 @@ h1{
 .splitseg-btn{flex:1;min-height:48px;border-radius:9px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:5px 6px;color:var(--muted);transition:background .15s ease,color .15s ease,border-color .15s ease}
 .splitseg-btn .splitseg-t{font-size:14.5px;font-weight:700;line-height:1.2}
 .splitseg-btn .splitseg-s{font-size:11px;font-weight:600;line-height:1.2;opacity:.85}
+.splitseg-btn:not(.on) .splitseg-s{color:var(--muted-strong);opacity:1}
 .splitseg-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .splitseg-btn:not(.on):active{filter:brightness(1.15)}
 
