@@ -137,6 +137,22 @@ button:focus-visible,[role="button"]:focus-visible,input:focus-visible{outline:2
 .liftmeta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chev{flex:none;font-size:20px;color:var(--faint);line-height:1;transition:transform .15s ease}
 .liftrow:active .chev{transform:translateX(2px)}
+/* v348: the session brief — a panel that fills exactly the height the
+   compact rows (v347) free up on taller phones, with the four facts worth
+   seeing before a session: what's up next, what happened last time this
+   day, the warm-up rule, and when you'll be done. It flex-grows into the
+   spare space and spreads its rows to fill it; below 720px height there
+   is no spare space, so it stays hidden and the layout is unchanged. */
+.daybrief{display:none}
+@media (min-height:720px){
+  .liftlist{flex:0 1 auto}
+  .daybrief{flex:1 1 auto;min-height:0;margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-md);padding:10px 14px;display:flex;flex-direction:column;justify-content:space-evenly;gap:6px;overflow:hidden}
+}
+.app.resting .daybrief{display:none}
+.briefrow{display:flex;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.briefk{flex:none;width:76px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.briefv{flex:1;min-width:0;font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.briefnext .briefv{font-weight:700}
 .progress{flex:none;display:flex;gap:4px;height:6px;margin-top:8px}
 .pseg{flex:1;height:6px;background:var(--line);border-radius:99px;overflow:hidden}
 .pseg i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s ease;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15)}
@@ -727,7 +743,7 @@ input{caret-color:var(--accent)}
   }
   html,body{overflow:visible;height:auto}
   .app{height:auto;max-width:none}
-  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.firstrun,.backupbar,.deloadbar,.savebar,#progressSegs{display:none!important}
+  .menubtn,.pill,.backbtn,.chev,.daycluster,.mini,.timer,.planbtn,.firstrun,.backupbar,.deloadbar,.savebar,.daybrief,#progressSegs{display:none!important}
   .view{display:none!important}
   #dayView{display:flex!important}
   .liftlist{flex:none}

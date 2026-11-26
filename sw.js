@@ -7,7 +7,7 @@
    the ASSETS contents and fails when the recorded hash no longer matches, so a
    changed asset can't ship without a version bump.                         */
 importScripts("./version.js");          // single source for the deploy tag (B3-33)
-const CACHE = GYM_VERSION; // CACHE-HASH: 73601926b25ca401
+const CACHE = GYM_VERSION; // CACHE-HASH: 43e5e02ceef79336
 const ASSETS = [
   "./", "./index.html", "./version.js", "./style.css",
   "./program.js", "./store.js", "./timer.js", "./machine.js", "./stats.js", "./rest.js", "./restctl.js", "./app.js",
@@ -56,7 +56,7 @@ self.addEventListener("fetch", (e) => {
           });
         }
         /* stale-while-revalidate, but conditionally: an unchanged asset costs a
-           304 header instead of re-downloading ~286 KB of JS/CSS on every load. */
+           304 header instead of re-downloading ~298 KB of JS/CSS on every load. */
         const cond = {};
         const etag = hit.headers.get("etag");
         if (etag) cond["If-None-Match"] = etag;

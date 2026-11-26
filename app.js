@@ -458,6 +458,40 @@
     });
     document.getElementById("progressSegs").innerHTML = segs;
 
+    /* v348: the session brief — fills the height the compact rows free up
+       (the panel itself is CSS-gated to >=720px-tall screens). Up next is
+       the viewed day's first unfinished lift; last time is the newest
+       history date across this day's lifts, with that date's logged sets
+       summed; done-by projects the remaining estimate onto the clock.   */
+    var briefNext = document.getElementById("briefNext");
+    if (briefNext) {
+      var nextLift = (!complete && firstOpenIdx >= 0) ? list[firstOpenIdx] : null;
+      briefNext.textContent = complete
+        ? "All lifts done — nice work"
+        : nextLift ? (st(cur, firstOpenIdx).swapAlt || nextLift.n) + " · " + effSets(nextLift) + "×" + nextLift.r + (nextLift.top > nextLift.r ? "–" + nextLift.top : "")
+          : "—";
+      var lastDate = null, lastSets = 0;
+      list.forEach(function (e, i) {
+        Gym.series(payload, cur, i).forEach(function (en) {
+          if (!en || !en.date) return;
+          if (!lastDate || en.date > lastDate) { lastDate = en.date; lastSets = en.setsDone || 0; }
+          else if (en.date === lastDate) lastSets += en.setsDone || 0;
+        });
+      });
+      var briefLast = document.getElementById("briefLast");
+      if (briefLast) briefLast.textContent = lastDate
+        ? fmtDate(lastDate) + " · " + lastSets + (lastSets === 1 ? " set" : " sets") + " logged"
+        : "No sessions logged for this day yet";
+      var minsLeft = totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts());
+      var doneBy = new Date(Date.now() + minsLeft * 60000);
+      var hh = doneBy.getHours(), ap = hh >= 12 ? "PM" : "AM";
+      hh = hh % 12 || 12;
+      var briefDoneBy = document.getElementById("briefDoneBy");
+      if (briefDoneBy) briefDoneBy.textContent = "~" + hh + ":" + (doneBy.getMinutes() < 10 ? "0" : "") + doneBy.getMinutes() + " " + ap + " · " + minsLeft + " min" + (totalDone > 0 ? " left" : " total");
+      var briefDoneRow = document.getElementById("briefDoneRow");
+      if (briefDoneRow) briefDoneRow.style.display = complete ? "none" : "";
+    }
+
     var due = !backupDismissed && Gym.backupDue(payload);
     backupBar.hidden = !due && !backupMsg;
     if (backupMsg) { backupBarText.textContent = backupMsg; backupMsg = ""; }
