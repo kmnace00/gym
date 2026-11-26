@@ -643,7 +643,7 @@
       : e.assist ? (s.load > 0 ? "-" + s.load : "0")
         : ((e.load === null && s.load === 0) ? "—" : s.load);
     document.getElementById("repVal").textContent = s.reps;
-    var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
+    var rirTxt = lastRirTxt(e, s);
     var effRest = restDuration(e.rest, s.rir);
     var loadBig = s.swapAlt
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
@@ -720,7 +720,7 @@
       if (gLoad) { s.load = gLoad; s.guess = 1; commit(); }
     }
 
-    var rirTxt = (e.partial && s.done === effSets(e) - 1) ? "0–1 RIR · last set" : s.rir + " RIR";
+    var rirTxt = lastRirTxt(e, s);
     var loadBig = sw
       ? (wl > 0 ? "Load <b>" + wl + "</b> lb" : "start light")
       : e.assist
@@ -1245,6 +1245,7 @@
     "4 in the tank — easy, four or more left"
   ];
   function rirText(rir) { return RIR_TXT[Math.max(0, Math.min(4, rir | 0))]; }
+  function lastRirTxt(e,s){return e.partial&&s.done===effSets(e)-1&&s.rir<=1?"0–1 RIR · last set":s.rir+" RIR";}
   for (var ri = 0; ri <= 4; ri++) {
     (function (rv) {
       var b = document.createElement("button");

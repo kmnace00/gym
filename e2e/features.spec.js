@@ -568,6 +568,23 @@ test("no partials cue when the last set is RIR 2", async ({ page }) => {
   await page.locator("#skipRest").click();
 });
 
+test("partial lift's last-set RIR copy follows the selected RIR (U150)", async ({ page }) => {
+  await seed(page, { v: 2, cur: "fri", idx: 5, state: {}, liftHistory: {} });
+  await page.locator(".liftrow").nth(5).click(); // Leg extension, partial:1, default RIR 1
+  for (var i = 0; i < 2; i++) {
+    await page.locator("#doneBtn").click();
+    await page.locator("#skipRest").click();
+  }
+  await expect(page.locator("#exPres")).toContainText("0–1 RIR · last set"); // default guidance preserved
+  await page.locator('.rir[data-rir="2"]').click(); // user overrides the last set to RIR 2
+  await expect(page.locator("#exPres")).toContainText("2 RIR"); // stale pre-fix: 0–1 RIR
+  await expect(page.locator("#exPres")).not.toContainText("0–1 RIR");
+  await page.locator("#doneBtn").click(); // last set logs at RIR 2
+  await expect(page.locator("#restMsg")).toContainText("Stretch — set up the next set.");
+  await expect(page.locator("#restMsg")).not.toContainText("+30s"); // app agrees it's RIR 2
+  await page.locator("#skipRest").click();
+});
+
 test("a lift without the partial flag never shows the partials cue", async ({ page }) => {
   await seed(page, { v: 2, cur: "fri", idx: 0, state: {}, liftHistory: {} });
   await page.locator(".liftrow").nth(0).click();
