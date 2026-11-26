@@ -538,6 +538,21 @@ test("the menu is reachable on a short phone", async ({ page }) => {
    the content fit, there was nothing to scroll back to; the head was simply
    unreachable. The card now sizes from the overlay's padded box and that box
    reserves the chrome. */
+test("the menu opens as a bottom sheet on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(url);
+  await page.locator("#menuBtn").click();
+  await expect(page.locator("#modal")).toBeVisible();
+  await page.waitForTimeout(350); // let the sheet entrance settle
+  const card = await page.evaluate(() => {
+    const r = document.querySelector(".modal-card").getBoundingClientRect();
+    const padBottom = parseFloat(getComputedStyle(document.querySelector(".modal")).paddingBottom);
+    return { bottom: r.bottom, inner: window.innerHeight, top: r.top, padBottom };
+  });
+  expect(Math.abs(card.bottom - (card.inner - card.padBottom)), "sheet sits on the bottom of the usable area (chrome reservation kept)").toBeLessThanOrEqual(2);
+  expect(card.top, "sheet does not fill the whole screen").toBeGreaterThan(0);
+});
+
 test("the menu card keeps its head clear of the system chrome in standalone (N25)", async ({ page }) => {
   const cases = [
     // standalone reports the physical screen as the layout viewport

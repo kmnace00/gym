@@ -622,3 +622,29 @@ the region, gap ≤8 px); do not delete the spec. Full gate per
 Files: `style.css`, `app.js` (render / aria only), `index.html`
 (guide wrapper only if needed), `e2e/*` (new geometry spec +
 sizing-spec update), `sw.js` (bump). Rollback: one revert.
+
+
+## Design rules (2026-11-26) — tokens & never list
+
+The standing visual contract, extracted from the shipped `style.css`
+tokens during the Nov 2026 AI-UI-design research round. The dated
+passes above record how the app got here; this section is what new UI
+builds against.
+
+- **Tokens.** Dark-first coffee palette: bg `#17100B`, surface
+  `#241811`, surface-2 `#2E1F14`, line `#513D24`, ink `#F7EBD9`, muted
+  `#D2A97C`. One accent: amber `#E3A857` (light theme `#855126` on
+  cream `#FDEBD2`). Good `#7FB069`, warn `#FBBF24`, danger `#F87171`
+  mean only what they say. Radius 16px cards / 12px small. Figures
+  always `tabular-nums` — timers and counters never twitch sideways.
+- **Never.** No centred pop-ups for action menus on the phone — the
+  Menu is a bottom sheet (thumb reach, drag handle, safe-area
+  padding); reading surfaces (the workout summary) may stay centred.
+  No gradients, no second accent, no sideways scrolling, no page
+  scroll: one screen, always. No tap target under 44px; no input
+  under 16px (iOS zoom). No animation without a job: feedback,
+  guidance, or state change.
+- **Motion.** Entrances use the ease-out family
+  `cubic-bezier(.23,1,.32,1)` and stay under 300ms; the GO moment is
+  the one deliberate exception (it earns its pulse). The global
+  `prefers-reduced-motion` rule kills all of it — no exceptions.

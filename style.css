@@ -315,7 +315,11 @@ h1{
 .app.resting .timer .tlabel strong{display:block;font-size:19px;white-space:normal}
 .app.resting .timer .tlabel span{margin-top:4px}
 .app.resting .timer .tbtns{display:flex;gap:10px}
-.app.resting .timer .tbtns button{height:50px;padding:0 22px;font-size:15px;min-width:108px}
+.app.resting .timer .tbtns button{height:auto;min-height:50px;padding:6px 22px;font-size:15px;min-width:108px}
+/* The armed two-tap label ("Tap again to finish") is three times the resting
+   label's length: the primary button takes the row's spare width and the
+   row grows instead of clipping the word 'finish' (v351). */
+.app.resting .timer .tbtns #skipRest{flex:1 1 auto}
 /* End rest is the advance action: filled, unlike the +15 / Pause outlines.
    The GO-state rule below still wins at GO (same specificity, later). */
 .app.resting .timer .tbtns #skipRest{background:var(--ink);color:var(--bg);border-color:transparent}
@@ -857,4 +861,15 @@ input{caret-color:var(--accent)}
 /* print: never expose the on-screen day band */
 @media print{
   .dayband{display:none!important}
+}
+
+/* ── menu as a bottom sheet on phone widths ─────────────────────────────
+   PWA pattern from the Nov 2026 AI-UI-design research round: action menus
+   belong in a thumb-reach sheet, not a centred pop-up. The summary card
+   stays centred — it is a reading surface, not a menu. The global
+   reduced-motion rule above already kills this entrance. */
+@media (max-width:560px){
+  .modal{align-items:flex-end;padding-left:0;padding-right:0}
+  .modal-card{max-width:none;border-radius:20px}
+  .modal-card::before{content:"";align-self:center;flex:none;width:36px;height:4px;border-radius:99px;background:var(--line);margin:-6px 0 2px}
 }
