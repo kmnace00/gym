@@ -719,6 +719,13 @@ App rests are 90/120/150/180 s. Literature (to be cited in
 for isolations. Audit each lift's rest against that, propose
 changes — T3 for the actual numbers.
 
+### Round 150 — `[READY round 150]` Partial lift's last-set RIR copy follows the selection
+**Verified live 2026-11-26 (Thu) ~03:40 UTC, tree clean at `c005c16`; not yet built — next round's work.**
+- **Defect:** `#exPres` hard-codes "0–1 RIR · last set" for the last set of a flagged partial lift even when the user selects RIR 2 — the same screen shows the hint "2 in the tank" and `aria-pressed` on RIR 2, and behavior agrees with 2 (no +30s rest, no partials cue). Two duplicated ternaries: `app.js:646` and `app.js:723`.
+- **Fix (−19 B net, no funding needed):** hoist a helper near `rirText()` (`app.js:1247`): `function lastRirTxt(e,s){return e.partial&&s.done===effSets(e)-1&&s.rir<=1?"0–1 RIR · last set":s.rir+" RIR";}` and use `var rirTxt = lastRirTxt(e, s);` at both sites. Default copy ("0–1 RIR · last set" when rir≤1) is byte-identical; only the overridden case (rir≥2) flips to `s.rir + " RIR"`.
+- **Failing-first U150 (e2e/features.spec.js, after the RIR-2 partials test; `PARTIALS` const at :541):** seed `{v:2,cur:"fri",idx:5}`, open `.liftrow` #5, log 2 sets + skipRest, assert `#exPres` contains "0–1 RIR · last set" (guard), tap `.rir[data-rir="2"]`, assert `#exPres` has "2 RIR" and not "0–1 RIR", tap doneBtn, assert `#restMsg` "Stretch — set up the next set." and no "+30s". Pre-fix live probe: `pres:"…0–1 RIR · last set…", hint:"2 in the tank…", pressed:"true"`.
+- **Then:** `gym-v344` → `gym-v345`, CACHE-HASH recompute, full gate (286 unit, typecheck, 383+ e2e), critic (`date -u` first — peak window Mon–Fri 01:00–04:00/06:00–10:00 UTC → `critic-local`; off-peak → `critic-flash` on `opencode/hy4-flash-free`), LOOP_STATE record, `fleet-ship`. No existing e2e pins the old `#exPres` string (only `#restMsg` "+30s for 0–1 RIR" at features.spec.js:553, unaffected).
+
 ### Round 149 — `[DONE round 149]` Print sheet hides the save/failure bar
 The `@media print` hide list now includes `.savebar` and drops redundant `.bbact/.bbdismiss`, so storage-warning bars no longer print (`style.css`). U149 e2e. Gate: 286 unit, typecheck clean, 383 e2e. critic-flash GO (hy4-flash-free). `gym-v344`.
 
