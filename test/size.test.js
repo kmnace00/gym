@@ -32,8 +32,12 @@ test("ten years of per-set history stays under localStorage quota", () => {
    Ceiling raised 250 -> 300 KB in v131 (Nov 13): the Phase 1 release Khang
    approved (timestamps + calibration engine, ramps, honest clock, notify
    rework) added ~18 KB of code; 272 KB total is still a small precache.
+   Recorded in DECISIONS.md.
+   Ceiling raised 300 -> 320 KB in v346 (Nov 26, 2026): the 4-day split
+   Khang asked for (DAYS4 program set, split toggle, mode-aware week/stats
+   plumbing) added ~6 KB; ~313 KB total is still a small one-shot precache.
    Recorded in DECISIONS.md. */
-test("precached assets stay under 300 KB and every listed asset exists", () => {
+test("precached assets stay under 320 KB and every listed asset exists", () => {
   const sw = fs.readFileSync(path.join(__dirname, "..", "sw.js"), "utf8");
   const assets = C.parseAssets(sw);
   assert.ok(assets, "sw.js must still expose a plausible ASSETS array");
@@ -42,7 +46,7 @@ test("precached assets stay under 300 KB and every listed asset exists", () => {
     assert.ok(fs.existsSync(path.join(__dirname, "..", a)), "ASSETS lists a missing file: " + a);
     bytes += fs.statSync(path.join(__dirname, "..", a)).size;
   }
-  assert.ok(bytes < 300 * 1024, "precached assets total " + bytes + " bytes; keep under 300 KB");
+  assert.ok(bytes < 320 * 1024, "precached assets total " + bytes + " bytes; keep under 320 KB");
 });
 
 /* Every gate that reads sw.js must agree on what the ASSETS list is. If the

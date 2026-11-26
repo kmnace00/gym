@@ -70,6 +70,42 @@
     ] }
   };
 
+  /* ── 4-day split (Khang's ask, Nov 26, 2026) ─────────────────────────────
+     An Upper/Lower ×2 week built from the SAME lift objects as the 3-day
+     program: DAYS4 lists each lift by id and reuses the object, so loads,
+     reps, rests and cues can never drift between modes, and store.reconcile()
+     re-homes every record/history entry by `exId` when the user toggles —
+     nothing is lost in either direction. Weekly volume is the 3-day volume
+     (same sets per muscle) spread over four shorter days; the one addition
+     is hip abduction, which already existed as Sunday's alt-week slot in
+     the sun-calf-raise cue (2×12 · 205) and is now a weekly Lower B lift.
+     Evidence + design: RESEARCH.md "Research pass Nov 26, 2026".          */
+  var LIFT_BY_ID = {};
+  Object.keys(DAYS).forEach(function (d) {
+    DAYS[d].ex.forEach(function (e) { LIFT_BY_ID[e.id] = e; });
+  });
+  var HIP_ABDUCTION = { id: "mon-hip-abduction", n: "Hip abduction", alts: ["Cable hip abduction", "Standing hip abduction"], s: 2, r: 12, top: 12, load: 205, step: 5, rest: 90, rir: 1, cue: "Push knees out, pause at the end." };
+  LIFT_BY_ID[HIP_ABDUCTION.id] = HIP_ABDUCTION;
+  function liftsOf(ids) { return ids.map(function (id) { return LIFT_BY_ID[id]; }); }
+  var DAYS4 = {
+    fri: { label: "Friday — Upper A · Push", ex: liftsOf([
+      "fri-smith-incline", "fri-incline-db", "fri-pec-deck",
+      "fri-weighted-dip", "fri-cable-lat", "sun-seated-row"
+    ]) },
+    sat: { label: "Saturday — Lower A · Quads + Biceps", ex: liftsOf([
+      "fri-smith-squat", "fri-bulgarian", "fri-leg-ext", "sat-calf-raise",
+      "sat-supinated-curl", "sat-preacher-curl"
+    ]) },
+    sun: { label: "Sunday — Upper B · Pull + Light Chest", ex: liftsOf([
+      "sat-front-pulldown", "sat-tbar-row", "sun-pullups", "sun-machine-ohp",
+      "sun-incline-db-fly", "sat-rear-delt", "sun-lat-pec"
+    ]) },
+    mon: { label: "Monday — Lower B · Hinge + Glutes", ex: liftsOf([
+      "sun-leg-press", "sat-cable-rdl", "sat-leg-curl", "mon-hip-abduction",
+      "sun-calf-raise", "sun-oh-ext"
+    ]) }
+  };
+
   /* named model constants (were magic numbers 50 / 60 in dayMins) */
   var SET_SECS = 50, TRANSITION_SECS = 60;
   /* N6/N7 (Nov 13): the honest-clock additions. STRETCH_SECS is the pre-work
@@ -154,8 +190,8 @@
   /** Scheduled minutes for a whole day (N6 honest clock): sets × (set +
       setup + rest) + transitions + the stretch block + ramp-up time. `cal`
       optionally overrides the stretch/setup seeds with learned values.     */
-  function dayMins(d, cal) {
-    var c = calOf(cal), t = c.stretch, list = DAYS[d].ex;
+  function dayMins(d, cal, days) {
+    var c = calOf(cal), t = c.stretch, list = (days || DAYS)[d].ex;
     for (var i = 0; i < list.length; i++) {
       var e = list[i], n = c.deload ? deloadSets(e) : e.s;
       t += n * (SET_SECS + c.setup) + n * e.rest;
@@ -168,8 +204,8 @@
   }
 
   /* pure: state is passed in, not read from a global */
-  function dayMinsLeft(d, state, cal) {
-    var c = calOf(cal), anyDone = false, list = DAYS[d].ex, i, rec;
+  function dayMinsLeft(d, state, cal, days) {
+    var c = calOf(cal), anyDone = false, list = (days || DAYS)[d].ex, i, rec;
     for (i = 0; i < list.length; i++) {
       rec = state && state[d + ":" + i];
       if (rec && typeof rec.done === "number" && rec.done > 0) anyDone = true;
@@ -202,8 +238,8 @@
    * @param {number} from
    * @returns {number}
    */
-  function firstOpenLift(d, state, from, target) {
-    var list = DAYS[d].ex, i, rec, done;
+  function firstOpenLift(d, state, from, target, days) {
+    var list = (days || DAYS)[d].ex, i, rec, done;
     for (i = Math.max(0, from); i < list.length; i++) {
       rec = state && state[d + ":" + i];
       done = rec && typeof rec.done === "number" ? rec.done : 0;
@@ -353,7 +389,7 @@
   }
 
   return {
-    DAYS: DAYS, SET_SECS: SET_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
+    DAYS: DAYS, DAYS4: DAYS4, SET_SECS: SET_SECS, BODYWEIGHT_LB: BODYWEIGHT_LB,
     STRETCH_SECS: STRETCH_SECS, SETUP_SECS: SETUP_SECS,
     fmt: fmt, esc: esc, round2: round2,
     dayMins: dayMins, dayMinsLeft: dayMinsLeft, getLift: getLift, firstOpenLift: firstOpenLift,

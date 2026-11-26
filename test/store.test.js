@@ -667,7 +667,10 @@ test("importRaw and importMerge reject a backup larger than 5 MB before parsing 
 
 test("validDay and validDate reject junk", () => {
   assert.equal(S.validDay("fri"), true);
-  assert.equal(S.validDay("mon"), false);
+  /* Nov 26, 2026: "mon" is a real day key in the 4-day split, and a session
+     banked under it must stay valid after toggling back to 3-day.        */
+  assert.equal(S.validDay("mon"), true);
+  assert.equal(S.validDay("tue"), false);
   assert.equal(S.validDay(null), false);
   assert.equal(S.validDay(""), false);
   assert.equal(S.validDate("2026-11-09"), true);

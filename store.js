@@ -49,12 +49,23 @@
   /** Write a string to localStorage; false when the write is refused. */
   function write(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
 
-  /* open on today's training day; Mon–Thu (off days) land on Fri, the next session */
-  function todayDay() { var d = new Date().getDay(); return d === 6 ? "sat" : (d === 0 ? "sun" : "fri"); }
-  /* the actual weekday when it is a training day, else null (Mon–Thu) */
-  function actualDay() { var d = new Date().getDay(); return d === 5 ? "fri" : d === 6 ? "sat" : d === 0 ? "sun" : null; }
-  /** True only for the three training days. */
-  function validDay(d) { return d === "fri" || d === "sat" || d === "sun"; }
+  /* open on today's training day; off days land on Fri, the next session.
+     Split "4" (Nov 26, 2026) adds Monday as the fourth training day:
+     Fri/Sat/Sun/Mon map to themselves, Tue–Thu land on Fri (next cycle). */
+  function todayDay(split) {
+    var d = new Date().getDay();
+    if (split === "4" && d === 1) return "mon";
+    return d === 6 ? "sat" : (d === 0 ? "sun" : "fri");
+  }
+  /* the actual weekday when it is a training day, else null */
+  function actualDay(split) {
+    var d = new Date().getDay();
+    if (split === "4" && d === 1) return "mon";
+    return d === 5 ? "fri" : d === 6 ? "sat" : d === 0 ? "sun" : null;
+  }
+  /** True only for real training-day keys (mon exists only in the 4-day split,
+      but a session banked under it must stay valid after toggling back). */
+  function validDay(d) { return d === "fri" || d === "sat" || d === "sun" || d === "mon"; }
   /** True only for a strict "YYYY-MM-DD" string that is a real calendar
       date: the components must round-trip through Date, so impossible dates
       like 2025-02-29 or 2026-04-31 are rejected, not rolled to a neighbor.  */
@@ -78,7 +89,7 @@
     return {
       v: CURRENT, cur: todayDay(), idx: 0, state: {}, liftHistory: {},
       lastBackup: null, active: emptySession(todayDay()), sessionLog: [],
-      bodyweight: 165, bodyweightSet: false, deloadSince: null
+      bodyweight: 165, bodyweightSet: false, deloadSince: null, split: "3"
     };
   }
 
@@ -307,6 +318,9 @@
     /* B6-09: the deload start date is additive on v5 — kept only when it is a
        real date, otherwise null (no version bump).                          */
     p.deloadSince = validDate(p.deloadSince) ? p.deloadSince : null;
+    /* Nov 26, 2026: the split toggle is additive on v5, like deloadSince —
+       kept only when it is exactly "4", otherwise the 3-day default.     */
+    p.split = p.split === "4" ? "4" : "3";
     if (!isObj(p.active)) p.active = emptySession(p.cur);
     sanitizeSession(p.active);
     if (!Array.isArray(p.sessionLog)) p.sessionLog = [];

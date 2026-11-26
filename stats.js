@@ -274,7 +274,8 @@
       var fri = new Date(fri0); fri.setDate(fri0.getDate() - w * 7);
       var sat = new Date(fri); sat.setDate(fri.getDate() + 1);
       var sun = new Date(fri); sun.setDate(fri.getDate() + 2);
-      out.push({ fri: !!have[keyOf(fri)], sat: !!have[keyOf(sat)], sun: !!have[keyOf(sun)], label: keyOf(fri) });
+      var mon = new Date(fri); mon.setDate(fri.getDate() + 3);
+      out.push({ fri: !!have[keyOf(fri)], sat: !!have[keyOf(sat)], sun: !!have[keyOf(sun)], mon: !!have[keyOf(mon)], label: keyOf(fri) });
     }
     return out;
   }
@@ -298,7 +299,7 @@
 
   /* B6-02: count a session toward its recorded day in its Mon–Sun week. */
   function sessionLoggedLifts(s, day) {
-    if (day !== "fri" && day !== "sat" && day !== "sun") return 0;
+    if (day !== "fri" && day !== "sat" && day !== "sun" && day !== "mon") return 0;
     var lifts = (s && s.lifts) || {}, prefix = day + ":", n = 0, k, rec;
     for (k in lifts) if (Object.prototype.hasOwnProperty.call(lifts, k) && k.indexOf(prefix) === 0) {
       rec = lifts[k];
@@ -309,10 +310,10 @@
   /** Session's covered YYYY-MM-DD key, or null. */
   function sessionCoveredKey(s) {
     var day = s && s.day;
-    if (day !== "fri" && day !== "sat" && day !== "sun") return null;
+    if (day !== "fri" && day !== "sat" && day !== "sun" && day !== "mon") return null;
     var dt = parseKey(s.date);
     if (!dt) return null;
-    var monday = new Date(dt), offs = { fri: 4, sat: 5, sun: 6 };
+    var monday = new Date(dt), offs = { fri: 4, sat: 5, sun: 6, mon: 0 };
     monday.setDate(dt.getDate() - ((dt.getDay() + 6) % 7));
     var key = new Date(monday);
     key.setDate(monday.getDate() + offs[day]);
@@ -337,16 +338,23 @@
    * Status of the current training week (Fri/Sat/Sun), oldest → newest.
    * @param {any} payload @param {string} nowKey YYYY-MM-DD
    * @param {{fri:number,sat:number,sun:number}} [dayLens] lifts scheduled per day (default 8)
+   * @param {string[]} [dayKeys] the week's day keys in order (default the 3-day week)
    * @returns {{day:string,date:string,state:string,lifts:number}[]}
    */
-  function weekStatus(payload, nowKey, dayLens) {
+  function weekStatus(payload, nowKey, dayLens, dayKeys) {
     var today = parseKey(nowKey);
     if (!today) return [];
     var fri0 = mostRecentFriday(today), lifts = weekLiftIndex(payload);
     var covered = sessionCoverage(payload, true); // B6-02: off-day sessions only
-    var names = ["fri", "sat", "sun"], out = [], i;
-    for (i = 0; i < 3; i++) {
-      var dt = new Date(fri0); dt.setDate(fri0.getDate() + i);
+    /* Nov 26, 2026: the 4-day split passes its own day list; the default
+       stays the 3-day week. Offsets are days after that week's Friday.
+       (The literal default list stays on its own line: tools/check-ids.js
+       parses it to guard the day tabs against the program's day keys.)  */
+    var names = ["fri", "sat", "sun"];
+    if (dayKeys) names = dayKeys;
+    var offs = { fri: 0, sat: 1, sun: 2, mon: 3 }, out = [], i;
+    for (i = 0; i < names.length; i++) {
+      var dt = new Date(fri0); dt.setDate(fri0.getDate() + (offs[names[i]] || 0));
       var key = keyOf(dt);
       var n = lifts[key] ? Object.keys(lifts[key]).length : 0;
       /* an off-day session that banked this day counts it too, once */
@@ -497,12 +505,13 @@
    * @param {(load:number, reps:number, opts?:object)=>number} metric
    * @param {string} nowKey YYYY-MM-DD
    * @param {{fri:number,sat:number,sun:number}} [dayLens]
+   * @param {string[]} [dayKeys]
    * @returns {{workouts:number, sets:number, weekDone:number, weekTotal:number,
    *            volume:number, byDay:object, weeks:any[], heatCount:number,
    *            heatTotal:number, heatWeeks:number, recent:any[], wow:object, pr:any, movers:any[]}}
    */
-  function progressSnapshot(payload, DAYS, metric, nowKey, dayLens) {
-    var wk = weekStatus(payload, nowKey, dayLens), weekDone = 0, i, d;
+  function progressSnapshot(payload, DAYS, metric, nowKey, dayLens, dayKeys) {
+    var wk = weekStatus(payload, nowKey, dayLens, dayKeys), weekDone = 0, i, d;
     for (i = 0; i < wk.length; i++) if (wk[i].state === "done") weekDone++;
     var weeks = trainingDays(payload, HEAT_WEEKS, nowKey), days = Object.keys(DAYS || {}), heatCount = 0, j, w;
     for (i = 0; i < weeks.length; i++) {

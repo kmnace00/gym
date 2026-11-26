@@ -368,3 +368,69 @@ PWA (no native packaging). Evaluated for depth before deciding to keep it and
 
 Conclusion: not worth keeping unused UI for a replica of what the Watch already
 writes. Removed the button, menu note, `appleHealthText` helper, and spec.
+
+## Research pass Nov 26, 2026 — the 4-day split (Khang's ask)
+
+Khang's ask: research 4-day splits and add one to the app as a toggle
+against the 3-day program. Verdict: **Upper/Lower ×2**, built by
+re-partitioning the existing 24 lifts (plus hip abduction, see below) —
+same weekly sets per muscle, spread over four shorter days.
+
+- **No split is proven superior when volume is equated.** Ramos-Campo
+  et al. 2024, *J Strength Cond Res* — systematic review/meta-analysis,
+  14 studies, 392 subjects: split vs full-body routines showed no
+  significant difference in muscle CSA or lean mass when volume was
+  equated. Confidence: high. App rule: the 4-day program must NOT add
+  weekly volume per muscle — it redistributes the 3-day program's sets.
+- **Frequency: 2×/week per muscle is the target; beyond that, frequency
+  is a scheduling choice.** Schoenfeld, Ogborn & Krieger 2016, *Sports
+  Med* 46(11):1689–1697, DOI 10.1007/s40279-016-0543-8 (already cited
+  above): 2× beat 1× volume-equated (ES 0.49 vs 0.30). The 2019 update
+  (Schoenfeld, Grgic & Krieger, *J Sports Sci* 37(11):1286–1295,
+  PMID 30558493, already cited above) found no meaningful hypertrophy
+  difference between frequencies once volume was equated. Confidence:
+  high. App rule: every major muscle keeps a direct 2×/week hit in the
+  4-day layout, exactly as the 3-day layout achieves it via indirect
+  work; no muscle drops to 1× (the failure mode of a naive
+  Push/Pull/Legs + Upper layout, where legs land at 1×).
+- **Per-session diminishing returns argue for spreading, not stacking.**
+  Remmert et al. 2025, *SportRχiv* preprint (not peer-reviewed):
+  meta-regressions of per-session volume found diminishing returns with
+  the point of undetectable superiority at ~11 fractional sets per
+  muscle per session for hypertrophy. Confidence: medium (preprint).
+  App rule: no muscle exceeds 9 direct sets in any 4-day session
+  (chest peaks at 9 on Upper A; back is split 3 + 9 across the two
+  upper days rather than 12 in one).
+- **Why Upper/Lower over the other 4-day shapes:** PPL+Upper puts legs
+  at 1×/week (fails the frequency rule above); 4× full-body repeats
+  squat/hinge patterns at high frequency with the most setup overhead;
+  Upper/Lower ×2 is the canonical 4-day structure (ACSM position stand
+  recommends training all major muscle groups at least twice a week)
+  and maps cleanly onto Khang's calendar: Fri/Sat/Sun as today, plus
+  Monday — with the app's off-day logging covering a Wed/Thu swap.
+- **The honest trade (no magic gains):** per-session estimates drop
+  from 105/98/100 min (3-day, honest clock) to 80/80/90/77 min (4-day),
+  while the week total rises ~303 → ~327 min because each extra day
+  carries its own stretch block, ramps and Zone 2 finisher. The gain
+  is shorter, fresher sessions — not more growth per set.
+- **Layout (all lifts reused by id; loads/reps/rests unchanged):**
+  Fri Upper A · Push (Smith incline, incline DB, pec deck, assisted
+  dip, cable lateral, machine seated row) · Sat Lower A · Quads +
+  Biceps (Smith squat, Bulgarian, leg extension, calf press, supinated
+  curl, preacher curl — biceps ride the leg day, a standard Upper/Lower
+  variant, because arms are fresh after legs) · Sun Upper B · Pull +
+  Light Chest (MTS pulldown, MTS row, assisted pull-up, machine OHP,
+  incline DB fly, rear delt, lateral↔reverse-pec superset) · Mon
+  Lower B · Hinge + Glutes (leg press, Smith RDL, seated leg curl,
+  hip abduction, calf press, overhead cable extension).
+- **Hip abduction is the one new lift** (2×12 · 205): it already
+  existed in the program as Sunday's alt-week slot in the sun-calf
+  cue; the 4-day layout makes it a weekly Lower B lift (+2 sets/week,
+  the only volume change in the whole design).
+
+Decision: build `DAYS4` in `program.js` from the same lift objects
+(never copies), a `split` field on the payload (additive on v5, like
+`deloadSince`), and a Menu toggle. Toggling runs `store.reconcile()`
+against the newly active set, so every record and history entry
+follows its lift id to its new day and back — no data migration, no
+loss in either direction.

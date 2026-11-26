@@ -2,15 +2,31 @@
 (function () {
   "use strict";
 
-  var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc, dayMins = Gym.dayMins, dayMinsLeft = Gym.dayMinsLeft,
+  var DAYS = Gym.DAYS, fmt = Gym.fmt, esc = Gym.esc,
       getLift = Gym.getLift, suggestLoad = Gym.suggestLoad, stallLoad = Gym.stallLoad,
       qualifies = Gym.qualifies, countsForProgression = Gym.countsForProgression,
       planFor = Gym.planFor, progressMetric = Gym.progressMetric,
-      firstOpenLift = Gym.firstOpenLift, restDuration = Gym.restDuration,
+      restDuration = Gym.restDuration,
       deloadSets = Gym.deloadSets, deloadLoad = Gym.deloadLoad, deloadActive = Gym.deloadActive,
       Machine = Gym, Stats = Gym, Rest = Gym;
-  var DAY_LIFTS = { fri: DAYS.fri.ex.length, sat: DAYS.sat.ex.length, sun: DAYS.sun.ex.length };
-  var DAY_LABEL = { fri: "Fri", sat: "Sat", sun: "Sun" };
+  /* Nov 26, 2026: the split toggle. DAYS / DAY_KEYS / DAY_LIFTS / DAY_LABEL
+     are rebuilt by applySplit() from the payload's `split` field; every
+     time estimate goes through a wrapper so it always reads the ACTIVE
+     program set, never program.js's default 3-day set.                    */
+  var DAY_KEYS = ["fri", "sat", "sun"];
+  var DAY_LIFTS = {}, DAY_LABEL = {};
+  var DAY_SHORT = { fri: "Fri", sat: "Sat", sun: "Sun", mon: "Mon" };
+  function splitMode() { return payload && payload.split === "4" ? "4" : "3"; }
+  function applySplit(p) {
+    var src = p || payload;
+    DAYS = src && src.split === "4" ? Gym.DAYS4 : Gym.DAYS;
+    DAY_KEYS = Object.keys(DAYS);
+    DAY_LIFTS = {}; DAY_LABEL = {};
+    DAY_KEYS.forEach(function (d) { DAY_LIFTS[d] = DAYS[d].ex.length; DAY_LABEL[d] = DAY_SHORT[d]; });
+  }
+  function dayMins(d, cal) { return Gym.dayMins(d, cal, DAYS); }
+  function dayMinsLeft(d, state, cal) { return Gym.dayMinsLeft(d, state, cal, DAYS); }
+  function firstOpenLift(d, state, from, target) { return Gym.firstOpenLift(d, state, from, target, DAYS); }
 
   /* ── state ── */
   var payload, cur, idx, view = "day", hintText = "", hintGood = false, planMsg = "";
@@ -336,7 +352,7 @@
      semantics (incl. mid-edit reset, B5-05). A11y gets one week sentence. */
   var WEEK_STATE_WORD = { done: "done", today: "today", partial: "partly logged", missed: "missed", upcoming: "upcoming" };
   function renderDayWeek() {
-    var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS);
+    var wk = Stats.weekStatus(payload, Gym.dateKey(), DAY_LIFTS, DAY_KEYS);
     var cluster = document.getElementById("dayCluster");
     if (cluster) {
       cluster.innerHTML = wk.map(function (w) {
@@ -379,9 +395,10 @@
     var summary = complete
       ? "Workout complete — nice work"
       : list.length + " lifts · " + totalSets + " sets · ~" + (totalDone > 0 ? dayMinsLeft(cur, payload.state, calOpts()) : dayMins(cur, calOpts())) + " min" + (totalDone > 0 ? " left" : "");
-    if (!Gym.actualDay()) {
+    if (!Gym.actualDay(splitMode())) {
       /* B6-02: say which training day this session banks under */
-      summary = "Off day · logs as " + (DAYS[Gym.todayDay()] ? DAYS[Gym.todayDay()].label.split(" — ")[0] : "the next session") + " · " + summary;
+      var td = Gym.todayDay(splitMode());
+      summary = "Off day · logs as " + (DAYS[td] ? DAYS[td].label.split(" — ")[0] : "the next session") + " · " + summary;
     }
     if (planMsg && totalDone === 0) summary += " · " + planMsg; // planning is over once sets are logged
     /* B6-10: nudge only in an empty week */
@@ -829,7 +846,7 @@
   /* ── progress view ─────────────────────────────────────────────────────── */
   function renderProgress() {
     var todayKey = Gym.dateKey();
-    var snap = Stats.progressSnapshot(payload, DAYS, progressMetric, todayKey, DAY_LIFTS);
+    var snap = Stats.progressSnapshot(payload, DAYS, progressMetric, todayKey, DAY_LIFTS, DAY_KEYS);
     document.getElementById("pSessions").textContent = snap.workouts;
     document.getElementById("pSets").textContent = snap.sets;
     document.getElementById("pDays").textContent = snap.weekDone + "/" + snap.weekTotal;
@@ -839,8 +856,9 @@
       : "No workouts yet — open a lift to begin";
 
     var byDay = snap.byDay;
-    var max = Math.max(1, byDay.fri, byDay.sat, byDay.sun);
-    var labels = { fri: "Friday", sat: "Saturday", sun: "Sunday" };
+    var max = 1;
+    DAY_KEYS.forEach(function (d) { if (byDay[d] > max) max = byDay[d]; });
+    var labels = { fri: "Friday", sat: "Saturday", sun: "Sunday", mon: "Monday" };
     var bars = "";
     DAY_KEYS.forEach(function (d) {
       var v = byDay[d], pct = Math.round((v / max) * 100);
@@ -1181,7 +1199,7 @@
   function syncClock(){var run=!!(payload.active&&payload.active.runningSince);if(run&&!sInt){sInt=setInterval(tickSession,500);keepAwake();}if(!run&&sInt){clearInterval(sInt);sInt=null;if(!appEl.classList.contains("resting"))releaseAwake();}renderSessionPill();}
   function startSessionTimer() {
     if (sInt) return;
-    if (payload.active && payload.active.status === "complete") payload.active = Gym.emptySession(Gym.todayDay());
+    if (payload.active && payload.active.status === "complete") payload.active = Gym.emptySession(Gym.todayDay(splitMode()));
     Gym.startSessionClock(payload);
     sInt = setInterval(tickSession, 500);
     renderSessionPill();
@@ -1198,7 +1216,7 @@
   }
   sessBtn.onclick = function () {
     if (sInt) { pauseSession(); return; }
-    if (payload.active && payload.active.status === "complete") { Gym.startSession(payload, Gym.todayDay()); render(); }
+    if (payload.active && payload.active.status === "complete") { Gym.startSession(payload, Gym.todayDay(splitMode())); render(); }
     if (payload.active && payload.active.day && payload.active.day !== cur) switchDay(payload.active.day);
     startSessionTimer();
   };
@@ -1624,13 +1642,13 @@
 
   /* ── finish workout + one-screen summary ───────────────────────────────── */
   function nextTrainingGap() {
-    var order = DAY_KEYS, orderDow = { fri: 5, sat: 6, sun: 0 };
-    var now = new Date(), dow = now.getDay(), t = Gym.actualDay();
+    var order = DAY_KEYS, orderDow = { fri: 5, sat: 6, sun: 0, mon: 1 };
+    var now = new Date(), dow = now.getDay(), t = Gym.actualDay(splitMode());
     var day;
-    if (!t) day = Gym.todayDay();
+    if (!t) day = Gym.todayDay(splitMode());
     else {
       var i = order.indexOf(t);
-      day = order[(i + 1) % 3];
+      day = order[(i + 1) % order.length];
     }
     var gap = (orderDow[day] - dow + 7) % 7;
     return { day: day, gap: gap };
@@ -1783,7 +1801,6 @@
   /* N12 (updated): day switching — the ‹ › chevrons beside the day title
      cycle the three training days, sharing switchDay with the header day
      tabs (#dayCluster, back in N24). */
-  var DAY_KEYS = ["fri", "sat", "sun"];
   function switchDay(d) {
     /* reset edit before switching: the backup restores into curSt(), so
        switching first writes into the wrong day's lift (B5-05). */
@@ -1806,7 +1823,7 @@
   var lastFocus = null;
   function openModal() {
     lastFocus = document.activeElement;
-    modal.hidden = false; hideMsg(); updateFoot(); initNotify(); renderCalib();
+    modal.hidden = false; hideMsg(); updateFoot(); initNotify(); renderCalib(); renderSplit();
     var first = modal.querySelector(".modalbtn, .modalclose");
     if (first) first.focus();
   }
@@ -1949,11 +1966,13 @@
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        var restored = Gym.reconcile(Gym.importRaw(String(reader.result)), DAYS);
+        var imported = Gym.importRaw(String(reader.result));
+        applySplit(imported); // a backup carries its own split — reconcile against it
+        var restored = Gym.reconcile(imported, DAYS);
         resetEdit(); planMsg = ""; timerIdle("", "");
         var snapOk = Gym.snapshot(payload, "pre-restore");
         payload = restored;
-        Gym.rollSession(payload, Gym.todayDay());
+        Gym.rollSession(payload, Gym.todayDay(splitMode()));
         cur = payload.cur; idx = payload.idx;
         if (!DAYS[cur]) cur = "fri";
         if (idx >= DAYS[cur].ex.length) idx = 0;
@@ -2127,6 +2146,32 @@
     setMsg("Deload week ended — normal targets restored." + saveResult(true));
     var s = document.getElementById("deloadStart"); if (s && s.getClientRects().length) s.focus();
   };
+  /* Nov 26, 2026: the split toggle — one tap swaps the whole program set.
+     reconcile() re-homes every record and history entry by lift id, so
+     loads, PRs and progression follow each lift to its new day and back;
+     nothing is reset. An in-progress session keeps its day if that day
+     exists in the new split (fri/sat/sun do in both); a Monday session
+     toggled back to 3-day banks under its lifts' 3-day homes.            */
+  function renderSplit() {
+    var b = document.getElementById("splitToggle");
+    if (b) b.textContent = splitMode() === "4" ? "Split: 4-day · Upper/Lower ×2" : "Split: 3-day · Fri–Sun";
+  }
+  document.getElementById("splitToggle").onclick = function () {
+    cancelPendingAdvance();
+    resetEdit(); clearUndo();
+    payload.split = splitMode() === "4" ? "3" : "4";
+    applySplit();
+    payload = Gym.reconcile(payload, DAYS);
+    if (!DAYS[cur]) cur = Gym.todayDay(splitMode());
+    if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
+    var open = firstOpen(0);
+    if (open >= 0) idx = open;
+    view = "day";
+    commit(); render(); updateFoot(); syncRestNext(); renderSplit();
+    setMsg(splitMode() === "4"
+      ? "4-day split on — Upper/Lower ×2, Fri–Mon. Same lifts and loads, shorter days." + saveResult(true)
+      : "3-day split on — Fri–Sun, as before. Loads and history kept." + saveResult(true));
+  };
   var bwInput = document.getElementById("bwInput");
   bwInput.addEventListener("input", function () {
     if (saveBw(this.value)) setMsg("Bodyweight set to " + payload.bodyweight + " lb" + saveResult(true));
@@ -2147,8 +2192,9 @@
     if (!restored || restored.__future) { setMsg("Snapshot is not readable."); return; }
     resetEdit(); planMsg = ""; timerIdle("", "");
     var snapOk = Gym.snapshot(payload, "pre-snapshot-restore");
+    applySplit(restored);
     payload = Gym.reconcile(restored, DAYS);
-    Gym.rollSession(payload, Gym.todayDay());
+    Gym.rollSession(payload, Gym.todayDay(splitMode()));
     cur = payload.cur; idx = payload.idx;
     if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
     if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
@@ -2203,11 +2249,13 @@
   window.addEventListener("orientationchange", syncViewportHeight);
   if (window.visualViewport) window.visualViewport.addEventListener("resize", syncViewportHeight);
   initTheme();
-  payload = Gym.reconcile(Gym.load(), DAYS);
+  var loaded = Gym.load();
+  applySplit(loaded);
+  payload = Gym.reconcile(loaded, DAYS);
   var loadErr = Gym.lastLoadError();
   if (loadErr && (loadErr.kind === "corrupt" || loadErr.kind === "future" || loadErr.kind === "salvaged")) dataWarn = loadErr.kind;
   /* a session from an earlier date is banked; today starts fresh but keeps loads */
-  Gym.rollSession(payload, Gym.todayDay());
+  Gym.rollSession(payload, Gym.todayDay(splitMode()));
   cur = payload.cur; idx = payload.idx;
   if (!DAYS[cur]) cur = payload.active && payload.active.day ? payload.active.day : "fri";
   if (idx >= DAYS[cur].ex.length || idx < 0) idx = 0;
