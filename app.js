@@ -1083,7 +1083,10 @@
     else { timerBar.classList.remove("paused"); pauseBtn.textContent = "Pause"; }
     restClock.textContent = fmt(v.secs);
     restClock.setAttribute("aria-label", v.phase === "paused" ? "Rest paused — " + fmt(v.secs) + " remaining" : "Rest time remaining");
-    restBarFill.style.width = Math.round(v.progress * 100) + "%";
+    // v349: fractional width — whole-% steps made the bar jump ~1% at a
+    // time on long rests; the .25s CSS transition can only smooth what
+    // it is given, and the 200 ms tick supplies plenty of steps.
+    restBarFill.style.width = (v.progress * 100).toFixed(2) + "%";
     restNext.textContent = v.nextText;
     setRestElapsed(v.elapsedSec);
     skipBtn.textContent = v.skipLabel;

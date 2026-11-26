@@ -362,3 +362,22 @@ test("rest Up now tracks an applied suggested load (U139)", async ({ page }) => 
   await page.locator("#detailsBtn").click();
   await expect(page.locator("#restNext")).toContainText("load 62.5"); // stale pre-fix
 });
+
+test("the rest bar drains smoothly, not in whole-percent steps (v349)", async ({ page }) => {
+  const errors = [];
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("pageerror", (e) => errors.push(String(e)));
+
+  await page.clock.install({ time: new Date("2026-11-09T10:00:00") });
+  await page.goto(url);
+  await page.locator(".liftrow").first().click();
+  await page.locator("#doneBtn").click(); // log a set -> rest starts
+  await expect(page.locator("#timerBar")).toHaveClass(/active/);
+  await page.clock.runFor(1000); // ~1% into a multi-minute rest
+  const w = await page.locator("#rbarFill").evaluate((el) => el.style.width);
+  expect(w).toMatch(/^\d+\.\d+%$/); // fractional — whole-% rounding made the bar jump
+  const pct = parseFloat(w);
+  expect(pct).toBeGreaterThan(0);
+  expect(pct).toBeLessThan(2);
+  expect(errors.filter((e) => !/vibrate|AudioContext/i.test(e))).toEqual([]);
+});
